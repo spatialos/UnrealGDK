@@ -228,7 +228,7 @@ struct Worker : Component
 		CommandRequest.schema_type = Schema_CreateCommandRequest();
 		Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
-		Schema_AddInt64(RequestObject, 1, PartitionId);
+		AddEntityIdToSchema(RequestObject, 1, PartitionId);
 
 		return CommandRequest;
 	}
@@ -259,7 +259,7 @@ struct AuthorityDelegation : AbstractMutableComponent
 		{
 			Schema_Object* Delegation = Schema_IndexObject(ComponentObject, 1, i);
 			Worker_ComponentId AssignedComponentId = Schema_GetUint32(Delegation, SCHEMA_MAP_KEY_FIELD_ID);
-			Worker_PartitionId PartitionId = Schema_GetUint64(Delegation, SCHEMA_MAP_VALUE_FIELD_ID);
+			Worker_PartitionId PartitionId = GetEntityIdFromSchema(Delegation, SCHEMA_MAP_VALUE_FIELD_ID);
 
 			Delegations.Add(AssignedComponentId, PartitionId);
 		}
@@ -278,7 +278,7 @@ struct AuthorityDelegation : AbstractMutableComponent
 			{
 				Schema_Object* Delegation = Schema_IndexObject(ComponentObject, 1, i);
 				Worker_ComponentId AssignedComponentId = Schema_GetUint32(Delegation, SCHEMA_MAP_KEY_FIELD_ID);
-				Worker_PartitionId PartitionId = Schema_GetUint64(Delegation, SCHEMA_MAP_VALUE_FIELD_ID);
+				Worker_PartitionId PartitionId = GetEntityIdFromSchema(Delegation, SCHEMA_MAP_VALUE_FIELD_ID);
 
 				Delegations.Add(AssignedComponentId, PartitionId);
 			}
@@ -296,7 +296,7 @@ struct AuthorityDelegation : AbstractMutableComponent
 		{
 			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 1);
 			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
-			Schema_AddUint64(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
+			AddEntityIdToSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
 		}
 
 		return Data;
@@ -313,7 +313,7 @@ struct AuthorityDelegation : AbstractMutableComponent
 		{
 			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 1);
 			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
-			Schema_AddUint64(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
+			AddEntityIdToSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
 		}
 
 		return ComponentUpdate;

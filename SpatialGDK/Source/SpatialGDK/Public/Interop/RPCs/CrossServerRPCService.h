@@ -43,10 +43,10 @@ public:
 	void AdvanceView();
 	void ProcessChanges();
 
-	EPushRPCResult PushCrossServerRPC(Worker_EntityId EntityId, const RPCSender& Sender, const PendingRPCPayload& Payload,
+	EPushRPCResult PushCrossServerRPC(FSpatialEntityId EntityId, const RPCSender& Sender, const PendingRPCPayload& Payload,
 									  bool bCreatedEntity);
 
-	void WriteCrossServerACKFor(Worker_EntityId Receiver, const RPCSender& Sender);
+	void WriteCrossServerACKFor(FSpatialEntityId Receiver, const RPCSender& Sender);
 	void FlushPendingClearedFields(TPair<EntityComponentId, PendingUpdate>& UpdateToSend);
 
 private:
@@ -54,23 +54,23 @@ private:
 	void ProcessChangesForEntityDelta(const EntityDelta& Delta);
 
 	// Process relevant view delta changes.
-	void EntityAdded(const Worker_EntityId EntityId);
-	void ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
-	void ProcessComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
+	void EntityAdded(const FSpatialEntityId EntityId);
+	void ComponentUpdate(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
+	void ProcessComponentChange(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId);
 
 	// Maintain local state of client server RPCs.
-	void PopulateDataStore(Worker_EntityId EntityId);
+	void PopulateDataStore(FSpatialEntityId EntityId);
 
 	// Client server RPC system responses to state changes.
-	void OnEndpointAuthorityGained(Worker_EntityId EntityId, const ComponentData& Component);
+	void OnEndpointAuthorityGained(FSpatialEntityId EntityId, const ComponentData& Component);
 
 	// The component with the given component ID was updated, and so there is an RPC to be handled.
-	void HandleRPC(const Worker_EntityId EntityId, const CrossServerEndpoint&);
+	void HandleRPC(const FSpatialEntityId EntityId, const CrossServerEndpoint&);
 	//// Calls ExtractRPCCallback for each RPC it extracts from a given component. If the callback returns false,
 	//// stops retrieving RPCs.
-	void ExtractCrossServerRPCs(Worker_EntityId EntityId, const CrossServerEndpoint&);
-	void UpdateSentRPCsACKs(Worker_EntityId, const CrossServerEndpointACK&);
-	void CleanupACKsFor(Worker_EntityId EndpointId, const CrossServerEndpoint&);
+	void ExtractCrossServerRPCs(FSpatialEntityId EntityId, const CrossServerEndpoint&);
+	void UpdateSentRPCsACKs(FSpatialEntityId, const CrossServerEndpointACK&);
+	void CleanupACKsFor(FSpatialEntityId EndpointId, const CrossServerEndpoint&);
 	//
 	//// Helpers
 	static bool IsCrossServerEndpoint(Worker_ComponentId ComponentId);

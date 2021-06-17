@@ -15,7 +15,7 @@ namespace
 {
 const float AdvancedTime = 0.5f;
 const float LongAdvancedTime = 5.5f;
-const Worker_EntityId TestEntityId = 1;
+const FSpatialEntityId TestEntityId{ 1 };
 const Worker_RequestId SuccessRequestId = 1;
 const Worker_RequestId QueueingRequestId = 2;
 
@@ -46,12 +46,12 @@ public:
 
 	virtual const FString& GetWorkerId() const override { return WorkerId; }
 
-	virtual Worker_EntityId GetWorkerSystemEntityId() const override { return WorkerSystemEntityId; }
+	virtual FSpatialEntityId GetWorkerSystemEntityId() const override { return WorkerSystemEntityId; }
 
 private:
 	TArray<TArray<OpList>> ListsOfOpLists;
 	TArray<OpList> QueuedOpLists;
-	Worker_EntityId WorkerSystemEntityId = 1;
+	FSpatialEntityId WorkerSystemEntityId{ 1 };
 	FString WorkerId = TEXT("test_worker");
 };
 

@@ -63,7 +63,7 @@ FUnrealObjectRef GetStablyNamedObjectRef(UObject* Object)
 	FString TempPath = Object->GetFName().ToString();
 	TempPath = UWorld::RemovePIEPrefix(TempPath);
 
-	return FUnrealObjectRef(0, 0, TempPath, GetStablyNamedObjectRef(Object->GetOuter()), true);
+	return FUnrealObjectRef({}, 0, TempPath, GetStablyNamedObjectRef(Object->GetOuter()), true);
 }
 
 TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
@@ -182,7 +182,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 {
 	AActor* Actor = Channel->Actor;
 	UClass* Class = Actor->GetClass();
-	Worker_EntityId EntityId = Channel->GetEntityId();
+	FSpatialEntityId EntityId = Channel->GetEntityId();
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
@@ -216,21 +216,21 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 #else
 		GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
 #endif // !UE_BUILD_SHIPPING
-		FUnrealObjectRef Remapped = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
+		FUnrealObjectRef Remapped = FUnrealObjectRef({}, 0, TempPath, OuterObjectRef, true);
 		if (!Metadata.StablyNamedRef.IsSet() || *Metadata.StablyNamedRef != Remapped)
 		{
 			UE_LOG(LogEntityFactory, Error,
 				   TEXT("When constructing an entity, the network remapped path for the stably named object path was not equal to the one "
-						"constructed before. This is unexpected and could lead to bugs further down the line. Actor: %s, EntityId: %lld"),
-				   *Actor->GetPathName(), EntityId);
+						"constructed before. This is unexpected and could lead to bugs further down the line. Actor: %s, EntityId: %s"),
+				   *Actor->GetPathName(), *EntityId.ToString());
 		}
 
 		if (!Metadata.bNetStartup.IsSet() || Metadata.bNetStartup != Actor->bNetStartup)
 		{
 			UE_LOG(LogEntityFactory, Error,
 				   TEXT("When constructing an entity, the bNetStartup variable was not equal to the one constructed before. This is "
-						"unexpected and could lead to bugs further down the line. Actor: %s, EntityId: %lld"),
-				   *Actor->GetPathName(), EntityId);
+						"unexpected and could lead to bugs further down the line. Actor: %s, EntityId: %s"),
+				   *Actor->GetPathName(), *EntityId.ToString());
 		}
 #endif
 	}
@@ -378,7 +378,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 #else
 	GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
 #endif
-	const TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
+	const TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef = FUnrealObjectRef({}, 0, TempPath, OuterObjectRef, true);
 
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position(Coordinates::FromFVector(GetActorSpatialPosition(Actor))).CreateComponentData());
@@ -413,7 +413,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	return Components;
 }
 
-TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const Worker_EntityId EntityId,
+TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const FSpatialEntityId EntityId,
 																			const InterestFactory* InterestFactory,
 																			const UAbstractLBStrategy* LbStrategy,
 																			VirtualWorkerId VirtualWorker, bool bDebugContextValid)

@@ -39,9 +39,9 @@ public:
 	// Produces a projection of a given main view delta to a sub view delta. The passed SubViewDelta is populated with
 	// the projection. The given arrays represent the state of the sub view and dictates the projection.
 	// Entity ID arrays are assumed to be sorted for view delta projection.
-	void Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& CompleteEntities,
-				 const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,
-				 const TArray<Worker_EntityId>& TemporarilyIncompleteEntities) const;
+	void Project(FSubViewDelta& SubDelta, const TArray<FSpatialEntityId>& CompleteEntities,
+				 const TArray<FSpatialEntityId>& NewlyCompleteEntities, const TArray<FSpatialEntityId>& NewlyIncompleteEntities,
+				 const TArray<FSpatialEntityId>& TemporarilyIncompleteEntities) const;
 	void Clear();
 	const TArray<EntityDelta>& GetEntityDeltas() const;
 	const TArray<Worker_Op>& GetWorkerMessages() const;
@@ -55,7 +55,7 @@ private:
 		explicit ReceivedComponentChange(const Worker_AddComponentOp& Op);
 		explicit ReceivedComponentChange(const Worker_ComponentUpdateOp& Op);
 		explicit ReceivedComponentChange(const Worker_RemoveComponentOp& Op);
-		Worker_EntityId EntityId;
+		FSpatialEntityId EntityId;
 		Worker_ComponentId ComponentId;
 		enum
 		{
@@ -71,13 +71,13 @@ private:
 	};
 	struct ReceivedEntityChange
 	{
-		Worker_EntityId EntityId;
+		FSpatialEntityId EntityId;
 		bool bAdded;
 	};
 	// Comparator that will return true when the entity change in question is not for the same entity ID as stored.
 	struct DifferentEntity
 	{
-		Worker_EntityId EntityId;
+		FSpatialEntityId EntityId;
 		bool operator()(const ReceivedEntityChange& E) const;
 		bool operator()(const ReceivedComponentChange& Op) const;
 		bool operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const;
@@ -85,7 +85,7 @@ private:
 	// Comparator that will return true when the entity change in question is not for the same entity-component as stored.
 	struct DifferentEntityComponent
 	{
-		Worker_EntityId EntityId;
+		FSpatialEntityId EntityId;
 		Worker_ComponentId ComponentId;
 		bool operator()(const ReceivedComponentChange& Op) const;
 		bool operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const;
@@ -141,10 +141,7 @@ private:
 	ReceivedEntityChange* ProcessEntityExistenceChange(ReceivedEntityChange* It, ReceivedEntityChange* End, EntityDelta& Delta,
 													   bool bAlreadyInView, EntityView& View);
 
-	// The sentinel entity ID has the property that when converted to a uint64 it will be greater than INT64_MAX.
-	// If we convert all entity IDs to uint64s before comparing them we can then be assured that the sentinel values
-	// will be greater than all valid IDs.
-	static const Worker_EntityId SENTINEL_ENTITY_ID = -1;
+	static FSpatialEntityId SENTINEL_ENTITY_ID;
 
 	TArray<ReceivedEntityChange> EntityChanges;
 	TArray<ReceivedComponentChange> ComponentChanges;

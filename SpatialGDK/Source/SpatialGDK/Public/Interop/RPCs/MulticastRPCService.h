@@ -27,25 +27,25 @@ public:
 
 private:
 	// Process relevant view delta changes.
-	void EntityAdded(Worker_EntityId EntityId);
-	void EntityRefresh(Worker_EntityId EntityId);
-	void ComponentUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
-	void AuthorityLost(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
+	void EntityAdded(FSpatialEntityId EntityId);
+	void EntityRefresh(FSpatialEntityId EntityId);
+	void ComponentUpdate(FSpatialEntityId EntityId, Worker_ComponentId ComponentId);
+	void AuthorityGained(FSpatialEntityId EntityId, Worker_ComponentSetId ComponentSetId);
+	void AuthorityLost(FSpatialEntityId EntityId, Worker_ComponentSetId ComponentSetId);
 
 	// Maintain local state of multicast RPCs.
-	void PopulateDataStore(Worker_EntityId EntityId);
-	void ApplyComponentUpdate(Worker_EntityId EntityId, Schema_ComponentUpdate* Update);
+	void PopulateDataStore(FSpatialEntityId EntityId);
+	void ApplyComponentUpdate(FSpatialEntityId EntityId, Schema_ComponentUpdate* Update);
 
 	// Multicast system responses to state changes.
-	void OnCheckoutMulticastRPCComponentOnEntity(Worker_EntityId EntityId);
-	void OnRemoveMulticastRPCComponentForEntity(Worker_EntityId EntityId);
-	void OnEndpointAuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
-	void OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
+	void OnCheckoutMulticastRPCComponentOnEntity(FSpatialEntityId EntityId);
+	void OnRemoveMulticastRPCComponentForEntity(FSpatialEntityId EntityId);
+	void OnEndpointAuthorityGained(FSpatialEntityId EntityId, Worker_ComponentSetId ComponentSetId);
+	void OnEndpointAuthorityLost(FSpatialEntityId EntityId, Worker_ComponentSetId ComponentSetId);
 
 	// Calls ExtractRPCCallback for each RPC it extracts from a given component. If the callback returns false,
 	// stops retrieving RPCs.
-	void ExtractRPCs(Worker_EntityId EntityId);
+	void ExtractRPCs(FSpatialEntityId EntityId);
 
 	ExtractRPCDelegate ExtractRPCCallback;
 	const FSubView* SubView;

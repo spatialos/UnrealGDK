@@ -16,13 +16,13 @@ struct SPATIALGDK_API FUnrealObjectRef
 	FUnrealObjectRef() = default;
 	FUnrealObjectRef(const FUnrealObjectRef&) = default;
 
-	FUnrealObjectRef(Worker_EntityId Entity, ObjectOffset Offset)
+	FUnrealObjectRef(FSpatialEntityId Entity, ObjectOffset Offset)
 		: Entity(Entity)
 		, Offset(Offset)
 	{
 	}
 
-	FUnrealObjectRef(Worker_EntityId Entity, ObjectOffset Offset, FString Path, FUnrealObjectRef Outer, bool bNoLoadOnClient)
+	FUnrealObjectRef(FSpatialEntityId Entity, ObjectOffset Offset, FString Path, FUnrealObjectRef Outer, bool bNoLoadOnClient)
 		: Entity(Entity)
 		, Offset(Offset)
 		, Path(Path)
@@ -35,7 +35,7 @@ struct SPATIALGDK_API FUnrealObjectRef
 
 	FORCEINLINE FString ToString() const
 	{
-		return FString::Printf(TEXT("(entity ID: %lld, offset: %u, path: %s)"), Entity, Offset,
+		return FString::Printf(TEXT("(entity ID: %s, offset: %u, path: %s)"), *Entity.ToString(), Offset,
 							   Path.IsSet() ? *Path.GetValue() : TEXT("not set"));
 	}
 
@@ -80,7 +80,7 @@ struct SPATIALGDK_API FUnrealObjectRef
 	static const FUnrealObjectRef NULL_OBJECT_REF;
 	static const FUnrealObjectRef UNRESOLVED_OBJECT_REF;
 
-	Worker_EntityId Entity;
+	FSpatialEntityId Entity;
 	ObjectOffset Offset;
 	SpatialGDK::TSchemaOption<FString> Path;
 	SpatialGDK::TSchemaOption<FUnrealObjectRef> Outer;
@@ -96,7 +96,7 @@ struct SPATIALGDK_API FUnrealObjectRef
 inline uint32 GetTypeHash(const FUnrealObjectRef& ObjectRef)
 {
 	uint32 Result = 1327u;
-	Result = (Result * 977u) + GetTypeHash(static_cast<int64>(ObjectRef.Entity));
+	Result = (Result * 977u) + GetTypeHash(ObjectRef.Entity);
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Offset);
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Path);
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Outer);

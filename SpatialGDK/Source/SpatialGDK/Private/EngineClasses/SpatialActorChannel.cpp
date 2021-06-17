@@ -265,8 +265,8 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 			if (Actor->GetTearOff())
 			{
 				NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
-				if (ensureMsgf(Actor->HasAuthority(), TEXT("EntityId %lld Actor %s doesn't have authority, can't disable replication"),
-							   EntityId, *Actor->GetName()))
+				if (ensureMsgf(Actor->HasAuthority(), TEXT("EntityId %s Actor %s doesn't have authority, can't disable replication"),
+							   *EntityId.ToString(), *Actor->GetName()))
 				{
 					// Since the entity deletion is delayed, this creates a situation,
 					// when the Actor is torn off, but still replicates.
@@ -281,8 +281,8 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		}
 		else if (bCreatedEntity) // We have not gained authority yet
 		{
-			if (ensureMsgf(Actor->HasAuthority(), TEXT("EntityId %lld Actor %s doesn't have authority, can't disable replication"),
-						   EntityId, *Actor->GetName()))
+			if (ensureMsgf(Actor->HasAuthority(), TEXT("EntityId %s Actor %s doesn't have authority, can't disable replication"),
+						   *EntityId.ToString(), *Actor->GetName()))
 			{
 				Actor->SetReplicates(false);
 			}
@@ -295,8 +295,8 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 	else
 	{
 		// This is unsupported, and shouldn't happen, don't attempt to cleanup entity to better indicate something has gone wrong
-		UE_LOG(LogSpatialActorChannel, Error,
-			   TEXT("RetireEntityIfAuthoritative called on actor channel with null actor - entity id (%lld)"), EntityId);
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("RetireEntityIfAuthoritative called on actor channel with null actor - entity id (%s)"),
+			   *EntityId.ToString());
 	}
 }
 
@@ -306,8 +306,8 @@ void USpatialActorChannel::ValidateChannelNotBroken()
 	// bunch). This shouldn't happen in Spatial and would likely lead to unexpected behavior.
 	if (Broken)
 	{
-		UE_LOG(LogSpatialActorChannel, Error, TEXT("Channel broken when cleaning up/closing channel. Entity id: %lld, actor: %s"), EntityId,
-			   *GetNameSafe(Actor));
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("Channel broken when cleaning up/closing channel. Entity id: %s, actor: %s"),
+			   *EntityId.ToString(), *GetNameSafe(Actor));
 	}
 }
 
@@ -656,8 +656,8 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 		else
 		{
-			UE_LOG(LogSpatialActorChannel, Warning, TEXT("EntityId: %lld Actor: %s Changelist with index %d has no changed items"),
-				   EntityId, *Actor->GetName(), i);
+			UE_LOG(LogSpatialActorChannel, Warning, TEXT("EntityId: %s Actor: %s Changelist with index %d has no changed items"),
+				   *EntityId.ToString(), *Actor->GetName(), i);
 		}
 	}
 
@@ -895,7 +895,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		else
 		{
 			UE_LOG(LogSpatialActorChannel, Warning,
-				   TEXT("EntityId: %lld Actor: %s Subobject: %s Changelist with index %d has no changed items"), EntityId,
+				   TEXT("EntityId: %s Actor: %s Subobject: %s Changelist with index %d has no changed items"), *EntityId.ToString(),
 				   *Actor->GetName(), *Object->GetName(), i);
 		}
 	}
@@ -969,7 +969,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 	else
 	{
 		UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(),
-			   EntityId);
+			   *EntityId.ToString());
 
 		if (PackageMap->IsEntityIdPendingCreation(EntityId))
 		{
@@ -1093,7 +1093,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	}
 }
 
-void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition)
+void USpatialActorChannel::SendPositionUpdate(AActor* InActor, FSpatialEntityId InEntityId, const FVector& NewPosition)
 {
 	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->HasServerAuthority(InEntityId))
 	{
@@ -1157,7 +1157,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
 	if (!ensureAlwaysMsgf(NetDriver->HasServerAuthority(EntityId),
-						  TEXT("Trying to process ownership change on non-auth server. Entity: %lld"), EntityId))
+						  TEXT("Trying to process ownership change on non-auth server. Entity: %s"), *EntityId.ToString()))
 	{
 		return;
 	}
@@ -1215,7 +1215,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	// need to iterate through.
 	for (AActor* Child : Actor->Children)
 	{
-		Worker_EntityId ChildEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Child);
+		FSpatialEntityId ChildEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Child);
 
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(ChildEntityId))
 		{

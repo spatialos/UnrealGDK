@@ -9,7 +9,7 @@ DEFINE_LOG_CATEGORY(LogSpatialRoutingSystem);
 
 namespace SpatialGDK
 {
-void SpatialRoutingSystem::ProcessUpdate(Worker_EntityId Entity, const ComponentChange& Change, RoutingComponents& Components)
+void SpatialRoutingSystem::ProcessUpdate(FSpatialEntityId Entity, const ComponentChange& Change, RoutingComponents& Components)
 {
 	switch (Change.ComponentId)
 	{
@@ -56,9 +56,9 @@ void SpatialRoutingSystem::ProcessUpdate(Worker_EntityId Entity, const Component
 	}
 }
 
-void SpatialRoutingSystem::OnSenderChanged(Worker_EntityId SenderId, RoutingComponents& Components)
+void SpatialRoutingSystem::OnSenderChanged(FSpatialEntityId SenderId, RoutingComponents& Components)
 {
-	TMap<CrossServer::RPCKey, Worker_EntityId> ReceiverAbsent;
+	TMap<CrossServer::RPCKey, FSpatialEntityId> ReceiverAbsent;
 	CrossServer::ReadRPCMap SlotsToClear = Components.SenderACKState.RPCSlots;
 
 	const RPCRingBuffer& Buffer = Components.Sender->ReliableRPCBuffer;
@@ -71,7 +71,7 @@ void SpatialRoutingSystem::OnSenderChanged(Worker_EntityId SenderId, RoutingComp
 		{
 			const TOptional<CrossServerRPCInfo>& Counterpart = Buffer.Counterpart[SlotIdx];
 
-			Worker_EntityId Receiver = Counterpart->Entity;
+			FSpatialEntityId Receiver = Counterpart->Entity;
 			uint64 RPCId = Counterpart->RPCId;
 			CrossServer::RPCKey RPCKey(SenderId, RPCId);
 			SlotsToClear.Remove(RPCKey);
@@ -126,7 +126,7 @@ void SpatialRoutingSystem::OnSenderChanged(Worker_EntityId SenderId, RoutingComp
 	}
 }
 
-void SpatialRoutingSystem::ClearReceiverSlot(Worker_EntityId Receiver, CrossServer::RPCKey RPCKey, RoutingComponents& ReceiverComponents)
+void SpatialRoutingSystem::ClearReceiverSlot(FSpatialEntityId Receiver, CrossServer::RPCKey RPCKey, RoutingComponents& ReceiverComponents)
 {
 	CrossServer::SentRPCEntry* SentRPC = ReceiverComponents.ReceiverState.Mailbox.Find(RPCKey);
 	check(SentRPC != nullptr);
@@ -146,7 +146,7 @@ void SpatialRoutingSystem::ClearReceiverSlot(Worker_EntityId Receiver, CrossServ
 	}
 }
 
-void SpatialRoutingSystem::TransferRPCsToReceiver(Worker_EntityId ReceiverId, RoutingComponents& Components)
+void SpatialRoutingSystem::TransferRPCsToReceiver(FSpatialEntityId ReceiverId, RoutingComponents& Components)
 {
 	if (RoutingComponents* ReceiverComps = RoutingWorkerView.Find(ReceiverId))
 	{
@@ -162,7 +162,7 @@ void SpatialRoutingSystem::TransferRPCsToReceiver(Worker_EntityId ReceiverId, Ro
 
 			check(!SentRPC.DestinationSlot.IsSet());
 
-			Worker_EntityId SenderId = RPCToSend.Get<0>();
+			FSpatialEntityId SenderId = RPCToSend.Get<0>();
 			uint64 RPCId = RPCToSend.Get<1>();
 
 			RoutingComponents* SenderComps = RoutingWorkerView.Find(SenderId);
@@ -230,7 +230,7 @@ void SpatialRoutingSystem::WriteACKToSender(CrossServer::RPCKey RPCKey, RoutingC
 	}
 }
 
-void SpatialRoutingSystem::OnReceiverACKChanged(Worker_EntityId EntityId, RoutingComponents& Components)
+void SpatialRoutingSystem::OnReceiverACKChanged(FSpatialEntityId EntityId, RoutingComponents& Components)
 {
 	CrossServerEndpointACK& ReceiverACK = Components.ReceiverACK.GetValue();
 	for (int32 SlotIdx = 0; SlotIdx < ReceiverACK.ACKArray.Num(); ++SlotIdx)
@@ -263,7 +263,7 @@ void SpatialRoutingSystem::OnReceiverACKChanged(Worker_EntityId EntityId, Routin
 Schema_ComponentUpdate* SpatialRoutingSystem::GetOrCreateComponentUpdate(
 	TPair<Worker_EntityId_Key, Worker_ComponentId> EntityComponentIdPair)
 {
-	check(EntityComponentIdPair.Key != 0);
+	check(EntityComponentIdPair.Key != SpatialConstants::INVALID_ENTITY_ID);
 	Schema_ComponentUpdate** ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
 	if (ComponentUpdatePtr == nullptr)
 	{
@@ -406,7 +406,7 @@ void SpatialRoutingSystem::Advance(SpatialOSWorkerInterface* Connection)
 
 				for (auto Slots : Components->SenderACKState.RPCSlots)
 				{
-					Worker_EntityId Receiver = Slots.Value.CounterpartEntity;
+					FSpatialEntityId Receiver = Slots.Value.CounterpartEntity;
 					if (Receiver != SpatialConstants::INVALID_ENTITY_ID && Slots.Value.ACKSlot != -1)
 					{
 						// The receiver would be waiting for an update from the sender.
@@ -438,7 +438,7 @@ void SpatialRoutingSystem::Flush(SpatialOSWorkerInterface* Connection)
 {
 	for (auto& Entry : PendingComponentUpdatesToSend)
 	{
-		Worker_EntityId Entity = Entry.Key.Get<0>();
+		FSpatialEntityId Entity = Entry.Key.Get<0>();
 		Worker_ComponentId CompId = Entry.Key.Get<1>();
 
 		if (RoutingComponents* Components = RoutingWorkerView.Find(Entity))

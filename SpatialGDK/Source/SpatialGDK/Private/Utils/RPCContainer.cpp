@@ -190,7 +190,7 @@ void FRPCContainer::ProcessRPCs()
 	bAlreadyProcessingRPCs = false;
 }
 
-void FRPCContainer::DropForEntity(const Worker_EntityId& EntityId)
+void FRPCContainer::DropForEntity(const FSpatialEntityId& EntityId)
 {
 	for (auto& RpcMap : QueuedRPCs)
 	{
@@ -198,7 +198,7 @@ void FRPCContainer::DropForEntity(const Worker_EntityId& EntityId)
 	}
 }
 
-bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ERPCType Type) const
+bool FRPCContainer::ObjectHasRPCsQueuedOfType(const FSpatialEntityId& EntityId, ERPCType Type) const
 {
 	if (const FRPCMap* MapOfQueues = QueuedRPCs.Find(Type))
 	{

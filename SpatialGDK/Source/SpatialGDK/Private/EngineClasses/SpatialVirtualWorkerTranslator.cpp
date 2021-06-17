@@ -41,7 +41,7 @@ Worker_PartitionId SpatialVirtualWorkerTranslator::GetPartitionEntityForVirtualW
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
-Worker_EntityId SpatialVirtualWorkerTranslator::GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const
+FSpatialEntityId SpatialVirtualWorkerTranslator::GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const
 {
 	if (const SpatialVirtualWorkerTranslator::WorkerInformation* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
 	{
@@ -65,11 +65,11 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 
 		for (const auto& Entry : VirtualToPhysicalWorkerMapping)
 		{
-			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("\t-> Assignment: Virtual Worker %d to %s with server worker entity: %lld"),
-				   Entry.Key, *(Entry.Value.WorkerName), Entry.Value.ServerWorkerEntityId);
+			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("\t-> Assignment: Virtual Worker %d to %s with server worker entity: %s"),
+				   Entry.Key, *(Entry.Value.WorkerName), *Entry.Value.ServerWorkerEntityId.ToString());
 		}
 	}
-#endif //!NO_LOGGING
+#endif //! NO_LOGGING
 }
 
 // The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID.
@@ -90,8 +90,10 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 		const VirtualWorkerId VirtualWorkerId = Schema_GetUint32(MappingObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID);
 		const PhysicalWorkerName WorkerName =
 			SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID);
-		const Worker_EntityId ServerWorkerEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID);
-		const Worker_PartitionId PartitionEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_PARTITION_ID);
+		const FSpatialEntityId ServerWorkerEntityId =
+			SpatialGDK::GetEntityIdFromSchema(MappingObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID);
+		const Worker_PartitionId PartitionEntityId =
+			SpatialGDK::GetEntityIdFromSchema(MappingObject, SpatialConstants::MAPPING_PARTITION_ID);
 
 		// Insert each into the provided map.
 		UpdateMapping(VirtualWorkerId, WorkerName, PartitionEntityId, ServerWorkerEntityId);
@@ -99,7 +101,7 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 }
 
 void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName WorkerName, Worker_PartitionId PartitionEntityId,
-												   Worker_EntityId ServerWorkerEntityId)
+												   FSpatialEntityId ServerWorkerEntityId)
 {
 	VirtualToPhysicalWorkerMapping.Add(Id, WorkerInformation{ WorkerName, ServerWorkerEntityId, PartitionEntityId });
 

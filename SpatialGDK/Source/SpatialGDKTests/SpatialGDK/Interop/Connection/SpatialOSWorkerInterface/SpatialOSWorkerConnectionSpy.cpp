@@ -34,35 +34,35 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendReserveEntityIdsRequest(uint3
 }
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FWorkerComponentData> Components,
-																	   const Worker_EntityId* EntityId,
+																	   const FSpatialEntityId* EntityId,
 																	   const SpatialGDK::FRetryData& RetryData,
 																	   const FSpatialGDKSpanId& SpanId)
 {
 	return NextRequestId++;
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_EntityId EntityId, const SpatialGDK::FRetryData& RetryData,
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(FSpatialEntityId EntityId, const SpatialGDK::FRetryData& RetryData,
 																	   const FSpatialGDKSpanId& SpanId)
 {
 	return NextRequestId++;
 }
 
-void SpatialOSWorkerConnectionSpy::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
+void SpatialOSWorkerConnectionSpy::SendAddComponent(FSpatialEntityId EntityId, FWorkerComponentData* ComponentData,
 													const FSpatialGDKSpanId& SpanId)
 {
 }
 
-void SpatialOSWorkerConnectionSpy::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+void SpatialOSWorkerConnectionSpy::SendRemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId,
 													   const FSpatialGDKSpanId& SpanId)
 {
 }
 
-void SpatialOSWorkerConnectionSpy::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
+void SpatialOSWorkerConnectionSpy::SendComponentUpdate(FSpatialEntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 													   const FSpatialGDKSpanId& SpanId)
 {
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(FSpatialEntityId EntityId, Worker_CommandRequest* Request,
 																  const SpatialGDK::FRetryData& RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	return NextRequestId++;

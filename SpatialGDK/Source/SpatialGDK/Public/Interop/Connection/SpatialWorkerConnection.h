@@ -65,18 +65,18 @@ public:
 	virtual const TArray<Worker_Op>& GetWorkerMessages() override;
 
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities, const SpatialGDK::FRetryData& RetryData) override;
-	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
+	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const FSpatialEntityId* EntityId,
 													 const SpatialGDK::FRetryData& RetryData,
 													 const FSpatialGDKSpanId& SpanId = {}) override;
-	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, const SpatialGDK::FRetryData& RetryData,
+	virtual Worker_RequestId SendDeleteEntityRequest(FSpatialEntityId EntityId, const SpatialGDK::FRetryData& RetryData,
 													 const FSpatialGDKSpanId& SpanId = {}) override;
-	virtual void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
+	virtual void SendAddComponent(FSpatialEntityId EntityId, FWorkerComponentData* ComponentData,
 								  const FSpatialGDKSpanId& SpanId = {}) override;
-	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+	virtual void SendRemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId,
 									 const FSpatialGDKSpanId& SpanId = {}) override;
-	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
+	virtual void SendComponentUpdate(FSpatialEntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 									 const FSpatialGDKSpanId& SpanId = {}) override;
-	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
+	virtual Worker_RequestId SendCommandRequest(FSpatialEntityId EntityId, Worker_CommandRequest* Request,
 												const SpatialGDK::FRetryData& RetryData, const FSpatialGDKSpanId& SpanId) override;
 	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
 									 const FSpatialGDKSpanId& SpanId = {}) override;
@@ -99,7 +99,7 @@ public:
 	bool HasValidCoordinator() const { return Coordinator.IsValid(); }
 
 	PhysicalWorkerName GetWorkerId() const;
-	Worker_EntityId GetWorkerSystemEntityId() const;
+	FSpatialEntityId GetWorkerSystemEntityId() const;
 
 	SpatialGDK::CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
 	SpatialGDK::CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);

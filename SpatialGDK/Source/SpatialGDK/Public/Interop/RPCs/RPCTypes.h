@@ -17,13 +17,13 @@ enum class QueueError
 
 namespace RPCCallbacks
 {
-using DataWritten = TFunction<void(Worker_EntityId, Worker_ComponentId, Schema_ComponentData*)>;
-using UpdateWritten = TFunction<void(Worker_EntityId, Worker_ComponentId, Schema_ComponentUpdate*)>;
-using RequestWritten = TFunction<void(Worker_EntityId, Schema_CommandRequest*)>;
-using ResponseWritten = TFunction<void(Worker_EntityId, Schema_CommandResponse*)>;
+using DataWritten = TFunction<void(FSpatialEntityId, Worker_ComponentId, Schema_ComponentData*)>;
+using UpdateWritten = TFunction<void(FSpatialEntityId, Worker_ComponentId, Schema_ComponentUpdate*)>;
+using RequestWritten = TFunction<void(FSpatialEntityId, Schema_CommandRequest*)>;
+using ResponseWritten = TFunction<void(FSpatialEntityId, Schema_CommandResponse*)>;
 using RPCWritten = TFunction<void(Worker_ComponentId, uint64)>;
-using QueueErrorCallback = TFunction<void(FName, Worker_EntityId, QueueError)>;
-using CanExtractRPCs = TFunction<bool(Worker_EntityId)>;
+using QueueErrorCallback = TFunction<void(FName, FSpatialEntityId, QueueError)>;
+using CanExtractRPCs = TFunction<bool(FSpatialEntityId)>;
 } // namespace RPCCallbacks
 
 /**
@@ -32,7 +32,7 @@ using CanExtractRPCs = TFunction<bool(Worker_EntityId)>;
 struct RPCReadingContext : FStackOnly
 {
 	FName ReaderName;
-	Worker_EntityId EntityId;
+	FSpatialEntityId EntityId;
 	Worker_ComponentId ComponentId;
 
 	bool IsUpdate() const { return Update != nullptr; }
@@ -82,7 +82,7 @@ struct RPCWritingContext : FStackOnly
 		// The RPCId parameter is intended to be unique in the EntityId/ComponentId context.
 		// void RPCWritten(uint64 RPCId);
 
-		const Worker_EntityId EntityId;
+		const FSpatialEntityId EntityId;
 		const Worker_ComponentId ComponentId;
 
 	private:
@@ -95,7 +95,7 @@ struct RPCWritingContext : FStackOnly
 			Schema_CommandResponse* Response;
 		};
 
-		EntityWrite(RPCWritingContext& InCtx, Worker_EntityId InEntityId, Worker_ComponentId InComponentID);
+		EntityWrite(RPCWritingContext& InCtx, FSpatialEntityId InEntityId, Worker_ComponentId InComponentID);
 		friend RPCWritingContext;
 		RPCWritingContext& Ctx;
 		Schema_Object* Fields = nullptr;
@@ -104,7 +104,7 @@ struct RPCWritingContext : FStackOnly
 		bool bActiveWriter = true;
 	};
 
-	EntityWrite WriteTo(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	EntityWrite WriteTo(FSpatialEntityId EntityId, Worker_ComponentId ComponentId);
 
 protected:
 	RPCCallbacks::DataWritten DataWrittenCallback;
@@ -128,9 +128,9 @@ public:
 	virtual ~RPCBufferSender() = default;
 
 	virtual void OnUpdate(const RPCReadingContext& iCtx) = 0;
-	virtual void OnAuthGained(Worker_EntityId EntityId, EntityViewElement const& Element);
+	virtual void OnAuthGained(FSpatialEntityId EntityId, EntityViewElement const& Element);
 	virtual void OnAuthGained_ReadComponent(const RPCReadingContext& iCtx) = 0;
-	virtual void OnAuthLost(Worker_EntityId EntityId) = 0;
+	virtual void OnAuthLost(FSpatialEntityId EntityId) = 0;
 
 	const TSet<Worker_ComponentId>& GetComponentsToReadOnUpdate() const { return ComponentsToReadOnUpdate; }
 
@@ -148,9 +148,9 @@ class RPCBufferReceiver
 public:
 	virtual ~RPCBufferReceiver() = default;
 
-	virtual void OnAdded(FName ReceiverName, Worker_EntityId EntityId, EntityViewElement const& Element);
+	virtual void OnAdded(FName ReceiverName, FSpatialEntityId EntityId, EntityViewElement const& Element);
 	virtual void OnAdded_ReadComponent(const RPCReadingContext& Ctx) = 0;
-	virtual void OnRemoved(Worker_EntityId EntityId) = 0;
+	virtual void OnRemoved(FSpatialEntityId EntityId) = 0;
 	virtual void OnUpdate(const RPCReadingContext& iCtx) = 0;
 	virtual void FlushUpdates(RPCWritingContext& Ctx) = 0;
 
@@ -188,7 +188,7 @@ struct NullReceiveWrapper
 		T Data;
 	};
 
-	WrappedData MakeWrappedData(Worker_EntityId EntityId, T&& Data, uint64 RPCId) { return MoveTemp(Data); }
+	WrappedData MakeWrappedData(FSpatialEntityId EntityId, T&& Data, uint64 RPCId) { return MoveTemp(Data); }
 };
 
 template <typename PayloadType, template <typename> class PayloadWrapper = NullReceiveWrapper>
@@ -200,10 +200,10 @@ public:
 	{
 	}
 
-	using ProcessRPC = TFunction<bool(Worker_EntityId, const PayloadType&, typename PayloadWrapper<PayloadType>::AdditionalData const&)>;
+	using ProcessRPC = TFunction<bool(FSpatialEntityId, const PayloadType&, typename PayloadWrapper<PayloadType>::AdditionalData const&)>;
 	virtual void ExtractReceivedRPCs(const RPCCallbacks::CanExtractRPCs&, const ProcessRPC&) = 0;
 
-	void QueueReceivedRPC(Worker_EntityId EntityId, PayloadType&& Data, uint64 RPCId)
+	void QueueReceivedRPC(FSpatialEntityId EntityId, PayloadType&& Data, uint64 RPCId)
 	{
 		auto& RPCs = ReceivedRPCs.FindOrAdd(EntityId);
 		RPCs.Emplace(Wrapper.MakeWrappedData(EntityId, MoveTemp(Data), RPCId));
@@ -222,9 +222,9 @@ protected:
 struct RPCQueue
 {
 	virtual ~RPCQueue() = default;
-	virtual void OnAuthGained(Worker_EntityId EntityId, const EntityViewElement& Element);
+	virtual void OnAuthGained(FSpatialEntityId EntityId, const EntityViewElement& Element);
 	virtual void OnAuthGained_ReadComponent(const RPCReadingContext& Ctx) = 0;
-	virtual void OnAuthLost(Worker_EntityId EntityId) = 0;
+	virtual void OnAuthLost(FSpatialEntityId EntityId) = 0;
 
 	const FName Name;
 
@@ -246,17 +246,17 @@ protected:
 template <typename PayloadType>
 struct TRPCBufferSender : RPCBufferSender
 {
-	virtual uint32 Write(RPCWritingContext& Ctx, Worker_EntityId EntityId, TArrayView<const PayloadType> RPC,
+	virtual uint32 Write(RPCWritingContext& Ctx, FSpatialEntityId EntityId, TArrayView<const PayloadType> RPC,
 						 const RPCCallbacks::RPCWritten& WrittenCallback) = 0;
 };
 
 template <typename AdditionalSendingData>
 struct TWrappedRPCQueue : public RPCQueue
 {
-	using SentRPCCallback = TFunction<void(FName, Worker_EntityId, Worker_ComponentId, uint64, const AdditionalSendingData&)>;
+	using SentRPCCallback = TFunction<void(FName, FSpatialEntityId, Worker_ComponentId, uint64, const AdditionalSendingData&)>;
 
 	virtual void FlushAll(RPCWritingContext& Ctx, const SentRPCCallback& SentCallback) = 0;
-	virtual void Flush(Worker_EntityId EntityId, RPCWritingContext& Ctx, const SentRPCCallback&, bool bIgnoreAdded = false) = 0;
+	virtual void Flush(FSpatialEntityId EntityId, RPCWritingContext& Ctx, const SentRPCCallback&, bool bIgnoreAdded = false) = 0;
 
 protected:
 	TWrappedRPCQueue(FName InName)
@@ -278,20 +278,20 @@ struct TRPCQueue : TWrappedRPCQueue<AdditionalSendingData>
 	{
 	}
 
-	virtual void Push(Worker_EntityId EntityId, PayloadType&& Payload, AdditionalSendingData&& Add = AdditionalSendingData())
+	virtual void Push(FSpatialEntityId EntityId, PayloadType&& Payload, AdditionalSendingData&& Add = AdditionalSendingData())
 	{
 		auto& Queue = Queues.FindOrAdd(EntityId);
 		Queue.RPCs.Emplace(MoveTemp(Payload));
 		Queue.AddData.Emplace(MoveTemp(Add));
 	}
 
-	void OnAuthGained(Worker_EntityId EntityId, const EntityViewElement& Element) override
+	void OnAuthGained(FSpatialEntityId EntityId, const EntityViewElement& Element) override
 	{
 		RPCQueue::OnAuthGained(EntityId, Element);
 		Queues.FindOrAdd(EntityId).bAdded = true;
 	}
 
-	void OnAuthLost(Worker_EntityId EntityId) { Queues.Remove(EntityId); }
+	void OnAuthLost(FSpatialEntityId EntityId) { Queues.Remove(EntityId); }
 
 	void OnAuthGained_ReadComponent(const RPCReadingContext& iCtx) override {}
 
@@ -305,7 +305,7 @@ protected:
 		bool bAdded = false;
 	};
 
-	bool FlushQueue(Worker_EntityId EntityId, QueueData& Queue, RPCWritingContext& Ctx,
+	bool FlushQueue(FSpatialEntityId EntityId, QueueData& Queue, RPCWritingContext& Ctx,
 					const typename TWrappedRPCQueue<AdditionalSendingData>::SentRPCCallback& SentCallback)
 	{
 		uint32 QueuedRPCs = Queue.RPCs.Num();

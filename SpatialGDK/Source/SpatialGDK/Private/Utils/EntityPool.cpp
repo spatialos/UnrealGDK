@@ -61,11 +61,11 @@ void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 						 TEXT("Received a different number of reserved entity IDs to what was requested"));
 
 		EntityRange NewEntityRange = {};
-		NewEntityRange.CurrentEntityId = Op.first_entity_id;
-		NewEntityRange.LastEntityId = Op.first_entity_id + (Op.number_of_entity_ids - 1);
+		NewEntityRange.CurrentEntityId = FSpatialEntityId(Op.first_entity_id);
+		NewEntityRange.LastEntityId = FSpatialEntityId(Op.first_entity_id + (Op.number_of_entity_ids - 1));
 
-		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Reserved %d entities, caching in pool, Entity IDs: (%d, %d)"), Op.number_of_entity_ids,
-			   Op.first_entity_id, NewEntityRange.LastEntityId);
+		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Reserved %d entities, caching in pool, Entity IDs: (%d, %s)"), Op.number_of_entity_ids,
+			   Op.first_entity_id, *NewEntityRange.LastEntityId.ToString());
 
 		ReservedEntityIDRanges.Add(NewEntityRange);
 
@@ -88,7 +88,7 @@ void UEntityPool::Advance()
 	ReserveEntityIdsHandler.ProcessOps(NetDriver->Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
 }
 
-Worker_EntityId UEntityPool::GetNextEntityId()
+FSpatialEntityId UEntityPool::GetNextEntityId()
 {
 	if (ReservedEntityIDRanges.Num() == 0)
 	{
@@ -99,12 +99,12 @@ Worker_EntityId UEntityPool::GetNextEntityId()
 	}
 
 	EntityRange& CurrentEntityRange = ReservedEntityIDRanges[0];
-	const Worker_EntityId NextId = CurrentEntityRange.CurrentEntityId++;
+	const FSpatialEntityId NextId = FSpatialEntityId(CurrentEntityRange.CurrentEntityId.EntityId++);
 
 	uint32_t TotalRemainingEntityIds = 0;
 	for (EntityRange Range : ReservedEntityIDRanges)
 	{
-		TotalRemainingEntityIds += Range.LastEntityId - Range.CurrentEntityId + 1;
+		TotalRemainingEntityIds += Range.LastEntityId.EntityId - Range.CurrentEntityId.EntityId + 1;
 	}
 
 	UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Popped ID, %i IDs remaining"), TotalRemainingEntityIds);

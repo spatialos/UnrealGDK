@@ -30,7 +30,7 @@ bool RPCService::IsReceiverAuthoritySet(const RPCReceiverDescription& Desc, Work
 	return Desc.Authority != NoAuthorityNeeded && ComponentSet == Desc.Authority;
 }
 
-void RPCService::ProcessUpdatesToSender(Worker_EntityId EntityId, ComponentSpan<ComponentChange> Updates)
+void RPCService::ProcessUpdatesToSender(FSpatialEntityId EntityId, ComponentSpan<ComponentChange> Updates)
 {
 	for (const ComponentChange& Change : Updates)
 	{
@@ -112,7 +112,7 @@ void RPCService::AdvanceSenderQueues()
 	}
 }
 
-void RPCService::ProcessUpdatesToReceivers(Worker_EntityId EntityId, const EntityViewElement& ViewElement,
+void RPCService::ProcessUpdatesToReceivers(FSpatialEntityId EntityId, const EntityViewElement& ViewElement,
 										   ComponentSpan<ComponentChange> Updates)
 {
 	for (const ComponentChange& Change : Updates)
@@ -141,7 +141,7 @@ void RPCService::ProcessUpdatesToReceivers(Worker_EntityId EntityId, const Entit
 	}
 }
 
-void RPCService::HandleReceiverAuthorityGained(Worker_EntityId EntityId, const EntityViewElement& ViewElement,
+void RPCService::HandleReceiverAuthorityGained(FSpatialEntityId EntityId, const EntityViewElement& ViewElement,
 											   ComponentSpan<AuthorityChange> AuthChanges)
 {
 	for (const AuthorityChange& Change : AuthChanges)
@@ -157,7 +157,7 @@ void RPCService::HandleReceiverAuthorityGained(Worker_EntityId EntityId, const E
 	}
 }
 
-void RPCService::HandleReceiverAuthorityLost(Worker_EntityId EntityId, ComponentSpan<AuthorityChange> AuthChanges)
+void RPCService::HandleReceiverAuthorityLost(FSpatialEntityId EntityId, ComponentSpan<AuthorityChange> AuthChanges)
 {
 	for (const AuthorityChange& Change : AuthChanges)
 	{

@@ -26,7 +26,7 @@ MigrationDiagnosticsSystem::MigrationDiagnosticsSystem(USpatialNetDriver& InNetD
 
 void MigrationDiagnosticsSystem::OnMigrationDiagnosticRequest(const Worker_Op& Op, const Worker_CommandRequestOp& RequestOp) const
 {
-	const Worker_EntityId EntityId = RequestOp.entity_id;
+	const FSpatialEntityId EntityId = ToSpatialEntityId(RequestOp.entity_id);
 	const Worker_RequestId RequestId = RequestOp.request_id;
 	AActor* BlockingActor = Cast<AActor>(PackageMap.GetObjectFromEntityId(EntityId));
 	if (IsValid(BlockingActor))
@@ -49,8 +49,8 @@ void MigrationDiagnosticsSystem::OnMigrationDiagnosticRequest(const Worker_Op& O
 	else
 	{
 		UE_LOG(LogSpatialMigrationDiagnostics, Warning,
-			   TEXT("Migration diaganostic log failed because cannot retreive actor for entity (%llu) on authoritative worker %s"),
-			   EntityId, *Connection.GetWorkerId());
+			   TEXT("Migration diaganostic log failed because cannot retreive actor for entity (%s) on authoritative worker %s"),
+			   *EntityId.ToString(), *Connection.GetWorkerId());
 	}
 }
 
@@ -64,7 +64,7 @@ void MigrationDiagnosticsSystem::OnMigrationDiagnosticResponse(const Worker_Op& 
 	}
 
 	Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponseOp.response.schema_type);
-	const Worker_EntityId EntityId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
+	const FSpatialEntityId EntityId = GetEntityIdFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
 	AActor* BlockingActor = Cast<AActor>(PackageMap.GetObjectFromEntityId(EntityId));
 	if (IsValid(BlockingActor))
 	{
@@ -76,8 +76,8 @@ void MigrationDiagnosticsSystem::OnMigrationDiagnosticResponse(const Worker_Op& 
 	}
 	else
 	{
-		UE_LOG(LogSpatialMigrationDiagnostics, Warning,
-			   TEXT("Migration diaganostic log failed because blocking actor (%llu) is not valid."), EntityId);
+		UE_LOG(LogSpatialMigrationDiagnostics, Warning, TEXT("Migration diaganostic log failed because blocking actor (%s) is not valid."),
+			   *EntityId.ToString());
 	}
 }
 

@@ -63,14 +63,14 @@ void CrossServerEndpointACK::ApplyComponentUpdate(Schema_ComponentUpdate* Update
 
 void ACKItem::ReadFromSchema(Schema_Object* SchemaObject)
 {
-	Sender = Schema_GetEntityId(SchemaObject, 1);
+	Sender = GetEntityIdFromSchema(SchemaObject, 1);
 	RPCId = Schema_GetUint64(SchemaObject, 2);
 	Result = Schema_GetUint64(SchemaObject, 3);
 }
 
 void ACKItem::WriteToSchema(Schema_Object* SchemaObject)
 {
-	Schema_AddEntityId(SchemaObject, 1, Sender);
+	AddEntityIdToSchema(SchemaObject, 1, Sender);
 	Schema_AddUint64(SchemaObject, 2, RPCId);
 	Schema_AddUint64(SchemaObject, 3, Result);
 }

@@ -43,7 +43,7 @@ void ActorOwnership::ApplySchema(Schema_Object* Schema)
 	{
 		if (Schema_GetEntityIdCount(Schema, SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_OWNER_ACTOR_ID) == 1)
 		{
-			OwnerActorEntityId = Schema_GetEntityId(Schema, SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_OWNER_ACTOR_ID);
+			OwnerActorEntityId = GetEntityIdFromSchema(Schema, SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_OWNER_ACTOR_ID);
 		}
 	}
 }
@@ -52,7 +52,7 @@ void ActorOwnership::WriteSchema(Schema_Object* Schema) const
 {
 	if (Schema != nullptr)
 	{
-		Schema_AddInt64(Schema, SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_OWNER_ACTOR_ID, OwnerActorEntityId);
+		AddEntityIdToSchema(Schema, SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_OWNER_ACTOR_ID, OwnerActorEntityId);
 	}
 }
 
@@ -64,7 +64,7 @@ ActorOwnership ActorOwnership::CreateFromActor(const AActor& Actor, const USpati
 	if (IsValid(OwningConnection))
 	{
 		// Add owning PlayerController's EntityId.
-		const Worker_EntityId ControllerEntity = PackageMap.GetEntityIdFromObject(OwningConnection->PlayerController);
+		const FSpatialEntityId ControllerEntity = PackageMap.GetEntityIdFromObject(OwningConnection->PlayerController);
 		check(ControllerEntity != SpatialConstants::INVALID_ENTITY_ID);
 		Ownership.OwnerActorEntityId = ControllerEntity;
 	}

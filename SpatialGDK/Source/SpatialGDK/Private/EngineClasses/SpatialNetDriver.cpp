@@ -471,7 +471,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		const SpatialGDK::FSubView& ActorAuthSubview = SpatialGDK::ActorSubviews::CreateActorAuthSubView(*this);
 
-		const FFilterPredicate TombstoneActorFilter = [this](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
+		const FFilterPredicate TombstoneActorFilter = [this](const FSpatialEntityId, const SpatialGDK::EntityViewElement& Element) {
 			return Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
 		};
 		const TArray<FDispatcherRefreshCallback> TombstoneActorRefreshCallbacks = {
@@ -900,7 +900,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	bMapLoaded = true;
 }
 
-void USpatialNetDriver::OnAsyncPackageLoadFilterComplete(Worker_EntityId EntityId)
+void USpatialNetDriver::OnAsyncPackageLoadFilterComplete(FSpatialEntityId EntityId)
 {
 	if (Connection != nullptr)
 	{
@@ -1073,7 +1073,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 			}
 			else
 			{
-				const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
+				const FSpatialEntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
 
 				// If the actor is an initially dormant startup actor that has not been replicated.
 				if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor() && ThisActor->GetIsReplicated()
@@ -1091,7 +1091,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 					if (!HasServerAuthority(EntityId))
 					{
 						UE_LOG(LogSpatialOSNetDriver, Warning,
-							   TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId,
+							   TEXT("Retiring dormant entity that we don't have spatial authority over [%s][%s]"), *EntityId.ToString(),
 							   *ThisActor->GetName());
 					}
 					ActorSystem->RetireEntity(EntityId, ThisActor->IsNetStartupActor());
@@ -1144,7 +1144,7 @@ void USpatialNetDriver::Shutdown()
 
 	if (bDeleteDynamicEntities && IsServer())
 	{
-		for (const Worker_EntityId EntityId : DormantEntities)
+		for (const FSpatialEntityId EntityId : DormantEntities)
 		{
 			if (HasServerAuthority(EntityId))
 			{
@@ -1152,7 +1152,7 @@ void USpatialNetDriver::Shutdown()
 			}
 		}
 
-		for (const Worker_EntityId EntityId : TombstonedEntities)
+		for (const FSpatialEntityId EntityId : TombstonedEntities)
 		{
 			if (HasServerAuthority(EntityId))
 			{
@@ -1246,7 +1246,7 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 		return;
 	}
 
-	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	FSpatialEntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		return;
@@ -1310,14 +1310,15 @@ void USpatialNetDriver::ProcessOwnershipChanges()
 	const bool bShouldWriteLoadBalancingData =
 		IsValid(Connection) && GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents;
 
-	for (Worker_EntityId EntityId : OwnershipChangedEntities)
+	for (FSpatialEntityId EntityId : OwnershipChangedEntities)
 	{
 		if (USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId))
 		{
 			if (bShouldWriteLoadBalancingData)
 			{
 				if (ensureAlwaysMsgf(IsValid(Channel->Actor),
-									 TEXT("Tried to process ownership changes for invalid channel Actor. Entity: %lld"), EntityId))
+									 TEXT("Tried to process ownership changes for invalid channel Actor. Entity: %s"),
+									 *EntityId.ToString()))
 				{
 					const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, *Channel->Actor);
 					Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
@@ -2600,7 +2601,7 @@ USpatialNetConnection* USpatialNetDriver::GetSpatialOSNetConnection() const
 }
 
 bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
-												   const Worker_EntityId& ClientSystemEntityId, USpatialNetConnection** OutConn)
+												   const FSpatialEntityId& ClientSystemEntityId, USpatialNetConnection** OutConn)
 {
 	check(*OutConn == nullptr);
 	*OutConn = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
@@ -2629,7 +2630,7 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	SpatialConnection->ConnectionClientWorkerSystemEntityId = ClientSystemEntityId;
 
 	// Register workerId and its connection.
-	UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Worker %lld 's NetConnection created."), ClientSystemEntityId);
+	UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Worker %s 's NetConnection created."), *ClientSystemEntityId.ToString());
 	ClientConnectionManager->RegisterClientConnection(ClientSystemEntityId, SpatialConnection);
 
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
@@ -2667,12 +2668,12 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	return true;
 }
 
-bool USpatialNetDriver::HasServerAuthority(Worker_EntityId EntityId) const
+bool USpatialNetDriver::HasServerAuthority(FSpatialEntityId EntityId) const
 {
 	return Connection->GetCoordinator().HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
 }
 
-bool USpatialNetDriver::HasClientAuthority(Worker_EntityId EntityId) const
+bool USpatialNetDriver::HasClientAuthority(FSpatialEntityId EntityId) const
 {
 	return Connection->GetCoordinator().HasAuthority(EntityId, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
 }
@@ -2704,7 +2705,7 @@ void USpatialNetDriver::ProcessPendingDormancy()
 }
 
 void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
-										const Worker_EntityId& ClientSystemEntityId)
+										const FSpatialEntityId& ClientSystemEntityId)
 {
 	USpatialNetConnection* SpatialConnection = nullptr;
 
@@ -2727,7 +2728,7 @@ void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRep
 }
 
 // This function is called for server workers who received the PC over the wire
-void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerController, const Worker_EntityId ClientSystemEntityId)
+void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerController, const FSpatialEntityId ClientSystemEntityId)
 {
 	if (!ensureAlwaysMsgf(PlayerController != nullptr, TEXT("PlayerController Actor was nullptr in PostSpawnPlayerController")))
 	{
@@ -2910,12 +2911,12 @@ void USpatialPendingNetGame::SendJoin()
 	bSentJoinRequest = true;
 }
 
-void USpatialNetDriver::AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel)
+void USpatialNetDriver::AddActorChannel(FSpatialEntityId EntityId, USpatialActorChannel* Channel)
 {
 	EntityToActorChannel.Add(EntityId, Channel);
 }
 
-void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId, USpatialActorChannel& Channel)
+void USpatialNetDriver::RemoveActorChannel(FSpatialEntityId EntityId, USpatialActorChannel& Channel)
 {
 	for (auto& ChannelRefs : Channel.ObjectReferenceMap)
 	{
@@ -2925,8 +2926,8 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId, USpatialAct
 
 	if (!EntityToActorChannel.Contains(EntityId))
 	{
-		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("RemoveActorChannel: Failed to find entity/channel mapping for entity %lld."),
-			   EntityId);
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("RemoveActorChannel: Failed to find entity/channel mapping for entity %s."),
+			   *EntityId.ToString());
 		return;
 	}
 
@@ -2991,7 +2992,7 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 	return Channel;
 }
 
-USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_EntityId EntityId) const
+USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(FSpatialEntityId EntityId) const
 {
 	return EntityToActorChannel.FindRef(EntityId);
 }
@@ -3008,7 +3009,7 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 		return;
 	}
 
-	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	const FSpatialEntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s) without entity id"), *Actor->GetName());
@@ -3054,7 +3055,7 @@ void USpatialNetDriver::RefreshActorVisibility(AActor* Actor, bool bMakeVisible)
 		return;
 	}
 
-	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	const FSpatialEntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to change visibility on an actor without entity id. Actor's name: %s"),
@@ -3094,7 +3095,7 @@ void USpatialNetDriver::RemovePendingDormantChannel(USpatialActorChannel* Channe
 	PendingDormantChannels.Remove(Channel);
 }
 
-void USpatialNetDriver::RegisterDormantEntityId(Worker_EntityId EntityId)
+void USpatialNetDriver::RegisterDormantEntityId(FSpatialEntityId EntityId)
 {
 	// Register dormant entities when their actor channel has been closed, but their entity is still alive.
 	// This allows us to clean them up when shutting down. Might be nice to not rely on ActorChannels to
@@ -3102,12 +3103,12 @@ void USpatialNetDriver::RegisterDormantEntityId(Worker_EntityId EntityId)
 	DormantEntities.Emplace(EntityId);
 }
 
-void USpatialNetDriver::UnregisterDormantEntityId(Worker_EntityId EntityId)
+void USpatialNetDriver::UnregisterDormantEntityId(FSpatialEntityId EntityId)
 {
 	DormantEntities.Remove(EntityId);
 }
 
-bool USpatialNetDriver::IsDormantEntity(Worker_EntityId EntityId) const
+bool USpatialNetDriver::IsDormantEntity(FSpatialEntityId EntityId) const
 {
 	return (DormantEntities.Find(EntityId) != nullptr);
 }
@@ -3120,9 +3121,9 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 		return nullptr;
 	}
 
-	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	const FSpatialEntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	ensureAlwaysMsgf(GetActorChannelByEntityId(EntityId) == nullptr,
-					 TEXT("Called CreateSpatialActorChannel while Actor Channel already exists for entity %lld"), EntityId);
+					 TEXT("Called CreateSpatialActorChannel while Actor Channel already exists for entity %s"), *EntityId.ToString());
 
 	USpatialNetConnection* NetConnection = GetSpatialOSNetConnection();
 	check(NetConnection != nullptr);
@@ -3147,7 +3148,7 @@ void USpatialNetDriver::WipeWorld(const PostWorldWipeDelegate& LoadSnapshotAfter
 	SnapshotManager->WorldWipe(LoadSnapshotAfterWorldWipe);
 }
 
-void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Delay, bool bIsNetStartupActor)
+void USpatialNetDriver::DelayedRetireEntity(FSpatialEntityId EntityId, float Delay, bool bIsNetStartupActor)
 {
 	FTimerHandle RetryTimer;
 	TimerManager.SetTimer(
@@ -3175,7 +3176,7 @@ void USpatialNetDriver::TryFinishStartup()
 
 			SpatialGDK::FSubView& NewView =
 				Connection->GetCoordinator().CreateSubView(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID,
-														   [](const Worker_EntityId, const SpatialGDK::EntityViewElement&) {
+														   [](const FSpatialEntityId, const SpatialGDK::EntityViewElement&) {
 															   return true;
 														   },
 														   {});
@@ -3190,7 +3191,7 @@ void USpatialNetDriver::TryFinishStartup()
 		{
 			SpatialGDK::FSubView& NewView =
 				Connection->GetCoordinator().CreateSubView(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID,
-														   [](const Worker_EntityId, const SpatialGDK::EntityViewElement&) {
+														   [](const FSpatialEntityId, const SpatialGDK::EntityViewElement&) {
 															   return true;
 														   },
 														   {});
@@ -3229,7 +3230,7 @@ void USpatialNetDriver::TryFinishStartup()
 				ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
 				if (WorldSettings && WorldSettings->bEnableDebugInterface)
 				{
-					const FFilterPredicate DebugCompFilter = [this](const Worker_EntityId EntityId,
+					const FFilterPredicate DebugCompFilter = [this](const FSpatialEntityId EntityId,
 																	const SpatialGDK::EntityViewElement& Element) {
 						return Element.Components.ContainsByPredicate(
 							SpatialGDK::ComponentIdEquality{ SpatialConstants::GDK_DEBUG_COMPONENT_ID });
@@ -3248,7 +3249,7 @@ void USpatialNetDriver::TryFinishStartup()
 #endif
 
 #if WITH_GAMEPLAY_DEBUGGER
-				const FFilterPredicate GameplayDebuggerCompFilter = [this](const Worker_EntityId EntityId,
+				const FFilterPredicate GameplayDebuggerCompFilter = [this](const FSpatialEntityId EntityId,
 																		   const SpatialGDK::EntityViewElement& Element) {
 					return Element.Components.ContainsByPredicate(
 						SpatialGDK::ComponentIdEquality{ SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID });
@@ -3304,7 +3305,7 @@ void USpatialNetDriver::SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpati
 }
 
 #if WITH_EDITOR
-void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
+void USpatialNetDriver::TrackTombstone(const FSpatialEntityId EntityId)
 {
 	TombstonedEntities.Add(EntityId);
 }
@@ -3315,7 +3316,7 @@ bool USpatialNetDriver::IsReady() const
 	return bIsReadyToStart;
 }
 
-bool USpatialNetDriver::IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure)
+bool USpatialNetDriver::IsLogged(FSpatialEntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure)
 {
 	// Clear the log migration store at the specified interval
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
@@ -3333,7 +3334,7 @@ bool USpatialNetDriver::IsLogged(Worker_EntityId ActorEntityId, EActorMigrationR
 	return bIsLogged;
 }
 
-int64 USpatialNetDriver::GetClientID() const
+FSpatialEntityId USpatialNetDriver::GetClientID() const
 {
 	if (IsServer())
 	{
@@ -3342,12 +3343,12 @@ int64 USpatialNetDriver::GetClientID() const
 
 	if (USpatialNetConnection* NetConnection = GetSpatialOSNetConnection())
 	{
-		return static_cast<int64>(NetConnection->GetPlayerControllerEntityId());
+		return NetConnection->GetPlayerControllerEntityId();
 	}
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
-int64 USpatialNetDriver::GetActorEntityId(const AActor& Actor) const
+FSpatialEntityId USpatialNetDriver::GetActorEntityId(const AActor& Actor) const
 {
 	if (PackageMap == nullptr)
 	{

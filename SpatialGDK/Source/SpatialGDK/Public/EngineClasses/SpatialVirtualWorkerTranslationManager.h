@@ -38,9 +38,9 @@ class SPATIALGDK_API SpatialVirtualWorkerTranslationManager
 public:
 	struct PartitionInfo
 	{
-		Worker_EntityId PartitionEntityId;
+		FSpatialEntityId PartitionEntityId;
 		VirtualWorkerId VirtualWorker;
-		Worker_EntityId SimulatingWorkerSystemEntityId;
+		FSpatialEntityId SimulatingWorkerSystemEntityId;
 	};
 
 	SpatialVirtualWorkerTranslationManager(SpatialOSWorkerInterface* InConnection, SpatialVirtualWorkerTranslator* InTranslator);
@@ -83,9 +83,9 @@ private:
 	void AssignPartitionsToEachServerWorkerFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void SendVirtualWorkerMappingUpdate() const;
 
-	void AssignPartitionToWorker(const PhysicalWorkerName& WorkerName, const Worker_EntityId& ServerWorkerEntityId,
-								 const Worker_EntityId& SystemEntityId, const PartitionInfo& Partition);
+	void AssignPartitionToWorker(const PhysicalWorkerName& WorkerName, const FSpatialEntityId& ServerWorkerEntityId,
+								 const FSpatialEntityId& SystemEntityId, const PartitionInfo& Partition);
 
-	void SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker);
-	void OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker);
+	void SpawnPartitionEntity(FSpatialEntityId PartitionEntityId, VirtualWorkerId VirtualWorker);
+	void OnPartitionEntityCreation(FSpatialEntityId PartitionEntityId, VirtualWorkerId VirtualWorker);
 };

@@ -95,7 +95,7 @@ public:
 
 	void AddObject(const UObject* Object, const char* Key = "object");
 	void AddFunction(const UFunction* Function, const char* Key = "function");
-	void AddEntityId(const Worker_EntityId EntityId, const char* Key = "entity_id");
+	void AddEntityId(const FSpatialEntityId EntityId, const char* Key = "entity_id");
 	void AddComponentId(const Worker_ComponentId ComponentId, const char* Key = "component_id");
 	void AddComponentSetId(const Worker_ComponentSetId ComponentId, const char* Key = "component_set_id");
 	void AddFieldId(const uint32 FieldId, const char* Key = "field_id");

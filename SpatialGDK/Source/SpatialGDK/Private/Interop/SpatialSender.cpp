@@ -98,7 +98,7 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 
 void USpatialSender::SendAuthorityIntentUpdate(const AActor& InActor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const
 {
-	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&InActor);
+	const FSpatialEntityId EntityId = PackageMap->GetEntityIdFromObject(&InActor);
 
 	if (!ensureAlwaysMsgf(EntityId != SpatialConstants::INVALID_ENTITY_ID,
 						  TEXT("Couldn't find entity ID from package map when sending auth intent update. Actor: %s"),
@@ -121,15 +121,15 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& InActor, VirtualWor
 	{
 		/* This seems to occur when using the replication graph, however we're still unsure the cause. */
 		UE_LOG(LogSpatialSender, Error,
-			   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
-			   *GetNameSafe(&InActor), EntityId, NewAuthoritativeVirtualWorkerId);
+			   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %s. Virtual worker: '%d'"),
+			   *GetNameSafe(&InActor), *EntityId.ToString(), NewAuthoritativeVirtualWorkerId);
 		return;
 	}
 
 	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
 	UE_LOG(LogSpatialSender, Log,
-		   TEXT("(%s) Sending AuthorityIntent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
-		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&InActor));
+		   TEXT("(%s) Sending AuthorityIntent update for entity id %s. Virtual worker '%d' should become authoritative over %s"),
+		   *NetDriver->Connection->GetWorkerId(), *EntityId.ToString(), NewAuthoritativeVirtualWorkerId, *GetNameSafe(&InActor));
 
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 

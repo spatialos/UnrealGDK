@@ -9,7 +9,7 @@
 
 namespace SpatialGDK
 {
-ExpectedViewDelta& ExpectedViewDelta::AddEntityDelta(const Worker_EntityId EntityId, const EntityChangeType ChangeType)
+ExpectedViewDelta& ExpectedViewDelta::AddEntityDelta(const FSpatialEntityId EntityId, const EntityChangeType ChangeType)
 {
 	EntityDeltas.Add(
 		EntityId, { EntityId, ChangeType == UPDATE ? ExpectedEntityDelta::UPDATE
@@ -19,27 +19,27 @@ ExpectedViewDelta& ExpectedViewDelta::AddEntityDelta(const Worker_EntityId Entit
 	return *this;
 }
 
-ExpectedViewDelta& ExpectedViewDelta::AddComponentAdded(const Worker_EntityId EntityId, ComponentData Data)
+ExpectedViewDelta& ExpectedViewDelta::AddComponentAdded(const FSpatialEntityId EntityId, ComponentData Data)
 {
 	EntityDeltas[EntityId].ComponentsAdded.Push(ComponentChange(Data.GetComponentId(), Data.GetUnderlying()));
 	EntityDeltas[EntityId].DataStorage.Push(MoveTemp(Data));
 	return *this;
 }
 
-ExpectedViewDelta& ExpectedViewDelta::AddComponentRemoved(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+ExpectedViewDelta& ExpectedViewDelta::AddComponentRemoved(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	EntityDeltas[EntityId].ComponentsRemoved.Push(ComponentChange(ComponentId));
 	return *this;
 }
 
-ExpectedViewDelta& ExpectedViewDelta::AddComponentUpdate(const Worker_EntityId EntityId, ComponentUpdate Update)
+ExpectedViewDelta& ExpectedViewDelta::AddComponentUpdate(const FSpatialEntityId EntityId, ComponentUpdate Update)
 {
 	EntityDeltas[EntityId].ComponentUpdates.Push(ComponentChange(Update.GetComponentId(), Update.GetUnderlying()));
 	EntityDeltas[EntityId].UpdateStorage.Push(MoveTemp(Update));
 	return *this;
 }
 
-ExpectedViewDelta& ExpectedViewDelta::AddComponentRefreshed(const Worker_EntityId EntityId, ComponentUpdate Update, ComponentData Data)
+ExpectedViewDelta& ExpectedViewDelta::AddComponentRefreshed(const FSpatialEntityId EntityId, ComponentUpdate Update, ComponentData Data)
 {
 	EntityDeltas[EntityId].ComponentsRefreshed.Push(ComponentChange(Update.GetComponentId(), Data.GetUnderlying(), Update.GetEvents()));
 	EntityDeltas[EntityId].DataStorage.Push(MoveTemp(Data));
@@ -47,19 +47,19 @@ ExpectedViewDelta& ExpectedViewDelta::AddComponentRefreshed(const Worker_EntityI
 	return *this;
 }
 
-ExpectedViewDelta& ExpectedViewDelta::AddAuthorityGained(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+ExpectedViewDelta& ExpectedViewDelta::AddAuthorityGained(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	EntityDeltas[EntityId].AuthorityGained.Add(AuthorityChange(ComponentId, AuthorityChange::AUTHORITY_GAINED));
 	return *this;
 }
 
-ExpectedViewDelta& ExpectedViewDelta::AddAuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+ExpectedViewDelta& ExpectedViewDelta::AddAuthorityLost(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	EntityDeltas[EntityId].AuthorityLost.Add(AuthorityChange(ComponentId, AuthorityChange::AUTHORITY_LOST));
 	return *this;
 }
 
-ExpectedViewDelta& ExpectedViewDelta::AddAuthorityLostTemporarily(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+ExpectedViewDelta& ExpectedViewDelta::AddAuthorityLostTemporarily(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	EntityDeltas[EntityId].AuthorityLostTemporarily.Add(AuthorityChange(ComponentId, AuthorityChange::AUTHORITY_LOST_TEMPORARILY));
 	return *this;
@@ -121,7 +121,7 @@ bool ExpectedViewDelta::CompareDeltas(const TArray<EntityDelta>& Other)
 	}
 
 	SortEntityDeltas();
-	TArray<uint32> DeltaKeys;
+	TArray<FSpatialEntityId> DeltaKeys;
 	EntityDeltas.GetKeys(DeltaKeys);
 	for (int32 i = 0; i < DeltaKeys.Num(); ++i)
 	{

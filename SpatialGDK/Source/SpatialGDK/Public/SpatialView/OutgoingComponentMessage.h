@@ -30,7 +30,7 @@ public:
 	{
 	}
 
-	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentData ComponentAdded, const FSpatialGDKSpanId& SpanId)
+	explicit OutgoingComponentMessage(FSpatialEntityId EntityId, ComponentData ComponentAdded, const FSpatialGDKSpanId& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(ComponentAdded.GetComponentId())
 		, SpanId(SpanId)
@@ -39,7 +39,7 @@ public:
 	{
 	}
 
-	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentUpdate ComponentUpdated, const FSpatialGDKSpanId& SpanId)
+	explicit OutgoingComponentMessage(FSpatialEntityId EntityId, ComponentUpdate ComponentUpdated, const FSpatialGDKSpanId& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(ComponentUpdated.GetComponentId())
 		, SpanId(SpanId)
@@ -48,7 +48,7 @@ public:
 	{
 	}
 
-	explicit OutgoingComponentMessage(Worker_EntityId EntityId, Worker_ComponentId RemovedComponentId, const FSpatialGDKSpanId& SpanId)
+	explicit OutgoingComponentMessage(FSpatialEntityId EntityId, Worker_ComponentId RemovedComponentId, const FSpatialGDKSpanId& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(RemovedComponentId)
 		, SpanId(SpanId)
@@ -137,7 +137,7 @@ public:
 		return Update;
 	}
 
-	Worker_EntityId EntityId;
+	FSpatialEntityId EntityId;
 	Worker_ComponentId ComponentId;
 
 	FSpatialGDKSpanId SpanId;

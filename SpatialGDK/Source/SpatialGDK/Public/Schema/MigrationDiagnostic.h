@@ -38,7 +38,7 @@ struct MigrationDiagnostic : Component
 	}
 
 	// Respond with information on the worker that has authority over the actor that is blocking the hierarchy from migrating
-	static Worker_CommandResponse CreateMigrationDiagnosticResponse(USpatialNetDriver* NetDriver, Worker_EntityId EntityId,
+	static Worker_CommandResponse CreateMigrationDiagnosticResponse(USpatialNetDriver* NetDriver, FSpatialEntityId EntityId,
 																	AActor* BlockingActor)
 	{
 		Worker_CommandResponse CommandResponse = {};
@@ -46,8 +46,8 @@ struct MigrationDiagnostic : Component
 		if (!ensureAlwaysMsgf(
 				NetDriver != nullptr && NetDriver->Connection != nullptr && NetDriver->LockingPolicy != nullptr
 					&& NetDriver->VirtualWorkerTranslator != nullptr && NetDriver->PackageMap != nullptr,
-				TEXT("Failed to create migration disagnostic response. Some core class was undefined. EntityId: %lld. Actor: %s"), EntityId,
-				*GetNameSafe(BlockingActor)))
+				TEXT("Failed to create migration disagnostic response. Some core class was undefined. EntityId: %s. Actor: %s"),
+				*EntityId.ToString(), *GetNameSafe(BlockingActor)))
 		{
 			return CommandResponse;
 		}
@@ -57,7 +57,7 @@ struct MigrationDiagnostic : Component
 		CommandResponse.schema_type = Schema_CreateCommandResponse();
 
 		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
-		Schema_AddEntityId(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID, EntityId);
+		AddEntityIdToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID, EntityId);
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID, BlockingActor->GetIsReplicated());
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_HAS_AUTHORITY_ID, BlockingActor->HasAuthority());
 
@@ -73,12 +73,12 @@ struct MigrationDiagnostic : Component
 		FSpatialLoadBalancingHandler MigrationHandler(NetDriver);
 		FSpatialLoadBalancingHandler::EvaluateActorResult Result =
 			MigrationHandler.EvaluateSingleActor(BlockingActor, NetOwner, NewAuthWorkerId);
-		Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+		FSpatialEntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
 
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_EVALUATION_ID,
 					   Result == FSpatialLoadBalancingHandler::EvaluateActorResult::Migrate);
 		Schema_AddInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_DESTINATION_WORKER_ID, NewAuthWorkerId);
-		Schema_AddEntityId(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID, OwnerId);
+		AddEntityIdToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID, OwnerId);
 
 		return CommandResponse;
 	}
@@ -100,16 +100,16 @@ struct MigrationDiagnostic : Component
 		}
 
 		VirtualWorkerId AuthoritativeWorkerId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_WORKER_ID);
-		Worker_EntityId BlockedEntityId = Schema_GetEntityId(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
+		FSpatialEntityId BlockedEntityId = GetEntityIdFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
 		bool bIsReplicated = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID);
 		bool bHasAuthority = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_HAS_AUTHORITY_ID);
 		bool bIsLocked = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_LOCKED_ID);
 		bool bCanMigrate = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_EVALUATION_ID);
 		VirtualWorkerId DestinationWorkerId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_DESTINATION_WORKER_ID);
-		Worker_EntityId AuthoritativeNetOwnerId = Schema_GetEntityId(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID);
+		FSpatialEntityId AuthoritativeNetOwnerId = GetEntityIdFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID);
 
 		AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(BlockingActor);
-		Worker_EntityId OriginalNetOwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+		FSpatialEntityId OriginalNetOwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
 
 		FString Reason = FString::Printf(TEXT("Originating worker (%i) does not have authority of blocking actor. "),
 										 NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId());
@@ -130,8 +130,8 @@ struct MigrationDiagnostic : Component
 		}
 		else if (IsValid(NetOwner) && OriginalNetOwnerId != AuthoritativeNetOwnerId)
 		{
-			Reason.Append(FString::Printf(TEXT("Blocking actor has different owner (%llu) on authoritative worker (%i). "),
-										  AuthoritativeNetOwnerId, AuthoritativeWorkerId));
+			Reason.Append(FString::Printf(TEXT("Blocking actor has different owner (%s) on authoritative worker (%i). "),
+										  *AuthoritativeNetOwnerId.ToString(), AuthoritativeWorkerId));
 		}
 		else if (bIsLocked)
 		{
@@ -147,8 +147,9 @@ struct MigrationDiagnostic : Component
 										  AuthoritativeWorkerId, DestinationWorkerId));
 		}
 
-		return FString::Printf(TEXT("Prevented owning actor %s (%llu)'s hierarchy from migrating because of blocking actor %s (%llu). %s"),
-							   *GetNameSafe(NetOwner), OriginalNetOwnerId, *BlockingActor->GetName(), BlockedEntityId, *Reason);
+		return FString::Printf(TEXT("Prevented owning actor %s (%s)'s hierarchy from migrating because of blocking actor %s (%s). %s"),
+							   *GetNameSafe(NetOwner), *OriginalNetOwnerId.ToString(), *BlockingActor->GetName(),
+							   *BlockedEntityId.ToString(), *Reason);
 	}
 };
 

@@ -17,15 +17,15 @@ namespace SpatialGDK
 class SpatialStrategySystem
 {
 public:
-	SpatialStrategySystem(const FSubView& InSubView, Worker_EntityId InStrategyWorkerEntityId, SpatialOSWorkerInterface* Connection);
+	SpatialStrategySystem(const FSubView& InSubView, FSpatialEntityId InStrategyWorkerEntityId, SpatialOSWorkerInterface* Connection);
 	void Advance(SpatialOSWorkerInterface* Connection);
 	void Flush(SpatialOSWorkerInterface* Connection);
 	void Destroy(SpatialOSWorkerInterface* Connection);
 
 private:
 	const FSubView& SubView;
-	Worker_EntityId StrategyWorkerEntityId;
-	Worker_EntityId StrategyPartitionEntityId;
+	FSpatialEntityId StrategyWorkerEntityId;
+	FSpatialEntityId StrategyPartitionEntityId;
 	Worker_RequestId StrategyWorkerRequest;
 };
 } // namespace SpatialGDK

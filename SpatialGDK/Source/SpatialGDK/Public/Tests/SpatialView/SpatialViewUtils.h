@@ -9,7 +9,7 @@
 
 namespace SpatialGDK
 {
-inline TArray<ComponentData> CopyComponentSetOnEntity(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId,
+inline TArray<ComponentData> CopyComponentSetOnEntity(FSpatialEntityId EntityId, Worker_ComponentSetId ComponentSetId,
 													  const EntityView& View, const FComponentSetData& ComponentSetData)
 {
 	TArray<ComponentData> Components;
@@ -33,29 +33,29 @@ inline void SetFromOpList(ViewDelta& Delta, EntityView& View, EntityComponentOpL
 	Delta.SetFromOpList(MoveTemp(OpLists), View, ComponentSetData);
 }
 
-inline void AddEntityToView(EntityView& View, const Worker_EntityId EntityId)
+inline void AddEntityToView(EntityView& View, const FSpatialEntityId EntityId)
 {
 	View.Add(EntityId, EntityViewElement());
 }
 
-inline void AddComponentToView(EntityView& View, const Worker_EntityId EntityId, ComponentData Data)
+inline void AddComponentToView(EntityView& View, const FSpatialEntityId EntityId, ComponentData Data)
 {
 	View[EntityId].Components.Push(MoveTemp(Data));
 }
 
-inline void AddAuthorityToView(EntityView& View, const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+inline void AddAuthorityToView(EntityView& View, const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	View[EntityId].Authority.Push(ComponentId);
 }
 
-inline void PopulateViewDeltaWithComponentAdded(ViewDelta& Delta, EntityView& View, const Worker_EntityId EntityId, ComponentData Data)
+inline void PopulateViewDeltaWithComponentAdded(ViewDelta& Delta, EntityView& View, const FSpatialEntityId EntityId, ComponentData Data)
 {
 	EntityComponentOpListBuilder OpListBuilder;
 	OpListBuilder.AddComponent(EntityId, MoveTemp(Data));
 	SetFromOpList(Delta, View, MoveTemp(OpListBuilder), FComponentSetData());
 }
 
-inline void PopulateViewDeltaWithComponentUpdated(ViewDelta& Delta, EntityView& View, const Worker_EntityId EntityId,
+inline void PopulateViewDeltaWithComponentUpdated(ViewDelta& Delta, EntityView& View, const FSpatialEntityId EntityId,
 												  ComponentUpdate Update)
 {
 	EntityComponentOpListBuilder OpListBuilder;
@@ -63,7 +63,7 @@ inline void PopulateViewDeltaWithComponentUpdated(ViewDelta& Delta, EntityView& 
 	SetFromOpList(Delta, View, MoveTemp(OpListBuilder), FComponentSetData());
 }
 
-inline void PopulateViewDeltaWithComponentRemoved(ViewDelta& Delta, EntityView& View, const Worker_EntityId EntityId,
+inline void PopulateViewDeltaWithComponentRemoved(ViewDelta& Delta, EntityView& View, const FSpatialEntityId EntityId,
 												  const Worker_ComponentId ComponentId)
 {
 	EntityComponentOpListBuilder OpListBuilder;
@@ -71,7 +71,7 @@ inline void PopulateViewDeltaWithComponentRemoved(ViewDelta& Delta, EntityView& 
 	SetFromOpList(Delta, View, MoveTemp(OpListBuilder), FComponentSetData());
 }
 
-inline void PopulateViewDeltaWithAuthorityChange(ViewDelta& Delta, EntityView& View, const Worker_EntityId EntityId,
+inline void PopulateViewDeltaWithAuthorityChange(ViewDelta& Delta, EntityView& View, const FSpatialEntityId EntityId,
 												 const Worker_ComponentSetId ComponentSetId, const Worker_Authority Authority,
 												 const FComponentSetData& ComponentSetData)
 {
@@ -81,7 +81,7 @@ inline void PopulateViewDeltaWithAuthorityChange(ViewDelta& Delta, EntityView& V
 	SetFromOpList(Delta, View, MoveTemp(OpListBuilder), ComponentSetData);
 }
 
-inline void PopulateViewDeltaWithAuthorityLostTemp(ViewDelta& Delta, EntityView& View, const Worker_EntityId EntityId,
+inline void PopulateViewDeltaWithAuthorityLostTemp(ViewDelta& Delta, EntityView& View, const FSpatialEntityId EntityId,
 												   const Worker_ComponentSetId ComponentSetId, const FComponentSetData& ComponentSetData)
 {
 	EntityComponentOpListBuilder OpListBuilder;
@@ -94,8 +94,8 @@ inline void PopulateViewDeltaWithAuthorityLostTemp(ViewDelta& Delta, EntityView&
 
 inline bool CompareViews(const EntityView& Lhs, const EntityView& Rhs)
 {
-	TArray<Worker_EntityId_Key> LhsKeys;
-	TArray<Worker_EntityId_Key> RhsKeys;
+	TArray<FSpatialEntityId> LhsKeys;
+	TArray<FSpatialEntityId> RhsKeys;
 	Lhs.GetKeys(LhsKeys);
 	Rhs.GetKeys(RhsKeys);
 	if (!AreEquivalent(LhsKeys, RhsKeys, WorkerEntityIdEquality))
@@ -105,7 +105,7 @@ inline bool CompareViews(const EntityView& Lhs, const EntityView& Rhs)
 
 	for (const auto& Pair : Lhs)
 	{
-		const long EntityId = Pair.Key;
+		const FSpatialEntityId EntityId = Pair.Key;
 		const EntityViewElement* LhsElement = &Pair.Value;
 		const EntityViewElement* RhsElement = &Rhs[EntityId];
 		if (!AreEquivalent(LhsElement->Components, RhsElement->Components, CompareComponentData))

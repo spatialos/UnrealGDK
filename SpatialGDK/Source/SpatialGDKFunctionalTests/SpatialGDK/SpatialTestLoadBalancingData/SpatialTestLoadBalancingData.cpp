@@ -212,7 +212,7 @@ template <typename TComponent>
 TOptional<TComponent> ASpatialTestLoadBalancingData::GetSpatialComponent(const AActor* Actor) const
 {
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-	const Worker_EntityId ActorEntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
+	const FSpatialEntityId ActorEntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
 
 	if (ensure(ActorEntityId != SpatialConstants::INVALID_ENTITY_ID))
 	{

@@ -100,15 +100,15 @@ void ClientServerRPCService::AddOverflowedRPC(const EntityRPCType EntityType, Pe
 	OverflowedRPCs.FindOrAdd(EntityType).Add(MoveTemp(Payload));
 }
 
-void ClientServerRPCService::IncrementAckedRPCID(const Worker_EntityId EntityId, const ERPCType Type)
+void ClientServerRPCService::IncrementAckedRPCID(const FSpatialEntityId EntityId, const ERPCType Type)
 {
 	const EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
 	uint64* LastAckedRPCId = LastAckedRPCIds.Find(EntityTypePair);
 	if (LastAckedRPCId == nullptr)
 	{
 		UE_LOG(LogClientServerRPCService, Warning,
-			   TEXT("ClientServerRPCService::IncrementAckedRPCID: Could not find last acked RPC id. Entity: %lld, RPC type: %s"), EntityId,
-			   *SpatialConstants::RPCTypeToString(Type));
+			   TEXT("ClientServerRPCService::IncrementAckedRPCID: Could not find last acked RPC id. Entity: %s, RPC type: %s"),
+			   *EntityId.ToString(), *SpatialConstants::RPCTypeToString(Type));
 		return;
 	}
 
@@ -120,7 +120,7 @@ void ClientServerRPCService::IncrementAckedRPCID(const Worker_EntityId EntityId,
 	RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, *LastAckedRPCId);
 }
 
-uint64 ClientServerRPCService::GetAckFromView(const Worker_EntityId EntityId, const ERPCType Type)
+uint64 ClientServerRPCService::GetAckFromView(const FSpatialEntityId EntityId, const ERPCType Type)
 {
 	switch (Type)
 	{
@@ -132,7 +132,7 @@ uint64 ClientServerRPCService::GetAckFromView(const Worker_EntityId EntityId, co
 	}
 }
 
-void ClientServerRPCService::SetEntityData(Worker_EntityId EntityId)
+void ClientServerRPCService::SetEntityData(FSpatialEntityId EntityId)
 {
 	for (const Worker_ComponentId ComponentId : SubView->GetView()[EntityId].Authority)
 	{
@@ -140,7 +140,7 @@ void ClientServerRPCService::SetEntityData(Worker_EntityId EntityId)
 	}
 }
 
-void ClientServerRPCService::EntityAdded(const Worker_EntityId EntityId)
+void ClientServerRPCService::EntityAdded(const FSpatialEntityId EntityId)
 {
 	for (const Worker_ComponentId ComponentId : SubView->GetView()[EntityId].Authority)
 	{
@@ -150,7 +150,7 @@ void ClientServerRPCService::EntityAdded(const Worker_EntityId EntityId)
 	}
 }
 
-void ClientServerRPCService::ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+void ClientServerRPCService::ComponentUpdate(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId,
 											 Schema_ComponentUpdate* Update)
 {
 	if (!IsClientOrServerEndpoint(ComponentId))
@@ -160,7 +160,7 @@ void ClientServerRPCService::ComponentUpdate(const Worker_EntityId EntityId, con
 	HandleRPC(EntityId, ComponentId);
 }
 
-void ClientServerRPCService::PopulateDataStore(const Worker_EntityId EntityId)
+void ClientServerRPCService::PopulateDataStore(const FSpatialEntityId EntityId)
 {
 	const EntityViewElement& Entity = SubView->GetView()[EntityId];
 	const ClientEndpoint Client = ClientEndpoint(
@@ -170,7 +170,7 @@ void ClientServerRPCService::PopulateDataStore(const Worker_EntityId EntityId)
 	ClientServerDataStore.Emplace(EntityId, ClientServerEndpoints{ Client, Server });
 }
 
-void ClientServerRPCService::ApplyComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+void ClientServerRPCService::ApplyComponentUpdate(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId,
 												  Schema_ComponentUpdate* Update)
 {
 	switch (ComponentId)
@@ -186,7 +186,7 @@ void ClientServerRPCService::ApplyComponentUpdate(const Worker_EntityId EntityId
 	}
 }
 
-void ClientServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+void ClientServerRPCService::OnEndpointAuthorityGained(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	switch (ComponentId)
 	{
@@ -209,7 +209,7 @@ void ClientServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId Ent
 	}
 }
 
-void ClientServerRPCService::OnEndpointAuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+void ClientServerRPCService::OnEndpointAuthorityLost(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	switch (ComponentId)
 	{
@@ -231,7 +231,7 @@ void ClientServerRPCService::OnEndpointAuthorityLost(const Worker_EntityId Entit
 	}
 }
 
-void ClientServerRPCService::ClearOverflowedRPCs(const Worker_EntityId EntityId)
+void ClientServerRPCService::ClearOverflowedRPCs(const FSpatialEntityId EntityId)
 {
 	for (uint8 RPCType = static_cast<uint8>(ERPCType::ClientReliable); RPCType <= static_cast<uint8>(ERPCType::NetMulticast); RPCType++)
 	{
@@ -239,7 +239,7 @@ void ClientServerRPCService::ClearOverflowedRPCs(const Worker_EntityId EntityId)
 	}
 }
 
-void ClientServerRPCService::HandleRPC(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+void ClientServerRPCService::HandleRPC(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	// When migrating an Actor to another worker, we preemptively change the role to SimulatedProxy when updating authority intent.
 	// This can happen while this worker still has ServerEndpoint authority, and attempting to process a server RPC causes the engine
@@ -256,7 +256,7 @@ void ClientServerRPCService::HandleRPC(const Worker_EntityId EntityId, const Wor
 	ExtractRPCsForEntity(EntityId, ComponentId);
 }
 
-void ClientServerRPCService::ExtractRPCsForEntity(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+void ClientServerRPCService::ExtractRPCsForEntity(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	switch (ComponentId)
 	{
@@ -271,15 +271,15 @@ void ClientServerRPCService::ExtractRPCsForEntity(const Worker_EntityId EntityId
 	}
 }
 
-void ClientServerRPCService::ExtractRPCsForType(const Worker_EntityId EntityId, const ERPCType Type)
+void ClientServerRPCService::ExtractRPCsForType(const FSpatialEntityId EntityId, const ERPCType Type)
 {
 	const EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
 
 	if (!LastSeenRPCIds.Contains(EntityTypePair))
 	{
 		UE_LOG(LogClientServerRPCService, Warning,
-			   TEXT("Tried to extract RPCs but no entry in Last Seen Map! This can happen after server travel. Entity: %lld, type: %s"),
-			   EntityId, *SpatialConstants::RPCTypeToString(Type));
+			   TEXT("Tried to extract RPCs but no entry in Last Seen Map! This can happen after server travel. Entity: %s, type: %s"),
+			   *EntityId.ToString(), *SpatialConstants::RPCTypeToString(Type));
 		return;
 	}
 	const uint64 LastSeenRPCId = LastSeenRPCIds[EntityTypePair];
@@ -297,10 +297,10 @@ void ClientServerRPCService::ExtractRPCsForType(const Worker_EntityId EntityId, 
 			if (!RPCRingBufferUtils::ShouldIgnoreCapacity(Type))
 			{
 				UE_LOG(LogClientServerRPCService, Warning,
-					   TEXT("ClientServerRPCService::ExtractRPCsForType: RPCs were overwritten without being processed! Entity: %lld, RPC "
+					   TEXT("ClientServerRPCService::ExtractRPCsForType: RPCs were overwritten without being processed! Entity: %s, RPC "
 							"type: %s, "
 							"last seen RPC ID: %d, last sent ID: %d, buffer size: %d"),
-					   EntityId, *SpatialConstants::RPCTypeToString(Type), LastSeenRPCId, Buffer.LastSentRPCId, BufferSize);
+					   *EntityId.ToString(), *SpatialConstants::RPCTypeToString(Type), LastSeenRPCId, Buffer.LastSentRPCId, BufferSize);
 			}
 			FirstRPCIdToRead = Buffer.LastSentRPCId - BufferSize + 1;
 		}
@@ -317,9 +317,9 @@ void ClientServerRPCService::ExtractRPCsForType(const Worker_EntityId EntityId, 
 			{
 				UE_LOG(
 					LogClientServerRPCService, Warning,
-					TEXT("ClientServerRPCService::ExtractRPCsForType: Ring buffer element empty. Entity: %lld, RPC type: %s, empty element "
+					TEXT("ClientServerRPCService::ExtractRPCsForType: Ring buffer element empty. Entity: %s, RPC type: %s, empty element "
 						 "RPC id: %d"),
-					EntityId, *SpatialConstants::RPCTypeToString(Type), RPCId);
+					*EntityId.ToString(), *SpatialConstants::RPCTypeToString(Type), RPCId);
 			}
 		}
 	}
@@ -327,9 +327,9 @@ void ClientServerRPCService::ExtractRPCsForType(const Worker_EntityId EntityId, 
 	{
 		UE_LOG(
 			LogClientServerRPCService, Warning,
-			TEXT("ClientServerRPCService::ExtractRPCsForType: Last sent RPC has smaller ID than last seen RPC. Entity: %lld, RPC type: %s, "
+			TEXT("ClientServerRPCService::ExtractRPCsForType: Last sent RPC has smaller ID than last seen RPC. Entity: %s, RPC type: %s, "
 				 "last sent ID: %d, last seen ID: %d"),
-			EntityId, *SpatialConstants::RPCTypeToString(Type), Buffer.LastSentRPCId, LastSeenRPCId);
+			*EntityId.ToString(), *SpatialConstants::RPCTypeToString(Type), Buffer.LastSentRPCId, LastSeenRPCId);
 	}
 
 	if (LastProcessedRPCId > LastSeenRPCId)
@@ -338,7 +338,7 @@ void ClientServerRPCService::ExtractRPCsForType(const Worker_EntityId EntityId, 
 	}
 }
 
-const RPCRingBuffer& ClientServerRPCService::GetBufferFromView(const Worker_EntityId EntityId, const ERPCType Type)
+const RPCRingBuffer& ClientServerRPCService::GetBufferFromView(const FSpatialEntityId EntityId, const ERPCType Type)
 {
 	switch (Type)
 	{

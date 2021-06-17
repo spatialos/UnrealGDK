@@ -13,7 +13,7 @@ struct FDeleteEntityRetryHandlerImpl
 {
 	struct CommandData
 	{
-		Worker_EntityId EntityId;
+		FSpatialEntityId EntityId;
 		FSpatialGDKSpanId SpanId;
 	};
 
@@ -54,7 +54,7 @@ struct FCreateEntityRetryHandlerImpl
 	struct CommandData
 	{
 		TArray<ComponentData> Components;
-		TOptional<Worker_EntityId> EntityId;
+		TOptional<FSpatialEntityId> EntityId;
 		FSpatialGDKSpanId SpanId;
 	};
 
@@ -168,7 +168,7 @@ struct FEntityCommandRetryHandlerImpl
 {
 	struct CommandData
 	{
-		Worker_EntityId EntityId;
+		FSpatialEntityId EntityId;
 		CommandRequest Request;
 		FSpatialGDKSpanId SpanId;
 	};

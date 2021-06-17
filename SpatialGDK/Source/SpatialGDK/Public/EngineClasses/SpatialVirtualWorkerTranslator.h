@@ -22,7 +22,7 @@ public:
 	struct WorkerInformation
 	{
 		PhysicalWorkerName WorkerName;
-		Worker_EntityId ServerWorkerEntityId;
+		FSpatialEntityId ServerWorkerEntityId;
 		Worker_PartitionId PartitionEntityId;
 	};
 
@@ -45,7 +45,7 @@ public:
 	// the next mapping update.
 	const PhysicalWorkerName* GetPhysicalWorkerForVirtualWorker(VirtualWorkerId Id) const;
 	Worker_PartitionId GetPartitionEntityForVirtualWorker(VirtualWorkerId Id) const;
-	Worker_EntityId GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const;
+	FSpatialEntityId GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const;
 
 	// On receiving a version of the translation state, apply that to the internal mapping.
 	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);
@@ -68,5 +68,5 @@ private:
 	void ApplyMappingFromSchema(Schema_Object* Object);
 
 	void UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName WorkerName, Worker_PartitionId PartitionEntityId,
-					   Worker_EntityId ServerWorkerEntityId);
+					   FSpatialEntityId ServerWorkerEntityId);
 };

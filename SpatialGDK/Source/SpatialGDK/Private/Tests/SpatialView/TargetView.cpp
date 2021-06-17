@@ -6,14 +6,14 @@
 
 namespace SpatialGDK
 {
-void FTargetView::AddEntity(Worker_EntityId EntityId)
+void FTargetView::AddEntity(FSpatialEntityId EntityId)
 {
 	check(!bDisconnected);
 	Builder.AddEntity(EntityId);
 	View.Emplace(EntityId);
 }
 
-void FTargetView::RemoveEntity(Worker_EntityId EntityId)
+void FTargetView::RemoveEntity(FSpatialEntityId EntityId)
 {
 	check(!bDisconnected);
 	// Make sure ops are generated to remove all authority and components for the removed entity.
@@ -29,7 +29,7 @@ void FTargetView::RemoveEntity(Worker_EntityId EntityId)
 	Builder.RemoveEntity(EntityId);
 }
 
-void FTargetView::AddOrSetComponent(Worker_EntityId EntityId, ComponentData Data)
+void FTargetView::AddOrSetComponent(FSpatialEntityId EntityId, ComponentData Data)
 {
 	check(!bDisconnected);
 	EntityViewElement* EntityData = View.Find(EntityId);
@@ -50,7 +50,7 @@ void FTargetView::AddOrSetComponent(Worker_EntityId EntityId, ComponentData Data
 	Builder.AddComponent(EntityId, MoveTemp(Data));
 }
 
-void FTargetView::UpdateComponent(Worker_EntityId EntityId, ComponentUpdate Update)
+void FTargetView::UpdateComponent(FSpatialEntityId EntityId, ComponentUpdate Update)
 {
 	check(!bDisconnected);
 	EntityViewElement& EntityData = View.FindChecked(EntityId);
@@ -60,7 +60,7 @@ void FTargetView::UpdateComponent(Worker_EntityId EntityId, ComponentUpdate Upda
 	Builder.UpdateComponent(EntityId, MoveTemp(Update));
 }
 
-void FTargetView::RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void FTargetView::RemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId)
 {
 	check(!bDisconnected);
 	EntityViewElement& EntityData = View.FindChecked(EntityId);
@@ -70,7 +70,7 @@ void FTargetView::RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId C
 	Builder.RemoveComponent(EntityId, ComponentId);
 }
 
-void FTargetView::AddAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId)
+void FTargetView::AddAuthority(FSpatialEntityId EntityId, Worker_ComponentSetId ComponentSetId)
 {
 	check(!bDisconnected);
 	EntityViewElement* EntityData = View.Find(EntityId);
@@ -84,7 +84,7 @@ void FTargetView::AddAuthority(Worker_EntityId EntityId, Worker_ComponentSetId C
 	Builder.SetAuthority(EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE, {});
 }
 
-void FTargetView::RemoveAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId)
+void FTargetView::RemoveAuthority(FSpatialEntityId EntityId, Worker_ComponentSetId ComponentSetId)
 {
 	check(!bDisconnected);
 	EntityViewElement& EntityData = View.FindChecked(EntityId);
@@ -100,7 +100,7 @@ void FTargetView::Disconnect(Worker_ConnectionStatusCode StatusCode, StringStora
 	Builder.SetDisconnect(StatusCode, MoveTemp(DisconnectReason));
 }
 
-void FTargetView::AddCreateEntityCommandResponse(Worker_EntityId EntityId, Worker_RequestId RequestId, Worker_StatusCode StatusCode,
+void FTargetView::AddCreateEntityCommandResponse(FSpatialEntityId EntityId, Worker_RequestId RequestId, Worker_StatusCode StatusCode,
 												 StringStorage Message)
 {
 	check(!bDisconnected);
@@ -114,27 +114,27 @@ void FTargetView::AddEntityQueryCommandResponse(Worker_RequestId RequestId, TArr
 	Builder.AddEntityQueryCommandResponse(RequestId, MoveTemp(Results), StatusCode, MoveTemp(Message));
 }
 
-void FTargetView::AddEntityCommandRequest(Worker_EntityId EntityId, Worker_RequestId RequestId, CommandRequest CommandRequest)
+void FTargetView::AddEntityCommandRequest(FSpatialEntityId EntityId, Worker_RequestId RequestId, CommandRequest CommandRequest)
 {
 	check(!bDisconnected);
 	Builder.AddEntityCommandRequest(EntityId, RequestId, MoveTemp(CommandRequest));
 }
 
-void FTargetView::AddEntityCommandResponse(Worker_EntityId EntityId, Worker_RequestId RequestId, Worker_StatusCode StatusCode,
+void FTargetView::AddEntityCommandResponse(FSpatialEntityId EntityId, Worker_RequestId RequestId, Worker_StatusCode StatusCode,
 										   StringStorage Message)
 {
 	check(!bDisconnected);
 	Builder.AddEntityCommandResponse(EntityId, RequestId, StatusCode, MoveTemp(Message));
 }
 
-void FTargetView::AddDeleteEntityCommandResponse(Worker_EntityId EntityId, Worker_RequestId RequestId, Worker_StatusCode StatusCode,
+void FTargetView::AddDeleteEntityCommandResponse(FSpatialEntityId EntityId, Worker_RequestId RequestId, Worker_StatusCode StatusCode,
 												 StringStorage Message)
 {
 	check(!bDisconnected);
 	Builder.AddDeleteEntityCommandResponse(EntityId, RequestId, StatusCode, MoveTemp(Message));
 }
 
-void FTargetView::AddReserveEntityIdsCommandResponse(Worker_EntityId EntityId, uint32 NumberOfEntities, Worker_RequestId RequestId,
+void FTargetView::AddReserveEntityIdsCommandResponse(FSpatialEntityId EntityId, uint32 NumberOfEntities, Worker_RequestId RequestId,
 													 Worker_StatusCode StatusCode, StringStorage Message)
 {
 	check(!bDisconnected);

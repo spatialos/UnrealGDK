@@ -71,7 +71,7 @@ void SpatialLoadBalanceEnforcer::Advance()
 	}
 }
 
-void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAuthorityDelegation(const Worker_EntityId EntityId)
+void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAuthorityDelegation(const FSpatialEntityId EntityId)
 {
 	const EntityViewElement& Element = SubView->GetView()[EntityId];
 	if (Element.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::LB_TAG_COMPONENT_ID }))
@@ -83,14 +83,14 @@ void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAuthorityDelegation(con
 	}
 }
 
-void SpatialLoadBalanceEnforcer::RefreshAuthority(const Worker_EntityId EntityId)
+void SpatialLoadBalanceEnforcer::RefreshAuthority(const FSpatialEntityId EntityId)
 {
 	const Worker_ComponentUpdate Update = CreateAuthorityDelegationUpdate(EntityId);
 
 	UpdateSender(EntityComponentUpdate{ EntityId, ComponentUpdate(OwningComponentUpdatePtr(Update.schema_type), Update.component_id) });
 }
 
-Worker_ComponentUpdate SpatialLoadBalanceEnforcer::CreateAuthorityDelegationUpdate(const Worker_EntityId EntityId)
+Worker_ComponentUpdate SpatialLoadBalanceEnforcer::CreateAuthorityDelegationUpdate(const FSpatialEntityId EntityId)
 {
 	LBComponents& Components = DataStore[EntityId];
 
@@ -109,7 +109,7 @@ Worker_ComponentUpdate SpatialLoadBalanceEnforcer::CreateAuthorityDelegationUpda
 	return AuthorityDelegationComponent.CreateAuthorityDelegationUpdate();
 }
 
-void SpatialLoadBalanceEnforcer::PopulateDataStore(const Worker_EntityId EntityId)
+void SpatialLoadBalanceEnforcer::PopulateDataStore(const FSpatialEntityId EntityId)
 {
 	LBComponents& Components = DataStore.Emplace(EntityId, LBComponents{});
 	for (const ComponentData& Data : SubView->GetView()[EntityId].Components)
@@ -131,7 +131,7 @@ void SpatialLoadBalanceEnforcer::PopulateDataStore(const Worker_EntityId EntityI
 	}
 }
 
-bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId,
 													  Schema_ComponentUpdate* Update)
 {
 	switch (ComponentId)
@@ -148,7 +148,7 @@ bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const Worker_EntityId Enti
 	return false;
 }
 
-bool SpatialLoadBalanceEnforcer::ApplyComponentRefresh(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+bool SpatialLoadBalanceEnforcer::ApplyComponentRefresh(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId,
 													   Schema_ComponentData* Data)
 {
 	switch (ComponentId)

@@ -16,10 +16,10 @@ namespace SpatialGDK
 class EntityComponentRecord
 {
 public:
-	void AddComponent(Worker_EntityId EntityId, ComponentData Data);
-	void RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void AddComponentAsUpdate(Worker_EntityId EntityId, ComponentData Data);
-	void AddUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
+	void AddComponent(FSpatialEntityId EntityId, ComponentData Data);
+	void RemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId);
+	void AddComponentAsUpdate(FSpatialEntityId EntityId, ComponentData Data);
+	void AddUpdate(FSpatialEntityId EntityId, ComponentUpdate Update);
 
 	void Clear();
 

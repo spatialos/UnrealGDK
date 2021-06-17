@@ -18,8 +18,8 @@ namespace
 {
 constexpr Worker_ComponentId COMPONENT_ID = 1000;
 constexpr Worker_ComponentId OTHER_COMPONENT_ID = 1001;
-constexpr Worker_EntityId ENTITY_ID = 1;
-constexpr Worker_EntityId OTHER_ENTITY_ID = 2;
+constexpr FSpatialEntityId ENTITY_ID{ 1 };
+constexpr FSpatialEntityId OTHER_ENTITY_ID{ 2 };
 constexpr double COMPONENT_VALUE = 3;
 constexpr double OTHER_COMPONENT_VALUE = 4;
 constexpr Worker_ComponentSetId COMPONENT_SET_ID = 1000;
@@ -244,7 +244,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Authority_Gained_Callback_Added_Then_Invok
 	EntityView View;
 	ViewDelta Delta;
 
-	const FEntityCallback Callback = [&Invoked](const Worker_EntityId&) {
+	const FEntityCallback Callback = [&Invoked](const FSpatialEntityId&) {
 		Invoked = true;
 	};
 	Dispatcher.RegisterAuthorityGainedCallback(COMPONENT_ID, Callback);
@@ -267,7 +267,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Authority_Lost_Callback_Added_Then_Invoked
 	EntityView View;
 	ViewDelta Delta;
 
-	const FEntityCallback Callback = [&Invoked](const Worker_EntityId&) {
+	const FEntityCallback Callback = [&Invoked](const FSpatialEntityId&) {
 		Invoked = true;
 	};
 	Dispatcher.RegisterAuthorityLostCallback(COMPONENT_SET_ID, Callback);
@@ -291,7 +291,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Authority_Lost_Temp_Callback_Added_Then_In
 	EntityView View;
 	ViewDelta Delta;
 
-	const FEntityCallback Callback = [&Invoked](const Worker_EntityId&) {
+	const FEntityCallback Callback = [&Invoked](const FSpatialEntityId&) {
 		Invoked = true;
 	};
 	Dispatcher.RegisterAuthorityLostTempCallback(COMPONENT_ID, Callback);

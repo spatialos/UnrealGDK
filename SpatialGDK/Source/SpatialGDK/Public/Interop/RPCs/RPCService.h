@@ -43,11 +43,11 @@ public:
 private:
 	void AdvanceSenderQueues();
 	void AdvanceReceivers();
-	void ProcessUpdatesToSender(Worker_EntityId EntityId, ComponentSpan<ComponentChange> Updates);
-	void ProcessUpdatesToReceivers(Worker_EntityId EntityId, const EntityViewElement& ViewElement, ComponentSpan<ComponentChange> Updates);
-	void HandleReceiverAuthorityGained(Worker_EntityId EntityId, const EntityViewElement& ViewElement,
+	void ProcessUpdatesToSender(FSpatialEntityId EntityId, ComponentSpan<ComponentChange> Updates);
+	void ProcessUpdatesToReceivers(FSpatialEntityId EntityId, const EntityViewElement& ViewElement, ComponentSpan<ComponentChange> Updates);
+	void HandleReceiverAuthorityGained(FSpatialEntityId EntityId, const EntityViewElement& ViewElement,
 									   ComponentSpan<AuthorityChange> AuthChanges);
-	void HandleReceiverAuthorityLost(Worker_EntityId EntityId, ComponentSpan<AuthorityChange> AuthChanges);
+	void HandleReceiverAuthorityLost(FSpatialEntityId EntityId, ComponentSpan<AuthorityChange> AuthChanges);
 
 	// Receiver may or may not need authority to be able to receive RPCs (Client/Server vs Multicast).
 	// On the other hand, Senders always need some authority in order to write outgoing RPCs

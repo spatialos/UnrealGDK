@@ -349,13 +349,13 @@ void UGlobalStateManager::AuthorityChanged(const Worker_ComponentSetAuthorityCha
 		return;
 	}
 
-	if (ViewCoordinator->HasComponent(AuthOp.entity_id, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
+	if (ViewCoordinator->HasComponent(ToSpatialEntityId(AuthOp.entity_id), SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
 	{
-		GlobalStateManagerEntityId = AuthOp.entity_id;
+		GlobalStateManagerEntityId = ToSpatialEntityId(AuthOp.entity_id);
 		SetDeploymentState();
 	}
 
-	if (ViewCoordinator->HasComponent(AuthOp.entity_id, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
+	if (ViewCoordinator->HasComponent(ToSpatialEntityId(AuthOp.entity_id), SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
 	{
 		// The bCanSpawnWithAuthority member determines whether a server-side worker
 		// should consider calling BeginPlay on startup Actors if the load-balancing
@@ -439,7 +439,7 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 		   bAuthoritative ? TEXT("authoritative") : TEXT("not authoritative"));
 }
 
-Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
+FSpatialEntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
 {
 	if (ensure(NetDriver != nullptr))
 	{

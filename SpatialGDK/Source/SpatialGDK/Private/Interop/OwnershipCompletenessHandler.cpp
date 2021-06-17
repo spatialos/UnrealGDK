@@ -7,7 +7,7 @@
 
 namespace SpatialGDK
 {
-bool FOwnershipCompletenessHandler::IsOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity) const
+bool FOwnershipCompletenessHandler::IsOwnershipComplete(FSpatialEntityId EntityId, const EntityViewElement& Entity) const
 {
 	const bool bShouldHaveOwnerOnlyComponents = ShouldHaveOwnerOnlyComponents(EntityId, Entity);
 
@@ -17,7 +17,7 @@ bool FOwnershipCompletenessHandler::IsOwnershipComplete(Worker_EntityId EntityId
 	return bShouldHaveOwnerOnlyComponents == bHasOwnerOnlyComponents;
 }
 
-bool FOwnershipCompletenessHandler::ShouldHaveOwnerOnlyComponents(Worker_EntityId EntityId, const EntityViewElement& Entity) const
+bool FOwnershipCompletenessHandler::ShouldHaveOwnerOnlyComponents(FSpatialEntityId EntityId, const EntityViewElement& Entity) const
 {
 	switch (Strategy)
 	{
@@ -26,8 +26,8 @@ bool FOwnershipCompletenessHandler::ShouldHaveOwnerOnlyComponents(Worker_EntityI
 	case EOwnershipCompletenessStrategy::RequiresPlayerOwnership:
 	{
 		const ComponentData* OwnershipData = Entity.Components.FindByPredicate(ComponentIdEquality{ ActorOwnership::ComponentId });
-		if (!ensureMsgf(OwnershipData != nullptr, TEXT("Entity should have ActorOwnership, EntityId: %lld component ID %ld"), EntityId,
-						ActorOwnership::ComponentId))
+		if (!ensureMsgf(OwnershipData != nullptr, TEXT("Entity should have ActorOwnership, EntityId: %s component ID %ld"),
+						*EntityId.ToString(), ActorOwnership::ComponentId))
 		{
 			return false;
 		}
@@ -43,7 +43,7 @@ bool FOwnershipCompletenessHandler::ShouldHaveOwnerOnlyComponents(Worker_EntityI
 	return false;
 }
 
-void FOwnershipCompletenessHandler::AddPlayerEntity(Worker_EntityId EntityId)
+void FOwnershipCompletenessHandler::AddPlayerEntity(FSpatialEntityId EntityId)
 {
 	PlayerOwnedEntities.Add(EntityId);
 
@@ -53,7 +53,7 @@ void FOwnershipCompletenessHandler::AddPlayerEntity(Worker_EntityId EntityId)
 	}
 }
 
-void FOwnershipCompletenessHandler::TryRemovePlayerEntity(Worker_EntityId EntityId)
+void FOwnershipCompletenessHandler::TryRemovePlayerEntity(FSpatialEntityId EntityId)
 {
 	PlayerOwnedEntities.Remove(EntityId);
 

@@ -24,9 +24,9 @@ const PhysicalWorkerName ValidWorkerOne = TEXT("ValidWorkerOne");
 const PhysicalWorkerName ValidWorkerTwo = TEXT("ValidWorkerTwo");
 const PhysicalWorkerName ValidWorkerThree = TEXT("ValidWorkerThree");
 
-const Worker_PartitionId WorkerOneId = 101;
-const Worker_PartitionId WorkerTwoId = 102;
-const Worker_PartitionId WorkerThreeId = 103;
+const Worker_PartitionId WorkerOneId{ 101 };
+const Worker_PartitionId WorkerTwoId{ 102 };
+const Worker_PartitionId WorkerThreeId{ 103 };
 } // namespace
 
 #define VIRTUALWORKERTRANSLATOR_TEST(TestName) GDK_AUTOMATION_TEST(Core, SpatialVirtualWorkerTranslator, TestName)

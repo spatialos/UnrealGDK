@@ -14,7 +14,7 @@ class FTestConnectionHandler : public AbstractConnectionHandler
 public:
 	using FSendMessageCallback = TUniqueFunction<void(TUniquePtr<MessagesToSend>)>;
 
-	explicit FTestConnectionHandler(FString InWorkerId = {}, Worker_EntityId InWorkerSystemEntityId = 0)
+	explicit FTestConnectionHandler(FString InWorkerId = {}, FSpatialEntityId InWorkerSystemEntityId = SpatialConstants::INVALID_ENTITY_ID)
 		: WorkerId(InWorkerId)
 		, WorkerEntityId(InWorkerSystemEntityId)
 	{
@@ -45,14 +45,14 @@ public:
 
 	virtual const FString& GetWorkerId() const override { return WorkerId; }
 
-	virtual Worker_EntityId GetWorkerSystemEntityId() const override { return WorkerEntityId; }
+	virtual FSpatialEntityId GetWorkerSystemEntityId() const override { return WorkerEntityId; }
 
 	void SetSendMessageCallback(FSendMessageCallback InSendMessageCallback) { SendMessageCallback = MoveTemp(InSendMessageCallback); }
 	void AddOpList(OpList Ops) { PendingOpLists.Add(MoveTemp(Ops)); }
 
 private:
 	FString WorkerId;
-	Worker_EntityId WorkerEntityId;
+	FSpatialEntityId WorkerEntityId;
 	FSendMessageCallback SendMessageCallback;
 	TArray<OpList> PendingOpLists;
 };

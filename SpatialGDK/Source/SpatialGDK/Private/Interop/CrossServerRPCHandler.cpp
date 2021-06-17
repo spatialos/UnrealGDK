@@ -84,7 +84,7 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 											 EventTracer->GetAndConsumeSpanForRequestId(Op.op.command_request.request_id).GetConstId(),
 											 /* NumCauses */ 1, [CommandOp, &Params](FSpatialTraceEventDataBuilder& EventBuilder) {
 												 EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForCrossServerRPC(
-													 CommandOp.entity_id, Params->Payload.Id.GetValue()));
+													 ToSpatialEntityId(CommandOp.entity_id), Params->Payload.Id.GetValue()));
 											 });
 		}
 	}
@@ -107,7 +107,7 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 		return;
 	}
 
-	if (!QueuedCrossServerRPCs.Contains(CommandOp.entity_id))
+	if (!QueuedCrossServerRPCs.Contains(ToSpatialEntityId(CommandOp.entity_id)))
 	{
 		// No Command Requests of this type queued so far. Let's try to process it:
 		if (TryExecuteCrossServerRPC(Params.GetValue()))
@@ -118,13 +118,13 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 	}
 
 	// Unable to process command request. Let's queue it up:
-	if (!QueuedCrossServerRPCs.Contains(CommandOp.entity_id))
+	if (!QueuedCrossServerRPCs.Contains(ToSpatialEntityId(CommandOp.entity_id)))
 	{
-		QueuedCrossServerRPCs.Add(CommandOp.entity_id, TArray<FCrossServerRPCParams>());
+		QueuedCrossServerRPCs.Add(ToSpatialEntityId(CommandOp.entity_id), TArray<FCrossServerRPCParams>());
 	}
 
 	RPCGuidsInFlight.Add(Params.GetValue().Payload.Id.GetValue());
-	QueuedCrossServerRPCs[CommandOp.entity_id].Add(MoveTemp(Params.GetValue()));
+	QueuedCrossServerRPCs[ToSpatialEntityId(CommandOp.entity_id)].Add(MoveTemp(Params.GetValue()));
 }
 
 bool CrossServerRPCHandler::TryExecuteCrossServerRPC(const FCrossServerRPCParams& Params) const

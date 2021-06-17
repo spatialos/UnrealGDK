@@ -67,9 +67,9 @@ private:
 		{
 		}
 		Worker_ComponentId Id;
-		TCallbacks<Worker_EntityId> AuthorityGainedCallbacks;
-		TCallbacks<Worker_EntityId> AuthorityLostCallbacks;
-		TCallbacks<Worker_EntityId> AuthorityLostTemporarilyCallbacks;
+		TCallbacks<FSpatialEntityId> AuthorityGainedCallbacks;
+		TCallbacks<FSpatialEntityId> AuthorityLostCallbacks;
+		TCallbacks<FSpatialEntityId> AuthorityLostTemporarilyCallbacks;
 
 		struct ComponentIdComparator
 		{
@@ -81,11 +81,11 @@ private:
 	};
 
 	static void InvokeWithExistingValues(Worker_ComponentId ComponentId, const FComponentValueCallback& Callback, const EntityView& View);
-	void HandleComponentPresenceChanges(Worker_EntityId EntityId, const ComponentSpan<ComponentChange>& ComponentChanges,
+	void HandleComponentPresenceChanges(FSpatialEntityId EntityId, const ComponentSpan<ComponentChange>& ComponentChanges,
 										TCallbacks<FEntityComponentChange> FComponentCallbacks::*Callbacks);
-	void HandleComponentValueChanges(Worker_EntityId EntityId, const ComponentSpan<ComponentChange>& ComponentChanges);
-	void HandleAuthorityChange(Worker_EntityId EntityId, const ComponentSpan<AuthorityChange>& AuthorityChanges,
-							   TCallbacks<Worker_EntityId> FAuthorityCallbacks::*Callbacks);
+	void HandleComponentValueChanges(FSpatialEntityId EntityId, const ComponentSpan<ComponentChange>& ComponentChanges);
+	void HandleAuthorityChange(FSpatialEntityId EntityId, const ComponentSpan<AuthorityChange>& AuthorityChanges,
+							   TCallbacks<FSpatialEntityId> FAuthorityCallbacks::*Callbacks);
 
 	// Component callbacks sorted by component ID;
 	TArray<FComponentCallbacks> ComponentCallbacks;

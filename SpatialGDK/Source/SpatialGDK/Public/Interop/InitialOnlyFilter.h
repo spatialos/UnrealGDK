@@ -20,12 +20,12 @@ class InitialOnlyFilter
 public:
 	InitialOnlyFilter(USpatialWorkerConnection& InConnection);
 
-	bool HasInitialOnlyData(Worker_EntityId EntityId) const;
-	bool HasInitialOnlyDataOrRequestIfAbsent(Worker_EntityId EntityId);
+	bool HasInitialOnlyData(FSpatialEntityId EntityId) const;
+	bool HasInitialOnlyDataOrRequestIfAbsent(FSpatialEntityId EntityId);
 	void FlushRequests();
 	void HandleInitialOnlyResponse(const Worker_EntityQueryResponseOp& Op);
-	const TArray<ComponentData>* GetInitialOnlyData(Worker_EntityId EntityId) const;
-	void RemoveInitialOnlyData(Worker_EntityId EntityId);
+	const TArray<ComponentData>* GetInitialOnlyData(FSpatialEntityId EntityId) const;
+	void RemoveInitialOnlyData(FSpatialEntityId EntityId);
 
 private:
 	void ClearRequest(Worker_RequestId RequestId);

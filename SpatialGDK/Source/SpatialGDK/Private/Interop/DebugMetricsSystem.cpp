@@ -32,7 +32,7 @@ void DebugMetricsSystem::ProcessOps(const TArray<Worker_Op>& Ops) const
 			const Worker_RequestId RequestId = CommandRequest.request_id;
 			const Worker_ComponentId ComponentId = CommandRequest.request.component_id;
 			const Worker_CommandIndex CommandIndex = CommandRequest.request.command_index;
-			const Worker_EntityId EntityId = CommandRequest.entity_id;
+			const FSpatialEntityId EntityId = ToSpatialEntityId(CommandRequest.entity_id);
 			bool bCommandHandled = false;
 
 			if (ComponentId == SpatialConstants::DEBUG_METRICS_COMPONENT_ID)
@@ -58,8 +58,8 @@ void DebugMetricsSystem::ProcessOps(const TArray<Worker_Op>& Ops) const
 					break;
 				}
 				default:
-					UE_LOG(LogSpatialDebugMetrics, Error, TEXT("Unknown command index for DebugMetrics component: %d, entity: %lld"),
-						   CommandIndex, EntityId);
+					UE_LOG(LogSpatialDebugMetrics, Error, TEXT("Unknown command index for DebugMetrics component: %d, entity: %s"),
+						   CommandIndex, *EntityId.ToString());
 					break;
 				}
 

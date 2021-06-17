@@ -47,7 +47,7 @@ public:
 	// broadcast events which subviews subscribe to in order to trigger a refresh. This global refresh may only be a
 	// temporary solution which keeps the API simple while the main systems are Actors and the load balancer.
 	// In the future when there could be an unbounded number of user systems this should probably be revisited.
-	void RefreshEntityCompleteness(Worker_EntityId EntityId);
+	void RefreshEntityCompleteness(FSpatialEntityId EntityId);
 
 	virtual const TArray<EntityDelta>& GetEntityDeltas() const override;
 	virtual const TArray<Worker_Op>& GetWorkerMessages() const override;
@@ -55,34 +55,34 @@ public:
 
 	virtual const FString& GetWorkerId() const override;
 
-	virtual Worker_EntityId GetWorkerSystemEntityId() const override;
+	virtual FSpatialEntityId GetWorkerSystemEntityId() const override;
 
-	virtual const ComponentData* GetComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override;
+	virtual const ComponentData* GetComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId) const override;
 
-	virtual void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId = {}) override;
-	virtual void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId = {}) override;
-	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+	virtual void SendAddComponent(FSpatialEntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId = {}) override;
+	virtual void SendComponentUpdate(FSpatialEntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId = {}) override;
+	virtual void SendRemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId,
 									 const FSpatialGDKSpanId& SpanId = {}) override;
 
-	virtual Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData = NO_RETRIES,
+	virtual Worker_RequestId SendEntityCommandRequest(FSpatialEntityId EntityId, CommandRequest Request, FRetryData RetryData = NO_RETRIES,
 													  const FSpatialGDKSpanId& SpanId = {}) override;
 	virtual void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response,
 										   const FSpatialGDKSpanId& SpanId = {}) override;
 	virtual void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const FSpatialGDKSpanId& SpanId = {}) override;
 
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, FRetryData RetryData = NO_RETRIES) override;
-	virtual Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
+	virtual Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<FSpatialEntityId> EntityId,
 													 FRetryData RetryData = NO_RETRIES, const FSpatialGDKSpanId& SpanId = {}) override;
-	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData = NO_RETRIES,
+	virtual Worker_RequestId SendDeleteEntityRequest(FSpatialEntityId EntityId, FRetryData RetryData = NO_RETRIES,
 													 const FSpatialGDKSpanId& SpanId = {}) override;
 	virtual Worker_RequestId SendEntityQueryRequest(EntityQuery Query, FRetryData RetryData = NO_RETRIES) override;
 
 	virtual void SendMetrics(SpatialMetrics Metrics) override;
 	virtual void SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message) override;
 
-	virtual bool HasEntity(Worker_EntityId EntityId) const override;
-	virtual bool HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override;
-	virtual bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId) const override;
+	virtual bool HasEntity(FSpatialEntityId EntityId) const override;
+	virtual bool HasComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId) const override;
+	virtual bool HasAuthority(FSpatialEntityId EntityId, Worker_ComponentSetId ComponentSetId) const override;
 
 	CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
 	CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
@@ -123,7 +123,7 @@ private:
 };
 
 template <class T>
-TOptional<T> DeserializeComponent(const ViewCoordinator& Coordinator, Worker_EntityId EntityId)
+TOptional<T> DeserializeComponent(const ViewCoordinator& Coordinator, FSpatialEntityId EntityId)
 {
 	const ComponentData* Data = Coordinator.GetComponent(EntityId, T::ComponentId);
 	if (Data != nullptr)

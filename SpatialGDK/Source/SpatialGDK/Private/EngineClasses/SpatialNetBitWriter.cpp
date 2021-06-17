@@ -19,7 +19,7 @@ FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMa
 
 void FSpatialNetBitWriter::SerializeObjectRef(FArchive& Archive, FUnrealObjectRef& ObjectRef)
 {
-	int64 EntityId = ObjectRef.Entity;
+	int64 EntityId = ObjectRef.Entity.EntityId;
 	Archive << EntityId;
 	Archive << ObjectRef.Offset;
 

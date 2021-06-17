@@ -10,13 +10,13 @@ namespace SpatialGDK
 {
 struct EntityRPCType
 {
-	EntityRPCType(Worker_EntityId EntityId, ERPCType Type)
+	EntityRPCType(FSpatialEntityId EntityId, ERPCType Type)
 		: EntityId(EntityId)
 		, Type(Type)
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FSpatialEntityId EntityId;
 	ERPCType Type;
 
 	friend bool operator==(const EntityRPCType& Lhs, const EntityRPCType& Rhs)

@@ -12,7 +12,7 @@ void UAsyncPackageLoadFilter::Init(const FOnPackageLoadedForEntity& InOnPackageL
 	OnPackageLoadedForEntity = InOnPackageLoadedForEntity;
 }
 
-bool UAsyncPackageLoadFilter::IsAssetLoadedOrTriggerAsyncLoad(Worker_EntityId EntityId, const FString& ClassPath)
+bool UAsyncPackageLoadFilter::IsAssetLoadedOrTriggerAsyncLoad(FSpatialEntityId EntityId, const FString& ClassPath)
 {
 	if (IsEntityWaitingForAsyncLoad(EntityId))
 	{
@@ -63,12 +63,12 @@ FString UAsyncPackageLoadFilter::GetPackagePath(const FString& ClassPath)
 	return FSoftObjectPath(ClassPath).GetLongPackageName();
 }
 
-bool UAsyncPackageLoadFilter::IsEntityWaitingForAsyncLoad(Worker_EntityId Entity)
+bool UAsyncPackageLoadFilter::IsEntityWaitingForAsyncLoad(FSpatialEntityId Entity)
 {
 	return EntitiesWaitingForAsyncLoad.Contains(Entity);
 }
 
-void UAsyncPackageLoadFilter::StartAsyncLoadingClass(Worker_EntityId EntityId, const FString& ClassPath)
+void UAsyncPackageLoadFilter::StartAsyncLoadingClass(FSpatialEntityId EntityId, const FString& ClassPath)
 {
 	FString PackagePath = GetPackagePath(ClassPath);
 	FName PackagePathName = *PackagePath;
@@ -78,8 +78,8 @@ void UAsyncPackageLoadFilter::StartAsyncLoadingClass(Worker_EntityId EntityId, c
 	EntitiesWaitingForAsyncLoad.Emplace(EntityId);
 	AsyncLoadingPackages.FindOrAdd(PackagePathName).Add(EntityId);
 
-	UE_LOG(LogAsyncPackageLoadFilter, Log, TEXT("Async loading package for entity. Package: %s, entity: %lld, already loading: %s"),
-		   *PackagePath, EntityId, bAlreadyLoading ? TEXT("true") : TEXT("false"));
+	UE_LOG(LogAsyncPackageLoadFilter, Log, TEXT("Async loading package for entity. Package: %s, entity: %s, already loading: %s"),
+		   *PackagePath, *EntityId.ToString(), bAlreadyLoading ? TEXT("true") : TEXT("false"));
 	if (!bAlreadyLoading)
 	{
 		LoadPackageAsync(PackagePath, FLoadPackageAsyncDelegate::CreateUObject(this, &UAsyncPackageLoadFilter::OnAsyncPackageLoaded));
@@ -118,8 +118,8 @@ void UAsyncPackageLoadFilter::ProcessActorsFromAsyncLoading()
 		{
 			if (IsEntityWaitingForAsyncLoad(Entity))
 			{
-				UE_LOG(LogAsyncPackageLoadFilter, Log, TEXT("Finished async loading package for entity. Package: %s, entity: %lld."),
-					   *PackageName.ToString(), Entity);
+				UE_LOG(LogAsyncPackageLoadFilter, Log, TEXT("Finished async loading package for entity. Package: %s, entity: %s."),
+					   *PackageName.ToString(), *Entity.ToString());
 
 				check(EntitiesWaitingForAsyncLoad.Find(Entity) != nullptr);
 				EntitiesWaitingForAsyncLoad.Remove(Entity);

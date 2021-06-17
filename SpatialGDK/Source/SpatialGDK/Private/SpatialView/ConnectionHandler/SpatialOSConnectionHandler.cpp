@@ -11,6 +11,8 @@
 #include <improbable/c_trace.h>
 #include <improbable/c_worker.h>
 
+#include "Utils/SchemaUtils.h"
+
 namespace SpatialGDK
 {
 SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection, TSharedPtr<SpatialEventTracer> EventTracer)
@@ -79,18 +81,18 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 		case OutgoingComponentMessage::ADD:
 		{
 			Worker_ComponentData Data = { nullptr, Message.ComponentId, MoveTemp(Message).ReleaseComponentAdded().Release(), nullptr };
-			Worker_Connection_SendAddComponent(Connection.Get(), Message.EntityId, &Data, &UpdateParams);
+			Worker_Connection_SendAddComponent(Connection.Get(), ToWorkerEntityId(Message.EntityId), &Data, &UpdateParams);
 			break;
 		}
 		case OutgoingComponentMessage::UPDATE:
 		{
 			Worker_ComponentUpdate Update = { nullptr, Message.ComponentId, MoveTemp(Message).ReleaseComponentUpdate().Release(), nullptr };
-			Worker_Connection_SendComponentUpdate(Connection.Get(), Message.EntityId, &Update, &UpdateParams);
+			Worker_Connection_SendComponentUpdate(Connection.Get(), ToWorkerEntityId(Message.EntityId), &Update, &UpdateParams);
 			break;
 		}
 		case OutgoingComponentMessage::REMOVE:
 		{
-			Worker_Connection_SendRemoveComponent(Connection.Get(), Message.EntityId, Message.ComponentId, &UpdateParams);
+			Worker_Connection_SendRemoveComponent(Connection.Get(), ToWorkerEntityId(Message.EntityId), Message.ComponentId, &UpdateParams);
 			break;
 		}
 		default:
@@ -117,7 +119,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 
 		SpatialScopedActiveSpanId SpanWrapper(EventTracer.Get(), Request.SpanId);
 
-		Worker_EntityId* EntityId = Request.EntityId.IsSet() ? &Request.EntityId.GetValue() : nullptr;
+		Worker_EntityId* EntityId = Request.EntityId.IsSet() ? &Request.EntityId.GetValue().EntityId : nullptr;
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
 		const Worker_RequestId Id =
 			Worker_Connection_SendCreateEntityRequest(Connection.Get(), Components.Num(), Components.GetData(), EntityId, Timeout);
@@ -128,7 +130,8 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 	{
 		SpatialScopedActiveSpanId SpanWrapper(EventTracer.Get(), Request.SpanId);
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
-		const Worker_RequestId Id = Worker_Connection_SendDeleteEntityRequest(Connection.Get(), Request.EntityId, Timeout);
+		const Worker_RequestId Id =
+			Worker_Connection_SendDeleteEntityRequest(Connection.Get(), ToWorkerEntityId(Request.EntityId), Timeout);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 
@@ -146,7 +149,8 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
 		Worker_CommandRequest r = { nullptr, Request.Request.GetComponentId(), Request.Request.GetCommandIndex(),
 									MoveTemp(Request.Request).Release(), nullptr };
-		const Worker_RequestId Id = Worker_Connection_SendCommandRequest(Connection.Get(), Request.EntityId, &r, Timeout, &CommandParams);
+		const Worker_RequestId Id =
+			Worker_Connection_SendCommandRequest(Connection.Get(), ToWorkerEntityId(Request.EntityId), &r, Timeout, &CommandParams);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 
@@ -185,7 +189,7 @@ const FString& SpatialOSConnectionHandler::GetWorkerId() const
 	return WorkerId;
 }
 
-Worker_EntityId SpatialOSConnectionHandler::GetWorkerSystemEntityId() const
+FSpatialEntityId SpatialOSConnectionHandler::GetWorkerSystemEntityId() const
 {
 	return WorkerSystemEntityId;
 }

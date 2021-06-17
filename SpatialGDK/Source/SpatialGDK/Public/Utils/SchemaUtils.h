@@ -14,7 +14,7 @@
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ComponentUpdate.h"
 
-using StringToEntityMap = TMap<FString, Worker_EntityId>;
+using StringToEntityMap = TMap<FString, FSpatialEntityId>;
 
 namespace SpatialGDK
 {
@@ -43,6 +43,16 @@ inline FString GetStringFromSchema(const Schema_Object* Object, Schema_FieldId I
 inline bool GetBoolFromSchema(const Schema_Object* Object, Schema_FieldId Id)
 {
 	return !!Schema_GetBool(Object, Id);
+}
+
+inline FSpatialEntityId GetEntityIdFromSchema(const Schema_Object* Object, Schema_FieldId Id)
+{
+	return FSpatialEntityId(Schema_IndexEntityId(Object, Id, 0));
+}
+
+inline void AddEntityIdToSchema(Schema_Object* Object, Schema_FieldId Id, const FSpatialEntityId& EntityId)
+{
+	Schema_AddEntityId(Object, Id, EntityId.EntityId);
 }
 
 inline void AddBytesToSchema(Schema_Object* Object, Schema_FieldId Id, const uint8* Data, uint32 NumBytes)
@@ -74,7 +84,7 @@ inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const
 
 	Schema_Object* ObjectRefObject = Schema_AddObject(Object, Id);
 
-	Schema_AddEntityId(ObjectRefObject, UNREAL_OBJECT_REF_ENTITY_ID, ObjectRef.Entity);
+	AddEntityIdToSchema(ObjectRefObject, UNREAL_OBJECT_REF_ENTITY_ID, ObjectRef.Entity);
 	Schema_AddUint32(ObjectRefObject, UNREAL_OBJECT_REF_OFFSET_ID, ObjectRef.Offset);
 	if (ObjectRef.Path)
 	{
@@ -101,7 +111,7 @@ inline FUnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_F
 
 	Schema_Object* ObjectRefObject = Schema_IndexObject(Object, Id, Index);
 
-	ObjectRef.Entity = Schema_GetEntityId(ObjectRefObject, UNREAL_OBJECT_REF_ENTITY_ID);
+	ObjectRef.Entity = GetEntityIdFromSchema(ObjectRefObject, UNREAL_OBJECT_REF_ENTITY_ID);
 	ObjectRef.Offset = Schema_GetUint32(ObjectRefObject, UNREAL_OBJECT_REF_OFFSET_ID);
 	if (Schema_GetObjectCount(ObjectRefObject, UNREAL_OBJECT_REF_PATH_ID) > 0)
 	{
@@ -134,7 +144,7 @@ inline void AddStringToEntityMapToSchema(Schema_Object* Object, Schema_FieldId I
 	{
 		Schema_Object* PairObject = Schema_AddObject(Object, Id);
 		AddStringToSchema(PairObject, SCHEMA_MAP_KEY_FIELD_ID, Pair.Key);
-		Schema_AddEntityId(PairObject, SCHEMA_MAP_VALUE_FIELD_ID, Pair.Value);
+		AddEntityIdToSchema(PairObject, SCHEMA_MAP_VALUE_FIELD_ID, Pair.Value);
 	}
 }
 
@@ -148,7 +158,7 @@ inline StringToEntityMap GetStringToEntityMapFromSchema(Schema_Object* Object, S
 		Schema_Object* PairObject = Schema_IndexObject(Object, Id, i);
 
 		FString String = GetStringFromSchema(PairObject, SCHEMA_MAP_KEY_FIELD_ID);
-		Worker_EntityId Entity = Schema_GetEntityId(PairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+		FSpatialEntityId Entity = GetEntityIdFromSchema(PairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 		Map.Add(String, Entity);
 	}
@@ -232,6 +242,16 @@ ComponentData CreateComponentDataHelper(const TComponent& Component)
 	Component.WriteSchema(ComponentObject);
 
 	return Data;
+}
+
+inline Worker_EntityId ToWorkerEntityId(const FSpatialEntityId& EntityId)
+{
+	return EntityId.EntityId;
+}
+
+inline FSpatialEntityId ToSpatialEntityId(const Worker_EntityId& EntityId)
+{
+	return FSpatialEntityId(EntityId);
 }
 
 } // namespace SpatialGDK

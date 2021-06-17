@@ -18,6 +18,7 @@
 #include "SpatialView/ViewDelta.h"
 #include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Utils/SchemaOption.h"
+#include "Utils/SchemaUtils.h"
 
 #define LOADBALANCEENFORCER_TEST(TestName) GDK_TEST(Core, SpatialLoadBalanceEnforcer, TestName)
 
@@ -27,15 +28,15 @@ namespace
 const PhysicalWorkerName ThisWorker = TEXT("ThisWorker");
 const PhysicalWorkerName OtherWorker = TEXT("OtherWorker");
 
-const Worker_PartitionId ThisWorkerId = 101;
-const Worker_PartitionId OtherWorkerId = 102;
-const Worker_PartitionId ClientWorkerId = 103;
-const Worker_PartitionId OtherClientWorkerId = 104;
+const Worker_PartitionId ThisWorkerId{ 101 };
+const Worker_PartitionId OtherWorkerId{ 102 };
+const Worker_PartitionId ClientWorkerId{ 103 };
+const Worker_PartitionId OtherClientWorkerId{ 104 };
 
 constexpr VirtualWorkerId ThisVirtualWorker = 1;
 constexpr VirtualWorkerId OtherVirtualWorker = 2;
 
-constexpr Worker_EntityId EntityIdOne = 1;
+constexpr FSpatialEntityId EntityIdOne{ 1 };
 
 const TArray<Worker_ComponentId> NonAuthDelegationLBComponents = { SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID };
 const TArray<Worker_ComponentId> ClientComponentIds = { SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID };
@@ -68,7 +69,7 @@ SpatialGDK::ComponentUpdate MakeComponentUpdateFromUpdate(const Worker_Component
 // Adds an entity to the view with correct LB components. Also assigns the current authority to the passed worker,
 // and the auth intent to the passed virtual worker.
 // Optionally pass a client name to designate the entity as net owned by that client.
-void AddLBEntityToView(SpatialGDK::EntityView& View, const Worker_EntityId EntityId, const Worker_PartitionId AuthPartitionId,
+void AddLBEntityToView(SpatialGDK::EntityView& View, const FSpatialEntityId EntityId, const Worker_PartitionId AuthPartitionId,
 					   const VirtualWorkerId IntentWorkerId,
 					   const Worker_PartitionId ClientAuthPartitionId = SpatialConstants::INVALID_ENTITY_ID)
 {
@@ -104,7 +105,7 @@ AuthorityDelegationMap GetAuthDelegationMapFromUpdate(const SpatialGDK::EntityCo
 	{
 		Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 1, i);
 		uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-		Worker_PartitionId Value = Schema_GetInt64(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+		Worker_PartitionId Value = SpatialGDK::GetEntityIdFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 		AuthDelegation.Add(Key, Value);
 	}

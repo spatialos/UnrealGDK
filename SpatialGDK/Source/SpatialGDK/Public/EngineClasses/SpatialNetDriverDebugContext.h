@@ -86,16 +86,16 @@ public:
 
 protected:
 	// Called from SpatialReveiver when the corresponding Ops are encountered.
-	void AddComponent(Worker_EntityId EntityId);
-	void RemoveComponent(Worker_EntityId EntityId);
-	void OnComponentChange(Worker_EntityId EntityId, const SpatialGDK::ComponentChange& Change);
-	void ApplyComponentUpdate(Worker_EntityId EntityId, Schema_ComponentUpdate* Update);
-	void AuthorityLost(Worker_EntityId EntityId);
+	void AddComponent(FSpatialEntityId EntityId);
+	void RemoveComponent(FSpatialEntityId EntityId);
+	void OnComponentChange(FSpatialEntityId EntityId, const SpatialGDK::ComponentChange& Change);
+	void ApplyComponentUpdate(FSpatialEntityId EntityId, Schema_ComponentUpdate* Update);
+	void AuthorityLost(FSpatialEntityId EntityId);
 
 	struct DebugComponentAuthData
 	{
 		SpatialGDK::DebugComponent Component;
-		Worker_EntityId Entity = SpatialConstants::INVALID_ENTITY_ID;
+		FSpatialEntityId Entity = SpatialConstants::INVALID_ENTITY_ID;
 		bool bAdded = false;
 		bool bDirty = false;
 	};
@@ -105,8 +105,8 @@ protected:
 	TOptional<VirtualWorkerId> GetActorExplicitDelegation(const AActor* Actor);
 	TOptional<VirtualWorkerId> GetActorHierarchyExplicitDelegation_Traverse(const AActor* Actor);
 
-	void AddEntityToWatch(Worker_EntityId);
-	void RemoveEntityToWatch(Worker_EntityId);
+	void AddEntityToWatch(FSpatialEntityId);
+	void RemoveEntityToWatch(FSpatialEntityId);
 
 	bool NeedEntityInterestUpdate() { return bNeedToUpdateInterest; }
 

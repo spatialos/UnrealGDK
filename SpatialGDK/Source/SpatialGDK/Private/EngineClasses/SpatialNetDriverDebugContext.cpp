@@ -122,7 +122,7 @@ void USpatialNetDriverDebugContext::AdvanceView()
 	}
 }
 
-void USpatialNetDriverDebugContext::OnComponentChange(Worker_EntityId EntityId, const SpatialGDK::ComponentChange& Change)
+void USpatialNetDriverDebugContext::OnComponentChange(FSpatialEntityId EntityId, const SpatialGDK::ComponentChange& Change)
 {
 	if (Change.Type == SpatialGDK::ComponentChange::UPDATE)
 	{
@@ -164,7 +164,7 @@ USpatialNetDriverDebugContext::DebugComponentAuthData& USpatialNetDriverDebugCon
 
 	SpatialGDK::DebugComponent* DbgComp = nullptr;
 
-	const Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+	const FSpatialEntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 	if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 	{
 		DbgComp = DebugComponents.Find(Entity);
@@ -209,13 +209,13 @@ void USpatialNetDriverDebugContext::RemoveActorTag(AActor* Actor, FName Tag)
 	}
 }
 
-void USpatialNetDriverDebugContext::AddComponent(Worker_EntityId EntityId)
+void USpatialNetDriverDebugContext::AddComponent(FSpatialEntityId EntityId)
 {
 	const SpatialGDK::EntityViewElement& Element = SubView->GetView().FindChecked(EntityId);
 	const SpatialGDK::ComponentData* Data = Element.Components.FindByPredicate([](const SpatialGDK::ComponentData& Component) {
 		return Component.GetComponentId() == SpatialConstants::GDK_DEBUG_COMPONENT_ID;
 	});
-	if (!ensureAlwaysMsgf(Data != nullptr, TEXT("Failed to access Debug component data for entity %lld"), EntityId))
+	if (!ensureAlwaysMsgf(Data != nullptr, TEXT("Failed to access Debug component data for entity %s"), *EntityId.ToString()))
 	{
 		return;
 	}
@@ -227,13 +227,13 @@ void USpatialNetDriverDebugContext::AddComponent(Worker_EntityId EntityId)
 	}
 }
 
-void USpatialNetDriverDebugContext::RemoveComponent(Worker_EntityId EntityId)
+void USpatialNetDriverDebugContext::RemoveComponent(FSpatialEntityId EntityId)
 {
 	RemoveEntityToWatch(EntityId);
 	DebugComponents.Remove(EntityId);
 }
 
-void USpatialNetDriverDebugContext::ApplyComponentUpdate(Worker_EntityId Entity, Schema_ComponentUpdate* Update)
+void USpatialNetDriverDebugContext::ApplyComponentUpdate(FSpatialEntityId Entity, Schema_ComponentUpdate* Update)
 {
 	SpatialGDK::DebugComponent* DbgComp = DebugComponents.Find(Entity);
 
@@ -254,7 +254,7 @@ void USpatialNetDriverDebugContext::ApplyComponentUpdate(Worker_EntityId Entity,
 	}
 }
 
-void USpatialNetDriverDebugContext::AuthorityLost(Worker_EntityId EntityId)
+void USpatialNetDriverDebugContext::AuthorityLost(FSpatialEntityId EntityId)
 {
 	for (auto Iterator = ActorDebugInfo.CreateIterator(); Iterator; ++Iterator)
 	{
@@ -266,14 +266,14 @@ void USpatialNetDriverDebugContext::AuthorityLost(Worker_EntityId EntityId)
 	}
 }
 
-void USpatialNetDriverDebugContext::AddEntityToWatch(Worker_EntityId Entity)
+void USpatialNetDriverDebugContext::AddEntityToWatch(FSpatialEntityId Entity)
 {
 	bool bAlreadyWatchingEntity = false;
 	CachedInterestSet.Add(Entity, &bAlreadyWatchingEntity);
 	bNeedToUpdateInterest |= !bAlreadyWatchingEntity;
 }
 
-void USpatialNetDriverDebugContext::RemoveEntityToWatch(Worker_EntityId Entity)
+void USpatialNetDriverDebugContext::RemoveEntityToWatch(FSpatialEntityId Entity)
 {
 	if (CachedInterestSet.Remove(Entity) > 0)
 	{
@@ -300,7 +300,7 @@ void USpatialNetDriverDebugContext::AddInterestOnTag(FName Tag)
 		{
 			if (Item.Value.Component.ActorTags.Contains(Tag))
 			{
-				Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Item.Key);
+				FSpatialEntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Item.Key);
 				if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 				{
 					AddEntityToWatch(Entity);
@@ -329,7 +329,7 @@ void USpatialNetDriverDebugContext::RemoveInterestOnTag(FName Tag)
 		{
 			if (!IsSetIntersectionEmpty(Item.Value.Component.ActorTags, SemanticInterest))
 			{
-				Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Item.Key);
+				FSpatialEntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Item.Key);
 				if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 				{
 					AddEntityToWatch(Entity);
@@ -394,7 +394,7 @@ TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorExplicitDelega
 	}
 	else
 	{
-		Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+		FSpatialEntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 		if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			DbgComp = DebugComponents.Find(Entity);
@@ -436,7 +436,7 @@ void USpatialNetDriverDebugContext::TickServer()
 		DebugComponentAuthData& Data = Entry.Value;
 		if (!Data.bAdded)
 		{
-			Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+			FSpatialEntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 			if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 			{
 				if (!IsSetIntersectionEmpty(Data.Component.ActorTags, SemanticInterest))
@@ -472,7 +472,7 @@ void USpatialNetDriverDebugContext::TickServer()
 
 bool USpatialNetDriverDebugContext::IsActorReady(AActor* Actor)
 {
-	Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+	FSpatialEntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 	if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 	{
 		return NetDriver->HasServerAuthority(Entity);
@@ -483,7 +483,7 @@ bool USpatialNetDriverDebugContext::IsActorReady(AActor* Actor)
 SpatialGDK::QueryConstraint USpatialNetDriverDebugContext::ComputeAdditionalEntityQueryConstraint() const
 {
 	SpatialGDK::QueryConstraint EntitiesConstraint;
-	for (Worker_EntityId Entity : CachedInterestSet)
+	for (FSpatialEntityId Entity : CachedInterestSet)
 	{
 		SpatialGDK::QueryConstraint EntityQuery;
 		EntityQuery.EntityIdConstraint = Entity;

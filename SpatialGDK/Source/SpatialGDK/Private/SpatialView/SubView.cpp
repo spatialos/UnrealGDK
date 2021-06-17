@@ -8,14 +8,14 @@
 
 namespace SpatialGDK
 {
-const FFilterPredicate FSubView::NoFilter = [](const Worker_EntityId&, const EntityViewElement&) {
+const FFilterPredicate FSubView::NoFilter = [](const FSpatialEntityId&, const EntityViewElement&) {
 	return true;
 };
 const TArray<FDispatcherRefreshCallback> FSubView::NoDispatcherCallbacks = TArray<FDispatcherRefreshCallback>{};
 const FComponentChangeRefreshPredicate FSubView::NoComponentChangeRefreshPredicate = [](const FEntityComponentChange&) {
 	return true;
 };
-const FAuthorityChangeRefreshPredicate FSubView::NoAuthorityChangeRefreshPredicate = [](const Worker_EntityId) {
+const FAuthorityChangeRefreshPredicate FSubView::NoAuthorityChangeRefreshPredicate = [](const FSpatialEntityId) {
 	return true;
 };
 
@@ -77,7 +77,7 @@ void FSubView::Refresh()
 	}
 }
 
-void FSubView::RefreshEntity(const Worker_EntityId EntityId)
+void FSubView::RefreshEntity(const FSpatialEntityId EntityId)
 {
 	if (TaggedEntities.Contains(EntityId))
 	{
@@ -90,18 +90,18 @@ const EntityView& FSubView::GetView() const
 	return *View;
 }
 
-bool FSubView::HasEntity(const Worker_EntityId EntityId) const
+bool FSubView::HasEntity(const FSpatialEntityId EntityId) const
 {
 	const EntityViewElement* Entity = View->Find(EntityId);
 	return Entity != nullptr;
 }
 
-bool FSubView::IsEntityComplete(const Worker_EntityId EntityId) const
+bool FSubView::IsEntityComplete(const FSpatialEntityId EntityId) const
 {
 	return GetCompleteEntities().Contains(EntityId);
 }
 
-bool FSubView::HasComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const
+bool FSubView::HasComponent(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId) const
 {
 	const EntityViewElement* Entity = View->Find(EntityId);
 	if (Entity == nullptr)
@@ -111,7 +111,7 @@ bool FSubView::HasComponent(const Worker_EntityId EntityId, const Worker_Compone
 	return Entity->Components.ContainsByPredicate(ComponentIdEquality{ ComponentId });
 }
 
-bool FSubView::HasAuthority(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const
+bool FSubView::HasAuthority(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId) const
 {
 	const EntityViewElement* Entity = View->Find(EntityId);
 	if (Entity == nullptr)
@@ -164,14 +164,14 @@ FDispatcherRefreshCallback FSubView::CreateAuthorityChangeRefreshCallback(IDispa
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
 		const CallbackId GainedCallbackId =
-			Dispatcher.RegisterAuthorityGainedCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId Id) {
+			Dispatcher.RegisterAuthorityGainedCallback(ComponentId, [RefreshPredicate, Callback](const FSpatialEntityId Id) {
 				if (RefreshPredicate(Id))
 				{
 					Callback(Id);
 				}
 			});
 		const CallbackId LostCallbackId =
-			Dispatcher.RegisterAuthorityLostCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId Id) {
+			Dispatcher.RegisterAuthorityLostCallback(ComponentId, [RefreshPredicate, Callback](const FSpatialEntityId Id) {
 				if (RefreshPredicate(Id))
 				{
 					Callback(Id);
@@ -200,7 +200,7 @@ void FSubView::RegisterTagCallbacks(IDispatcher& Dispatcher)
 
 void FSubView::RegisterRefreshCallbacks(IDispatcher& Dispatcher, const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
 {
-	const FRefreshCallback RefreshEntityCallback = [this](const Worker_EntityId EntityId) {
+	const FRefreshCallback RefreshEntityCallback = [this](const FSpatialEntityId EntityId) {
 		RefreshEntity(EntityId);
 	};
 	for (FDispatcherRefreshCallback Callback : DispatcherRefreshCallbacks)
@@ -213,19 +213,19 @@ void FSubView::RegisterRefreshCallbacks(IDispatcher& Dispatcher, const TArray<FD
 	}
 }
 
-void FSubView::OnTaggedEntityAdded(const Worker_EntityId EntityId)
+void FSubView::OnTaggedEntityAdded(const FSpatialEntityId EntityId)
 {
 	TaggedEntities.Add(EntityId);
 	CheckEntityAgainstFilter(EntityId);
 }
 
-void FSubView::OnTaggedEntityRemoved(const Worker_EntityId EntityId)
+void FSubView::OnTaggedEntityRemoved(const FSpatialEntityId EntityId)
 {
 	TaggedEntities.RemoveSingleSwap(EntityId);
 	EntityIncomplete(EntityId);
 }
 
-void FSubView::CheckEntityAgainstFilter(const Worker_EntityId EntityId)
+void FSubView::CheckEntityAgainstFilter(const FSpatialEntityId EntityId)
 {
 	if (View->Contains(EntityId) && Filter(EntityId, (*View)[EntityId]))
 	{
@@ -235,7 +235,7 @@ void FSubView::CheckEntityAgainstFilter(const Worker_EntityId EntityId)
 	EntityIncomplete(EntityId);
 }
 
-void FSubView::EntityComplete(const Worker_EntityId EntityId)
+void FSubView::EntityComplete(const FSpatialEntityId EntityId)
 {
 	// We were just about to remove this entity, but it has become complete again before the delta was read.
 	// Mark it as temporarily incomplete, but otherwise treat it as if it hadn't gone incomplete.
@@ -252,7 +252,7 @@ void FSubView::EntityComplete(const Worker_EntityId EntityId)
 	}
 }
 
-void FSubView::EntityIncomplete(const Worker_EntityId EntityId)
+void FSubView::EntityIncomplete(const FSpatialEntityId EntityId)
 {
 	// If we were about to add this, don't. It's as if we never saw it.
 	if (NewlyCompleteEntities.RemoveSingleSwap(EntityId))

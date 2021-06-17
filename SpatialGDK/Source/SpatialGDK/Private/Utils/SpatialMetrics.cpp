@@ -150,7 +150,7 @@ void USpatialMetrics::SpatialStartRPCMetrics()
 	if (!bIsServer && ControllerRefProvider.IsBound())
 	{
 		const FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
-		const Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+		const FSpatialEntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -250,7 +250,7 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 	if (!bIsServer && ControllerRefProvider.IsBound())
 	{
 		const FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
-		const Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+		const FSpatialEntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -279,7 +279,7 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, const float Valu
 	if (!bIsServer && ControllerRefProvider.IsBound())
 	{
 		const FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
-		const Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+		const FSpatialEntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -475,7 +475,7 @@ void USpatialMetrics::SpatialExecServerCmd_Internal(const FString& ServerName, c
 	if (!bIsServer && ControllerRefProvider.IsBound())
 	{
 		const FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
-		const Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+		const FSpatialEntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -502,12 +502,12 @@ void USpatialMetrics::SpatialExecServerCmd_Internal(const FString& ServerName, c
 	else
 	{
 		bool bExecuteLocally = ServerName.Equals(TEXT("local"), ESearchCase::IgnoreCase);
-		Worker_EntityId ServerWorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
+		FSpatialEntityId ServerWorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 		if (!bExecuteLocally)
 		{
 			for (const auto& Iter : Connection->GetView())
 			{
-				const Worker_EntityId EntityId = Iter.Key;
+				const FSpatialEntityId EntityId = Iter.Key;
 				const SpatialGDK::EntityViewElement& Element = Iter.Value;
 				const SpatialGDK::ComponentData* Data = Element.Components.FindByPredicate([](const SpatialGDK::ComponentData& Component) {
 					return Component.GetComponentId() == SpatialConstants::SERVER_WORKER_COMPONENT_ID;

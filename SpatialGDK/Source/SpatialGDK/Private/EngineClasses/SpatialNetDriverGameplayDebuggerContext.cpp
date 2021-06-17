@@ -111,7 +111,7 @@ TOptional<VirtualWorkerId> USpatialNetDriverGameplayDebuggerContext::GetActorDel
 
 	FEntityData* EntityData = nullptr;
 
-	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(&InActor);
+	FSpatialEntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(&InActor);
 	if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 	{
 		EntityData = TrackedEntities.Find(EntityId);
@@ -244,7 +244,7 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 	}
 }
 
-void USpatialNetDriverGameplayDebuggerContext::TrackEntity(Worker_EntityId InEntityId)
+void USpatialNetDriverGameplayDebuggerContext::TrackEntity(FSpatialEntityId InEntityId)
 {
 	check(NetDriver && NetDriver->VirtualWorkerTranslator);
 
@@ -255,7 +255,8 @@ void USpatialNetDriverGameplayDebuggerContext::TrackEntity(Worker_EntityId InEnt
 
 	if (Data == nullptr)
 	{
-		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Failed to access component data for entity %lld"), InEntityId);
+		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Failed to access component data for entity %lld"),
+			   *InEntityId.ToString());
 		return;
 	}
 
@@ -263,7 +264,7 @@ void USpatialNetDriverGameplayDebuggerContext::TrackEntity(Worker_EntityId InEnt
 	if (ComponentData == nullptr)
 	{
 		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Failed to get underlying component data for entity %lld"),
-			   InEntityId);
+			   *InEntityId.ToString());
 		return;
 	}
 
@@ -277,7 +278,7 @@ void USpatialNetDriverGameplayDebuggerContext::TrackEntity(Worker_EntityId InEnt
 	}
 	else
 	{
-		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Tracking entity twice, where id = %lld"), InEntityId);
+		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Tracking entity twice, where id = %s"), *InEntityId.ToString());
 	}
 
 	check(EntityData);
@@ -293,7 +294,7 @@ void USpatialNetDriverGameplayDebuggerContext::TrackEntity(Worker_EntityId InEnt
 	}
 }
 
-void USpatialNetDriverGameplayDebuggerContext::UntrackEntity(Worker_EntityId InEntityId)
+void USpatialNetDriverGameplayDebuggerContext::UntrackEntity(FSpatialEntityId InEntityId)
 {
 	check(NetDriver && NetDriver->PackageMap);
 
@@ -305,7 +306,7 @@ void USpatialNetDriverGameplayDebuggerContext::UntrackEntity(Worker_EntityId InE
 	ActorsAdded.Remove(InEntityId);
 }
 
-void USpatialNetDriverGameplayDebuggerContext::AddAuthority(Worker_EntityId InEntityId, FEntityData* OptionalEntityData)
+void USpatialNetDriverGameplayDebuggerContext::AddAuthority(FSpatialEntityId InEntityId, FEntityData* OptionalEntityData)
 {
 	check(NetDriver && NetDriver->VirtualWorkerTranslator);
 
@@ -330,7 +331,7 @@ void USpatialNetDriverGameplayDebuggerContext::AddAuthority(Worker_EntityId InEn
 	ActorsAdded.AddUnique(InEntityId);
 }
 
-void USpatialNetDriverGameplayDebuggerContext::RemoveAuthority(Worker_EntityId InEntityId, FEntityData* InOptionalEntityData)
+void USpatialNetDriverGameplayDebuggerContext::RemoveAuthority(FSpatialEntityId InEntityId, FEntityData* InOptionalEntityData)
 {
 	if (InOptionalEntityData == nullptr)
 	{
@@ -390,7 +391,7 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerRequest(AGameplayDebugger
 		return;
 	}
 
-	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(InCategoryReplicator);
+	FSpatialEntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(InCategoryReplicator);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Warning, TEXT("Callback from an actor with no entity"));

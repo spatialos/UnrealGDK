@@ -9,7 +9,7 @@ DEFINE_LOG_CATEGORY(LogSpatialStrategySystem);
 
 namespace SpatialGDK
 {
-SpatialStrategySystem::SpatialStrategySystem(const FSubView& InSubView, Worker_EntityId InStrategyWorkerEntityId,
+SpatialStrategySystem::SpatialStrategySystem(const FSubView& InSubView, FSpatialEntityId InStrategyWorkerEntityId,
 											 SpatialOSWorkerInterface* Connection)
 	: SubView(InSubView)
 	, StrategyWorkerEntityId(InStrategyWorkerEntityId)

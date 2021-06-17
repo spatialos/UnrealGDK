@@ -23,7 +23,7 @@ public:
 	virtual OpList GetNextOpList() override;
 	virtual void SendMessages(TUniquePtr<MessagesToSend> Messages) override;
 	virtual const FString& GetWorkerId() const override;
-	virtual Worker_EntityId GetWorkerSystemEntityId() const override;
+	virtual FSpatialEntityId GetWorkerSystemEntityId() const override;
 
 private:
 	enum

@@ -64,9 +64,9 @@ public:
 		State.LastACK = ACKCount.Get(/*DefaultValue*/ 0);
 	}
 
-	virtual void OnAuthLost(Worker_EntityId Entity) override { BufferState.Remove(Entity); }
+	virtual void OnAuthLost(FSpatialEntityId Entity) override { BufferState.Remove(Entity); }
 
-	virtual uint32 Write(RPCWritingContext& Ctx, Worker_EntityId EntityId, TArrayView<const Payload> RPCs,
+	virtual uint32 Write(RPCWritingContext& Ctx, FSpatialEntityId EntityId, TArrayView<const Payload> RPCs,
 						 const RPCCallbacks::RPCWritten& WrittenCallback) override
 	{
 		BufferStateData& NextSlot = BufferState.FindOrAdd(EntityId);

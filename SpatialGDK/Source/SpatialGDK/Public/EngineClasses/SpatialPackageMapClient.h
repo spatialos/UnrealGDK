@@ -27,16 +27,16 @@ public:
 
 	void Advance();
 
-	Worker_EntityId AllocateEntityIdAndResolveActor(AActor* Actor);
+	FSpatialEntityId AllocateEntityIdAndResolveActor(AActor* Actor);
 	FNetworkGUID TryResolveObjectAsEntity(UObject* Value);
 
-	bool IsEntityIdPendingCreation(Worker_EntityId EntityId) const;
-	void RemovePendingCreationEntityId(Worker_EntityId EntityId);
+	bool IsEntityIdPendingCreation(FSpatialEntityId EntityId) const;
+	void RemovePendingCreationEntityId(FSpatialEntityId EntityId);
 
-	bool ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
+	bool ResolveEntityActor(AActor* Actor, FSpatialEntityId EntityId);
 	void ResolveSubobject(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
-	void RemoveEntityActor(Worker_EntityId EntityId);
+	void RemoveEntityActor(FSpatialEntityId EntityId);
 	void RemoveSubobject(const FUnrealObjectRef& ObjectRef);
 
 	// This function is ONLY used in SpatialReceiver::GetOrCreateActor to undo
@@ -47,12 +47,12 @@ public:
 
 	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef) const;
-	FNetworkGUID GetNetGUIDFromEntityId(const Worker_EntityId& EntityId) const;
+	FNetworkGUID GetNetGUIDFromEntityId(const FSpatialEntityId& EntityId) const;
 
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
-	TWeakObjectPtr<UObject> GetObjectFromEntityId(const Worker_EntityId EntityId);
+	TWeakObjectPtr<UObject> GetObjectFromEntityId(const FSpatialEntityId EntityId);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(const UObject* Object) const;
-	Worker_EntityId GetEntityIdFromObject(const UObject* Object) const;
+	FSpatialEntityId GetEntityIdFromObject(const UObject* Object) const;
 
 	AActor* GetUniqueActorInstanceByClassRef(const FUnrealObjectRef& ClassRef);
 	AActor* GetUniqueActorInstanceByClass(UClass* Class) const;
@@ -60,7 +60,7 @@ public:
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
 
-	Worker_EntityId AllocateEntityId();
+	FSpatialEntityId AllocateEntityId();
 	bool IsEntityPoolReady() const;
 	FEntityPoolReadyEvent& GetEntityPoolReadyDelegate();
 
@@ -71,7 +71,7 @@ public:
 	// Pending object references, being asynchronously loaded.
 	TSet<FNetworkGUID> PendingReferences;
 
-	Worker_EntityId AllocateNewEntityId() const;
+	FSpatialEntityId AllocateNewEntityId() const;
 
 private:
 	UPROPERTY()
@@ -88,17 +88,17 @@ class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
 
-	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId);
+	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, FSpatialEntityId EntityId);
 	void AssignNewSubobjectNetGUID(UObject* Subobject, const FUnrealObjectRef& SubobjectRef);
 
-	void RemoveEntityNetGUID(Worker_EntityId EntityId);
+	void RemoveEntityNetGUID(FSpatialEntityId EntityId);
 	void RemoveSubobjectNetGUID(const FUnrealObjectRef& SubobjectRef);
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(UObject* Object);
 
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
-	FNetworkGUID GetNetGUIDFromEntityId(Worker_EntityId EntityId) const;
+	FNetworkGUID GetNetGUIDFromEntityId(FSpatialEntityId EntityId) const;
 
 	void NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef, bool bReading) const;
 

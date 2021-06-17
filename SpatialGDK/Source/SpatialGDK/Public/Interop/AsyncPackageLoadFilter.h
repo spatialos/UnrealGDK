@@ -8,7 +8,7 @@
 
 #include "AsyncPackageLoadFilter.generated.h"
 
-DECLARE_DELEGATE_OneParam(FOnPackageLoadedForEntity, Worker_EntityId /*EntityId*/);
+DECLARE_DELEGATE_OneParam(FOnPackageLoadedForEntity, FSpatialEntityId /*EntityId*/);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogAsyncPackageLoadFilter, Log, All);
 
@@ -21,13 +21,13 @@ public:
 	void Init(const FOnPackageLoadedForEntity& OnPackageLoadedForEntityDelegate);
 
 	// Returns if asset package required by entity-actor is loaded
-	bool IsAssetLoadedOrTriggerAsyncLoad(Worker_EntityId EntityId, const FString& ClassPath);
+	bool IsAssetLoadedOrTriggerAsyncLoad(FSpatialEntityId EntityId, const FString& ClassPath);
 	void ProcessActorsFromAsyncLoading();
 
 private:
 	bool NeedToLoadClass(const FString& ClassPath);
-	bool IsEntityWaitingForAsyncLoad(Worker_EntityId Entity);
-	void StartAsyncLoadingClass(Worker_EntityId EntityId, const FString& ClassPath);
+	bool IsEntityWaitingForAsyncLoad(FSpatialEntityId Entity);
+	void StartAsyncLoadingClass(FSpatialEntityId EntityId, const FString& ClassPath);
 
 	FString GetPackagePath(const FString& ClassPath);
 	void OnAsyncPackageLoaded(const FName& PackageName, UPackage* Package, EAsyncLoadingResult::Type Result);

@@ -103,9 +103,9 @@ void WellKnownEntitySystem::ProcessComponentAdd(const Worker_ComponentId Compone
 	}
 }
 
-void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
+void WellKnownEntitySystem::ProcessAuthorityGain(const FSpatialEntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
-	GlobalStateManager->AuthorityChanged({ EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });
+	GlobalStateManager->AuthorityChanged({ ToWorkerEntityId(EntityId), ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });
 
 	if (SubView->GetView()[EntityId].Components.ContainsByPredicate(
 			SpatialGDK::ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID }))
@@ -118,11 +118,11 @@ void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId,
 			SpatialGDK::ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID }))
 	{
 		InitializeVirtualWorkerTranslationManager();
-		VirtualWorkerTranslationManager->AuthorityChanged({ EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });
+		VirtualWorkerTranslationManager->AuthorityChanged({ ToWorkerEntityId(EntityId), ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });
 	}
 }
 
-void WellKnownEntitySystem::ProcessEntityAdd(const Worker_EntityId EntityId)
+void WellKnownEntitySystem::ProcessEntityAdd(const FSpatialEntityId EntityId)
 {
 	const EntityViewElement& Element = SubView->GetView()[EntityId];
 	for (const ComponentData& ComponentData : Element.Components)
@@ -160,7 +160,7 @@ void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 {
 	// Perform a naive leader election where we wait for the correct number of server workers to be present in the deployment, and then
 	// whichever server has the lowest server worker entity ID becomes the leader and claims the snapshot partition.
-	const Worker_EntityId LocalServerWorkerEntityId = GlobalStateManager->GetLocalServerWorkerEntityId();
+	const FSpatialEntityId LocalServerWorkerEntityId = GlobalStateManager->GetLocalServerWorkerEntityId();
 
 	if (LocalServerWorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
@@ -168,12 +168,12 @@ void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 		return;
 	}
 
-	Worker_EntityId LowestEntityId = LocalServerWorkerEntityId;
+	FSpatialEntityId LowestEntityId = LocalServerWorkerEntityId;
 
 	int ServerCount = 0;
 	for (const auto& Iter : SubView->GetView())
 	{
-		const Worker_EntityId EntityId = Iter.Key;
+		const FSpatialEntityId EntityId = Iter.Key;
 		const SpatialGDK::EntityViewElement& Element = Iter.Value;
 		if (Element.Components.ContainsByPredicate([](const SpatialGDK::ComponentData& CompData) {
 				return CompData.GetComponentId() == SpatialConstants::SERVER_WORKER_COMPONENT_ID;

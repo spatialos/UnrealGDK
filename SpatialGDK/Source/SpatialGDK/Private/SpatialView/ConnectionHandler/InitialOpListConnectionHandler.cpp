@@ -67,7 +67,7 @@ const FString& InitialOpListConnectionHandler::GetWorkerId() const
 	return InnerHandler->GetWorkerId();
 }
 
-Worker_EntityId InitialOpListConnectionHandler::GetWorkerSystemEntityId() const
+FSpatialEntityId InitialOpListConnectionHandler::GetWorkerSystemEntityId() const
 {
 	return InnerHandler->GetWorkerSystemEntityId();
 }

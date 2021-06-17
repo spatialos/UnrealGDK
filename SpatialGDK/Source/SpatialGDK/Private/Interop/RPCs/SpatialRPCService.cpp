@@ -111,7 +111,7 @@ void SpatialRPCService::ProcessOutgoingRPCs()
 	OutgoingRPCs.ProcessRPCs();
 }
 
-EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const RPCSender& Sender, const ERPCType Type, RPCPayload Payload,
+EPushRPCResult SpatialRPCService::PushRPC(const FSpatialEntityId EntityId, const RPCSender& Sender, const ERPCType Type, RPCPayload Payload,
 										  const bool bCreatedEntity, UObject* Target, UFunction* Function, const FSpatialGDKSpanId& SpanId)
 {
 	const EntityRPCType EntityType = EntityRPCType(EntityId, Type);
@@ -154,7 +154,7 @@ void SpatialRPCService::PushOverflowedRPCs()
 {
 	for (auto It = ClientServerRPCs.GetOverflowedRPCs().CreateIterator(); It; ++It)
 	{
-		Worker_EntityId EntityId = It.Key().EntityId;
+		FSpatialEntityId EntityId = It.Key().EntityId;
 		ERPCType Type = It.Key().Type;
 		TArray<PendingRPCPayload>& OverflowedRPCArray = It.Value();
 
@@ -174,8 +174,9 @@ void SpatialRPCService::PushOverflowedRPCs()
 				{
 					UE_LOG(LogSpatialRPCService, Log,
 						   TEXT("SpatialRPCService::PushOverflowedRPCs: Sent some but not all overflowed RPCs. RPCs sent %d, RPCs still "
-								"overflowed: %d, Entity: %lld, RPC type: %s"),
-						   NumProcessed, OverflowedRPCArray.Num() - NumProcessed, EntityId, *SpatialConstants::RPCTypeToString(Type));
+								"overflowed: %d, Entity: %s, RPC type: %s"),
+						   NumProcessed, OverflowedRPCArray.Num() - NumProcessed, *EntityId.ToString(),
+						   *SpatialConstants::RPCTypeToString(Type));
 				}
 				if (EventTracer != nullptr)
 				{
@@ -189,15 +190,15 @@ void SpatialRPCService::PushOverflowedRPCs()
 			case EPushRPCResult::HasAckAuthority:
 				UE_LOG(LogSpatialRPCService, Warning,
 					   TEXT("SpatialRPCService::PushOverflowedRPCs: Gained authority over ack component for RPC type that was overflowed. "
-							"Entity: %lld, RPC type: %s"),
-					   EntityId, *SpatialConstants::RPCTypeToString(Type));
+							"Entity: %s, RPC type: %s"),
+					   *EntityId.ToString(), *SpatialConstants::RPCTypeToString(Type));
 				bShouldDrop = true;
 				break;
 			case EPushRPCResult::NoRingBufferAuthority:
 				UE_LOG(LogSpatialRPCService, Warning,
 					   TEXT("SpatialRPCService::PushOverflowedRPCs: Lost authority over ring buffer component for RPC type that was "
-							"overflowed. Entity: %lld, RPC type: %s"),
-					   EntityId, *SpatialConstants::RPCTypeToString(Type));
+							"overflowed. Entity: %s, RPC type: %s"),
+					   *EntityId.ToString(), *SpatialConstants::RPCTypeToString(Type));
 				bShouldDrop = true;
 				break;
 			default:
@@ -254,7 +255,7 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 	return UpdatesToSend;
 }
 
-TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId)
+TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation(const FSpatialEntityId EntityId)
 {
 	static TArray<Worker_ComponentId> EndpointComponentIds = { SpatialConstants::MULTICAST_RPCS_COMPONENT_ID,
 															   SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID };
@@ -282,8 +283,8 @@ TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation
 			if (EndpointComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID)
 			{
 				UE_LOG(LogSpatialRPCService, Error,
-					   TEXT("SpatialRPCService::GetRPCComponentsOnEntityCreation: Initial RPCs present on ClientEndpoint! EntityId: %lld"),
-					   EntityId);
+					   TEXT("SpatialRPCService::GetRPCComponentsOnEntityCreation: Initial RPCs present on ClientEndpoint! EntityId: %s"),
+					   *EntityId.ToString());
 			}
 
 			Component.schema_type = *ComponentData;
@@ -345,7 +346,7 @@ void SpatialRPCService::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarg
 	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, InSender, Type, MoveTemp(InPayload), SpanId);
 }
 
-void SpatialRPCService::ClearPendingRPCs(const Worker_EntityId EntityId)
+void SpatialRPCService::ClearPendingRPCs(const FSpatialEntityId EntityId)
 {
 	IncomingRPCs.DropForEntity(EntityId);
 	OutgoingRPCs.DropForEntity(EntityId);
@@ -367,7 +368,7 @@ RPCPayload SpatialRPCService::CreateRPCPayloadFromParams(UObject* TargetObject, 
 	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, Id, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
 }
 
-EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId, const ERPCType Type, PendingRPCPayload Payload,
+EPushRPCResult SpatialRPCService::PushRPCInternal(const FSpatialEntityId EntityId, const ERPCType Type, PendingRPCPayload Payload,
 												  const bool bCreatedEntity)
 {
 	const Worker_ComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
@@ -455,15 +456,15 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 	return EPushRPCResult::Success;
 }
 
-bool SpatialRPCService::ActorCanExtractRPC(Worker_EntityId EntityId) const
+bool SpatialRPCService::ActorCanExtractRPC(FSpatialEntityId EntityId) const
 {
 	const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver->PackageMap->GetObjectFromEntityId(EntityId);
 	if (!ActorReceivingRPC.IsValid())
 	{
 		UE_LOG(LogSpatialRPCService, Log,
 			   TEXT("Entity receiving ring buffer RPC does not exist in PackageMap, possibly due to corresponding actor getting "
-					"destroyed. Entity: %lld"),
-			   EntityId);
+					"destroyed. Entity: %s"),
+			   *EntityId.ToString());
 		return false;
 	}
 
@@ -471,8 +472,8 @@ bool SpatialRPCService::ActorCanExtractRPC(Worker_EntityId EntityId) const
 	if (bActorRoleIsSimulatedProxy)
 	{
 		UE_LOG(LogSpatialRPCService, Verbose,
-			   TEXT("Will not process server RPC, Actor role changed to SimulatedProxy. This happens on migration. Entity: %lld"),
-			   EntityId);
+			   TEXT("Will not process server RPC, Actor role changed to SimulatedProxy. This happens on migration. Entity: %s"),
+			   *EntityId.ToString());
 		return false;
 	}
 	return true;
@@ -562,8 +563,8 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 			return true;
 		}
 		else if (!ensureAlwaysMsgf(MissingRef.Path.IsSet(),
-								   TEXT("Received reference to dynamic object as loadable. Target : %s, Parameter Entity : %llu, RPC : %s"),
-								   *TargetObject->GetName(), MissingRef.Entity, *Function->GetName()))
+								   TEXT("Received reference to dynamic object as loadable. Target : %s, Parameter Entity : %s, RPC : %s"),
+								   *TargetObject->GetName(), *MissingRef.Entity.ToString(), *Function->GetName()))
 		{
 			// Validation code, to ensure that every loadable ref we receive has a name.
 			return true;
@@ -737,34 +738,33 @@ bool SpatialRPCService::SendRingBufferedRPC(UObject* TargetObject, const RPCSend
 	{
 	case EPushRPCResult::QueueOverflowed:
 		UE_LOG(LogSpatialRPCService, Log,
-			   TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, queuing RPC locally. Actor: %s, entity: %lld, "
+			   TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, queuing RPC locally. Actor: %s, entity: %s, "
 					"function: %s"),
-			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+			   *TargetObject->GetPathName(), *TargetObjectRef.Entity.ToString(), *Function->GetName());
 		return true;
 	case EPushRPCResult::DropOverflowed:
-		UE_LOG(
-			LogSpatialRPCService, Log,
-			TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, function: %s"),
-			*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		UE_LOG(LogSpatialRPCService, Log,
+			   TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %s, function: %s"),
+			   *TargetObject->GetPathName(), *TargetObjectRef.Entity.ToString(), *Function->GetName());
 		return true;
 	case EPushRPCResult::HasAckAuthority:
 		UE_LOG(LogSpatialRPCService, Warning,
 			   TEXT("USpatialSender::SendRingBufferedRPC: Worker has authority over ack component for RPC it is sending. RPC will not be "
-					"sent. Actor: %s, entity: %lld, function: %s"),
-			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+					"sent. Actor: %s, entity: %s, function: %s"),
+			   *TargetObject->GetPathName(), *TargetObjectRef.Entity.ToString(), *Function->GetName());
 		return true;
 	case EPushRPCResult::NoRingBufferAuthority:
 		// TODO: Change engine logic that calls Client RPCs from non-auth servers and change this to error. UNR-2517
 		UE_LOG(LogSpatialRPCService, Log,
 			   TEXT("USpatialSender::SendRingBufferedRPC: Failed to send RPC because the worker does not have authority over ring buffer "
-					"component. Actor: %s, entity: %lld, function: %s"),
-			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+					"component. Actor: %s, entity: %s, function: %s"),
+			   *TargetObject->GetPathName(), *TargetObjectRef.Entity.ToString(), *Function->GetName());
 		return true;
 	case EPushRPCResult::EntityBeingCreated:
 		UE_LOG(LogSpatialRPCService, Log,
 			   TEXT("USpatialSender::SendRingBufferedRPC: RPC was called between entity creation and initial authority gain, so it will be "
-					"queued. Actor: %s, entity: %lld, function: %s"),
-			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+					"queued. Actor: %s, entity: %s, function: %s"),
+			   *TargetObject->GetPathName(), *TargetObjectRef.Entity.ToString(), *Function->GetName());
 		return false;
 	default:
 		return true;

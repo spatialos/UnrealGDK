@@ -127,7 +127,7 @@ public:
 	bool IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const;
 
 	// Tries to find ClassInfo corresponding to an unused dynamic subobject on the given entity
-	const FClassInfo* GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId,
+	const FClassInfo* GetClassInfoForNewSubobject(const UObject* Object, FSpatialEntityId EntityId,
 												  USpatialPackageMapClient* PackageMapClient);
 
 	UPROPERTY()

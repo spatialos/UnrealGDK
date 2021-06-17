@@ -110,13 +110,13 @@ SchemaResultType InterestFactory::CreateServerAuthInterestResultType()
 	return ServerAuthResultType;
 }
 
-Worker_ComponentData InterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
+Worker_ComponentData InterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const FSpatialEntityId InEntityId) const
 {
 	return CreateInterest(InActor, InInfo, InEntityId).CreateComponentData();
 }
 
 Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo,
-															 const Worker_EntityId InEntityId) const
+															 const FSpatialEntityId InEntityId) const
 {
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
@@ -238,7 +238,7 @@ Interest InterestFactory::CreateRoutingWorkerInterest()
 	return ServerInterest;
 }
 
-Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
+Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const FSpatialEntityId InEntityId) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -367,7 +367,7 @@ bool InterestFactory::DoOwnersHaveEntityId(const AActor* Actor) const
 	return true;
 }
 
-void InterestFactory::AddServerActorOwnerInterest(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const
+void InterestFactory::AddServerActorOwnerInterest(Interest& OutInterest, const AActor* InActor, const FSpatialEntityId& EntityId) const
 {
 	AActor* Owner = InActor->GetOwner();
 	Query OwnerChainQuery;
@@ -379,9 +379,9 @@ void InterestFactory::AddServerActorOwnerInterest(Interest& OutInterest, const A
 		if (OwnerQuery.EntityIdConstraint == SpatialConstants::INVALID_ENTITY_ID)
 		{
 			UE_LOG(LogInterestFactory, Warning,
-				   TEXT("Interest for Actor %s (%llu) is out of date because owner %s does not have an entity id."
+				   TEXT("Interest for Actor %s (%s) is out of date because owner %s does not have an entity id."
 						"USpatialActorChannel::NeedOwnerInterestUpdate should be set in order to eventually update it"),
-				   *InActor->GetName(), EntityId, *Owner->GetName());
+				   *InActor->GetName(), *EntityId.ToString(), *Owner->GetName());
 			return;
 		}
 		OwnerChainQuery.Constraint.OrConstraint.Add(OwnerQuery);

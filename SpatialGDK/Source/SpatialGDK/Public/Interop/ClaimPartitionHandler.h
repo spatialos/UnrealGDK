@@ -14,7 +14,7 @@ class ClaimPartitionHandler
 public:
 	ClaimPartitionHandler(SpatialOSWorkerInterface& InWorkerInterface);
 
-	void ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim);
+	void ClaimPartition(FSpatialEntityId SystemEntityId, Worker_PartitionId PartitionToClaim);
 
 	void ProcessOps(const TArray<Worker_Op>& Ops);
 

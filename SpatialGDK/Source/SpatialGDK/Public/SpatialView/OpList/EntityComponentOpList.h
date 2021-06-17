@@ -14,7 +14,7 @@ namespace SpatialGDK
 {
 struct OpListEntity
 {
-	Worker_EntityId EntityId;
+	FSpatialEntityId EntityId;
 	TArray<ComponentData> Components;
 };
 
@@ -34,27 +34,27 @@ class EntityComponentOpListBuilder
 public:
 	EntityComponentOpListBuilder();
 
-	EntityComponentOpListBuilder& AddEntity(Worker_EntityId EntityId);
-	EntityComponentOpListBuilder& RemoveEntity(Worker_EntityId EntityId);
-	EntityComponentOpListBuilder& AddComponent(Worker_EntityId EntityId, ComponentData Data);
-	EntityComponentOpListBuilder& UpdateComponent(Worker_EntityId EntityId, ComponentUpdate Update);
-	EntityComponentOpListBuilder& RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	EntityComponentOpListBuilder& SetAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId, Worker_Authority Authority,
+	EntityComponentOpListBuilder& AddEntity(FSpatialEntityId EntityId);
+	EntityComponentOpListBuilder& RemoveEntity(FSpatialEntityId EntityId);
+	EntityComponentOpListBuilder& AddComponent(FSpatialEntityId EntityId, ComponentData Data);
+	EntityComponentOpListBuilder& UpdateComponent(FSpatialEntityId EntityId, ComponentUpdate Update);
+	EntityComponentOpListBuilder& RemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId);
+	EntityComponentOpListBuilder& SetAuthority(FSpatialEntityId EntityId, Worker_ComponentSetId ComponentSetId, Worker_Authority Authority,
 											   TArray<ComponentData> Components);
 	EntityComponentOpListBuilder& SetDisconnect(Worker_ConnectionStatusCode StatusCode, StringStorage DisconnectReason);
 	EntityComponentOpListBuilder& StartCriticalSection();
 	EntityComponentOpListBuilder& EndCriticalSection();
-	EntityComponentOpListBuilder& AddCreateEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
+	EntityComponentOpListBuilder& AddCreateEntityCommandResponse(FSpatialEntityId EntityID, Worker_RequestId RequestId,
 																 Worker_StatusCode StatusCode, StringStorage Message);
 	EntityComponentOpListBuilder& AddEntityQueryCommandResponse(Worker_RequestId RequestId, TArray<OpListEntity> Results,
 																Worker_StatusCode StatusCode, StringStorage Message);
-	EntityComponentOpListBuilder& AddEntityCommandRequest(Worker_EntityId EntityID, Worker_RequestId RequestId,
+	EntityComponentOpListBuilder& AddEntityCommandRequest(FSpatialEntityId EntityID, Worker_RequestId RequestId,
 														  CommandRequest CommandRequest);
-	EntityComponentOpListBuilder& AddEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
+	EntityComponentOpListBuilder& AddEntityCommandResponse(FSpatialEntityId EntityID, Worker_RequestId RequestId,
 														   Worker_StatusCode StatusCode, StringStorage Message);
-	EntityComponentOpListBuilder& AddDeleteEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
+	EntityComponentOpListBuilder& AddDeleteEntityCommandResponse(FSpatialEntityId EntityID, Worker_RequestId RequestId,
 																 Worker_StatusCode StatusCode, StringStorage Message);
-	EntityComponentOpListBuilder& AddReserveEntityIdsCommandResponse(Worker_EntityId EntityID, uint32 NumberOfEntities,
+	EntityComponentOpListBuilder& AddReserveEntityIdsCommandResponse(FSpatialEntityId EntityID, uint32 NumberOfEntities,
 																	 Worker_RequestId RequestId, Worker_StatusCode StatusCode,
 																	 StringStorage Message);
 
