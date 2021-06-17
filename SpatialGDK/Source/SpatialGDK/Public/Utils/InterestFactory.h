@@ -30,7 +30,10 @@
  * made by that server worker.
  */
 
+#if WITH_GAMEPLAY_DEBUGGER
 class AGameplayDebuggerCategoryReplicator;
+#endif
+
 class UAbstractLBStrategy;
 class USpatialClassInfoManager;
 class USpatialPackageMapClient;

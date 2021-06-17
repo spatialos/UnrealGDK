@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added NetWriteFence UFUNCTION Tag. This tag is used when Network writes to an actor should be ordered with regard to updates to another actor. This is relevant in worker recovery/snapshot reloading to get some ordering guarantees when SpatialOS can write updates to entities in any order.
 - Inspector process is automatically started when starting PIE. This means you can re-use existing inspector browser sessions.
 - Visual Logger now supports multi-worker environments.
+- Added `StopInsights` command to `SpatialExecServerCmd`, which takes no additional parameters and disables any Insight capturing on the target worker
+  - Example usage: "SpatialExecServerCmd local StopInsights
+- Renamed `StartInsights` command args - `trace` -> `channel` and `tracefile` -> `file`
 
 ### Bug fixes:
 - An issue with `AActor::SetAutonomousProxy` has been fixed, where actors that were manually set as `AutonomousProxy` could get downgraded to `SimulatedProxy`. The functions `SetAutonomousProxyOnAuthority` and `IsAutonomousProxyOnAuthority` have been added to AActor, along with a change to `ActorSystem::HandleActorAuthority` which will upgrade an actor's role from `SimulatedProxy` to `AutonomousProxy` if the actor gains Authority when `IsAutonomousProxyOnAuthority` is true.
@@ -38,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prevented a client crash that occurs if there is a mismatch between the client and server schema hash.
 - Fixed an issue for actors with bNetLoadOnClient. A dynamic subobject removed from such an actor while out of a client's view will now be properly removed on the client when the actor comes back into the client's view.
 - Fixed an issue that caused `UnrealGDK/Setup.sh` to report `sed: can't read : No such file or directory` when run on macOS.
+- Static subobjects on bNetLoadOnClient actors are now removed on clients in a manner matching native unreal's behavior. This change affects subobjects removed by the server while the actor is not in the client's interest.
 - Fixed an issue where multicast rpcs could be overwritten and then dropped on authority flicker.
 
 ### Internal:

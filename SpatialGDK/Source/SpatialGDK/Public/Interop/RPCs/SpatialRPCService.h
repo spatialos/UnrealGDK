@@ -98,11 +98,6 @@ private:
 
 	float LastIncomingProcessingTime;
 	float LastOutgoingProcessingTime;
-
-#if TRACE_LIB_ACTIVE
-	void ProcessResultToLatencyTrace(const EPushRPCResult Result, const TraceKey Trace);
-	TMap<EntityComponentId, TraceKey> PendingTraces;
-#endif
 };
 
 } // namespace SpatialGDK
