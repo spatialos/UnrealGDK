@@ -3,10 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#if WITH_GAMEPLAY_DEBUGGER
 #include "Schema/GameplayDebuggerComponent.h"
 #include "Schema/Interest.h"
 #include "SpatialCommonTypes.h"
 #include "UObject/WeakInterfacePtr.h"
+#endif // WITH_GAMEPLAY_DEBUGGER
 
 #include "SpatialNetDriverGameplayDebuggerContext.generated.h"
 
@@ -32,6 +35,8 @@ class SPATIALGDK_API USpatialNetDriverGameplayDebuggerContext : public UObject
 
 public:
 	USpatialNetDriverGameplayDebuggerContext() = default;
+
+#if WITH_GAMEPLAY_DEBUGGER
 	virtual ~USpatialNetDriverGameplayDebuggerContext();
 
 	static void Enable(const SpatialGDK::FSubView& InSubView, USpatialNetDriver& InNetDriver);
@@ -46,11 +51,13 @@ public:
 
 	void AdvanceView();
 	void TickServer();
+#endif // WITH_GAMEPLAY_DEBUGGER
 
 	UPROPERTY()
 	UGameplayDebuggerLBStrategy* LBStrategy = nullptr;
 
 protected:
+#if WITH_GAMEPLAY_DEBUGGER
 	struct FEntityData
 	{
 		SpatialGDK::GameplayDebuggerComponent Component;
@@ -74,4 +81,5 @@ protected:
 	TSet<Worker_EntityId_Key> ComponentsUpdated;
 	TArray<Worker_EntityId_Key> ActorsAdded;
 	TMap<FString, uint32> PhysicalToVirtualWorkerIdMap;
+#endif // WITH_GAMEPLAY_DEBUGGER
 };

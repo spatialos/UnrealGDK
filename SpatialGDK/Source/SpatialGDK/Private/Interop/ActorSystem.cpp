@@ -316,7 +316,7 @@ void ActorSystem::Advance()
 			UE_LOG(LogActorSystem, Verbose, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
 				   Delta.EntityId);
 			// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
-			NetDriver->PackageMap->ResolveEntityActor(EntityActor, Delta.EntityId);
+			NetDriver->PackageMap->ResolveEntityActorAndSubobjects(Delta.EntityId, EntityActor);
 			RemoveActor(Delta.EntityId);
 		}
 	}
@@ -700,13 +700,14 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 		}
 		else if (UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
-			DestroySubObject(EntityId, *Object, ObjectRef);
+			DestroySubObject(ObjectRef, *Object);
 		}
 	}
 }
 
-void ActorSystem::DestroySubObject(const Worker_EntityId EntityId, UObject& Object, const FUnrealObjectRef& ObjectRef) const
+void ActorSystem::DestroySubObject(const FUnrealObjectRef& ObjectRef, UObject& Object) const
 {
+	const Worker_EntityId EntityId = ObjectRef.Entity;
 	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
 	{
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
@@ -1278,8 +1279,6 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 
 	ActorData& ActorComponents = ActorDataStore[EntityId];
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
 	AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
 	if (EntityActor != nullptr)
 	{
@@ -1307,7 +1306,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 	}
 
 	// Make sure ClassInfo exists
-	const FClassInfo& ActorClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Class);
+	NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
 	// If the received actor is torn off, don't bother spawning it.
 	// (This is only needed due to the delay between tearoff and deleting the entity. See https://improbableio.atlassian.net/browse/UNR-841)
@@ -1328,7 +1327,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	if (!NetDriver->PackageMap->ResolveEntityActor(EntityActor, EntityId))
+	if (!NetDriver->PackageMap->ResolveEntityActorAndSubobjects(EntityId, EntityActor))
 	{
 		UE_LOG(LogActorSystem, Warning,
 			   TEXT("Failed to resolve entity actor when receiving entity. Actor will not be spawned. Entity: %lld, actor: %s"), EntityId,
@@ -1411,7 +1410,7 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 	if (EntityActor.IsFullNameStableForNetworking())
 	{
 		// bNetLoadOnClient actors could have components removed while out of the client's interest
-		ClientNetLoadActorHelper.RemoveRuntimeRemovedComponents(EntityId, EntityComponents);
+		ClientNetLoadActorHelper.RemoveRuntimeRemovedComponents(EntityId, EntityComponents, EntityActor);
 	}
 
 	// Resolve things like RepNotify or RPCs after applying component data.
@@ -1679,7 +1678,7 @@ USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, const Worker
 
 USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, const Worker_EntityId EntityId)
 {
-	if (!NetDriver->PackageMap->ResolveEntityActor(StablyNamedActor, EntityId))
+	if (!NetDriver->PackageMap->ResolveEntityActorAndSubobjects(EntityId, StablyNamedActor))
 	{
 		UE_LOG(LogActorSystem, Warning,
 			   TEXT("Failed to restore actor channel for stably named actor: failed to resolve actor. Entity: %lld, actor: %s"), EntityId,
