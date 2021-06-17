@@ -50,8 +50,8 @@ SpatialRPCService::SpatialRPCService(const FSubView& InActorAuthSubView, const F
 
 void SpatialRPCService::AdvanceView()
 {
-	ClientServerRPCs.AdvanceView();
-	MulticastRPCs.AdvanceView();
+	// ClientServerRPCs.AdvanceView();
+	// MulticastRPCs.AdvanceView();
 	if (CrossServerRPCs)
 	{
 		CrossServerRPCs->AdvanceView();
@@ -60,8 +60,8 @@ void SpatialRPCService::AdvanceView()
 
 void SpatialRPCService::ProcessChanges(const float NetDriverTime)
 {
-	ClientServerRPCs.ProcessChanges();
-	MulticastRPCs.ProcessChanges();
+	// ClientServerRPCs.ProcessChanges();
+	// MulticastRPCs.ProcessChanges();
 	if (CrossServerRPCs)
 	{
 		CrossServerRPCs->ProcessChanges();
@@ -256,8 +256,9 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 
 TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId)
 {
-	static TArray<Worker_ComponentId> EndpointComponentIds = { SpatialConstants::MULTICAST_RPCS_COMPONENT_ID,
-															   SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID };
+	static TArray<Worker_ComponentId> EndpointComponentIds = { /*SpatialConstants::MULTICAST_RPCS_COMPONENT_ID,*/
+															   SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID
+	};
 
 	TArray<FWorkerComponentData> Components;
 

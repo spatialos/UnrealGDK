@@ -105,6 +105,7 @@ struct RPCWritingContext : FStackOnly
 	};
 
 	EntityWrite WriteTo(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	DataKind GetDataKind() const { return Kind; }
 
 protected:
 	RPCCallbacks::DataWritten DataWrittenCallback;
@@ -131,6 +132,7 @@ public:
 	virtual void OnAuthGained(Worker_EntityId EntityId, EntityViewElement const& Element);
 	virtual void OnAuthGained_ReadComponent(const RPCReadingContext& iCtx) = 0;
 	virtual void OnAuthLost(Worker_EntityId EntityId) = 0;
+	virtual void FlushUpdates(RPCWritingContext& Ctx){};
 
 	const TSet<Worker_ComponentId>& GetComponentsToReadOnUpdate() const { return ComponentsToReadOnUpdate; }
 
