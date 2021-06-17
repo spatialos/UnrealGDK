@@ -142,11 +142,7 @@ void AStaticSubobjectsTest::PrepareTest()
 
 	// Step 9
 	AddStep(TEXT("StaticSubobjectsTestClientSeeRightNumberComponentsWithoutWait2"), FWorkerDefinition::Client(1), nullptr, [this]() {
-		AssertIsValid(TestActor->TestStaticComponent1, TEXT("TestStaticComponent1 should be valid."));
-		AssertIsValid(TestActor->TestStaticComponent2, TEXT("TestStaticComponent2 should be valid."));
-
 		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents, TEXT("The client should see the right number of components."));
-
 		FinishStep();
 	});
 
@@ -198,9 +194,6 @@ void AStaticSubobjectsTest::PrepareTest()
 
 	// Step 17
 	AddStep(TEXT("StaticSubobjectsTestClientSeeRightNumberComponentsWithoutWait3"), FWorkerDefinition::Client(1), nullptr, [this]() {
-		RequireTrue(IsValid(TestActor->TestStaticComponent1), TEXT("TestStaticComponent1 should be valid."));
-		RequireTrue(!IsValid(TestActor->TestStaticComponent2), TEXT("TestStaticComponent2 should be nullptr."));
-
 		RequireEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents - 1,
 						 TEXT("The client should see the right number of components."));
 
