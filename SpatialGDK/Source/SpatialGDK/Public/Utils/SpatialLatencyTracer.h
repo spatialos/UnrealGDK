@@ -11,20 +11,7 @@
 #include "Utils/GDKPropertyMacros.h"
 
 #if TRACE_LIB_ACTIVE
-
-// As a result of using both the old and new trace.h, there's now a shadow warning for TraceSpan. Worker
-// will fix in the interim, but as a stop gap lets just ignore the warning - UNR-5460.
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wshadow"
-#endif
-
-#include <WorkerSDK/improbable/legacy/trace.h>
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-
+#include <WorkerSDK/improbable/legacy_trace.h>
 #endif // TRACE_LIB_ACTIVE
 
 #include "SpatialLatencyTracer.generated.h"
@@ -64,23 +51,20 @@ public:
 	//
 	// EXPERIMENTAL: We do not support this functionality currently: Do not use it unless you are Improbable staff.
 	//
-	// USpatialLatencyTracer allows for tracing of gameplay events across multiple workers, from their user
-	// instigation, to their observed results. Each of these multi-worker events are tracked through `traces`
-	// which allow the user to see collected timings of these events in a single location. Key timings related
+	// `USpatialLatencyTracer` allows you to trace gameplay events across multiple workers, from their user
+	// instigation to their observed results. Each of these multi-worker events are tracked through `traces`,
+	// which allow you to see collected timings of these events in a single location. Key timings related
 	// to these events are logged throughout the Unreal GDK networking stack. This API makes the assumption
 	// that the distributed workers have had their clocks synced by some time syncing protocol (eg. NTP). To
 	// give accurate timings, the trace payload is embedded directly within the relevant networking component
-	// updates. This framework also assumes that the worker that calls BeginLatencyTrace will also eventually
-	// call EndLatencyTrace on the trace. This allows accurate end-to-end timings.
+	// updates. This framework also assumes that the worker that calls `BeginLatencyTrace` will also eventually
+	// call `EndLatencyTrace` on the trace. This allows accurate end-to-end timings.
 	//
-	// These timings are logged to Google's Stackdriver (https://cloud.google.com/stackdriver/)
+	// These timings are logged to Google Cloud's operations suite (formerly Stackdriver).
+	// https://cloud.google.com/products/operations
 	//
 	// Setup:
-	// 1. Run UnrealGDK SetupIncTraceLibs.bat to include latency tracking libraries.
-	// 2. Setup a Google project with access to Stackdriver.
-	// 3. Create and download a service-account certificate
-	// 4. Set an environment variable GOOGLE_APPLICATION_CREDENTIALS to certificate path
-	// 5. Set an environment variable GRPC_DEFAULT_SSL_ROOTS_FILE_PATH to your `roots.pem` gRPC path
+	// See https://github.com/spatialos/UnrealGDKTestGyms/blob/master/USER_MANUAL.md#latency-gym
 	//
 	// Usage:
 	// 1. Register your Google's project id with `RegisterProject`
@@ -149,27 +133,19 @@ public:
 #if TRACE_LIB_ACTIVE
 
 	bool IsValidKey(TraceKey Key);
-	TraceKey RetrievePendingTrace(const UObject* Obj, const UFunction* Function);
-	TraceKey RetrievePendingTrace(const UObject* Obj, const GDK_PROPERTY(Property) * Property);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const FString& Tag);
 
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);
 	void WriteAndEndTrace(const TraceKey Key, const FString& TraceDesc, bool bOnlyEndIfTraceRootIsRemote);
 
-	void WriteTraceToSchemaObject(const TraceKey Key, Schema_Object* Obj, const Schema_FieldId FieldId);
-	TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj, const Schema_FieldId FieldId);
-
 	void SetWorkerId(const FString& NewWorkerId) { WorkerId = NewWorkerId; }
 	void ResetWorkerId();
-
-	void OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*);
-	void OnDequeueMessage(const SpatialGDK::FOutgoingMessage*);
 
 private:
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
 	using ActorPropertyKey = TPair<const AActor*, const GDK_PROPERTY(Property)*>;
 	using ActorTagKey = TPair<const AActor*, FString>;
-	using TraceSpan = improbable::trace::Span;
+	using TraceSpan = improbable::legacy::trace::Span;
 
 	bool BeginLatencyTrace_Internal(const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
 	bool ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType::Type Type, const FString& TraceDesc,

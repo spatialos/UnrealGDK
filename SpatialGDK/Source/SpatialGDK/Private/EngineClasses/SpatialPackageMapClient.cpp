@@ -20,6 +20,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "UObject/UObjectGlobals.h"
+#include "Utils/SpatialActorUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 
@@ -94,7 +95,7 @@ Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor
 	}
 
 	// Register Actor with package map since we know what the entity id is.
-	if (!ResolveEntityActor(Actor, EntityId))
+	if (!ResolveEntityActorAndSubobjects(EntityId, Actor))
 	{
 		UE_LOG(LogSpatialPackageMap, Error, TEXT("Unable to resolve an Entity for Actor: %s"), *Actor->GetName());
 		return SpatialConstants::INVALID_ENTITY_ID;
@@ -149,7 +150,7 @@ void USpatialPackageMapClient::RemovePendingCreationEntityId(Worker_EntityId Ent
 	PendingCreationEntityIds.Remove(EntityId);
 }
 
-bool USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId)
+bool USpatialPackageMapClient::ResolveEntityActorAndSubobjects(const Worker_EntityId EntityId, AActor* Actor)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	FNetworkGUID NetGUID = SpatialGuidCache->GetNetGUIDFromEntityId(EntityId);
@@ -162,8 +163,9 @@ bool USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_EntityId
 
 	if (GetEntityIdFromObject(Actor) != EntityId)
 	{
-		UE_LOG(LogSpatialPackageMap, Error, TEXT("ResolveEntityActor failed for Actor: %s with NetGUID: %s and passed entity ID: %lld"),
-			   *Actor->GetName(), *NetGUID.ToString(), EntityId);
+		UE_LOG(LogSpatialPackageMap, Error,
+			   TEXT("ResolveEntityActorAndSubobjects failed for Actor: %s with NetGUID: %s and passed entity ID: %lld"), *Actor->GetName(),
+			   *NetGUID.ToString(), EntityId);
 		return false;
 	}
 
@@ -389,61 +391,10 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 {
 }
 
-using FSubobjectToOffsetMap = TMap<UObject*, uint32>;
-
-static FSubobjectToOffsetMap CreateOffsetMapFromActor(USpatialPackageMapClient* PackageMap, AActor* Actor, const FClassInfo& Info)
-{
-	FSubobjectToOffsetMap SubobjectNameToOffset;
-
-	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
-	{
-		UObject* Subobject = StaticFindObjectFast(UObject::StaticClass(), Actor, SubobjectInfoPair.Value->SubobjectName);
-		const uint32 Offset = SubobjectInfoPair.Key;
-
-		if (Subobject != nullptr && Subobject->IsPendingKill() == false && Subobject->IsSupportedForNetworking())
-		{
-			SubobjectNameToOffset.Add(Subobject, Offset);
-		}
-	}
-
-	if (Actor->GetInstanceComponents().Num() > 0)
-	{
-		// Process components attached to this object; this allows us to join up
-		// server- and client-side components added in the level.
-		TArray<UActorComponent*> ActorInstanceComponents;
-
-		// In non-editor builds, editor-only components can be allocated a slot in the array, but left as nullptrs.
-		Algo::CopyIf(Actor->GetInstanceComponents(), ActorInstanceComponents, [](UActorComponent* Component) -> bool {
-			return IsValid(Component);
-		});
-		// These need to be ordered in case there are more than one component of the same type, or
-		// we may end up with wrong component instances having associations between them.
-		ActorInstanceComponents.Sort([](const UActorComponent& Lhs, const UActorComponent& Rhs) -> bool {
-			return Lhs.GetName().Compare(Rhs.GetName()) < 0;
-		});
-
-		for (UActorComponent* DynamicComponent : ActorInstanceComponents)
-		{
-			if (!DynamicComponent->IsSupportedForNetworking())
-			{
-				continue;
-			}
-
-			const FClassInfo* DynamicComponentClassInfo = PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(DynamicComponent);
-
-			if (DynamicComponentClassInfo != nullptr)
-			{
-				SubobjectNameToOffset.Add(DynamicComponent, DynamicComponentClassInfo->SchemaComponents[SCHEMA_Data]);
-			}
-		}
-	}
-
-	return SubobjectNameToOffset;
-}
-
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId)
 {
-	if (!ensureAlwaysMsgf(EntityId > 0, TEXT("Tried to assign net guid for invalid entity ID. Actor: %s"), *GetNameSafe(Actor)))
+	if (!ensureAlwaysMsgf(IsValid(Actor), TEXT("Tried to assign net guid for invalid actor. EntityId: %lld"), EntityId)
+		|| !ensureAlwaysMsgf(EntityId > 0, TEXT("Tried to assign net guid for invalid entity ID. Actor: %s"), *GetNameSafe(Actor)))
 	{
 		return FNetworkGUID();
 	}
@@ -480,13 +431,14 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 	UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"), *Actor->GetName(),
 		   *NetGUID.ToString(), EntityId);
 
-	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-	const FSubobjectToOffsetMap& SubobjectToOffset = CreateOffsetMapFromActor(SpatialNetDriver->PackageMap, Actor, Info);
+	const FClassInfo& ActorInfo = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+	const SpatialGDK::FSubobjectToOffsetMap& SubobjectsToOffsets =
+		SpatialGDK::CreateOffsetMapFromActor(*SpatialNetDriver->PackageMap, *Actor, ActorInfo);
 
-	for (auto& Pair : SubobjectToOffset)
+	for (auto& SubobjectToOffset : SubobjectsToOffsets)
 	{
-		UObject* Subobject = Pair.Key;
-		uint32 Offset = Pair.Value;
+		UObject* Subobject = SubobjectToOffset.Key;
+		const ObjectOffset Offset = SubobjectToOffset.Value;
 
 		// AssignNewStablyNamedObjectNetGUID is not used due to using the wrong ObjectRef as the outer of the subobject.
 		// So it is ok to use RegisterObjectRef in both cases since no prior bookkeeping was done (unlike Actors)
@@ -594,7 +546,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 
 	if (UnrealMetadata->NativeClass.IsStale())
 	{
-		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Attempting to remove stale object from package map - %s"), *UnrealMetadata->ClassPath);
+		UE_LOG(LogSpatialPackageMap, Log, TEXT("Attempting to remove stale object from package map - %s"), *UnrealMetadata->ClassPath);
 	}
 	else
 	{
@@ -673,7 +625,7 @@ void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& Subobj
 
 	if (UnrealMetadata->NativeClass.IsStale())
 	{
-		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Attempting to remove stale subobject from package map - %s"),
+		UE_LOG(LogSpatialPackageMap, Log, TEXT("Attempting to remove stale subobject from package map - %s"),
 			   *UnrealMetadata->ClassPath);
 	}
 	else

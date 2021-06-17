@@ -20,6 +20,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
+#include "EngineClasses/SpatialNetDriverGameplayDebuggerContext.h"
 #include "EngineClasses/SpatialNetDriverRPC.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
@@ -104,6 +105,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	: Super(ObjectInitializer)
 	, LoadBalanceStrategy(nullptr)
 	, DebugCtx(nullptr)
+	, GameplayDebuggerCtx(nullptr)
 	, LoadBalanceEnforcer(nullptr)
 	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
@@ -428,7 +430,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	USpatialGameInstance* GameInstance = GetGameInstance();
 	check(GameInstance != nullptr);
 
-	SpatialMetrics = NewObject<USpatialMetrics>();
+	SpatialMetrics = NewObject<USpatialMetrics>(this);
 	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
 
 	SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
@@ -2085,6 +2087,13 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		DebugCtx->TickServer();
 	}
 
+#if WITH_GAMEPLAY_DEBUGGER
+	if (GameplayDebuggerCtx != nullptr)
+	{
+		GameplayDebuggerCtx->TickServer();
+	}
+#endif
+
 	if (UReplicationDriver* RepDriver = GetReplicationDriver())
 	{
 		return RepDriver->ServerReplicateActors(DeltaSeconds);
@@ -2275,6 +2284,13 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			{
 				DebugCtx->AdvanceView();
 			}
+
+#if WITH_GAMEPLAY_DEBUGGER
+			if (GameplayDebuggerCtx != nullptr)
+			{
+				GameplayDebuggerCtx->AdvanceView();
+			}
+#endif
 
 			if (ClientConnectionManager.IsValid())
 			{
@@ -3245,6 +3261,24 @@ void USpatialNetDriver::TryFinishStartup()
 					USpatialNetDriverDebugContext::EnableDebugSpatialGDK(DebugActorSubView, this);
 				}
 #endif
+
+#if WITH_GAMEPLAY_DEBUGGER
+				const FFilterPredicate GameplayDebuggerCompFilter = [this](const Worker_EntityId EntityId,
+																		   const SpatialGDK::EntityViewElement& Element) {
+					return Element.Components.ContainsByPredicate(
+						SpatialGDK::ComponentIdEquality{ SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID });
+				};
+
+				const TArray<FDispatcherRefreshCallback> GameplayDebuggerCompRefresh = {
+					Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+						SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID)
+				};
+
+				const SpatialGDK::FSubView& GameplayDebuggerActorSubView =
+					SpatialGDK::ActorSubviews::CreateCustomActorSubView({}, GameplayDebuggerCompFilter, GameplayDebuggerCompRefresh, *this);
+				USpatialNetDriverGameplayDebuggerContext::Enable(GameplayDebuggerActorSubView, *this);
+#endif // WITH_GAMEPLAY_DEBUGGER
+
 				// We've found and dispatched all ops we need for startup,
 				// trigger BeginPlay() on the GSM and process the queued ops.
 				// Note that FindAndDispatchStartupOps() will have notified the Dispatcher

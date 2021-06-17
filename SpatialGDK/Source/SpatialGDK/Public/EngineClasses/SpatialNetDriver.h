@@ -43,6 +43,7 @@ class USpatialGameInstance;
 class USpatialMetrics;
 class USpatialNetConnection;
 class USpatialNetDriverDebugContext;
+class USpatialNetDriverGameplayDebuggerContext;
 class USpatialPackageMapClient;
 class USpatialPlayerSpawner;
 class USpatialReceiver;
@@ -218,6 +219,8 @@ public:
 	USpatialWorkerFlags* SpatialWorkerFlags;
 	UPROPERTY()
 	USpatialNetDriverDebugContext* DebugCtx;
+	UPROPERTY()
+	USpatialNetDriverGameplayDebuggerContext* GameplayDebuggerCtx;
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
 
