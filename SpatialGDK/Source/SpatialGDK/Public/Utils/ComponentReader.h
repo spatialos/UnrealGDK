@@ -26,17 +26,18 @@ public:
 							  USpatialActorChannel& Channel, bool& bOutReferencesChanged);
 
 private:
-	enum EProcessFieldType
+	enum class EProcessFieldType
 	{
-		ProcessFieldType_OnlySpecialCase,
-		ProcessFieldType_AllButSpecialCase,
-		ProcessFieldType_All
+		OnlySpecialCase,
+		AllButSpecialCase,
+		All
 	};
 
 	struct ApplySchemaObjectDataStruct
 	{
-		ApplySchemaObjectDataStruct(Schema_Object* inComponentObject, UObject& inObject, USpatialActorChannel& inChannel, bool inIsInitialData,
-									const TArray<Schema_FieldId>& inUpdatedIds, Worker_ComponentId inComponentId, bool& inOutReferencesChanged);
+		ApplySchemaObjectDataStruct(Schema_Object* inComponentObject, UObject& inObject, USpatialActorChannel& inChannel,
+									bool inIsInitialData, const TArray<Schema_FieldId>& inUpdatedIds, Worker_ComponentId inComponentId,
+									bool& inOutReferencesChanged);
 
 		FObjectReplicator* Replicator;
 		Schema_Object* ComponentObject;

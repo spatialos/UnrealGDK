@@ -230,6 +230,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	TimeWhenPositionLastUpdated = 0.0;
 	AuthorityReceivedTimestamp = 0;
 	bNeedOwnerInterestUpdate = false;
+	bIsAutonomousProxyOnAuthority = false;
 
 	PendingDynamicSubobjects.Empty();
 	SavedInterestBucketComponentID = SpatialConstants::INVALID_COMPONENT_ID;
