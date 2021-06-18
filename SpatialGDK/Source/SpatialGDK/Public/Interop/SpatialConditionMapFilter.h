@@ -11,18 +11,18 @@
 class FSpatialConditionMapFilter
 {
 public:
-	FSpatialConditionMapFilter(USpatialActorChannel* ActorChannel, bool bIsClient)
+	FSpatialConditionMapFilter(USpatialActorChannel* ActorChannel, bool bIsClient, ENetRole Role, bool bRepPhysics)
 	{
 		// Reconstruct replication flags on the client side.
 		FReplicationFlags RepFlags;
 		RepFlags.bReplay = 0;
 		RepFlags.bNetInitial = 1; // Interest/queries controls initial only data visibility, so if the update is there let it through
-		RepFlags.bNetSimulated = ActorChannel->Actor->Role == ROLE_SimulatedProxy;
+		RepFlags.bNetSimulated = Role == ROLE_SimulatedProxy;
 		RepFlags.bNetOwner = bIsClient;
 #if ENGINE_MINOR_VERSION <= 23
 		RepFlags.bRepPhysics = ActorChannel->Actor->ReplicatedMovement.bRepPhysics;
 #else
-		RepFlags.bRepPhysics = ActorChannel->Actor->GetReplicatedMovement().bRepPhysics;
+		RepFlags.bRepPhysics = bRepPhysics;
 #endif
 
 #if 0

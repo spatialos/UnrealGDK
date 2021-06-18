@@ -118,7 +118,7 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 	// that component type (Data, OwnerOnly, Handover, etc.).
 	const TArray<Schema_FieldId>& InitialIds = ClassInfoManager->GetFieldIdsByComponentId(ComponentId);
 
-	ApplySchemaObject({ ComponentObject, Object, Channel, true, InitialIds, ComponentId, bOutReferencesChanged });
+	ApplySchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentId, bOutReferencesChanged);
 }
 
 void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& Object,
@@ -146,283 +146,252 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId,
 
 	if (UpdatedIds.Num() > 0)
 	{
-		ApplySchemaObject({ ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged });
+		ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged);
 	}
 }
 
-void ComponentReader::ApplySchemaObject(ApplySchemaObjectDataStruct ApplySchemaObjectData)
+void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
+										const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId,
+										bool& bOutReferencesChanged)
 {
-	ApplySchemaObjectData.Replicator = ApplySchemaObjectData.Channel.PreReceiveSpatialUpdate(&ApplySchemaObjectData.Object);
-	if (ApplySchemaObjectData.Replicator == nullptr)
+	FObjectReplicator* Replicator = Channel.PreReceiveSpatialUpdate(&Object);
+	if (Replicator == nullptr)
 	{
 		// Can't apply this schema object. Error printed from PreReceiveSpatialUpdate.
 		return;
 	}
-
-	const bool bEventTracerEnabled = EventTracer != nullptr;
-	{
-		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
-		SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
-
-		Worker_EntityId EntityId = ApplySchemaObjectData.Channel.GetEntityId();
-		if (bEventTracerEnabled)
-		{
-			ApplySchemaObjectData.CauseSpanIds =
-				EventTracer->GetAndConsumeSpansForComponent(EntityComponentId(EntityId, ApplySchemaObjectData.ComponentId));
-		}
-
-		// Actors have special cases that we need to process before all other fields
-		if (EnumHasAnyFlags(ApplySchemaObjectData.Replicator->RepLayout->GetFlags(), ERepLayoutFlags::IsActor))
-		{
-			ApplySchemaObjectData.ProcessFieldType = EProcessFieldType::OnlySpecialCase;
-			ApplySchemaObjectFields(ApplySchemaObjectData);
-
-			ApplySchemaObjectData.ProcessFieldType = EProcessFieldType::AllButSpecialCase;
-			ApplySchemaObjectFields(ApplySchemaObjectData);
-		}
-		else
-		{
-			ApplySchemaObjectData.ProcessFieldType = EProcessFieldType::All;
-			ApplySchemaObjectFields(ApplySchemaObjectData);
-		}
-	}
-
-	ApplySchemaObjectData.Channel.RemoveRepNotifiesWithUnresolvedObjs(ApplySchemaObjectData.RepNotifies,
-																	  *ApplySchemaObjectData.Replicator->RepLayout, RootObjectReferencesMap,
-																	  &ApplySchemaObjectData.Object);
-
-	ApplySchemaObjectData.Channel.PostReceiveSpatialUpdate(&ApplySchemaObjectData.Object, ApplySchemaObjectData.RepNotifies,
-														   ApplySchemaObjectData.PropertySpanIds);
-}
-
-void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& ApplySchemaObjectData)
-{
-	FObjectReplicator* Replicator = ApplySchemaObjectData.Replicator;
-	UObject& Object = ApplySchemaObjectData.Object;
-	USpatialActorChannel& Channel = ApplySchemaObjectData.Channel;
-	Worker_ComponentId ComponentId = ApplySchemaObjectData.ComponentId;
 
 	TUniquePtr<FRepState>& RepState = Replicator->RepState;
 	TArray<FRepLayoutCmd>& Cmds = Replicator->RepLayout->Cmds;
 	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex = Replicator->RepLayout->BaseHandleToCmdIndex;
 	TArray<FRepParentCmd>& Parents = Replicator->RepLayout->Parents;
 
-	const Worker_EntityId EntityId = Channel.GetEntityId();
-	const bool bEventTracerEnabled = EventTracer != nullptr;
+	bool bIsAuthServer = Channel.IsAuthoritativeServer();
+	bool bAutonomousProxy = Channel.IsClientAutonomousProxy();
+	bool bIsClient = NetDriver->GetNetMode() == NM_Client;
+	bool bEventTracerEnabled = EventTracer != nullptr;
 
-	const bool bIsAuthServer = Channel.IsAuthoritativeServer();
-	const bool bAutonomousProxy = Channel.IsClientAutonomousProxy();
-	const bool bIsClient = NetDriver->GetNetMode() == NM_Client;
-	const FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient);
-
-	for (uint32 FieldId : ApplySchemaObjectData.UpdatedIds)
+	// RemoteRole and bRepPhysics are used to construct the condition map. We must check to see if these
+	// properties have just been received, before we construct the condition map for receiving everything else.
+	ENetRole ActorRole = Channel.Actor->Role;
+	bool bRepPhysics = Channel.Actor->GetReplicatedMovement().bRepPhysics;
+	if (EnumHasAnyFlags(Replicator->RepLayout->GetFlags(), ERepLayoutFlags::IsActor))
 	{
-		// FieldId is the same as rep handle
-		if (FieldId == 0 || (int)FieldId - 1 >= BaseHandleToCmdIndex.Num())
+		for (uint32 FieldId : UpdatedIds)
 		{
-			UE_LOG(LogSpatialComponentReader, Error,
-				   TEXT("ApplySchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: "
-						"%lld, Component: %d"),
-				   *Object.GetPathName(), FieldId, Channel.GetEntityId(), ComponentId);
-			continue;
+			int32 CmdIndex = BaseHandleToCmdIndex[FieldId - 1].CmdIndex;
+			const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
+
+			if (UNLIKELY((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex))
+			{
+				ActorRole = (ENetRole)Schema_IndexUint32(ComponentObject, FieldId, 0);
+				if (ActorRole == ROLE_AutonomousProxy && !bIsAuthServer && !bAutonomousProxy)
+				{
+					ActorRole = ROLE_SimulatedProxy;
+				}
+			}
+			else if (UNLIKELY((int32)AActor::ENetFields_Private::ReplicatedMovement == Cmd.ParentIndex))
+			{
+				TArray<uint8> ValueData = IndexBytesFromSchema(ComponentObject, FieldId, 0);
+				bRepPhysics = ValueData[0] & (1 << 1) ? true : false;
+			}
+		}
+	}
+	FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient, ActorRole, bRepPhysics);
+
+	TArray<GDK_PROPERTY(Property)*> RepNotifies;
+	TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
+
+	{
+		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
+		SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
+
+		Worker_EntityId EntityId = Channel.GetEntityId();
+		TArray<FSpatialGDKSpanId> CauseSpanIds;
+		if (bEventTracerEnabled)
+		{
+			CauseSpanIds = EventTracer->GetAndConsumeSpansForComponent(EntityComponentId(EntityId, ComponentId));
 		}
 
-		int32 CmdIndex = BaseHandleToCmdIndex[FieldId - 1].CmdIndex;
-		const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
-		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
-		const int32 ShadowOffset = Cmd.ShadowOffset;
-
-		// Special Case properties are properties that are used in building the FSpatialConditionMapFilter,
-		// and the client must read them before rebuilding the condition map for all other properties.
-		const bool bProcessingSpecialCases = ApplySchemaObjectData.ProcessFieldType == EProcessFieldType::OnlySpecialCase;
-		if (ApplySchemaObjectData.ProcessFieldType != EProcessFieldType::All)
+		for (uint32 FieldId : UpdatedIds)
 		{
-			auto ShouldConsiderProperty = [&Cmd, &bProcessingSpecialCases]() -> bool {
-				if (bProcessingSpecialCases)
-				{
-					return (int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex
-						   || (int32)AActor::ENetFields_Private::Role == Cmd.ParentIndex
-						   || (int32)AActor::ENetFields_Private::ReplicatedMovement == Cmd.ParentIndex;
-				}
-				// We still need to process the full ReplicatedMovement struct, because only its bRepPhysics member is a special case.
-				// So if we're processing AllButSpecialCase, we only have to skip Role and Remote Role
-				return !((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex
-						 || (int32)AActor::ENetFields_Private::Role == Cmd.ParentIndex);
-			};
-
-			const bool bShouldConsiderProperty = ShouldConsiderProperty();
-			if (UNLIKELY(!bShouldConsiderProperty))
+			// FieldId is the same as rep handle
+			if (FieldId == 0 || (int)FieldId - 1 >= BaseHandleToCmdIndex.Num())
 			{
+				UE_LOG(LogSpatialComponentReader, Error,
+					   TEXT("ApplySchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: "
+							"%lld, Component: %d"),
+					   *Object.GetPathName(), FieldId, Channel.GetEntityId(), ComponentId);
 				continue;
 			}
-		}
 
-		if (NetDriver->IsServer() || bProcessingSpecialCases || ConditionMap.IsRelevant(Parent.Condition))
-		{
-			// This is mostly copied from ReceivePropertyHelper in RepLayout.cpp
-			auto GetSwappedCmd = [&Cmd, &Cmds, &Parents, bIsAuthServer, &Replicator, &Channel, &Parent]() -> const FRepLayoutCmd& {
+			int32 CmdIndex = BaseHandleToCmdIndex[FieldId - 1].CmdIndex;
+			const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
+			const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
+			int32 ShadowOffset = Cmd.ShadowOffset;
+
+			if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
+			{
+				// This is mostly copied from ReceivePropertyHelper in RepLayout.cpp
+				auto GetSwappedCmd = [&Cmd, &Cmds, &Parents, bIsAuthServer, &Replicator, &Channel, &Parent]() -> const FRepLayoutCmd& {
 #if ENGINE_MINOR_VERSION >= 25
-				// Only swap Role/RemoteRole for actors
-				if (EnumHasAnyFlags(Replicator->RepLayout->GetFlags(), ERepLayoutFlags::IsActor) && !Channel.GetSkipRoleSwap())
-				{
-					// Swap Role to RemoteRole, and vice-versa. Leave everything else the same.
-					if (UNLIKELY((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex))
+					// Only swap Role/RemoteRole for actors
+					if (EnumHasAnyFlags(Replicator->RepLayout->GetFlags(), ERepLayoutFlags::IsActor) && !Channel.GetSkipRoleSwap())
 					{
-						return Cmds[Parents[(int32)AActor::ENetFields_Private::Role].CmdStart];
+						// Swap Role to RemoteRole, and vice-versa. Leave everything else the same.
+						if (UNLIKELY((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex))
+						{
+							return Cmds[Parents[(int32)AActor::ENetFields_Private::Role].CmdStart];
+						}
+						else if (UNLIKELY((int32)AActor::ENetFields_Private::Role == Cmd.ParentIndex))
+						{
+							return Cmds[Parents[(int32)AActor::ENetFields_Private::RemoteRole].CmdStart];
+						}
 					}
-					else if (UNLIKELY((int32)AActor::ENetFields_Private::Role == Cmd.ParentIndex))
-					{
-						return Cmds[Parents[(int32)AActor::ENetFields_Private::RemoteRole].CmdStart];
-					}
-				}
 
-				return Cmd;
+					return Cmd;
 #else
-				return (!bIsAuthServer && Parent.RoleSwapIndex != -1) ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
+					return (!bIsAuthServer && Parent.RoleSwapIndex != -1) ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
 #endif
-			};
-			// This swaps Role/RemoteRole as we write it
-			const FRepLayoutCmd& SwappedCmd = GetSwappedCmd();
+				};
+				// This swaps Role/RemoteRole as we write it
+				const FRepLayoutCmd& SwappedCmd = GetSwappedCmd();
 
-			uint8* Data = (uint8*)&Object + SwappedCmd.Offset;
+				uint8* Data = (uint8*)&Object + SwappedCmd.Offset;
 
-			// If the property has RepNotifies, update with local data and possibly initialize the shadow data
-			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
-			{
-				FRepStateStaticBuffer& ShadowData = RepState->GetReceivingRepState()->StaticBuffer;
-				if (ShadowData.Num() == 0)
+				// If the property has RepNotifies, update with local data and possibly initialize the shadow data
+				if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
 				{
-					Channel.ResetShadowData(*Replicator->RepLayout.Get(), ShadowData, &Object);
-				}
-				else
-				{
-					Cmd.Property->CopySingleValue(ShadowData.GetData() + SwappedCmd.ShadowOffset, Data);
-				}
-			}
-
-			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
-			{
-				GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Cmd.Property);
-				if (ArrayProperty == nullptr)
-				{
-					UE_LOG(LogSpatialComponentReader, Error, TEXT("Failed to apply Schema Object %s. One of it's properties is null"),
-						   *Object.GetName());
-					continue;
-				}
-
-				// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
-				if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
-				{
-					SCOPE_CYCLE_COUNTER(STAT_ReaderApplyFastArrayUpdate);
-
-					TArray<uint8> ValueData = GetBytesFromSchema(ApplySchemaObjectData.ComponentObject, FieldId);
-					int64 CountBits = ValueData.Num() * 8;
-					TSet<FUnrealObjectRef> NewMappedRefs;
-					TSet<FUnrealObjectRef> NewUnresolvedRefs;
-					FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewMappedRefs, NewUnresolvedRefs);
-
-					if (ValueData.Num() > 0)
+					FRepStateStaticBuffer& ShadowData = RepState->GetReceivingRepState()->StaticBuffer;
+					if (ShadowData.Num() == 0)
 					{
-						FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, &Object, Parent.ArrayIndex,
-																		  Parent.Property, NetDeltaStruct);
+						Channel.ResetShadowData(*Replicator->RepLayout.Get(), ShadowData, &Object);
 					}
-
-					FObjectReferences* CurEntry = RootObjectReferencesMap.Find(SwappedCmd.Offset);
-					const bool bHasReferences = NewUnresolvedRefs.Num() > 0 || NewMappedRefs.Num() > 0;
-
-					if (ReferencesChanged(RootObjectReferencesMap, SwappedCmd.Offset, bHasReferences, NewMappedRefs, NewUnresolvedRefs))
+					else
 					{
-						if (bHasReferences)
-						{
-							RootObjectReferencesMap.Add(
-								SwappedCmd.Offset,
-								FObjectReferences(ValueData, CountBits, MoveTemp(NewMappedRefs), MoveTemp(NewUnresolvedRefs), ShadowOffset,
-												  Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
-						}
-						else
-						{
-							RootObjectReferencesMap.Remove(SwappedCmd.Offset);
-						}
-						ApplySchemaObjectData.bOutReferencesChanged = true;
+						Cmd.Property->CopySingleValue(ShadowData.GetData() + SwappedCmd.ShadowOffset, Data);
 					}
 				}
+
+				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
+				{
+					GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Cmd.Property);
+					if (ArrayProperty == nullptr)
+					{
+						UE_LOG(LogSpatialComponentReader, Error, TEXT("Failed to apply Schema Object %s. One of it's properties is null"),
+							   *Object.GetName());
+						continue;
+					}
+
+					// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
+					if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
+					{
+						SCOPE_CYCLE_COUNTER(STAT_ReaderApplyFastArrayUpdate);
+
+						TArray<uint8> ValueData = GetBytesFromSchema(ComponentObject, FieldId);
+						int64 CountBits = ValueData.Num() * 8;
+						TSet<FUnrealObjectRef> NewMappedRefs;
+						TSet<FUnrealObjectRef> NewUnresolvedRefs;
+						FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewMappedRefs, NewUnresolvedRefs);
+
+						if (ValueData.Num() > 0)
+						{
+							FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, &Object, Parent.ArrayIndex,
+																			  Parent.Property, NetDeltaStruct);
+						}
+
+						FObjectReferences* CurEntry = RootObjectReferencesMap.Find(SwappedCmd.Offset);
+						const bool bHasReferences = NewUnresolvedRefs.Num() > 0 || NewMappedRefs.Num() > 0;
+
+						if (ReferencesChanged(RootObjectReferencesMap, SwappedCmd.Offset, bHasReferences, NewMappedRefs, NewUnresolvedRefs))
+						{
+							if (bHasReferences)
+							{
+								RootObjectReferencesMap.Add(
+									SwappedCmd.Offset,
+									FObjectReferences(ValueData, CountBits, MoveTemp(NewMappedRefs), MoveTemp(NewUnresolvedRefs),
+													  ShadowOffset, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
+							}
+							else
+							{
+								RootObjectReferencesMap.Remove(SwappedCmd.Offset);
+							}
+							bOutReferencesChanged = true;
+						}
+					}
+					else
+					{
+						ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, SwappedCmd.Offset, ShadowOffset,
+								   Cmd.ParentIndex, bOutReferencesChanged);
+					}
+				}
 				else
 				{
-					ApplyArray(ApplySchemaObjectData.ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data,
-							   SwappedCmd.Offset, ShadowOffset, Cmd.ParentIndex, ApplySchemaObjectData.bOutReferencesChanged);
+					ApplyProperty(ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data, SwappedCmd.Offset, ShadowOffset,
+								  Cmd.ParentIndex, bOutReferencesChanged);
 				}
-			}
-			else
-			{
-				// The ReplicatedMovement struct is a special case because it contains bRepPhysics, we read just that bit.
-				if (bProcessingSpecialCases && (int32)AActor::ENetFields_Private::ReplicatedMovement == Cmd.ParentIndex)
+
+				if (Cmd.Property->GetFName() == NAME_RemoteRole)
 				{
-					TArray<uint8> ValueData = IndexBytesFromSchema(ApplySchemaObjectData.ComponentObject, FieldId, 0);
-					Channel.Actor->GetReplicatedMovement_Mutable().bRepPhysics = ValueData[0] & (1 << 1) ? true : false;
+					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
+					// the client RPCs component.
+					GDK_PROPERTY(ByteProperty)* ByteProperty = GDK_CASTFIELD<GDK_PROPERTY(ByteProperty)>(Cmd.Property);
+					Channel.SetAutonomousProxyOnAuthority(ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy);
+					if (!bIsAuthServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
+					{
+						ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
+					}
 				}
-				else
-				{
-					ApplyProperty(ApplySchemaObjectData.ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data,
-								  SwappedCmd.Offset, ShadowOffset, Cmd.ParentIndex, ApplySchemaObjectData.bOutReferencesChanged);
-				}
-			}
 
-			if (Cmd.Property->GetFName() == NAME_RemoteRole)
-			{
-				// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
-				// the client RPCs component.
-				GDK_PROPERTY(ByteProperty)* ByteProperty = GDK_CASTFIELD<GDK_PROPERTY(ByteProperty)>(Cmd.Property);
-				Channel.SetAutonomousProxyOnAuthority(ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy);
-				if (!bIsAuthServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
-				{
-					ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
-				}
-			}
-
-			FSpatialGDKSpanId SpanId;
-			if (bEventTracerEnabled)
-			{
-				const Trace_SpanIdType* Causes = reinterpret_cast<const Trace_SpanIdType*>(ApplySchemaObjectData.CauseSpanIds.GetData());
-				SpanId = EventTracer->TraceEvent(
-					RECEIVE_PROPERTY_UPDATE_EVENT_NAME, "", Causes, ApplySchemaObjectData.CauseSpanIds.Num(),
-					[&Object, EntityId, ComponentId, Cmd](FSpatialTraceEventDataBuilder& EventBuilder) {
-						EventBuilder.AddObject(&Object);
-						EventBuilder.AddEntityId(EntityId);
-						EventBuilder.AddComponentId(ComponentId);
-						EventBuilder.AddKeyValue("PropertyName", Cmd.Property->GetName());
-						EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForProperty(EntityId, Cmd.Property));
-					});
-			}
-
-			// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
-			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
-			{
-				bool bIsIdentical =
-					Cmd.Property->Identical(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
-
+				FSpatialGDKSpanId SpanId;
 				if (bEventTracerEnabled)
 				{
-					ApplySchemaObjectData.PropertySpanIds.Add(Parent.Property, SpanId);
+					const Trace_SpanIdType* Causes = reinterpret_cast<const Trace_SpanIdType*>(CauseSpanIds.GetData());
+					SpanId = EventTracer->TraceEvent(
+						RECEIVE_PROPERTY_UPDATE_EVENT_NAME, "", Causes, CauseSpanIds.Num(),
+						[&Object, EntityId, ComponentId, Cmd](FSpatialTraceEventDataBuilder& EventBuilder) {
+							EventBuilder.AddObject(&Object);
+							EventBuilder.AddEntityId(EntityId);
+							EventBuilder.AddComponentId(ComponentId);
+							EventBuilder.AddKeyValue("PropertyName", Cmd.Property->GetName());
+							EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForProperty(EntityId, Cmd.Property));
+						});
 				}
 
-				// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
-				if (ApplySchemaObjectData.bIsInitialData)
+				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
+				if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
 				{
-					if (!bIsIdentical)
+					bool bIsIdentical =
+						Cmd.Property->Identical(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
+
+					if (bEventTracerEnabled)
 					{
-						ApplySchemaObjectData.RepNotifies.AddUnique(Parent.Property);
+						PropertySpanIds.Add(Parent.Property, SpanId);
 					}
-				}
-				else
-				{
-					if (Parent.RepNotifyCondition == REPNOTIFY_Always || !bIsIdentical)
+
+					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
+					if (bIsInitialData)
 					{
-						ApplySchemaObjectData.RepNotifies.AddUnique(Parent.Property);
+						if (!bIsIdentical)
+						{
+							RepNotifies.AddUnique(Parent.Property);
+						}
+					}
+					else
+					{
+						if (Parent.RepNotifyCondition == REPNOTIFY_Always || !bIsIdentical)
+						{
+							RepNotifies.AddUnique(Parent.Property);
+						}
 					}
 				}
 			}
 		}
 	}
+
+	Channel.RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator->RepLayout, RootObjectReferencesMap, &Object);
+
+	Channel.PostReceiveSpatialUpdate(&Object, RepNotifies, PropertySpanIds);
 }
 
 void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap,
@@ -717,22 +686,6 @@ uint32 ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_Fie
 		checkf(false, TEXT("Tried to get count of unknown property in field %d"), FieldId);
 		return 0;
 	}
-}
-
-ComponentReader::ApplySchemaObjectDataStruct::ApplySchemaObjectDataStruct(Schema_Object* InComponentObject, UObject& InObject,
-																		  USpatialActorChannel& InChannel, bool InIsInitialData,
-																		  const TArray<Schema_FieldId>& InUpdatedIds,
-																		  Worker_ComponentId InComponentId, bool& InOutReferencesChanged)
-	: Replicator(nullptr)
-	, ComponentObject(InComponentObject)
-	, Object(InObject)
-	, Channel(InChannel)
-	, bIsInitialData(InIsInitialData)
-	, UpdatedIds(InUpdatedIds)
-	, ComponentId(InComponentId)
-	, ProcessFieldType(EProcessFieldType::All)
-	, bOutReferencesChanged(InOutReferencesChanged)
-{
 }
 
 } // namespace SpatialGDK

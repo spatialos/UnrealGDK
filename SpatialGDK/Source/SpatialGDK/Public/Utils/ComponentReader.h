@@ -26,44 +26,12 @@ public:
 							  USpatialActorChannel& Channel, bool& bOutReferencesChanged);
 
 private:
-	enum class EProcessFieldType
-	{
-		OnlySpecialCase,
-		AllButSpecialCase,
-		All
-	};
-
-	struct ApplySchemaObjectDataStruct
-	{
-		ApplySchemaObjectDataStruct(Schema_Object* InComponentObject, UObject& InObject, USpatialActorChannel& InChannel,
-									bool InIsInitialData, const TArray<Schema_FieldId>& InUpdatedIds, Worker_ComponentId InComponentId,
-									bool& InOutReferencesChanged);
-
-		FObjectReplicator* Replicator;
-		Schema_Object* ComponentObject;
-		UObject& Object;
-		USpatialActorChannel& Channel;
-		const bool bIsInitialData;
-
-		const TArray<Schema_FieldId>& UpdatedIds;
-		const Worker_ComponentId ComponentId;
-
-		TArray<FSpatialGDKSpanId> CauseSpanIds;
-		TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
-		TArray<GDK_PROPERTY(Property)*> RepNotifies;
-
-		EProcessFieldType ProcessFieldType;
-		bool& bOutReferencesChanged;
-	};
-
-	void ApplySchemaObject(ApplySchemaObjectDataStruct ApplySchemaObjectData);
-
-	void ApplySchemaObjectFields(ApplySchemaObjectDataStruct& ApplySchemaObjectData);
+	void ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
+						   const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId, bool& bOutReferencesChanged);
 
 	void ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index,
 					   GDK_PROPERTY(Property) * Property, uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex,
 					   bool& bOutReferencesChanged);
-
 	void ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap,
 					GDK_PROPERTY(ArrayProperty) * Property, uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex,
 					bool& bOutReferencesChanged);
