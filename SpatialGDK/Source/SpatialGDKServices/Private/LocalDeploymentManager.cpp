@@ -269,11 +269,11 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	// Give the snapshot path a timestamp to ensure we don't overwrite snapshots from older deployments.
 	// The snapshot service saves snapshots with the name `snapshot-n.snapshot` for a given deployment,
 	// where 'n' is the number of snapshots taken since starting the deployment.
-	LastSnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, *RuntimeStartTime.ToString());
+	CurrentSnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, *RuntimeStartTime.ToString());
 
 	// Create the folder for storing the snapshots.
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	PlatformFile.CreateDirectoryTree(*LastSnapshotPath);
+	PlatformFile.CreateDirectoryTree(*CurrentSnapshotPath);
 
 	// Use the runtime start timestamp as the log directory, e.g. `<Project>/spatial/localdeployment/<timestamp>/`
 	FString LocalDeploymentLogsDir = FPaths::Combine(SpatialGDKServicesConstants::LocalDeploymentLogsDir, RuntimeStartTime.ToString());
@@ -294,7 +294,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 		TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
 			 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
 		*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-		*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *LastSnapshotPath, *SchemaBundle, *EventTracingPath, *LaunchArgs);
+		*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *CurrentSnapshotPath, *SchemaBundle, *EventTracingPath, *LaunchArgs);
 
 	if (!RuntimeIPToExpose.IsEmpty())
 	{
@@ -500,17 +500,17 @@ void FLocalDeploymentManager::FinishLocalDeploymentShutDown()
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	const auto IsDirectoryEmpty = [&PlatformFile](const TCHAR* Directory) -> bool {
-		bool directoryIsEmpty = true;
-		PlatformFile.IterateDirectory(Directory, [&directoryIsEmpty](const TCHAR* FilenameOrDirectory, bool bIsDirectory) -> bool {
-			directoryIsEmpty = false;
+		bool bDirectoryIsEmpty = true;
+		PlatformFile.IterateDirectory(Directory, [&bDirectoryIsEmpty](const TCHAR* FilenameOrDirectory, bool bIsDirectory) -> bool {
+			bDirectoryIsEmpty = false;
 			return false;
 		});
-		return directoryIsEmpty;
+		return bDirectoryIsEmpty;
 	};
 
-	if (IsDirectoryEmpty(*LastSnapshotPath))
+	if (IsDirectoryEmpty(*CurrentSnapshotPath))
 	{
-		PlatformFile.DeleteDirectory(*LastSnapshotPath);
+		PlatformFile.DeleteDirectory(*CurrentSnapshotPath);
 	}
 
 	bLocalDeploymentRunning = false;

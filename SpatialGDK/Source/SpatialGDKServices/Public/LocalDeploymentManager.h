@@ -111,7 +111,7 @@ private:
 
 	FString ExposedRuntimeIP;
 
-	FString LastSnapshotPath;
+	FString CurrentSnapshotPath;
 
 	bool bRedeployRequired = false;
 	bool bAutoDeploy = false;
