@@ -240,18 +240,18 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 			auto ShouldConsiderProperty = [&Cmd, &bProcessingSpecialCases]() -> bool {
 				if (bProcessingSpecialCases)
 				{
-					return UNLIKELY((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex)
-						   || UNLIKELY((int32)AActor::ENetFields_Private::Role == Cmd.ParentIndex)
-						   || UNLIKELY((int32)AActor::ENetFields_Private::ReplicatedMovement == Cmd.ParentIndex);
+					return (int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex
+						   || (int32)AActor::ENetFields_Private::Role == Cmd.ParentIndex
+						   || (int32)AActor::ENetFields_Private::ReplicatedMovement == Cmd.ParentIndex;
 				}
 				// We still need to process the full ReplicatedMovement struct, because only its bRepPhysics member is a special case.
 				// So if we're processing AllButSpecialCase, we only have to skip Role and Remote Role
-				return !(UNLIKELY((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex)
-						 || UNLIKELY((int32)AActor::ENetFields_Private::Role == Cmd.ParentIndex));
+				return !((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex
+						 || (int32)AActor::ENetFields_Private::Role == Cmd.ParentIndex);
 			};
 
 			const bool bShouldConsiderProperty = ShouldConsiderProperty();
-			if (!bShouldConsiderProperty)
+			if (UNLIKELY(!bShouldConsiderProperty))
 			{
 				continue;
 			}
@@ -373,12 +373,9 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 				// the client RPCs component.
 				GDK_PROPERTY(ByteProperty)* ByteProperty = GDK_CASTFIELD<GDK_PROPERTY(ByteProperty)>(Cmd.Property);
 				Channel.SetAutonomousProxyOnAuthority(ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy);
-				if (ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
+				if (!bIsAuthServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
 				{
-					if (!bIsAuthServer && !bAutonomousProxy)
-					{
-						ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
-					}
+					ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
 				}
 			}
 
@@ -722,19 +719,19 @@ uint32 ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_Fie
 	}
 }
 
-ComponentReader::ApplySchemaObjectDataStruct::ApplySchemaObjectDataStruct(Schema_Object* inComponentObject, UObject& inObject,
-																		  USpatialActorChannel& inChannel, bool inIsInitialData,
-																		  const TArray<Schema_FieldId>& inUpdatedIds,
-																		  Worker_ComponentId inComponentId, bool& inOutReferencesChanged)
+ComponentReader::ApplySchemaObjectDataStruct::ApplySchemaObjectDataStruct(Schema_Object* InComponentObject, UObject& InObject,
+																		  USpatialActorChannel& InChannel, bool InIsInitialData,
+																		  const TArray<Schema_FieldId>& InUpdatedIds,
+																		  Worker_ComponentId InComponentId, bool& InOutReferencesChanged)
 	: Replicator(nullptr)
-	, ComponentObject(inComponentObject)
-	, Object(inObject)
-	, Channel(inChannel)
-	, bIsInitialData(inIsInitialData)
-	, UpdatedIds(inUpdatedIds)
-	, ComponentId(inComponentId)
+	, ComponentObject(InComponentObject)
+	, Object(InObject)
+	, Channel(InChannel)
+	, bIsInitialData(InIsInitialData)
+	, UpdatedIds(InUpdatedIds)
+	, ComponentId(InComponentId)
 	, ProcessFieldType(EProcessFieldType::All)
-	, bOutReferencesChanged(inOutReferencesChanged)
+	, bOutReferencesChanged(InOutReferencesChanged)
 {
 }
 

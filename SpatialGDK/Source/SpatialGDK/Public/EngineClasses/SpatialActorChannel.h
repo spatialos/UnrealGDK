@@ -215,9 +215,9 @@ public:
 
 	inline bool IsAuthoritativeServer() const { return bIsAuthServer; }
 
-	FORCEINLINE bool IsAutonomousProxyOnAuthority() const { return bIsAutonomousProxyOnAuthority; }
+	bool IsAutonomousProxyOnAuthority() const { return bIsAutonomousProxyOnAuthority; }
 
-	FORCEINLINE bool SetAutonomousProxyOnAuthority(bool bAutonomousProxy) { return bIsAutonomousProxyOnAuthority = bAutonomousProxy; }
+	void SetAutonomousProxyOnAuthority(bool bAutonomousProxy) { bIsAutonomousProxyOnAuthority = bAutonomousProxy; }
 
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)
 	{

@@ -35,9 +35,9 @@ private:
 
 	struct ApplySchemaObjectDataStruct
 	{
-		ApplySchemaObjectDataStruct(Schema_Object* inComponentObject, UObject& inObject, USpatialActorChannel& inChannel,
-									bool inIsInitialData, const TArray<Schema_FieldId>& inUpdatedIds, Worker_ComponentId inComponentId,
-									bool& inOutReferencesChanged);
+		ApplySchemaObjectDataStruct(Schema_Object* InComponentObject, UObject& InObject, USpatialActorChannel& InChannel,
+									bool InIsInitialData, const TArray<Schema_FieldId>& InUpdatedIds, Worker_ComponentId InComponentId,
+									bool& InOutReferencesChanged);
 
 		FObjectReplicator* Replicator;
 		Schema_Object* ComponentObject;
