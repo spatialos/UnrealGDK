@@ -1,5 +1,5 @@
 ---
-ci_version: &ci_version "${CI_VERSION:-1.3}"
+ci_version: &ci_version "${CI_VERSION:-1.4}"
 common_env_vars: &common_env_vars
   BUILD_TYPE: "GDK"
   GDK_BRANCH: "main_branch::${BUILDKITE_BRANCH}"
@@ -7,9 +7,13 @@ common_env_vars: &common_env_vars
   USE_FASTBUILD: "${USE_FASTBUILD:-True}"
   IS_BUILDKITE_BUILD: "${IS_BUILDKITE_BUILD:-True}"
   BUILD_ANDROID: "${BUILD_ANDROID:-False}"
-  SKIP_TESTS: "${SKIP_TESTS:-False}"
   CLEAN_BUILD: "${CLEAN_BUILD:-False}"
-  SLOW_TESTS: "${SLOW_TESTS}"
+  RUN_DEFAULT_TESTS: "${RUN_DEFAULT_TESTS:-True}"
+  SLOW_TESTS: "${SLOW_TESTS:-False}"
+  EXTRA_TESTS: "${EXTRA_TESTS:-}"
+  EXTRA_TESTS_RUN_NATIVE: "${EXTRA_TESTS_RUN_NATIVE:-False}"
+  EXTRA_TESTS_RUN_REPGRAPH: "${EXTRA_TESTS_RUN_REPGRAPH:-False}"
+  EXTRA_TESTS_RUNS: "${EXTRA_TESTS_RUNS:-1}"
 
 steps:
   # New build pipeline
