@@ -1077,8 +1077,8 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 
 		RepNotifiesToSend.Emplace(TWeakObjectPtr<UObject>(ReplicatingObject));
 		ResolveObjectReferences(RepLayout, ReplicatingObject, *RepState, RepState->ReferenceMap, ShadowData.GetData(),
-		                        (uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(), RepNotifiesToSend[RepNotifiesToSend.Num()-1],
-		                        bSomeObjectsWereMapped);
+								(uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(),
+								RepNotifiesToSend[RepNotifiesToSend.Num() - 1], bSomeObjectsWereMapped);
 
 		if (bSomeObjectsWereMapped)
 		{
@@ -1092,8 +1092,7 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 
 void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState,
 										  FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data,
-										  int32 MaxAbsOffset, FObjectRepNotifies& ObjectRepNotifiesOut,
-										  bool& bOutSomeObjectsWereMapped)
+										  int32 MaxAbsOffset, FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutSomeObjectsWereMapped)
 {
 	for (auto It = ObjectReferencesMap.CreateIterator(); It; ++It)
 	{
