@@ -294,7 +294,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 		TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
 			 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
 		*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-		*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *SnapshotPath, *SchemaBundle, *EventTracingPath, *LaunchArgs);
+		*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *LastSnapshotPath, *SchemaBundle, *EventTracingPath, *LaunchArgs);
 
 	if (!RuntimeIPToExpose.IsEmpty())
 	{
