@@ -427,9 +427,13 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 {
 	if (FlowController->IsLocalController())
 	{
-		checkf(LocalFlowController == nullptr, TEXT("OwningTest already had a LocalFlowController, this shouldn't happen"));
+		if (LocalFlowController != nullptr)
+		{
+			checkf(LocalFlowController == FlowController,
+				   TEXT("OwningTest already had different LocalFlowController, this shouldn't happen"));
+			return;
+		}
 		LocalFlowController = FlowController;
-		LocalFlowController->TrySetReadyToRunTest();
 	}
 
 	if (!HasAuthority())
@@ -443,7 +447,7 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 		// Since Clients can spawn on any worker we need to centralize the assignment of their ids to the Test Authority.
 		FlowControllerSpawner.AssignClientFlowControllerId(FlowController);
 	}
-	checkf(!FlowControllers.Contains(FlowController), TEXT("Auth test already registered this flow controller, this shouldn't happen"));
+
 	FlowControllers.Add(FlowController);
 }
 

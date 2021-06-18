@@ -42,7 +42,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue that caused `UnrealGDK/Setup.sh` to report `sed: can't read : No such file or directory` when run on macOS.
 - Static subobjects on bNetLoadOnClient actors are now removed on clients in a manner matching native unreal's behavior. This change affects subobjects removed by the server while the actor is not in the client's interest.
 - Fixed an issue where multicast rpcs could be overwritten and then dropped on authority flicker.
-- Fixed an issue with registering spatial flow controllers in the Spatial Testing Framework.
 
 ### Internal:
 - Hide the Test MultiworkerSettings and GridStrategy classes from displaying in the editor. These are meant to only be used in Tests.
