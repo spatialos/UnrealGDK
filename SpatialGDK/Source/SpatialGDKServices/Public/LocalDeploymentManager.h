@@ -111,6 +111,8 @@ private:
 
 	FString ExposedRuntimeIP;
 
+	FString CurrentSnapshotPath;
+
 	bool bRedeployRequired = false;
 	bool bAutoDeploy = false;
 	bool bIsInChina = false;

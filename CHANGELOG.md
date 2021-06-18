@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`x.y.z`] - Unreleased
 
 ### Breaking changes:
+
+### Features:
+
+### Bug fixes:
+
+### Internal:
+
+## [`0.14.0-rc`] - Unreleased
+
+### Breaking changes:
 - The `Handover` variable specifier has been deprecated. It should be replaced with the standard `Replicated` variable specifier and restricting the replication with the new `COND_ServerOnly` replication condition in `GetLifetimeReplicatedProps`. `Handover` variables will try to replicate using the new replication condition, but support will be removed in the next release.
 - Reworked AlwaysInterested functionality to run on authoritative servers, and owning clients. The previous behaviour was for it to only run on PlayerController classes, on the client only.
 - `bUseNetOwnerActorGroup` actor setting has been removed with the default behavior now true inside LayeredLBStrategy. Extend this class if you wish to alter this default behavior.
@@ -42,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue that caused `UnrealGDK/Setup.sh` to report `sed: can't read : No such file or directory` when run on macOS.
 - Static subobjects on bNetLoadOnClient actors are now removed on clients in a manner matching native unreal's behavior. This change affects subobjects removed by the server while the actor is not in the client's interest.
 - Fixed an issue where multicast rpcs could be overwritten and then dropped on authority flicker.
+- Fixed issue using the runtime snapshot endpoint with a local deployment, using `localhost:5006/snapshot` works again and creates a snapshot.
 
 ### Internal:
 - Hide the Test MultiworkerSettings and GridStrategy classes from displaying in the editor. These are meant to only be used in Tests.

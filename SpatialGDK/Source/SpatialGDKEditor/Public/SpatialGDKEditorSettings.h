@@ -134,7 +134,7 @@ struct FSpatialLaunchConfigDescription
 	const FString& GetDefaultTemplateForRuntimeVariant() const;
 
 	/** Use default template for deployments. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Use Default Template"))
 	bool bUseDefaultTemplateForRuntimeVariant;
 
 	/** Deployment template. */
