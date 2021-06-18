@@ -151,9 +151,9 @@ private:
 							Schema_ComponentData* Data);
 
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
-	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState,
-								 FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data,
-								 int32 MaxAbsOffset, TArray<GDK_PROPERTY(Property) *>& RepNotifies, bool& bOutSomeObjectsWereMapped);
+	void ResolveObjectReferences(::FRepLayout& RepLayout, ::UObject* ReplicatedObject, ::FSpatialObjectRepState& RepState,
+	                             FObjectReferencesMap& ObjectReferencesMap, uint8* StoredData, uint8* Data,
+	                             int32 MaxAbsOffset, FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutSomeObjectsWereMapped);
 
 	// Component update
 	USpatialActorChannel* GetOrRecreateChannelForDormantActor(AActor* Actor, Worker_EntityId EntityID) const;

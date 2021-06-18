@@ -1067,7 +1067,6 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 		}
 
 		bool bSomeObjectsWereMapped = false;
-		TArray<GDK_PROPERTY(Property)*> RepNotifies;
 
 		FRepLayout& RepLayout = DependentChannel->GetObjectRepLayout(ReplicatingObject);
 		FRepStateStaticBuffer& ShadowData = DependentChannel->GetObjectStaticBuffer(ReplicatingObject);
@@ -1076,16 +1075,15 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 			DependentChannel->ResetShadowData(RepLayout, ShadowData, ReplicatingObject);
 		}
 
+		RepNotifiesToSend.Emplace(TWeakObjectPtr<UObject>(ReplicatingObject));
 		ResolveObjectReferences(RepLayout, ReplicatingObject, *RepState, RepState->ReferenceMap, ShadowData.GetData(),
-								(uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(), RepNotifies,
-								bSomeObjectsWereMapped);
+		                        (uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(), RepNotifiesToSend[RepNotifiesToSend.Num()-1],
+		                        bSomeObjectsWereMapped);
 
 		if (bSomeObjectsWereMapped)
 		{
-			DependentChannel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, RepLayout, RepState->ReferenceMap, ReplicatingObject);
-
 			UE_LOG(LogActorSystem, Verbose, TEXT("Resolved for target object %s"), *ReplicatingObject->GetName());
-			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies, {});
+			ReplicatingObject->PostNetReceive();
 		}
 
 		RepState->UnresolvedRefs.Remove(ObjectRef);
@@ -1094,7 +1092,7 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 
 void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState,
 										  FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data,
-										  int32 MaxAbsOffset, TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+										  int32 MaxAbsOffset, FObjectRepNotifies& ObjectRepNotifiesOut,
 										  bool& bOutSomeObjectsWereMapped)
 {
 	for (auto It = ObjectReferencesMap.CreateIterator(); It; ++It)
@@ -1131,7 +1129,7 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 			int32 NewMaxOffset = Array->Num() * ArrayProperty->Inner->ElementSize;
 
 			ResolveObjectReferences(RepLayout, ReplicatedObject, RepState, *ObjectReferences.Array, (uint8*)StoredArray->GetData(),
-									(uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped);
+									(uint8*)Array->GetData(), NewMaxOffset, ObjectRepNotifiesOut, bOutSomeObjectsWereMapped);
 			continue;
 		}
 
@@ -1220,7 +1218,7 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 			{
 				if (Parent.RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + StoredDataOffset, Data + AbsOffset))
 				{
-					RepNotifies.AddUnique(Parent.Property);
+					ObjectRepNotifiesOut.RepNotifies.AddUnique(Parent.Property);
 				}
 			}
 		}
