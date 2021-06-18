@@ -454,18 +454,6 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 					}
 
-					if (const APlayerState* PlayerState = Cast<APlayerState>(Actor))
-					{
-						// The following check will return false on non-authoritative servers if the Pawn hasn't been received yet.
-						if (APawn* PawnFromPlayerState = PlayerState->GetPawn())
-						{
-							if (PawnFromPlayerState->IsPlayerControlled() && PawnFromPlayerState->HasAuthority())
-							{
-								PawnFromPlayerState->RemoteRole = ROLE_AutonomousProxy;
-							}
-						}
-					}
-
 					if (!bDormantActor)
 					{
 						UpdateShadowData(EntityId);

@@ -206,7 +206,7 @@ void UTestReplicationConditionsComponent_Physics::GetLifetimeReplicatedProps(TAr
 ATestReplicationConditionsActor_Physics::ATestReplicationConditionsActor_Physics()
 {
 	UTestReplicationConditionsPrimitiveComponent* PrimitiveComponent =
-		CreateDefaultSubobject< UTestReplicationConditionsPrimitiveComponent>(TEXT("UTestReplicationConditionsPrimitiveComponent"));
+		CreateDefaultSubobject<UTestReplicationConditionsPrimitiveComponent>(TEXT("UTestReplicationConditionsPrimitiveComponent"));
 
 	SetRootComponent(PrimitiveComponent);
 
