@@ -2,21 +2,12 @@
 
 #pragma once
 
-#include "Components/StaticMeshComponent.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "PhysX3/PhysX_3.4/Include/PxRigidActor.h"
 #include "TestReplicationConditionsActor.generated.h"
 
-#if WITH_PHYSX
-namespace physx
-{
-class PxRigidActor;
-}
-#endif
-
 UCLASS()
-class UTestReplicationConditionsComponentBase : public UPrimitiveComponent
+class UTestReplicationConditionsComponentBase : public USceneComponent
 {
 	GENERATED_BODY()
 
@@ -234,6 +225,15 @@ public:
 };
 
 UCLASS()
+class UTestReplicationConditionsPrimitiveComponent : public UPrimitiveComponent
+{
+	GENERATED_BODY()
+
+public:
+	virtual bool IsSimulatingPhysics(FName BoneName = NAME_None) const override;
+};
+
+UCLASS()
 class UTestReplicationConditionsComponent_Physics : public UTestReplicationConditionsComponentBase
 {
 	GENERATED_BODY()
@@ -256,13 +256,9 @@ class ATestReplicationConditionsActor_Physics : public ATestReplicationCondition
 public:
 	ATestReplicationConditionsActor_Physics();
 
-	virtual void OnRep_ReplicatedMovement() override;
-
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void SpawnDynamicComponents();
-
-	void InitFakePhysics();
 
 	void SetPhysicsEnabled(bool bEnabled);
 
@@ -277,10 +273,4 @@ public:
 
 	UPROPERTY(Replicated)
 	UTestReplicationConditionsComponent_Physics* DynamicComponent;
-
-	UBodySetup* BodySetup;
-
-#if WITH_PHYSX
-	physx::PxRigidActor* RigidActor;
-#endif
 };

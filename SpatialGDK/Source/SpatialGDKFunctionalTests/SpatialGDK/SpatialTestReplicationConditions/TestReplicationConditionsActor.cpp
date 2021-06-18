@@ -3,9 +3,6 @@
 #include "TestReplicationConditionsActor.h"
 
 #include "Net/UnrealNetwork.h"
-#include "PhysXPublicCore.h"
-
-using namespace PhysicsInterfaceTypes;
 
 UTestReplicationConditionsComponentBase::UTestReplicationConditionsComponentBase()
 {
@@ -193,6 +190,11 @@ void ATestReplicationConditionsActor_AutonomousOnly::SpawnDynamicComponents()
 		TEXT("DynamicTestReplicationConditionsComponent_AutonomousOnly"));
 }
 
+bool UTestReplicationConditionsPrimitiveComponent::IsSimulatingPhysics(FName BoneName /*= NAME_None*/) const
+{
+	return true;
+}
+
 void UTestReplicationConditionsComponent_Physics::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -203,16 +205,13 @@ void UTestReplicationConditionsComponent_Physics::GetLifetimeReplicatedProps(TAr
 
 ATestReplicationConditionsActor_Physics::ATestReplicationConditionsActor_Physics()
 {
+	UTestReplicationConditionsPrimitiveComponent* PrimitiveComponent =
+		CreateDefaultSubobject< UTestReplicationConditionsPrimitiveComponent>(TEXT("UTestReplicationConditionsPrimitiveComponent"));
+
+	SetRootComponent(PrimitiveComponent);
+
 	StaticComponent =
 		CreateDefaultSubobject<UTestReplicationConditionsComponent_Physics>(TEXT("UTestReplicationConditionsComponent_Physics"));
-
-	SetRootComponent(StaticComponent);
-}
-
-void ATestReplicationConditionsActor_Physics::OnRep_ReplicatedMovement()
-{
-	InitFakePhysics();
-	Super::OnRep_ReplicatedMovement();
 }
 
 void ATestReplicationConditionsActor_Physics::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -231,39 +230,12 @@ void ATestReplicationConditionsActor_Physics::SpawnDynamicComponents()
 		SpawnDynamicComponent<UTestReplicationConditionsComponent_Physics>(TEXT("DynamicTestReplicationConditionsComponent_Physics"));
 }
 
-void ATestReplicationConditionsActor_Physics::InitFakePhysics()
-{
-	// This setup is required to have Unreal attempt to replicate any physics information, including Actor.ReplicatedMovement.
-	// Actor.ReplicatedMovement contains bRepPhysics, which is necessary to replicate to clients so that
-	// FSpatialConditionMapFilter can check it when determining the value of the COND_*Physics conditions.
-	if (UPrimitiveComponent* RootPrimComp = Cast<UPrimitiveComponent>(GetRootComponent()))
-	{
-		if (FBodyInstance* BodyInstance = RootPrimComp->GetBodyInstance())
-		{
-			if (BodyInstance->BodySetup == nullptr)
-			{
-				BodySetup = NewObject<UBodySetup>(this, NAME_None);
-				BodySetup->CollisionTraceFlag = CTF_UseSimpleAndComplex;
-				BodySetup->BodySetupGuid = FGuid::NewGuid();
-				BodyInstance->BodySetup = BodySetup;
-
-#if WITH_PHYSX
-				RigidActor = GPhysXSDK->createRigidStatic(U2PTransform(FTransform::Identity));
-				BodyInstance->ActorHandle.SyncActor = RigidActor;
-#endif
-			}
-		}
-	}
-}
-
 void ATestReplicationConditionsActor_Physics::SetPhysicsEnabled(bool bEnabled)
 {
-	InitFakePhysics();
-
 	GetReplicatedMovement_Mutable().bRepPhysics = bEnabled;
 	SetReplicatingMovement(bEnabled);
 
-	if (UPrimitiveComponent* RootPrimComp = Cast<UPrimitiveComponent>(GetRootComponent()))
+	if (UTestReplicationConditionsPrimitiveComponent* RootPrimComp = Cast<UTestReplicationConditionsPrimitiveComponent>(GetRootComponent()))
 	{
 		RootPrimComp->SetSimulatePhysics(bEnabled);
 	}

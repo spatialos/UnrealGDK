@@ -27,7 +27,5 @@ public class SpatialGDKFunctionalTests : ModuleRules
                 "InputCore",
                 "Slate"
             });
-
-        SetupModulePhysicsSupport(Target);
     }
 }
