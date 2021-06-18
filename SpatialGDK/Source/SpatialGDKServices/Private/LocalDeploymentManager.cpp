@@ -502,7 +502,7 @@ void FLocalDeploymentManager::FinishLocalDeploymentShutDown()
 	const auto IsDirectoryEmpty = [&PlatformFile](const TCHAR* Directory) -> bool {
 		bool directoryIsEmpty = true;
 		PlatformFile.IterateDirectory(Directory, [&directoryIsEmpty](const TCHAR* FilenameOrDirectory, bool bIsDirectory) -> bool {
-			bool isEmpty = true;
+			directoryIsEmpty = false;
 			return false;
 		});
 		return directoryIsEmpty;
