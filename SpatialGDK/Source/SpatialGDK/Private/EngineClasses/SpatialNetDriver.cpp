@@ -3248,6 +3248,7 @@ void USpatialNetDriver::TryFinishStartup()
 #endif
 
 #if WITH_GAMEPLAY_DEBUGGER
+#if 0 // Disable for 0.14.0, do not merge this change back into master
 				const FFilterPredicate GameplayDebuggerCompFilter = [this](const Worker_EntityId EntityId,
 																		   const SpatialGDK::EntityViewElement& Element) {
 					return Element.Components.ContainsByPredicate(
@@ -3262,6 +3263,7 @@ void USpatialNetDriver::TryFinishStartup()
 				const SpatialGDK::FSubView& GameplayDebuggerActorSubView =
 					SpatialGDK::ActorSubviews::CreateCustomActorSubView({}, GameplayDebuggerCompFilter, GameplayDebuggerCompRefresh, *this);
 				USpatialNetDriverGameplayDebuggerContext::Enable(GameplayDebuggerActorSubView, *this);
+#endif
 #endif // WITH_GAMEPLAY_DEBUGGER
 
 				// We've found and dispatched all ops we need for startup,
