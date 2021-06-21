@@ -49,6 +49,7 @@ void ASpatialTestRepNotify::PrepareTest()
 		TestArray.Empty();
 		TestArray.Add(1);
 		TestArray.Add(2);
+		TestSubobject->OnChangedRepNotifyInt = 1;
 
 		FinishStep();
 	});
