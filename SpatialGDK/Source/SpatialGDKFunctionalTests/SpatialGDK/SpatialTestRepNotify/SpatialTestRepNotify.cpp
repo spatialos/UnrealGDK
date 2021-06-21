@@ -16,7 +16,8 @@
  *	- The test itself is used as the test Actor.
  *  - It contains a number of replicated properties and OnRep functions that either set boolean flags confirming they have been called, or
  *save the old value of the argument passed to the OnRep function.
- * We also check the ordering of repnotifies being called, expecting that both an actor and its subobjects will have their new data applied before repnotifies are called on either.
+ * We also check the ordering of repnotifies being called, expecting that both an actor and its subobjects will have their new data applied
+ *before repnotifies are called on either.
  *
  * - Test:
  *	- The Server changes the values of the replicated properties multiple times.
@@ -263,7 +264,6 @@ void ASpatialTestRepNotify::PrepareTest()
 			FinishStep();
 		},
 		nullptr, 5.0f);
-
 
 	/**
 	 * In this section of the test, we check the order rep notifies are called in.
