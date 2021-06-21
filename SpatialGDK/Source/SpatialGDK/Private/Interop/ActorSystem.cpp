@@ -965,8 +965,8 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 		ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 		bool bOutReferencesChanged = false;
 
-		RepNotifiesToSend.Emplace(FObjectRepNotifies(TWeakObjectPtr<UObject>(&TargetObject)));
-		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, RepNotifiesToSend[RepNotifiesToSend.Num() - 1],
+		FObjectRepNotifies ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(&TargetObject));
+		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, ObjectRepNotifiesOut,
 								  bOutReferencesChanged);
 
 		RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
@@ -1075,10 +1075,10 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 			DependentChannel->ResetShadowData(RepLayout, ShadowData, ReplicatingObject);
 		}
 
-		RepNotifiesToSend.Emplace(TWeakObjectPtr<UObject>(ReplicatingObject));
+		FObjectRepNotifies ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(ReplicatingObject));
 		ResolveObjectReferences(RepLayout, ReplicatingObject, *RepState, RepState->ReferenceMap, ShadowData.GetData(),
 								(uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(),
-								RepNotifiesToSend[RepNotifiesToSend.Num() - 1], bSomeObjectsWereMapped);
+								ObjectRepNotifiesOut, bSomeObjectsWereMapped);
 
 		if (bSomeObjectsWereMapped)
 		{
@@ -1248,8 +1248,8 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 	bool bOutReferencesChanged = false;
-	RepNotifiesToSend.Emplace(TWeakObjectPtr<UObject>(&TargetObject));
-	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, RepNotifiesToSend[RepNotifiesToSend.Num() - 1],
+	FObjectRepNotifies ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(&TargetObject));
+	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, ObjectRepNotifiesOut,
 								bOutReferencesChanged);
 	RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 
