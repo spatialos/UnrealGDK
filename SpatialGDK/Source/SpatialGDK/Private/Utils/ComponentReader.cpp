@@ -172,7 +172,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	bool bEventTracerEnabled = EventTracer != nullptr;
 
 	// RemoteRole (which is swapped into the local Actor's Role property) and bRepPhysics are used to construct the condition map.
-	// We must check to see if these properties have just been received, before we construct the condition map for receiving everything else.
+	// We must check to see if these properties have just been received, before we construct the condition map for receiving everything
+	// else.
 	ENetRole ActorRole = Channel.Actor->Role;
 	bool bRepPhysics = Channel.Actor->GetReplicatedMovement().bRepPhysics;
 	if (EnumHasAnyFlags(Replicator->RepLayout->GetFlags(), ERepLayoutFlags::IsActor))
