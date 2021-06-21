@@ -269,7 +269,11 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	// Give the snapshot path a timestamp to ensure we don't overwrite snapshots from older deployments.
 	// The snapshot service saves snapshots with the name `snapshot-n.snapshot` for a given deployment,
 	// where 'n' is the number of snapshots taken since starting the deployment.
-	FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, *RuntimeStartTime.ToString());
+	CurrentSnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, *RuntimeStartTime.ToString());
+
+	// Create the folder for storing the snapshots.
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	PlatformFile.CreateDirectoryTree(*CurrentSnapshotPath);
 
 	// Use the runtime start timestamp as the log directory, e.g. `<Project>/spatial/localdeployment/<timestamp>/`
 	FString LocalDeploymentLogsDir = FPaths::Combine(SpatialGDKServicesConstants::LocalDeploymentLogsDir, RuntimeStartTime.ToString());
@@ -277,7 +281,6 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	// Store these logs alongside the GDK ones for convenience
 	const TCHAR* RuntimeEventLogPaths = TEXT("EventTracing/runtime");
 	FString EventTracingPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectSavedDir(), RuntimeEventLogPaths));
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	if (!PlatformFile.CreateDirectoryTree(*EventTracingPath))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to create runtime event log path."));
@@ -291,7 +294,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 		TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
 			 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
 		*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-		*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *SnapshotPath, *SchemaBundle, *EventTracingPath, *LaunchArgs);
+		*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *CurrentSnapshotPath, *SchemaBundle, *EventTracingPath, *LaunchArgs);
 
 	if (!RuntimeIPToExpose.IsEmpty())
 	{
@@ -495,6 +498,21 @@ void FLocalDeploymentManager::FinishLocalDeploymentShutDown()
 	// Kill the log file handle.
 	RuntimeLogFileHandle.Reset();
 
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	const auto IsDirectoryEmpty = [&PlatformFile](const TCHAR* Directory) -> bool {
+		bool bDirectoryIsEmpty = true;
+		PlatformFile.IterateDirectory(Directory, [&bDirectoryIsEmpty](const TCHAR* FilenameOrDirectory, bool bIsDirectory) -> bool {
+			bDirectoryIsEmpty = false;
+			return false;
+		});
+		return bDirectoryIsEmpty;
+	};
+
+	if (IsDirectoryEmpty(*CurrentSnapshotPath))
+	{
+		PlatformFile.DeleteDirectory(*CurrentSnapshotPath);
+	}
+
 	bLocalDeploymentRunning = false;
 	bStoppingDeployment = false;
 }
@@ -549,11 +567,6 @@ void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World,
 #else
 	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
 #endif
-
-	FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, *RuntimeStartTime.ToString());
-	// Create the folder for storing the snapshots.
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	PlatformFile.CreateDirectoryTree(*SnapshotPath);
 
 	HttpRequest->OnProcessRequestComplete().BindLambda(
 		[World, OnSnapshotTaken](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
