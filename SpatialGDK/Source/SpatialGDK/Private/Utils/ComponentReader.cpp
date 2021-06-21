@@ -171,7 +171,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	bool bIsClient = NetDriver->GetNetMode() == NM_Client;
 	bool bEventTracerEnabled = EventTracer != nullptr;
 
-	// RemoteRole and bRepPhysics are used to construct the condition map. We must check to see if these
+	// RemoteRole (which is swapped into the local Actor's Role property) and bRepPhysics are used to construct the condition map. We must check to see if these
 	// properties have just been received, before we construct the condition map for receiving everything else.
 	ENetRole ActorRole = Channel.Actor->Role;
 	bool bRepPhysics = Channel.Actor->GetReplicatedMovement().bRepPhysics;
