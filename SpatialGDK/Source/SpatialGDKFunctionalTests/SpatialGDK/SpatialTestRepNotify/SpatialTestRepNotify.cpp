@@ -16,7 +16,7 @@
  *	- The test itself is used as the test Actor.
  *  - It contains a number of replicated properties and OnRep functions that either set boolean flags confirming they have been called, or
  *save the old value of the argument passed to the OnRep function.
- * We also check the ordering of repnotifies being called, expecting that both an actor and its subobjects will have their new data applied
+ * We also check the ordering of RepNotifies being called, expecting that both an actor and its subobjects will have their new data applied
  *before repnotifies are called on either.
  *
  * - Test:
