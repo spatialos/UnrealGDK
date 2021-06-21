@@ -6,7 +6,6 @@
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/LBDataStorage.h"
-#include "LoadBalancing/LoadBalancingCalculator.h"
 #include "LoadBalancing/PartitionManager.h"
 
 namespace SpatialGDK
@@ -17,7 +16,8 @@ FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, S
 	ExpectedWorkers = LegacyLBStrat.GetMinimumRequiredWorkers();
 	VirtualWorkerIdToHandle.SetNum(ExpectedWorkers);
 
-	if (!LegacyLBStrat.IsStrategyWorkerAware())
+	bDirectAssignment = !LegacyLBStrat.IsStrategyWorkerAware();
+	if (bDirectAssignment)
 	{
 		AssignmentStorage = MakeUnique<FDirectAssignmentStorage>();
 	}
@@ -25,18 +25,7 @@ FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, S
 	{
 		PositionStorage = MakeUnique<SpatialGDK::FSpatialPositionStorage>();
 		GroupStorage = MakeUnique<SpatialGDK::FActorGroupStorage>();
-
-		FLegacyLBContext LBContext;
-		Calculator = LegacyLBStrat.CreateLoadBalancingCalculator(LBContext);
-
-		if (LBContext.Layers != nullptr)
-		{
-			LBContext.Layers->SetGroupData(*GroupStorage);
-		}
-		for (auto* Grid : LBContext.Grid)
-		{
-			Grid->SetPositionData(*PositionStorage);
-		}
+		LegacyLBStrat.GetLegacyLBInformation(LBContext);
 	}
 }
 
@@ -76,8 +65,9 @@ void FLegacyLoadBalancing::Advance(ISpatialOSWorker& Connection)
 						}
 					}
 				}
+
+				WorkerTranslationRequest.Reset();
 			}
-			WorkerTranslationRequest.Reset();
 		}
 		}
 	}
@@ -161,9 +151,29 @@ void FLegacyLoadBalancing::TickPartitions(FPartitionManager& PartitionMgr)
 			VirtualWorkerIdToHandle[i - 1] = WorkersMap.FindChecked(ServerWorkerEntityId);
 		}
 
-		if (Calculator != nullptr)
+		if (!bDirectAssignment)
 		{
-			Calculator->CollectPartitionsToAdd(FString(), PartitionMgr, Partitions);
+			Partitions.SetNum(ExpectedWorkers);
+			for (const auto& Layer : LBContext.Layers)
+			{
+				for (const auto& Cell : Layer.Cells)
+				{
+					FVector2D CellCenter = Cell.Region.GetCenter();
+					const FVector Center3D{ CellCenter.X, CellCenter.Y, 0.0f };
+
+					const FVector2D EdgeLengths2D = Cell.Region.GetSize();
+					check(EdgeLengths2D.X > 0.0f && EdgeLengths2D.Y > 0.0f);
+					const FVector EdgeLengths3D{ EdgeLengths2D.X + Cell.Border, EdgeLengths2D.Y + Cell.Border, FLT_MAX };
+
+					SpatialGDK::QueryConstraint Constraint;
+					Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D),
+																		  SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
+
+					FString PartitionName =
+						FString::Printf(TEXT("Layer : %s, Cell (%f,%f)"), *Layer.Name.ToString(), CellCenter.X, CellCenter.Y);
+					Partitions[Cell.WorkerId - 1] = PartitionMgr.CreatePartition(PartitionName, nullptr, Constraint);
+				}
+			}
 		}
 		else
 		{
@@ -186,9 +196,50 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 {
 	if (bCreatedPartitions)
 	{
-		if (Calculator)
+		if (!bDirectAssignment)
 		{
-			Calculator->CollectEntitiesToMigrate(Ctx);
+			TSet<Worker_EntityId_Key> NotChecked;
+			ToRefresh = ToRefresh.Union(Ctx.ModifiedEntities);
+			for (Worker_EntityId EntityId : ToRefresh)
+			{
+				if (Ctx.MigratingEntities.Contains(EntityId))
+				{
+					NotChecked.Add(EntityId);
+					continue;
+				}
+
+				int32 Group = GroupStorage->GetGroups().FindChecked(EntityId);
+				FLegacyLBContext::Layer& Layer = LBContext.Layers[Group];
+
+				const FVector& Position = PositionStorage->GetPositions().FindChecked(EntityId);
+				const FVector2D Actor2DLocation(Position);
+
+				int32& CurAssignment = Assignment.FindOrAdd(EntityId, -1);
+
+				if (CurAssignment >= 0 && CurAssignment < Layer.Cells.Num())
+				{
+					if (Layer.Cells[CurAssignment].Region.IsInside(Actor2DLocation))
+					{
+						continue;
+					}
+				}
+
+				int32 NewAssignment = -1;
+				for (const auto& CandidateCell : Layer.Cells)
+				{
+					if (CandidateCell.Region.IsInside(Actor2DLocation))
+					{
+						NewAssignment = CandidateCell.WorkerId - 1;
+					}
+				}
+
+				if (NewAssignment >= 0 && NewAssignment < Partitions.Num() && ensureAlways(NewAssignment != CurAssignment))
+				{
+					CurAssignment = NewAssignment;
+					Ctx.EntitiesToMigrate.Add(EntityId, Partitions[CurAssignment]);
+				}
+			}
+			ToRefresh = MoveTemp(NotChecked);
 		}
 		else
 		{

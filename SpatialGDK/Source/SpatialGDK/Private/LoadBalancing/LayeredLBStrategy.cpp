@@ -5,8 +5,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
-#include "LoadBalancing/LoadBalancingCalculator.h"
-#include "LoadBalancing/LoadBalancingDecorator.h"
 #include "Schema/ActorGroupMember.h"
 #include "Utils/LayerInfo.h"
 #include "Utils/SpatialActorUtils.h"
@@ -385,39 +383,34 @@ void ULayeredLBStrategy::AddStrategyForLayer(const FName& LayerName, UAbstractLB
 	LayerNameToLBStrategy[LayerName]->Init();
 }
 
-TUniquePtr<SpatialGDK::FLoadBalancingCalculator> ULayeredLBStrategy::CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const
+void ULayeredLBStrategy::GetLegacyLBInformation(FLegacyLBContext& Ctx) const
 {
 	if (!IsStrategyWorkerAware())
 	{
-		return nullptr;
+		return;
 	}
 
 	TArray<FName> LayerNames;
-	TArray<TUniquePtr<SpatialGDK::FLoadBalancingCalculator>> Layers;
 	LayerNames.SetNum(LayerNameToLBStrategy.Num());
-	Layers.SetNum(LayerNameToLBStrategy.Num());
-
-	for (auto Entry : LayerNameToLBStrategy)
+	for (const auto& Data : LayerData)
 	{
-		FName LayerName = Entry.Key;
-		if (const FLayerData* Data = LayerData.Find(LayerName))
-		{
-			LayerNames[Data->LayerIndex] = LayerName;
-			Layers[Data->LayerIndex] = Entry.Value->CreateLoadBalancingCalculator(OutCtx);
-		}
+		LayerNames[Data.Value.LayerIndex] = Data.Key;
 	}
 
-	auto Calculator = MakeUnique<SpatialGDK::FLayerLoadBalancingCalculator>(LayerNames, MoveTemp(Layers));
-	OutCtx.Layers = Calculator.Get();
-
-	return Calculator;
+	for (FName& LayerName : LayerNames)
+	{
+		Ctx.Layers.AddDefaulted();
+		Ctx.Layers.Last().Name = LayerName;
+		const UAbstractLBStrategy* Strategy = LayerNameToLBStrategy.FindChecked(LayerName);
+		Strategy->GetLegacyLBInformation(Ctx);
+	}
 }
 
 bool ULayeredLBStrategy::IsStrategyWorkerAware() const
 {
 	for (auto Entry : LayerNameToLBStrategy)
 	{
-		if (!Entry.Value->IsStrategyWorkerAware())
+		if (!Entry.Value->IsA<UGridBasedLBStrategy>() || !Entry.Value->IsStrategyWorkerAware())
 		{
 			return false;
 		}
@@ -425,27 +418,18 @@ bool ULayeredLBStrategy::IsStrategyWorkerAware() const
 	return true;
 }
 
-SpatialGDK::FLoadBalancingDecorator* ULayeredLBStrategy::GetLoadBalancingDecorator() const
+TArray<SpatialGDK::ComponentData> ULayeredLBStrategy::CreateStaticLoadBalancingData(const AActor& Actor) const
 {
-	if (!Decorator.IsValid())
+	TArray<SpatialGDK::ComponentData> ComponentData;
+	if (IsStrategyWorkerAware())
 	{
-		if (!IsStrategyWorkerAware())
-		{
-			return nullptr;
-		}
+		FName LayerName = GetLayerNameForActor(Actor);
 
-		TClassMap<uint32> GroupMap;
-		for (auto Entry : ClassPathToLayerName)
-		{
-			UClass* Class = Entry.Key.LoadSynchronous();
-			FName LayerName = Entry.Value;
-			if (const FLayerData* Data = LayerData.Find(LayerName))
-			{
-				GroupMap.Set(Class, Data->LayerIndex);
-			}
-		}
+		uint32 LayerIndex = LayerData.FindChecked(LayerName).LayerIndex;
 
-		Decorator = MakeUnique<SpatialGDK::FLayerLoadBalancingDecorator>(MoveTemp(GroupMap));
+		SpatialGDK::ActorGroupMember MembershipComponent(LayerIndex);
+		ComponentData.Add(MembershipComponent.CreateComponentData());
 	}
-	return Decorator.Get();
+
+	return ComponentData;
 }

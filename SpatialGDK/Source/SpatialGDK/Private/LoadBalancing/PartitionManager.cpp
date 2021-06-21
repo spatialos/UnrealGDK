@@ -9,6 +9,9 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
 
+#include "Interop/CreateEntityHandler.h"
+#include "Interop/ReserveEntityIdsHandler.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialPartitionManager);
 
 namespace SpatialGDK
@@ -183,8 +186,8 @@ struct FPartitionManager::Impl
 			break;
 			case EntityDelta::ADD:
 			{
-				const EntityViewElement& WorkerDesc = WorkerView.GetView().FindChecked(Delta.EntityId);
-				for (const auto& Component : WorkerDesc.Components)
+				const EntityViewElement& PartitionElement = PartitionView.GetView().FindChecked(Delta.EntityId);
+				for (const auto& Component : PartitionElement.Components)
 				{
 					if (Component.GetComponentId() == SpatialConstants::PARTITION_ACK_COMPONENT_ID)
 					{
@@ -272,7 +275,7 @@ struct FPartitionManager::Impl
 			{
 			case EntityDelta::ADD:
 			{
-				const EntityViewElement& WorkerDesc = WorkerView.GetView().FindChecked(Delta.EntityId);
+				const EntityViewElement& WorkerDesc = SystemWorkerView.GetView().FindChecked(Delta.EntityId);
 				for (const auto& Component : WorkerDesc.Components)
 				{
 					if (Component.GetComponentId() == SpatialConstants::WORKER_COMPONENT_ID)
@@ -534,21 +537,21 @@ TArray<FLBWorkerHandle> FPartitionManager::GetConnectedWorkers()
 {
 	TArray<FLBWorkerHandle> ConnectedWorkers;
 	Swap(ConnectedWorkers, m_Impl->ConnectedWorkersThisFrame);
-	return MoveTemp(ConnectedWorkers);
+	return ConnectedWorkers;
 }
 
 TArray<FLBWorkerHandle> FPartitionManager::GetDisconnectedWorkers()
 {
 	TArray<FLBWorkerHandle> DisconnectedWorkers;
 	Swap(DisconnectedWorkers, m_Impl->DisconnectedWorkersThisFrame);
-	return MoveTemp(DisconnectedWorkers);
+	return DisconnectedWorkers;
 }
 
 Worker_EntityId FPartitionManager::GetServerWorkerEntityIdForWorker(FLBWorkerHandle Worker)
 {
 	if (!m_Impl->ConnectedWorkers.Contains(Worker))
 	{
-		return 0;
+		return SpatialConstants::INVALID_ENTITY_ID;
 	}
 
 	return Worker->State->ServerWorkerId;

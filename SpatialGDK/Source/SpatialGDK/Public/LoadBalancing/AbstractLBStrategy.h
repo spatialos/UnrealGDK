@@ -12,18 +12,22 @@
 
 #include "AbstractLBStrategy.generated.h"
 
-namespace SpatialGDK
-{
-class FLoadBalancingCalculator;
-class FLoadBalancingDecorator;
-class FGridBalancingCalculator;
-class FLayerLoadBalancingCalculator;
-} // namespace SpatialGDK
-
 struct FLegacyLBContext
 {
-	TArray<SpatialGDK::FGridBalancingCalculator*> Grid;
-	SpatialGDK::FLayerLoadBalancingCalculator* Layers;
+	struct Cell
+	{
+		VirtualWorkerId WorkerId;
+		FBox2D Region;
+		float Border;
+	};
+
+	struct Layer
+	{
+		FName Name;
+		TArray<Cell> Cells;
+	};
+
+	TArray<Layer> Layers;
 };
 
 /**
@@ -96,11 +100,10 @@ public:
 		PURE_VIRTUAL(UAbstractLBStrategy::GetLBStrategyForVisualRendering, return nullptr;);
 
 	virtual bool IsStrategyWorkerAware() const { return false; }
-	virtual TUniquePtr<SpatialGDK::FLoadBalancingCalculator> CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const;
-	virtual SpatialGDK::FLoadBalancingDecorator* GetLoadBalancingDecorator() const
+	virtual void GetLegacyLBInformation(FLegacyLBContext& Ctx) const {}
+	virtual TArray<SpatialGDK::ComponentData> CreateStaticLoadBalancingData(const AActor& Actor) const
 	{
-		// Should return the manual assigner decorator for compatibility
-		return nullptr;
+		return TArray<SpatialGDK::ComponentData>();
 	}
 
 protected:

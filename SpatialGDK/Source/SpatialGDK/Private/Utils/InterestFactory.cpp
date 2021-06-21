@@ -219,11 +219,6 @@ Interest InterestFactory::CreatePartitionInterest(SpatialGDK::QueryConstraint co
 	return PartitionInterest;
 }
 
-void InterestFactory::AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker,
-													Interest& OutInterest) const
-{
-}
-
 Interest InterestFactory::CreateRoutingWorkerInterest()
 {
 	Interest ServerInterest;

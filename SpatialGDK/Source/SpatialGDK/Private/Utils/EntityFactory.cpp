@@ -12,7 +12,6 @@
 #include "Interop/ActorSetWriter.h"
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "LoadBalancing/LoadBalancingDecorator.h"
 #include "Schema/ActorGroupMember.h"
 #include "Schema/ActorOwnership.h"
 #include "Schema/ActorSetMember.h"
@@ -173,9 +172,9 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	{
 		ComponentDatas.Add(AuthorityIntentV2(AuthoritativeServerPartitionId).CreateComponentData());
 		ComponentDatas.Add(AuthorityIntentACK().CreateComponentData());
-		if (auto Decorator = NetDriver->LoadBalanceStrategy->GetLoadBalancingDecorator())
+		if (NetDriver->LoadBalanceStrategy->IsStrategyWorkerAware())
 		{
-			TArray<SpatialGDK::ComponentData> DecoratorData = Decorator->OnCreate(Actor);
+			TArray<SpatialGDK::ComponentData> DecoratorData = NetDriver->LoadBalanceStrategy->CreateStaticLoadBalancingData(*Actor);
 			for (auto& Component : DecoratorData)
 			{
 				FWorkerComponentData DecoratorComponent;
@@ -474,11 +473,6 @@ TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(FStr
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_SHADOW_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
-	if (SpatialSettings->bRunStrategyWorker)
-	{
-		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_ACK_COMPONENT_ID));
-		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_AUTH_TAG_COMPONENT_ID));
-	}
 
 	return Components;
 }

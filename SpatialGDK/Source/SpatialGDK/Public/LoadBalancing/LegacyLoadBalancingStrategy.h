@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/LoadBalancingStrategy.h"
 
-class UAbstractLBStrategy;
 class SpatialVirtualWorkerTranslator;
 
 namespace SpatialGDK
@@ -33,21 +33,29 @@ public:
 protected:
 	void QueryTranslation(ISpatialOSWorker& Connection);
 
+	// +++ Data Storage +++
 	TUniquePtr<FSpatialPositionStorage> PositionStorage;
 	TUniquePtr<FActorGroupStorage> GroupStorage;
 	TUniquePtr<FDirectAssignmentStorage> AssignmentStorage;
-	TUniquePtr<FLoadBalancingCalculator> Calculator;
+	// --- Data Storage ---
+
+	// +++ Partition Assignment +++
 	TArray<FPartitionHandle> Partitions;
 	TArray<FLBWorkerHandle> VirtualWorkerIdToHandle;
-
 	TSet<FLBWorkerHandle> ConnectedWorkers;
-
 	SpatialVirtualWorkerTranslator& Translator;
 	TOptional<Worker_RequestId> WorkerTranslationRequest;
-	bool bTranslatorIsReady = false;
-
 	uint32 ExpectedWorkers = 0;
 	bool bCreatedPartitions = false;
+	bool bTranslatorIsReady = false;
+	// --- Partition Assignment ---
+
+	// +++ Load Balancing +++
+	FLegacyLBContext LBContext;
+	TSet<Worker_EntityId_Key> ToRefresh;
+	TMap<Worker_EntityId_Key, int32> Assignment;
+	bool bDirectAssignment = false;
+	// --- Load Balancing ---
 };
 
 } // namespace SpatialGDK

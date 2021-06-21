@@ -2178,7 +2178,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 				}
 				else
 				{
-					if (!Actor->HasAuthority() || LockingPolicy->IsLocked(Actor))
+					if (!ensureAlways(Actor->HasAuthority()) || LockingPolicy->IsLocked(Actor))
 					{
 						continue;
 					}

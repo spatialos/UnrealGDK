@@ -6,8 +6,6 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 
-#include "LoadBalancing/LoadBalancingCalculator.h"
-
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialStatics.h"
 
@@ -274,14 +272,18 @@ bool UGridBasedLBStrategy::IsStrategyWorkerAware() const
 	return true;
 }
 
-TUniquePtr<SpatialGDK::FLoadBalancingCalculator> UGridBasedLBStrategy::CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const
+void UGridBasedLBStrategy::GetLegacyLBInformation(FLegacyLBContext& Ctx) const
 {
-	auto Calculator = MakeUnique<SpatialGDK::FGridBalancingCalculator>(Cols, Rows, WorldWidth, WorldHeight, InterestBorder);
-	OutCtx.Grid.Add(Calculator.Get());
-	return Calculator;
-}
-
-SpatialGDK::FLoadBalancingDecorator* UGridBasedLBStrategy::GetLoadBalancingDecorator() const
-{
-	return nullptr;
+	if (Ctx.Layers.Num() == 0)
+	{
+		Ctx.Layers.AddDefaulted();
+	}
+	for (int32 i = 0; i < WorkerCells.Num(); ++i)
+	{
+		FLegacyLBContext::Cell NewCell;
+		NewCell.Border = InterestBorder;
+		NewCell.Region = WorkerCells[i];
+		NewCell.WorkerId = VirtualWorkerIds[i];
+		Ctx.Layers.Last().Cells.Add(NewCell);
+	}
 }

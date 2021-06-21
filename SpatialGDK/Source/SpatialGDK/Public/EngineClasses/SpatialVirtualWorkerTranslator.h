@@ -49,8 +49,6 @@ public:
 	// On receiving a version of the translation state, apply that to the internal mapping.
 	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);
 
-	// USpatialNetDriver* NetDriver;
-
 	TWeakObjectPtr<UAbstractLBStrategy> LoadBalanceStrategy;
 
 private:
