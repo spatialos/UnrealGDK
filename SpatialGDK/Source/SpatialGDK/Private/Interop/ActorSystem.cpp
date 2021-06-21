@@ -449,7 +449,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						Actor->SetReplicates(true);
 					}
 
-					if (Channel->IsAutonomousProxyOnAuthority())
+					if (Channel != nullptr && Channel->IsAutonomousProxyOnAuthority())
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 					}

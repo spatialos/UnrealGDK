@@ -192,7 +192,7 @@ void ATestReplicationConditionsActor_AutonomousOnly::SpawnDynamicComponents()
 
 bool UTestReplicationConditionsPrimitiveComponent::IsSimulatingPhysics(FName BoneName /*= NAME_None*/) const
 {
-	return true;
+	return GetOwner()->GetReplicatedMovement().bRepPhysics;
 }
 
 void UTestReplicationConditionsComponent_Physics::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -233,10 +233,4 @@ void ATestReplicationConditionsActor_Physics::SpawnDynamicComponents()
 void ATestReplicationConditionsActor_Physics::SetPhysicsEnabled(bool bEnabled)
 {
 	GetReplicatedMovement_Mutable().bRepPhysics = bEnabled;
-	SetReplicatingMovement(bEnabled);
-
-	if (UTestReplicationConditionsPrimitiveComponent* RootPrimComp = Cast<UTestReplicationConditionsPrimitiveComponent>(GetRootComponent()))
-	{
-		RootPrimComp->SetSimulatePhysics(bEnabled);
-	}
 }

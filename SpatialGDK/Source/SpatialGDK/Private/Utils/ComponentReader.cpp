@@ -171,8 +171,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	bool bIsClient = NetDriver->GetNetMode() == NM_Client;
 	bool bEventTracerEnabled = EventTracer != nullptr;
 
-	// RemoteRole (which is swapped into the local Actor's Role property) and bRepPhysics are used to construct the condition map. We must check to see if these
-	// properties have just been received, before we construct the condition map for receiving everything else.
+	// RemoteRole (which is swapped into the local Actor's Role property) and bRepPhysics are used to construct the condition map.
+	// We must check to see if these properties have just been received, before we construct the condition map for receiving everything else.
 	ENetRole ActorRole = Channel.Actor->Role;
 	bool bRepPhysics = Channel.Actor->GetReplicatedMovement().bRepPhysics;
 	if (EnumHasAnyFlags(Replicator->RepLayout->GetFlags(), ERepLayoutFlags::IsActor))
@@ -184,6 +184,10 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 			if (UNLIKELY((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex))
 			{
 				ActorRole = (ENetRole)Schema_IndexUint32(ComponentObject, FieldId, 0);
+				// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
+				// the client RPCs component. A race condition can occur here, if we check out the actor
+				// before the channel is Authoritative of it. The race gets handled in
+				// ActorSystem::HandleActorAuthority where we check USpatialActorChannel::IsAutonomousProxyOnAuthority.
 				if (ActorRole == ROLE_AutonomousProxy && !bIsAuthServer && !bAutonomousProxy)
 				{
 					ActorRole = ROLE_SimulatedProxy;
