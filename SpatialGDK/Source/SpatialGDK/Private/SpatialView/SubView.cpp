@@ -55,9 +55,9 @@ const FSubViewDelta& FSubView::GetViewDelta() const
 	return SubViewDelta;
 }
 
-TSet<Worker_EntityId_Key> FSubView::GetCompleteEntities() const
+TArray<Worker_EntityId> FSubView::GetCompleteEntities() const
 {
-	return TSet<Worker_EntityId_Key>( CompleteEntities );
+	return CompleteEntities;
 }
 
 void FSubView::Refresh()

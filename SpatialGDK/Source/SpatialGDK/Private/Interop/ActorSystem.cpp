@@ -243,7 +243,10 @@ ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InAutho
 #if DO_CHECK
 static void ValidateNoSubviewIntersections(const FSubView& Lhs, const FSubView& Rhs, const FString& SubviewDescription)
 {
-	for (const Worker_EntityId Overlapping : Lhs.GetCompleteEntities().Intersect(Rhs.GetCompleteEntities()))
+	TSet<Worker_EntityId_Key> LhsEntities, RhsEntities;
+	Algo::Copy(Lhs.GetCompleteEntities(), LhsEntities);
+	Algo::Copy(Rhs.GetCompleteEntities(), RhsEntities);
+	for (const Worker_EntityId Overlapping : LhsEntities.Intersect(RhsEntities))
 	{
 		UE_LOG(LogActorSystem, Warning, TEXT("Entity %lld is doubly complete on %s"), Overlapping, *SubviewDescription);
 	}
