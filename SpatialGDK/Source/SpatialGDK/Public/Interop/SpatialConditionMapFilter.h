@@ -19,11 +19,7 @@ public:
 		RepFlags.bNetInitial = 1; // Interest/queries controls initial only data visibility, so if the update is there let it through
 		RepFlags.bNetSimulated = Role == ROLE_SimulatedProxy;
 		RepFlags.bNetOwner = bIsClient;
-#if ENGINE_MINOR_VERSION <= 23
-		RepFlags.bRepPhysics = ActorChannel->Actor->ReplicatedMovement.bRepPhysics;
-#else
 		RepFlags.bRepPhysics = bRepPhysics;
-#endif
 
 #if 0
 		UE_LOG(LogTemp, Verbose, TEXT("CMF Actor %s (%lld) NetOwner %d Simulated %d RepPhysics %d Client %s"),

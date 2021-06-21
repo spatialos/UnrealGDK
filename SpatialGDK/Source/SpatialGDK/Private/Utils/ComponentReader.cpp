@@ -181,7 +181,6 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 		{
 			int32 CmdIndex = BaseHandleToCmdIndex[FieldId - 1].CmdIndex;
 			const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
-
 			if (UNLIKELY((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex))
 			{
 				ActorRole = (ENetRole)Schema_IndexUint32(ComponentObject, FieldId, 0);
@@ -192,6 +191,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 			}
 			else if (UNLIKELY((int32)AActor::ENetFields_Private::ReplicatedMovement == Cmd.ParentIndex))
 			{
+				// Pull out bRepPhysics, based on FRepMovement::NetSerialize
 				TArray<uint8> ValueData = IndexBytesFromSchema(ComponentObject, FieldId, 0);
 				bRepPhysics = ValueData[0] & (1 << 1) ? true : false;
 			}
@@ -353,7 +353,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 							EventBuilder.AddObject(&Object);
 							EventBuilder.AddEntityId(EntityId);
 							EventBuilder.AddComponentId(ComponentId);
-							EventBuilder.AddKeyValue("PropertyName", Cmd.Property->GetName());
+							EventBuilder.AddKeyValue("property_name", Cmd.Property->GetName());
 							EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForProperty(EntityId, Cmd.Property));
 						});
 				}
