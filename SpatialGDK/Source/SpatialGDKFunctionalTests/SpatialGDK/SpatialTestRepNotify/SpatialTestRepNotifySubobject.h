@@ -20,9 +20,9 @@ public:
 
 	bool bParentPropertyWasExpectedProperty;
 
-	UPROPERTY(ReplicatedUsing = OnRep_OnChangedRepNotifyInt1)
-	int32 OnChangedRepNotifyInt1;
+	UPROPERTY(ReplicatedUsing = OnRep_OnChangedRepNotifyInt)
+	int32 OnChangedRepNotifyInt;
 
 	UFUNCTION()
-	void OnRep_OnChangedRepNotifyInt1(int32 OldOnChangedRepNotifyInt1);
+	void OnRep_OnChangedRepNotifyInt(int32 OldOnChangedRepNotifyInt);
 };

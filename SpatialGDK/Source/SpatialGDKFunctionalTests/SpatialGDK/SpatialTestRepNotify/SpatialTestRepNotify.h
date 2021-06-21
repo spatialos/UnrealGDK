@@ -64,6 +64,4 @@ public:
 
 	UFUNCTION()
 	void OnRep_TestArray(TArray<int32> OldTestArray);
-
-	USpatialTestRepNotifySubobject* GetSubobject();
 };

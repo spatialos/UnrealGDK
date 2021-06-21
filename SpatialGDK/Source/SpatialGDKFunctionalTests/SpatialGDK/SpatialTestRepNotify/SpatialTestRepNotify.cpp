@@ -16,6 +16,8 @@
  *	- The test itself is used as the test Actor.
  *  - It contains a number of replicated properties and OnRep functions that either set boolean flags confirming they have been called, or
  *save the old value of the argument passed to the OnRep function.
+ * We also check the ordering of repnotifies being called, expecting that both an actor and its subobjects will have their new data applied before repnotifies are called on either.
+ *
  * - Test:
  *	- The Server changes the values of the replicated properties multiple times.
  *  - The clients check whether the RepNotifies have or have not been called correctly.
@@ -26,11 +28,11 @@
 ASpatialTestRepNotify::ASpatialTestRepNotify()
 	: Super()
 {
-	TestSubobject = CreateDefaultSubobject<USpatialTestRepNotifySubobject>(TEXT("USpatialTestRepNotifySubobject"));
-	TestSubobject->SetIsReplicated(true);
-
 	Author = "Miron + Andrei + Arthur";
 	Description = TEXT("Test RepNotify replication and shadow data");
+
+	TestSubobject = CreateDefaultSubobject<USpatialTestRepNotifySubobject>(TEXT("USpatialTestRepNotifySubobject"));
+	TestSubobject->SetIsReplicated(true);
 }
 
 void ASpatialTestRepNotify::PrepareTest()
@@ -262,12 +264,21 @@ void ASpatialTestRepNotify::PrepareTest()
 		},
 		nullptr, 5.0f);
 
+
+	/**
+	 * In this section of the test, we check the order rep notifies are called in.
+	 * In native, data will be applied for an actor, its subobjects, and only THEN will repnotifies be called for the updated data.
+	 *
+	 * To test this, we set the update a replicated property on an actor (the test itself) and a subobject.
+	 * Then in repnotifies on both the actor and the subobject, we check that the property on the other object has already been updated.
+	 * */
+
 	AddStep(
 		TEXT("SpatialTestRepNotifyAllWorkersInitialiseExpectedOrderingProps"), FWorkerDefinition::AllWorkers, nullptr,
 		[this]() {
-			USpatialTestRepNotifySubobject* Subobject = GetSubobject();
-			Subobject->ExpectedParentInt1Property = 350;
-			Subobject->bParentPropertyWasExpectedProperty = false;
+			AssertIsValid(TestSubobject, TEXT("TestSubobject should be valid."));
+			TestSubobject->ExpectedParentInt1Property = 350;
+			TestSubobject->bParentPropertyWasExpectedProperty = false;
 			ExpectedSubobjectIntProperty = 400;
 			bSubobjectIntPropertyWasExpectedProperty = false;
 			FinishStep();
@@ -277,8 +288,8 @@ void ASpatialTestRepNotify::PrepareTest()
 	AddStep(
 		TEXT("SpatialTestRepNotifyServerChangeReplicatedVariables2"), FWorkerDefinition::Server(1), nullptr,
 		[this]() {
-			USpatialTestRepNotifySubobject* Subobject = GetSubobject();
-			Subobject->OnChangedRepNotifyInt1 = 400;
+			AssertIsValid(TestSubobject, TEXT("TestSubobject should be valid."));
+			TestSubobject->OnChangedRepNotifyInt = 400;
 			OnChangedRepNotifyInt1 = 350;
 			FinishStep();
 		},
@@ -287,12 +298,11 @@ void ASpatialTestRepNotify::PrepareTest()
 	AddStep(
 		TEXT("SpatialTestRepNotifyClientCheckOrderingWasCorrect"), FWorkerDefinition::AllClients,
 		[this]() -> bool {
-			USpatialTestRepNotifySubobject* Subobject = GetSubobject();
-			return Subobject->OnChangedRepNotifyInt1 == 400 && OnChangedRepNotifyInt1 == 350;
+			return TestSubobject->OnChangedRepNotifyInt == 400 && OnChangedRepNotifyInt1 == 350;
 		},
 		[this]() {
-			USpatialTestRepNotifySubobject* Subobject = GetSubobject();
-			AssertEqual_Bool(Subobject->bParentPropertyWasExpectedProperty, true,
+			AssertIsValid(TestSubobject, TEXT("TestSubobject should be valid."));
+			AssertEqual_Bool(TestSubobject->bParentPropertyWasExpectedProperty, true,
 							 TEXT("The OnChangedRepNotifyInt1 on parent actor ASpatialTestRepNotify should have been set to 350 before the "
 								  "subobject's RepNotify was called"));
 			AssertEqual_Bool(bSubobjectIntPropertyWasExpectedProperty, true,
@@ -306,10 +316,10 @@ void ASpatialTestRepNotify::PrepareTest()
 void ASpatialTestRepNotify::OnRep_OnChangedRepNotifyInt1(int32 OldOnChangedRepNotifyInt1)
 {
 	bOnRepOnChangedRepNotifyInt1Called = true;
-
 	bSubobjectIntPropertyWasExpectedProperty = false;
-	USpatialTestRepNotifySubobject* Subobject = GetSubobject();
-	if (Subobject->OnChangedRepNotifyInt1 == ExpectedSubobjectIntProperty)
+
+	ensureAlwaysMsgf(IsValid(TestSubobject), TEXT("TestSubobject should be valid"));
+	if (TestSubobject->OnChangedRepNotifyInt == ExpectedSubobjectIntProperty)
 	{
 		bSubobjectIntPropertyWasExpectedProperty = true;
 	}
@@ -346,16 +356,4 @@ void ASpatialTestRepNotify::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(ASpatialTestRepNotify, TestArray);
 
 	DOREPLIFETIME(ASpatialTestRepNotify, TestSubobject);
-}
-
-USpatialTestRepNotifySubobject* ASpatialTestRepNotify::GetSubobject()
-{
-	TArray<USpatialTestRepNotifySubobject*> Subobjects;
-	GetComponents<USpatialTestRepNotifySubobject>(Subobjects);
-
-	if (ensureAlwaysMsgf(Subobjects.Num() == 1, TEXT("There should only be one USpatialTestRepNotifySubobject")))
-	{
-		return Subobjects[0];
-	}
-	return nullptr;
 }

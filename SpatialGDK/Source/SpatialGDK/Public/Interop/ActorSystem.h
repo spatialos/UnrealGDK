@@ -151,8 +151,8 @@ private:
 							Schema_ComponentData* Data);
 
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
-	void ResolveObjectReferences(::FRepLayout& RepLayout, ::UObject* ReplicatedObject, ::FSpatialObjectRepState& RepState,
-								 FObjectReferencesMap& ObjectReferencesMap, uint8* StoredData, uint8* Data, int32 MaxAbsOffset,
+	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState,
+								 FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset,
 								 FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutSomeObjectsWereMapped);
 
 	// Component update

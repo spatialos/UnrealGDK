@@ -11,7 +11,7 @@ USpatialTestRepNotifySubobject::USpatialTestRepNotifySubobject()
 	SetIsReplicatedByDefault(true);
 }
 
-void USpatialTestRepNotifySubobject::OnRep_OnChangedRepNotifyInt1(int32 OldOnChangedRepNotifyInt1)
+void USpatialTestRepNotifySubobject::OnRep_OnChangedRepNotifyInt(int32 OldOnChangedRepNotifyInt)
 {
 	bParentPropertyWasExpectedProperty = false;
 	if (ASpatialTestRepNotify* Parent = Cast<ASpatialTestRepNotify>(GetOwner()))
@@ -27,5 +27,5 @@ void USpatialTestRepNotifySubobject::GetLifetimeReplicatedProps(TArray<FLifetime
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(USpatialTestRepNotifySubobject, OnChangedRepNotifyInt1);
+	DOREPLIFETIME(USpatialTestRepNotifySubobject, OnChangedRepNotifyInt);
 }
