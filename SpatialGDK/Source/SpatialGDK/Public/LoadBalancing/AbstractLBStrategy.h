@@ -12,6 +12,13 @@
 
 #include "AbstractLBStrategy.generated.h"
 
+/**
+ * Simple descriptor of the most commonly used load balancing class
+ * This is directly interpreted by LegacyLoadBalancingStrategy but is not intended
+ * as more than a mock for working and refining the centralized load balancing strategy.
+ * It does away with the compositional pattern of abstract strategies, which should disappear
+ * in favor of a fully user-specified one (still have to work out which tools we make available to help).
+ */
 struct FLegacyLBContext
 {
 	struct Cell

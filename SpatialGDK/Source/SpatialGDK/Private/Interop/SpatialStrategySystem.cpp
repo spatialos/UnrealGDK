@@ -157,31 +157,34 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 
 void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 {
-	PartitionsMgr->Flush(Connection);
-
+	// Update worker's interest if needed (now, only when additional data storage has been added)
 	if (bStrategySystemInterestDirty)
 	{
 		UpdateStrategySystemInterest(Connection);
 	}
 
+	// Manage updates to partitions
 	Strategy->TickPartitions(*PartitionsMgr);
-	Strategy->Flush(Connection);
+	PartitionsMgr->Flush(Connection);
 
+	// Iterator over the data storage to collect the entities which have been modified this frame.
 	TSet<Worker_EntityId_Key> ModifiedEntities;
 	for (auto& Storage : DataStorages)
 	{
 		ModifiedEntities = ModifiedEntities.Union(Storage->GetModifiedEntities());
 	}
 
+	// Ask the Strategy about the entities that need migration.
 	FMigrationContext Ctx(MigratingEntities, ModifiedEntities);
-
 	Strategy->CollectEntitiesToMigrate(Ctx);
 
+	// Clear the buffer of modified entities now that the strategy has been informed.
 	for (auto& Storage : DataStorages)
 	{
 		Storage->ClearModified();
 	}
 
+	// If there were pending migrations, meld them with the migration requests
 	for (auto PendingMigration : PendingMigrations)
 	{
 		if (!Ctx.EntitiesToMigrate.Contains(PendingMigration.Key))
@@ -195,6 +198,7 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	{
 		Worker_EntityId EntityId = Migration.Key;
 
+		// Right now we do not allow changing the destination partition in flight, but that may not be a hard requirement.
 		if (!ensureAlways(!MigratingEntities.Contains(EntityId)))
 		{
 			continue;
@@ -203,6 +207,7 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 		FPartitionHandle Partition = Migration.Value;
 		TOptional<Worker_PartitionId> DestPartition = PartitionsMgr->GetPartitionId(Partition);
 		AuthorityIntentV2& AuthIntent = AuthorityIntentView.FindChecked(EntityId);
+		// The destination partition is not ready to accept actors, push the migration into the pending map.
 		if (!DestPartition)
 		{
 			PendingMigrations.Add(EntityId, Partition);
@@ -212,6 +217,7 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 		AuthIntent.PartitionId = DestPartition.GetValue();
 		AuthIntent.AssignmentCounter++;
 
+		// Send an update to the current authoritative worker, to release auth.
 		ComponentUpdate Update(OwningComponentUpdatePtr(AuthIntent.CreateAuthorityIntentUpdate().schema_type),
 							   AuthorityIntentV2::ComponentId);
 		Connection.SendComponentUpdate(EntityId, MoveTemp(Update), {});
@@ -221,6 +227,7 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	TSet<Worker_EntityId_Key> EntitiesToUpdate = EntitiesClientChanged;
 	EntitiesToUpdate.Append(EntitiesACKMigration);
 
+	// Process the entities for which the migration was acked by the current authoritative worker.
 	for (auto EntityToMigrate : EntitiesACKMigration)
 	{
 		AuthorityIntentV2& AuthIntent = AuthorityIntentView.FindChecked(EntityToMigrate);
@@ -230,6 +237,8 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 		MigratingEntities.Remove(EntityToMigrate);
 	}
 	EntitiesACKMigration.Empty();
+
+	// Process the entities needing a change to client ownership
 	for (auto EntityToUpdateOwner : EntitiesClientChanged)
 	{
 		NetOwningClientWorker& NetOwnerData = NetOwningClientView.FindChecked(EntityToUpdateOwner);
@@ -239,6 +248,7 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	}
 	EntitiesClientChanged.Empty();
 
+	// Send the actual authority delegation updates
 	for (auto EntityToUpdate : EntitiesToUpdate)
 	{
 		AuthorityDelegation& AuthDelegation = AuthorityDelegationView.FindChecked(EntityToUpdate);
@@ -246,6 +256,8 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 							   SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID);
 		Connection.SendComponentUpdate(EntityToUpdate, MoveTemp(Update), {});
 	}
+
+	Strategy->Flush(Connection);
 }
 
 void FSpatialStrategySystem::Destroy(ISpatialOSWorker& Connection) {}

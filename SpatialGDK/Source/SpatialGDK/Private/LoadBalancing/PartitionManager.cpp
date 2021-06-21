@@ -191,6 +191,10 @@ struct FPartitionManager::Impl
 				{
 					if (Component.GetComponentId() == SpatialConstants::PARTITION_ACK_COMPONENT_ID)
 					{
+						// Right now, we wait for an answer from the worker to which the partition has been delegated to
+						// This could help with preventing loss of authority if a worker is delegated an actor
+						// before it knows it has been delegated the partition which has auth over it
+						// There could be other ways to prevent that, which would make the partition_ack component useless.
 						Schema_Object* Object = Schema_GetComponentDataFields(Component.GetUnderlying());
 						if (Schema_GetUint64(Object, 1) != 0)
 						{
@@ -322,11 +326,13 @@ struct FPartitionManager::Impl
 
 	void Flush(ISpatialOSWorker& Connection)
 	{
+		// Wait for the initial entityId reservation query to land
 		if (FirstPartitionId == 0)
 		{
 			return;
 		}
 
+		// Ask for more ids if we run out.
 		if (CurPartitionId == FirstPartitionId + k_PartitionsReserveRange)
 		{
 			if (!PartitionReserveRequest.IsSet())
