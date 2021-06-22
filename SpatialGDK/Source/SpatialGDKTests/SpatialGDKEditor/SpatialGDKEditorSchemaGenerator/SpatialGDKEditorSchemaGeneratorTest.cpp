@@ -138,11 +138,6 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 		}
 		else
 		{
-			if (ParsedNamesAndIds.Names.Num() != 1)
-			{
-				return false;
-			}
-
 			if (ActorData->GeneratedSchemaName.Compare(ParsedNamesAndIds.Names[0]) != 0)
 			{
 				return false;
@@ -169,9 +164,14 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 			//	}
 			//}
 
-			for (int i = 0; i < ParsedNamesAndIds.Ids.Num(); ++i)
+			uint32 IdIndex = 0;
+			for (int i = 0; i < SCHEMA_Count; ++i)
 			{
-				if (ActorData->SchemaComponents[i] != ParsedNamesAndIds.Ids[i])
+				if (ActorData->SchemaComponents[i] == SpatialConstants::INVALID_COMPONENT_ID)
+				{
+					continue;
+				}
+				if (ActorData->SchemaComponents[i] != ParsedNamesAndIds.Ids[IdIndex++])
 				{
 					return false;
 				}
@@ -333,7 +333,16 @@ public:
 
 		FString ExpectedContent;
 		FFileHelper::LoadFileToString(ExpectedContent, *ExpectedContentFullPath);
-		ExpectedContent.ReplaceInline(TEXT("{{id}}"), *FString::FromInt(GetNextFreeId()));
+		while (true)
+		{
+			FString SearchString = TEXT("{{id}}");
+			int32 Index = ExpectedContent.Find(SearchString, ESearchCase::IgnoreCase, ESearchDir::FromStart, -1);
+			if (Index == -1)
+				break;
+			ExpectedContent.RemoveAt(Index, SearchString.Len());
+			ExpectedContent.InsertAt(Index, *FString::FromInt(GetNextFreeId()));
+		}
+
 		return (CleanSchema(GeneratedSchemaContent).Compare(CleanSchema(ExpectedContent)) == 0);
 	}
 
@@ -906,6 +915,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 	TArray<FString> GDKSchemaFilePaths = { "authority_intent.schema",
 										   "core_types.schema",
 										   "debug_component.schema",
+										   "gameplay_debugger_component.schema",
 										   "debug_metrics.schema",
 										   "global_state_manager.schema",
 										   "initial_only_presence.schema",

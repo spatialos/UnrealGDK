@@ -18,25 +18,12 @@
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/SpatialLatencyTracer.h"
 
 DEFINE_LOG_CATEGORY(LogComponentFactory);
 
 DECLARE_CYCLE_STAT(TEXT("Factory ProcessPropertyUpdates"), STAT_FactoryProcessPropertyUpdates, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Factory ProcessFastArrayUpdate"), STAT_FactoryProcessFastArrayUpdate, STATGROUP_SpatialNet);
 
-namespace
-{
-template <typename T>
-TraceKey* GetTraceKeyFromComponentObject(T& Obj)
-{
-#if TRACE_LIB_ACTIVE
-	return &Obj.Trace;
-#else
-	return nullptr;
-#endif
-}
-} // namespace
 namespace SpatialGDK
 {
 ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver)
@@ -46,12 +33,11 @@ ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNet
 	, bInterestHasChanged(bInterestDirty)
 	, bInitialOnlyDataWritten(false)
 	, bInitialOnlyReplicationEnabled(GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition)
-	, LatencyTracer(USpatialLatencyTracer::GetTracer(InNetDriver))
 {
 }
 
 uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes,
-										  ESchemaComponentType PropertyGroup, bool bIsInitialData, TraceKey* OutLatencyTraceId,
+										  ESchemaComponentType PropertyGroup, bool bIsInitialData,
 										  TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
 {
 	SCOPE_CYCLE_COUNTER(STAT_FactoryProcessPropertyUpdates);
@@ -69,30 +55,6 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 			const FRepLayoutCmd& Cmd = Changes.RepLayout.Cmds[HandleIterator.CmdIndex];
 			const FRepParentCmd& Parent = Changes.RepLayout.Parents[Cmd.ParentIndex];
 
-#if TRACE_LIB_ACTIVE
-			if (LatencyTracer != nullptr && OutLatencyTraceId != nullptr)
-			{
-				TraceKey PropertyKey = InvalidTraceKey;
-				PropertyKey = LatencyTracer->RetrievePendingTrace(Object, Cmd.Property);
-				if (PropertyKey == InvalidTraceKey)
-				{
-					// Check for sending a nested property
-					PropertyKey = LatencyTracer->RetrievePendingTrace(Object, Parent.Property);
-				}
-				if (PropertyKey != InvalidTraceKey)
-				{
-					// If we have already got a trace for this actor/component, we will end one of them here
-					if (*OutLatencyTraceId != InvalidTraceKey)
-					{
-						UE_LOG(LogComponentFactory, Warning,
-							   TEXT("%s property trace being dropped because too many active on this actor (%s)"), *Cmd.Property->GetName(),
-							   *Object->GetName());
-						LatencyTracer->WriteAndEndTrace(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"), true);
-					}
-					*OutLatencyTraceId = PropertyKey;
-				}
-			}
-#endif
 			if (GetGroupFromCondition(Parent.Condition) == PropertyGroup)
 			{
 				const uint8* Data = (uint8*)Object + Cmd.Offset;
@@ -389,8 +351,7 @@ FWorkerComponentData ComponentFactory::CreateComponentData(Worker_ComponentId Co
 
 	// We're currently ignoring ClearedId fields, which is problematic if the initial replicated state
 	// is different to what the default state is (the client will have the incorrect data). UNR:959
-	OutBytesWritten +=
-		FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, true, GetTraceKeyFromComponentObject(ComponentData));
+	OutBytesWritten += FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, true);
 
 	return ComponentData;
 }
@@ -498,8 +459,7 @@ FWorkerComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	uint32 BytesWritten = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false,
-										   GetTraceKeyFromComponentObject(ComponentUpdate), &ClearedIds);
+	uint32 BytesWritten = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, &ClearedIds);
 
 	for (Schema_FieldId Id : ClearedIds)
 	{

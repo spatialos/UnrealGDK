@@ -7,7 +7,6 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/PlayerState.h"
-#include "Interop/ClientNetLoadActorHelper.h"
 #include "Interop/InitialOnlyFilter.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -244,7 +243,10 @@ ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InAutho
 #if DO_CHECK
 static void ValidateNoSubviewIntersections(const FSubView& Lhs, const FSubView& Rhs, const FString& SubviewDescription)
 {
-	for (const Worker_EntityId Overlapping : Lhs.GetCompleteEntities().Intersect(Rhs.GetCompleteEntities()))
+	TSet<Worker_EntityId_Key> LhsEntities, RhsEntities;
+	Algo::Copy(Lhs.GetCompleteEntities(), LhsEntities);
+	Algo::Copy(Rhs.GetCompleteEntities(), RhsEntities);
+	for (const Worker_EntityId Overlapping : LhsEntities.Intersect(RhsEntities))
 	{
 		UE_LOG(LogActorSystem, Warning, TEXT("Entity %lld is doubly complete on %s"), Overlapping, *SubviewDescription);
 	}
@@ -315,7 +317,7 @@ void ActorSystem::Advance()
 			UE_LOG(LogActorSystem, Verbose, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
 				   Delta.EntityId);
 			// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
-			NetDriver->PackageMap->ResolveEntityActor(EntityActor, Delta.EntityId);
+			NetDriver->PackageMap->ResolveEntityActorAndSubobjects(Delta.EntityId, EntityActor);
 			RemoveActor(Delta.EntityId);
 		}
 	}
@@ -659,7 +661,7 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 		EventTracer->TraceEvent(COMPONENT_UPDATE_EVENT_NAME, "", Causes, CauseSpanIds.Num(),
 								[Object, TargetObject, EntityId, ComponentId](FSpatialTraceEventDataBuilder& EventBuilder) {
 									EventBuilder.AddObject(Object);
-									EventBuilder.AddObject(TargetObject, "TargetObject");
+									EventBuilder.AddObject(TargetObject, "target_object");
 									EventBuilder.AddEntityId(EntityId);
 									EventBuilder.AddComponentId(ComponentId);
 								});
@@ -699,13 +701,14 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 		}
 		else if (UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
-			DestroySubObject(EntityId, *Object, ObjectRef);
+			DestroySubObject(ObjectRef, *Object);
 		}
 	}
 }
 
-void ActorSystem::DestroySubObject(const Worker_EntityId EntityId, UObject& Object, const FUnrealObjectRef& ObjectRef) const
+void ActorSystem::DestroySubObject(const FUnrealObjectRef& ObjectRef, UObject& Object) const
 {
+	const Worker_EntityId EntityId = ObjectRef.Entity;
 	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
 	{
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
@@ -1272,20 +1275,19 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 
 	ActorData& ActorComponents = ActorDataStore[EntityId];
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
-	if (EntityActor != nullptr)
 	{
-		if (!EntityActor->IsActorReady())
+		AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get(/*bEvenIfPendingKill =*/true));
+		if (EntityActor != nullptr)
 		{
-			UE_LOG(LogActorSystem, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
-				   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
+			if (!EntityActor->IsActorReady())
+			{
+				UE_LOG(LogActorSystem, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
+					   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
+			}
+
+			return;
 		}
-
-		return;
 	}
-
 	UE_LOG(LogActorSystem, Verbose,
 		   TEXT("%s: Entity has been checked out on a worker which didn't spawn it. "
 				"Entity ID: %lld"),
@@ -1301,7 +1303,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 	}
 
 	// Make sure ClassInfo exists
-	const FClassInfo& ActorClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Class);
+	NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
 	// If the received actor is torn off, don't bother spawning it.
 	// (This is only needed due to the delay between tearoff and deleting the entity. See https://improbableio.atlassian.net/browse/UNR-841)
@@ -1312,7 +1314,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	EntityActor = TryGetOrCreateActor(ActorComponents, EntityId);
+	AActor* EntityActor = TryGetOrCreateActor(ActorComponents, EntityId);
 
 	if (EntityActor == nullptr)
 	{
@@ -1322,7 +1324,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	if (!NetDriver->PackageMap->ResolveEntityActor(EntityActor, EntityId))
+	if (!NetDriver->PackageMap->ResolveEntityActorAndSubobjects(EntityId, EntityActor))
 	{
 		UE_LOG(LogActorSystem, Warning,
 			   TEXT("Failed to resolve entity actor when receiving entity. Actor will not be spawned. Entity: %lld, actor: %s"), EntityId,
@@ -1405,7 +1407,7 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 	if (EntityActor.IsFullNameStableForNetworking())
 	{
 		// bNetLoadOnClient actors could have components removed while out of the client's interest
-		ClientNetLoadActorHelper.RemoveRuntimeRemovedComponents(EntityId, EntityComponents);
+		ClientNetLoadActorHelper.RemoveRuntimeRemovedComponents(EntityId, EntityComponents, EntityActor);
 	}
 
 	// Resolve things like RepNotify or RPCs after applying component data.
@@ -1673,7 +1675,7 @@ USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, const Worker
 
 USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, const Worker_EntityId EntityId)
 {
-	if (!NetDriver->PackageMap->ResolveEntityActor(StablyNamedActor, EntityId))
+	if (!NetDriver->PackageMap->ResolveEntityActorAndSubobjects(EntityId, StablyNamedActor))
 	{
 		UE_LOG(LogActorSystem, Warning,
 			   TEXT("Failed to restore actor channel for stably named actor: failed to resolve actor. Entity: %lld, actor: %s"), EntityId,
@@ -1936,7 +1938,7 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 											GDK_PROPERTY(Property)* Property = *Itr;
 											EventBuilder.AddObject(Object);
 											EventBuilder.AddEntityId(EntityId);
-											EventBuilder.AddKeyValue("PropertyName", Property->GetName());
+											EventBuilder.AddKeyValue("property_name", Property->GetName());
 											EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForProperty(EntityId, Property));
 										});
 

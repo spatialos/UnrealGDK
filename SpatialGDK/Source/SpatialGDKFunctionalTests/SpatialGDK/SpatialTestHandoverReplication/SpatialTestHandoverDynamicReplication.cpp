@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestHandoverDynamicReplication.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -90,7 +90,7 @@ void ASpatialTestHandoverDynamicReplication::PrepareTest()
 
 				AssertTrue(IsValid(NetDriver), TEXT("This test should be run with Spatial Networking"));
 
-				LoadBalancingStrategy = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy);
+				LoadBalancingStrategy = GetLoadBalancingStrategy();
 
 				AssertTrue(IsValid(HandoverCube) && IsValid(LoadBalancingStrategy), TEXT("All servers should have a valid reference to the "
 																						 "HandoverCube and the strategy"));

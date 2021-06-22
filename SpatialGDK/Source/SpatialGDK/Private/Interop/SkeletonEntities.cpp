@@ -428,7 +428,7 @@ void FSkeletonEntityPopulator::PopulateEntity(Worker_EntityId SkeletonEntityId, 
 {
 	EntityFactory Factory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
 
-	NetDriver->PackageMap->ResolveEntityActor(&SkeletonEntityStartupActor, SkeletonEntityId);
+	NetDriver->PackageMap->ResolveEntityActorAndSubobjects(SkeletonEntityId, &SkeletonEntityStartupActor);
 
 	TArray<FWorkerComponentData> Components;
 

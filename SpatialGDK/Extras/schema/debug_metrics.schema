@@ -8,9 +8,16 @@ type ModifySettingPayload {
     float setting_value = 2;
 }
 
+type ExecServerCommandPayload {
+    string server_worker = 1;
+    int32 command = 2;
+    string args = 3;
+}
+
 component DebugMetrics {
     id = 9984;
     command Void start_rpc_metrics(Void);
     command Void stop_rpc_metrics(Void);
     command Void modify_spatial_settings(ModifySettingPayload);
+    command Void exec_server_command(ExecServerCommandPayload);
 }

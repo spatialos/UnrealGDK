@@ -20,6 +20,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
+#include "EngineClasses/SpatialNetDriverGameplayDebuggerContext.h"
 #include "EngineClasses/SpatialNetDriverRPC.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
@@ -106,6 +107,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	: Super(ObjectInitializer)
 	, LoadBalanceStrategy(nullptr)
 	, DebugCtx(nullptr)
+	, GameplayDebuggerCtx(nullptr)
 	, LoadBalanceEnforcer(nullptr)
 	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
@@ -427,11 +429,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 {
 	InitializeSpatialOutputDevice();
 
-	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	USpatialGameInstance* GameInstance = GetGameInstance();
 	check(GameInstance != nullptr);
 
-	SpatialMetrics = NewObject<USpatialMetrics>();
+	SpatialMetrics = NewObject<USpatialMetrics>(this);
 	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
 
 	SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
@@ -443,7 +444,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		Sender = NewObject<USpatialSender>();
 		Receiver = NewObject<USpatialReceiver>();
 
-		if (IsServer() && SpatialSettings->bRunStrategyWorker)
+		if (IsServer() && GetDefault<USpatialGDKSettings>()->bRunStrategyWorker)
 		{
 			SkeletonEntityCreationStep = MakeUnique<SpatialGDK::FSkeletonEntityCreationStep>(*this);
 		}
@@ -458,6 +459,54 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 		SnapshotManager = MakeUnique<SpatialSnapshotManager>();
 
+		CreateAndInitializeLoadBalancingClasses();
+
+		Dispatcher->Init(SpatialWorkerFlags);
+		Sender->Init(this, &TimerManager, Connection->GetEventTracer());
+		Receiver->Init(this, Connection->GetEventTracer());
+		GlobalStateManager->Init(this);
+		SnapshotManager->Init(Connection, GlobalStateManager);
+		PlayerSpawner->Init(this);
+		PlayerSpawner->OnPlayerSpawnFailed.BindUObject(GameInstance, &USpatialGameInstance::HandleOnPlayerSpawnFailed);
+
+		SpatialMetrics->ControllerRefProvider.BindUObject(this, &USpatialNetDriver::GetCurrentPlayerControllerRef);
+
+		// PackageMap value has been set earlier in USpatialNetConnection::InitBase
+		// Making sure the value is the same
+		USpatialPackageMapClient* NewPackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+		check(NewPackageMap == PackageMap);
+
+		PackageMap->Init(*this);
+		if (IsServer())
+		{
+			PackageMap->GetEntityPoolReadyDelegate().AddUObject(Connection, &USpatialWorkerConnection::CreateServerWorkerEntity);
+		}
+
+		// The interest factory depends on the package map, so is created last.
+		InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
+
+		if (!IsServer())
+		{
+			return;
+		}
+
+		SpatialGDK::FSubView& WellKnownSubView =
+			Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
+													   SpatialGDK::FSubView::NoDispatcherCallbacks);
+		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(
+			WellKnownSubView, Connection, LoadBalanceStrategy->GetMinimumRequiredWorkers(), *VirtualWorkerTranslator, *GlobalStateManager);
+	}
+}
+
+void USpatialNetDriver::CreateAndInitializeCoreClassesAfterStartup()
+{
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	USpatialGameInstance* GameInstance = GetGameInstance();
+	check(GameInstance != nullptr);
+
+	FName WorkerType = GameInstance->GetSpatialWorkerType();
+	if (WorkerType == SpatialConstants::DefaultServerWorkerType || WorkerType == SpatialConstants::DefaultClientWorkerType)
+	{
 		if (SpatialSettings->bAsyncLoadNewClassesOnEntityCheckout)
 		{
 			AsyncPackageLoadFilter = NewObject<UAsyncPackageLoadFilter>();
@@ -469,8 +518,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		{
 			InitialOnlyFilter = MakeUnique<SpatialGDK::InitialOnlyFilter>(*Connection);
 		}
-
-		CreateAndInitializeLoadBalancingClasses();
 
 		const SpatialGDK::FSubView& ActorSubview = SpatialGDK::ActorSubviews::CreateActorSubView(*this);
 
@@ -528,41 +575,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		}
 
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
-
-		Dispatcher->Init(SpatialWorkerFlags);
-		Sender->Init(this, &TimerManager, Connection->GetEventTracer());
-		Receiver->Init(this, Connection->GetEventTracer());
-		GlobalStateManager->Init(this);
-		SnapshotManager->Init(Connection, GlobalStateManager);
-		PlayerSpawner->Init(this);
-		PlayerSpawner->OnPlayerSpawnFailed.BindUObject(GameInstance, &USpatialGameInstance::HandleOnPlayerSpawnFailed);
-
-		SpatialMetrics->ControllerRefProvider.BindUObject(this, &USpatialNetDriver::GetCurrentPlayerControllerRef);
-
-		// PackageMap value has been set earlier in USpatialNetConnection::InitBase
-		// Making sure the value is the same
-		USpatialPackageMapClient* NewPackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
-		check(NewPackageMap == PackageMap);
-
-		PackageMap->Init(*this);
-		if (IsServer())
-		{
-			PackageMap->GetEntityPoolReadyDelegate().AddUObject(Connection, &USpatialWorkerConnection::CreateServerWorkerEntity);
-		}
-
-		// The interest factory depends on the package map, so is created last.
-		InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
-
-		if (!IsServer())
-		{
-			return;
-		}
-
-		SpatialGDK::FSubView& WellKnownSubView =
-			Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
-													   SpatialGDK::FSubView::NoDispatcherCallbacks);
-		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(
-			WellKnownSubView, Connection, LoadBalanceStrategy->GetMinimumRequiredWorkers(), *VirtualWorkerTranslator, *GlobalStateManager);
 	}
 }
 
@@ -2083,6 +2095,13 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		DebugCtx->TickServer();
 	}
 
+#if WITH_GAMEPLAY_DEBUGGER
+	if (GameplayDebuggerCtx != nullptr)
+	{
+		GameplayDebuggerCtx->TickServer();
+	}
+#endif
+
 	if (UReplicationDriver* RepDriver = GetReplicationDriver())
 	{
 		return RepDriver->ServerReplicateActors(DeltaSeconds);
@@ -2274,6 +2293,13 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				DebugCtx->AdvanceView();
 			}
 
+#if WITH_GAMEPLAY_DEBUGGER
+			if (GameplayDebuggerCtx != nullptr)
+			{
+				GameplayDebuggerCtx->AdvanceView();
+			}
+#endif
+
 			if (ClientConnectionManager.IsValid())
 			{
 				ClientConnectionManager->Advance();
@@ -2288,7 +2314,10 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
 				Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
 				Dispatcher->ProcessOps(Connection->GetWorkerMessages());
-				CrossServerRPCHandler->ProcessMessages(Connection->GetWorkerMessages(), DeltaTime);
+				if (CrossServerRPCHandler)
+				{
+					CrossServerRPCHandler->ProcessMessages(Connection->GetWorkerMessages(), DeltaTime);
+				}
 			}
 
 			if (RPCService.IsValid())
@@ -3219,6 +3248,8 @@ void USpatialNetDriver::TryFinishStartup()
 				bIsReadyToStart = true;
 				Connection->SetStartupComplete();
 
+				CreateAndInitializeCoreClassesAfterStartup();
+
 #if WITH_EDITORONLY_DATA
 				ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
 				if (WorldSettings && WorldSettings->bEnableDebugInterface)
@@ -3240,6 +3271,24 @@ void USpatialNetDriver::TryFinishStartup()
 					USpatialNetDriverDebugContext::EnableDebugSpatialGDK(DebugActorSubView, this);
 				}
 #endif
+
+#if WITH_GAMEPLAY_DEBUGGER
+				const FFilterPredicate GameplayDebuggerCompFilter = [this](const Worker_EntityId EntityId,
+																		   const SpatialGDK::EntityViewElement& Element) {
+					return Element.Components.ContainsByPredicate(
+						SpatialGDK::ComponentIdEquality{ SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID });
+				};
+
+				const TArray<FDispatcherRefreshCallback> GameplayDebuggerCompRefresh = {
+					Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+						SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID)
+				};
+
+				const SpatialGDK::FSubView& GameplayDebuggerActorSubView =
+					SpatialGDK::ActorSubviews::CreateCustomActorSubView({}, GameplayDebuggerCompFilter, GameplayDebuggerCompRefresh, *this);
+				USpatialNetDriverGameplayDebuggerContext::Enable(GameplayDebuggerActorSubView, *this);
+#endif // WITH_GAMEPLAY_DEBUGGER
+
 				// We've found and dispatched all ops we need for startup,
 				// trigger BeginPlay() on the GSM and process the queued ops.
 				// Note that FindAndDispatchStartupOps() will have notified the Dispatcher
@@ -3254,6 +3303,8 @@ void USpatialNetDriver::TryFinishStartup()
 		{
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();
+
+			CreateAndInitializeCoreClassesAfterStartup();
 		}
 		else
 		{

@@ -43,6 +43,7 @@ class USpatialGameInstance;
 class USpatialMetrics;
 class USpatialNetConnection;
 class USpatialNetDriverDebugContext;
+class USpatialNetDriverGameplayDebuggerContext;
 class USpatialPackageMapClient;
 class USpatialPlayerSpawner;
 class USpatialReceiver;
@@ -220,6 +221,8 @@ public:
 	UPROPERTY()
 	USpatialNetDriverDebugContext* DebugCtx;
 	UPROPERTY()
+	USpatialNetDriverGameplayDebuggerContext* GameplayDebuggerCtx;
+	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
 
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
@@ -321,6 +324,8 @@ private:
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
+	void CreateAndInitializeCoreClassesAfterStartup();
+
 	void CreateAndInitializeLoadBalancingClasses();
 
 	void CreateServerSpatialOSNetConnection();

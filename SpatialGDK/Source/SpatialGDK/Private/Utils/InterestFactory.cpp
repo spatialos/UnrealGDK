@@ -18,6 +18,10 @@
 #include "GameFramework/PlayerController.h"
 #include "UObject/UObjectIterator.h"
 
+#if WITH_GAMEPLAY_DEBUGGER
+#include "GameplayDebuggerCategoryReplicator.h"
+#endif
+
 DEFINE_LOG_CATEGORY(LogInterestFactory);
 
 DECLARE_STATS_GROUP(TEXT("InterestFactory"), STATGROUP_SpatialInterestFactory, STATCAT_Advanced);
@@ -193,6 +197,14 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 												 PartitionQuery);
 	}
 
+#if WITH_GAMEPLAY_DEBUGGER
+	// Query to know about all the actors tagged with a gameplay debugger component
+	PartitionQuery = Query();
+	PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID };
+	PartitionQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID;
+	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, PartitionQuery);
+#endif
+
 	return PartitionInterest;
 }
 
@@ -239,6 +251,14 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 		AddClientPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
 	}
 
+#if WITH_GAMEPLAY_DEBUGGER
+	if (AGameplayDebuggerCategoryReplicator* Replicator = Cast<AGameplayDebuggerCategoryReplicator>(InActor))
+	{
+		// Put special server interest on the replicator for the auth server to ensure player controller visibility
+		AddServerGameplayDebuggerCategoryReplicatorActorInterest(ResultInterest, *Replicator);
+	}
+#endif
+
 	// Clients need to see owner only and server RPC components on entities they have authority over
 	AddClientSelfInterest(ResultInterest);
 
@@ -268,6 +288,39 @@ void InterestFactory::AddClientPlayerControllerActorInterest(Interest& OutIntere
 		AddNetCullDistanceQueries(OutInterest, LevelConstraint);
 	}
 }
+
+#if WITH_GAMEPLAY_DEBUGGER
+void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(Interest& OutInterest,
+																			   const AGameplayDebuggerCategoryReplicator& Replicator) const
+{
+	APlayerController* PlayerController = Replicator.GetReplicationOwner();
+	if (PlayerController == nullptr)
+	{
+		UE_LOG(LogInterestFactory, Warning,
+			   TEXT("Gameplay debugger category replicator actor %s doesn't have a player controller set as its replication owner. An "
+					"interest query for the authoritative server could not be added and using the gameplay debugger might fail."),
+			   *Replicator.GetName());
+		return;
+	}
+
+	const UNetDriver* NetDriver = PlayerController->GetNetDriver();
+	if (NetDriver == nullptr)
+	{
+		UE_LOG(LogInterestFactory, Warning,
+			   TEXT("Player controller actor %s doesn't have an associated net driver. An interest query for the authoritative server "
+					"could not be added and using the gameplay debugger might fail."),
+			   *PlayerController->GetName());
+		return;
+	}
+
+	// Add a query for the authoritative server to see the player controller
+	Query PlayerControllerQuery;
+	PlayerControllerQuery.Constraint.EntityIdConstraint = NetDriver->GetActorEntityId(*PlayerController);
+	PlayerControllerQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
+	PlayerControllerQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, PlayerControllerQuery);
+}
+#endif
 
 void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const
 {

@@ -113,19 +113,12 @@ public:
 
 	void SetStartupComplete();
 
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
-	FOnEnqueueMessage OnEnqueueMessage;
-
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
-	FOnDequeueMessage OnDequeueMessage;
-
+	SpatialGDK::ISpatialOSWorker* GetSpatialWorkerInterface() const;
 	SpatialGDK::SpatialEventTracer* GetEventTracer() const { return EventTracer; }
 
 private:
 	TOptional<SpatialGDK::ServerWorkerEntityCreator> WorkerEntityCreator;
 
-	static bool IsStartupComponent(Worker_ComponentId Id);
-	static void ExtractStartupOps(SpatialGDK::OpList& OpList, SpatialGDK::ExtractedOpListData& ExtractedOpList);
 	bool StartupComplete = false;
 	SpatialGDK::SpatialEventTracer* EventTracer;
 	TUniquePtr<SpatialGDK::ViewCoordinator> Coordinator;
