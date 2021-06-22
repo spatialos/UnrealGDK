@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`x.y.z`] - Unreleased
 
 ### Breaking changes:
+
+### Features:
+
+### Bug fixes:
+
+### Internal:
+
+## [`0.14.0-rc`] - Unreleased
+
+### Breaking changes:
 - The `Handover` variable specifier has been deprecated. It should be replaced with the standard `Replicated` variable specifier and restricting the replication with the new `COND_ServerOnly` replication condition in `GetLifetimeReplicatedProps`. `Handover` variables will try to replicate using the new replication condition, but support will be removed in the next release.
 - Reworked AlwaysInterested functionality to run on authoritative servers, and owning clients. The previous behaviour was for it to only run on PlayerController classes, on the client only.
 - `bUseNetOwnerActorGroup` actor setting has been removed with the default behavior now true inside LayeredLBStrategy. Extend this class if you wish to alter this default behavior.
@@ -22,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added NetWriteFence UFUNCTION Tag. This tag is used when Network writes to an actor should be ordered with regard to updates to another actor. This is relevant in worker recovery/snapshot reloading to get some ordering guarantees when SpatialOS can write updates to entities in any order.
 - Inspector process is automatically started when starting PIE. This means you can re-use existing inspector browser sessions.
 - Visual Logger now supports multi-worker environments.
+- Added `StopInsights` command to `SpatialExecServerCmd`, which takes no additional parameters and disables any Insight capturing on the target worker
+  - Example usage: "SpatialExecServerCmd local StopInsights
+- Renamed `StartInsights` command args - `trace` -> `channel` and `tracefile` -> `file`
 
 ### Bug fixes:
 - Added a pop-up message when schema generation fails, which suggests running a Clean and Generate to fix a bad schema state.
@@ -37,8 +50,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prevented a client crash that occurs if there is a mismatch between the client and server schema hash.
 - Fixed an issue for actors with bNetLoadOnClient. A dynamic subobject removed from such an actor while out of a client's view will now be properly removed on the client when the actor comes back into the client's view.
 - Fixed an issue that caused `UnrealGDK/Setup.sh` to report `sed: can't read : No such file or directory` when run on macOS.
+- Static subobjects on bNetLoadOnClient actors are now removed on clients in a manner matching native unreal's behavior. This change affects subobjects removed by the server while the actor is not in the client's interest.
 - Fixed an issue where multicast rpcs could be overwritten and then dropped on authority flicker.
 - Fixed an issue with registering spatial flow controllers in the Spatial Testing Framework.
+- Fixed issue using the runtime snapshot endpoint with a local deployment, using `localhost:5006/snapshot` works again and creates a snapshot.
 
 ### Internal:
 - Hide the Test MultiworkerSettings and GridStrategy classes from displaying in the editor. These are meant to only be used in Tests.

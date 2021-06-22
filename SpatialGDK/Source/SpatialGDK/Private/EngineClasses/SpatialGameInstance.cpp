@@ -247,10 +247,6 @@ void USpatialGameInstance::HandleOnConnected(USpatialNetDriver& NetDriver)
 	SetSpatialWorkerId(SpatialConnectionManager->GetWorkerConnection()->GetWorkerId());
 #if TRACE_LIB_ACTIVE
 	SpatialLatencyTracer->SetWorkerId(GetSpatialWorkerId());
-
-	USpatialWorkerConnection* WorkerConnection = SpatialConnectionManager->GetWorkerConnection();
-	WorkerConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
-	WorkerConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
 #endif
 
 	OnSpatialConnected.Broadcast();

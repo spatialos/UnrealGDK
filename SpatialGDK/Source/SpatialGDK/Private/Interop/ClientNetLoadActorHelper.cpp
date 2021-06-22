@@ -2,7 +2,6 @@
 
 #include "Interop/ClientNetLoadActorHelper.h"
 
-#include "Algo/AnyOf.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/SpatialReceiver.h"
@@ -40,6 +39,11 @@ UObject* FClientNetLoadActorHelper::GetReusableDynamicSubObject(const FUnrealObj
 void FClientNetLoadActorHelper::EntityRemoved(const Worker_EntityId EntityId, const AActor& Actor)
 {
 	ClearDynamicSubobjectMetadata(EntityId);
+	SaveDynamicSubobjectsMetadata(EntityId, Actor);
+}
+
+void FClientNetLoadActorHelper::SaveDynamicSubobjectsMetadata(const Worker_EntityId EntityId, const AActor& Actor)
+{
 	if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
 		for (UObject* DynamicSubObject : Channel->CreateSubObjects)
@@ -84,7 +88,15 @@ void FClientNetLoadActorHelper::ClearDynamicSubobjectMetadata(const Worker_Entit
 	SpatialEntityRemovedSubobjectMetadata.Remove(InEntityId);
 }
 
-void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents)
+void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents,
+															   AActor& EntityActor)
+{
+	RemoveDynamicComponentsRemovedByRuntime(EntityId, NewComponents);
+	RemoveStaticComponentsRemovedByRuntime(EntityId, NewComponents, EntityActor);
+}
+
+void FClientNetLoadActorHelper::RemoveDynamicComponentsRemovedByRuntime(const Worker_EntityId EntityId,
+																		const TArray<ComponentData>& NewComponents)
 {
 	if (TMap<ObjectOffset, FNetworkGUID>* SubobjectOffsetToNetGuid = SpatialEntityRemovedSubobjectMetadata.Find(EntityId))
 	{
@@ -94,16 +106,13 @@ void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_Enti
 		for (auto OffsetToNetGuidIterator = SubobjectOffsetToNetGuid->CreateIterator(); OffsetToNetGuidIterator; ++OffsetToNetGuidIterator)
 		{
 			const ObjectOffset ObjectOffset = OffsetToNetGuidIterator->Key;
-			if (!OffsetContainedInComponentArray(NewComponents, ObjectOffset))
+			if (!SubobjectWithOffsetStillExists(NewComponents, ObjectOffset))
 			{
-				if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(OffsetToNetGuidIterator->Value, false))
+				if (UObject* Object =
+						NetDriver->PackageMap->GetObjectFromNetGUID(OffsetToNetGuidIterator->Value, false /* bIgnoreMustBeMapped */))
 				{
-					UE_LOG(LogClientNetLoadActorHelper, Verbose,
-						   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
-								"actor was out of the client's interest. Destroying the SubObject now."),
-						   ObjectOffset, EntityId);
-					const FUnrealObjectRef ObjectRef(EntityId, ObjectOffset);
-					NetDriver->ActorSystem.Get()->DestroySubObject(EntityId, *Object, ObjectRef);
+					const FUnrealObjectRef EntityObjectRef(EntityId, ObjectOffset);
+					SubobjectRemovedByRuntime(EntityObjectRef, *Object);
 				}
 				OffsetToNetGuidIterator.RemoveCurrent();
 			}
@@ -111,8 +120,35 @@ void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_Enti
 	}
 }
 
-bool FClientNetLoadActorHelper::OffsetContainedInComponentArray(const TArray<ComponentData>& Components,
-																const ObjectOffset OffsetToCheckIfContained) const
+void FClientNetLoadActorHelper::RemoveStaticComponentsRemovedByRuntime(const Worker_EntityId EntityId,
+																	   const TArray<ComponentData>& NewComponents, AActor& EntityActor)
+{
+	const FClassInfo& ActorInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(EntityActor.GetClass());
+	FSubobjectToOffsetMap SubobjectsToOffsets = CreateStaticOffsetMapFromActor(EntityActor, ActorInfo);
+
+	for (auto& SubobjectToOffset : SubobjectsToOffsets)
+	{
+		UObject& Subobject = *SubobjectToOffset.Key;
+		const ObjectOffset Offset = SubobjectToOffset.Value;
+		if (SubobjectIsReplicated(Subobject, EntityId) && !SubobjectWithOffsetStillExists(NewComponents, Offset))
+		{
+			const FUnrealObjectRef ObjectRef(EntityId, Offset);
+			SubobjectRemovedByRuntime(ObjectRef, Subobject);
+		}
+	}
+}
+
+void FClientNetLoadActorHelper::SubobjectRemovedByRuntime(const FUnrealObjectRef& EntityObjectRef, UObject& Subobject)
+{
+	UE_LOG(LogClientNetLoadActorHelper, Verbose,
+		   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %lld was destroyed while the "
+				"actor was out of the client's interest. Destroying the SubObject now."),
+		   EntityObjectRef.Offset, EntityObjectRef.Entity);
+	NetDriver->ActorSystem.Get()->DestroySubObject(EntityObjectRef, Subobject);
+}
+
+bool FClientNetLoadActorHelper::SubobjectWithOffsetStillExists(const TArray<ComponentData>& Components,
+															   const ObjectOffset OffsetToCheckIfContained) const
 {
 	for (const ComponentData& Component : Components)
 	{
@@ -131,6 +167,20 @@ bool FClientNetLoadActorHelper::OffsetContainedInComponentArray(const TArray<Com
 		}
 	}
 	return false;
-};
+}
+
+bool FClientNetLoadActorHelper::SubobjectIsReplicated(const UObject& Object, const Worker_EntityId EntityId) const
+{
+	if (const USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
+	{
+		const TSharedRef<FObjectReplicator>* ReplicatorRefPtr = Channel->ReplicationMap.Find(&Object);
+		// Condition taken from private method UActorChannel::ObjectHasReplicator
+		const bool bIsReplicated = ReplicatorRefPtr != nullptr && &Object == ReplicatorRefPtr->Get().GetObject();
+		// NOTE: In theory, this could lead to a static subobject being unintentionally deleted on the client if the server sets it to not
+		// replicate while it is out of the client’s interest. See https://improbableio.atlassian.net/browse/UNR-5609 for more.
+		return bIsReplicated;
+	}
+	return false;
+}
 
 } // namespace SpatialGDK
