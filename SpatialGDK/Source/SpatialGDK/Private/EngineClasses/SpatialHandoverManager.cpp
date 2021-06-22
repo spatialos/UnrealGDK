@@ -138,14 +138,14 @@ void FSpatialHandoverManager::ApplyComponentRefresh(const Worker_EntityId Entity
 	HandleChange(EntityId, Components);
 }
 
-void FSpatialHandoverManager::Flush(ISpatialOSWorker& Connection, TSet<Worker_EntityId_Key> const& ActorsReleased)
+void FSpatialHandoverManager::Flush(ISpatialOSWorker& Connection, const TSet<Worker_EntityId_Key>& ActorsReleased)
 {
 	for (auto Partition : PartitionsToACK)
 	{
-		OwningComponentUpdatePtr UpdateData(Schema_CreateComponentUpdate());
-		Schema_Object* ACKObj = Schema_GetComponentUpdateFields(UpdateData.Get());
+		ComponentUpdate Update(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
+		Schema_Object* ACKObj = Schema_GetComponentUpdateFields(Update.GetUnderlying());
 		Schema_AddUint64(ACKObj, 1, 1);
-		Connection.SendComponentUpdate(Partition, ComponentUpdate(MoveTemp(UpdateData), SpatialConstants::PARTITION_ACK_COMPONENT_ID));
+		Connection.SendComponentUpdate(Partition, MoveTemp(Update));
 	}
 	PartitionsToACK.Empty();
 

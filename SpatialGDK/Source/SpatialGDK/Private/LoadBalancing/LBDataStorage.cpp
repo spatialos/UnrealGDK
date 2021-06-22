@@ -9,7 +9,7 @@ FSpatialPositionStorage::FSpatialPositionStorage()
 	Components.Add(SpatialConstants::POSITION_COMPONENT_ID);
 }
 
-void FSpatialPositionStorage::OnAdded(Worker_EntityId EntityId, SpatialGDK::EntityViewElement const& Element)
+void FSpatialPositionStorage::OnAdded(Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element)
 {
 	for (const auto& Component : Element.Components)
 	{
@@ -65,7 +65,7 @@ FActorGroupStorage::FActorGroupStorage()
 	Components.Add(SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ID);
 }
 
-void FActorGroupStorage::OnAdded(Worker_EntityId EntityId, SpatialGDK::EntityViewElement const& Element)
+void FActorGroupStorage::OnAdded(Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element)
 {
 	for (const auto& Component : Element.Components)
 	{
@@ -98,7 +98,7 @@ FDirectAssignmentStorage::FDirectAssignmentStorage()
 	Components.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 }
 
-void FDirectAssignmentStorage::OnAdded(Worker_EntityId EntityId, SpatialGDK::EntityViewElement const& Element)
+void FDirectAssignmentStorage::OnAdded(Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element)
 {
 	for (const auto& Component : Element.Components)
 	{

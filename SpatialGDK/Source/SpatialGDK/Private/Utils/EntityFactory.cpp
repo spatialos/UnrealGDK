@@ -444,7 +444,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	return Components;
 }
 
-TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(FString const& PartitionName, const Worker_EntityId EntityId,
+TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const FString& PartitionName, const Worker_EntityId EntityId,
 																			const InterestFactory* InterestFactory,
 																			const SpatialGDK::QueryConstraint& LoadBalancingConstraint,
 																			VirtualWorkerId VirtualWorker, bool bDebugContextValid)

@@ -48,7 +48,7 @@ public:
 	InterestFactory(USpatialClassInfoManager* InClassInfoManager);
 
 	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy) const;
-	Interest CreatePartitionInterest(QueryConstraint const& LoadBalancingConstraint, bool bDebug) const;
+	Interest CreatePartitionInterest(const QueryConstraint& LoadBalancingConstraint, bool bDebug) const;
 	void AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, Interest& OutInterest) const;
 	static Interest CreateRoutingWorkerInterest();
 

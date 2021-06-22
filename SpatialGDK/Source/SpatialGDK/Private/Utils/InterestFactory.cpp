@@ -160,7 +160,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	return ServerInterest;
 }
 
-Interest InterestFactory::CreatePartitionInterest(SpatialGDK::QueryConstraint const& LoadBalancingConstraint, bool bDebug) const
+Interest InterestFactory::CreatePartitionInterest(const SpatialGDK::QueryConstraint& LoadBalancingConstraint, bool bDebug) const
 {
 	// Add load balancing query
 	Interest PartitionInterest{};

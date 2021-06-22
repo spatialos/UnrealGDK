@@ -17,7 +17,7 @@ DEFINE_LOG_CATEGORY(LogSpatialStrategySystem);
 namespace SpatialGDK
 {
 FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionsMgr, const FSubView& InLBView,
-											   TUniquePtr<FLoadBalancingStrategy>&& InStrategy)
+											   TUniquePtr<FLoadBalancingStrategy> InStrategy)
 	: LBView(InLBView)
 	, PartitionsMgr(MoveTemp(InPartitionsMgr))
 	, Strategy(MoveTemp(InStrategy))
@@ -194,7 +194,7 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	}
 	PendingMigrations.Empty();
 
-	for (auto const& Migration : Ctx.EntitiesToMigrate)
+	for (const auto& Migration : Ctx.EntitiesToMigrate)
 	{
 		Worker_EntityId EntityId = Migration.Key;
 

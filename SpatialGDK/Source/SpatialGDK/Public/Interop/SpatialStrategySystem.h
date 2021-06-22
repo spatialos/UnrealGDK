@@ -28,7 +28,7 @@ class FSpatialStrategySystem
 {
 public:
 	FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionMgr, const FSubView& InLBView,
-						   TUniquePtr<FLoadBalancingStrategy>&& Strategy);
+						   TUniquePtr<FLoadBalancingStrategy> Strategy);
 
 	~FSpatialStrategySystem();
 

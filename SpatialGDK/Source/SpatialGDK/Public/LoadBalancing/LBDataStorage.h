@@ -11,7 +11,7 @@ class FLBDataStorage
 public:
 	virtual ~FLBDataStorage() = default;
 
-	virtual void OnAdded(Worker_EntityId EntityId, SpatialGDK::EntityViewElement const& Element) = 0;
+	virtual void OnAdded(Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element) = 0;
 	virtual void OnRemoved(Worker_EntityId EntityId) = 0;
 	virtual void OnUpdate(Worker_EntityId EntityId, Worker_ComponentId InComponentId, Schema_ComponentUpdate* Update) = 0;
 
@@ -31,7 +31,7 @@ class FSpatialPositionStorage : public FLBDataStorage
 public:
 	FSpatialPositionStorage();
 
-	virtual void OnAdded(Worker_EntityId EntityId, SpatialGDK::EntityViewElement const& Element) override;
+	virtual void OnAdded(Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element) override;
 	virtual void OnRemoved(Worker_EntityId EntityId) override;
 	virtual void OnUpdate(Worker_EntityId EntityId, Worker_ComponentId InComponentId, Schema_ComponentUpdate* Update) override;
 
@@ -46,7 +46,7 @@ class FActorGroupStorage : public FLBDataStorage
 public:
 	FActorGroupStorage();
 
-	virtual void OnAdded(Worker_EntityId EntityId, SpatialGDK::EntityViewElement const& Element) override;
+	virtual void OnAdded(Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element) override;
 	virtual void OnRemoved(Worker_EntityId EntityId) override;
 	virtual void OnUpdate(Worker_EntityId EntityId, Worker_ComponentId InComponentId, Schema_ComponentUpdate* Update) override;
 
@@ -61,7 +61,7 @@ class FDirectAssignmentStorage : public FLBDataStorage
 public:
 	FDirectAssignmentStorage();
 
-	virtual void OnAdded(Worker_EntityId EntityId, SpatialGDK::EntityViewElement const& Element) override;
+	virtual void OnAdded(Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element) override;
 	virtual void OnRemoved(Worker_EntityId EntityId) override;
 	virtual void OnUpdate(Worker_EntityId EntityId, Worker_ComponentId InComponentId, Schema_ComponentUpdate* Update) override;
 
