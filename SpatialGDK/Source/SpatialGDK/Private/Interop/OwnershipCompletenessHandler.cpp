@@ -47,13 +47,19 @@ void FOwnershipCompletenessHandler::AddPlayerEntity(Worker_EntityId EntityId)
 {
 	bool bIsAlreadyInSet = false;
 	PlayerOwnedEntities.Add(EntityId, &bIsAlreadyInSet);
-	bRequiresRefresh = bRequiresRefresh || !bIsAlreadyInSet;
+	if (!bIsAlreadyInSet)
+	{
+		bRequiresRefresh = true;
+	}
 }
 
 void FOwnershipCompletenessHandler::TryRemovePlayerEntity(Worker_EntityId EntityId)
 {
 	int32 CountRemoved = PlayerOwnedEntities.Remove(EntityId);
-	bRequiresRefresh = bRequiresRefresh || CountRemoved > 0;
+	if (CountRemoved > 0)
+	{
+		bRequiresRefresh = true;
+	}
 }
 
 void FOwnershipCompletenessHandler::AddSubView(FSubView& InSubView)
