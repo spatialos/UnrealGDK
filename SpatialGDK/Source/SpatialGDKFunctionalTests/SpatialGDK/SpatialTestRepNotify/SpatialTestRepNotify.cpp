@@ -321,10 +321,8 @@ void ASpatialTestRepNotify::PrepareTest()
 void ASpatialTestRepNotify::OnRep_OnChangedRepNotifyInt1(int32 OldOnChangedRepNotifyInt1)
 {
 	bOnRepOnChangedRepNotifyInt1Called = true;
-	bSubobjectIntPropertyWasExpectedProperty = false;
 
 	ensureAlwaysMsgf(IsValid(TestSubobject), TEXT("TestSubobject should be valid"));
-
 	bSubobjectIntPropertyWasExpectedProperty = TestSubobject->OnChangedRepNotifyInt == ExpectedSubobjectIntProperty;
 }
 
