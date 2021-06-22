@@ -272,6 +272,8 @@ void ASpatialTestRepNotify::PrepareTest()
 	 *
 	 * To test this, we set the update a replicated property on an actor (the test itself) and a subobject.
 	 * Then in repnotifies on both the actor and the subobject, we check that the property on the other object has already been updated.
+	 *
+	 * This could in theory not pass until we have component set updates (though it is very low probability)
 	 * */
 
 	AddStep(
