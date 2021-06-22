@@ -2302,6 +2302,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				ActorSystem->Advance();
 			}
 
+			if (OwnershipCompletenessHandler.IsSet())
+			{
+				OwnershipCompletenessHandler->Advance();
+			}
+
 			{
 				SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
 				Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));

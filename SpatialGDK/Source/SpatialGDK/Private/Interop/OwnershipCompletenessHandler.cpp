@@ -45,27 +45,33 @@ bool FOwnershipCompletenessHandler::ShouldHaveOwnerOnlyComponents(Worker_EntityI
 
 void FOwnershipCompletenessHandler::AddPlayerEntity(Worker_EntityId EntityId)
 {
-	PlayerOwnedEntities.Add(EntityId);
-
-	for (FSubView* SubViewToRefresh : SubViewsToRefresh)
-	{
-		SubViewToRefresh->Refresh();
-	}
+	bool bIsAlreadyInSet = false;
+	PlayerOwnedEntities.Add(EntityId, &bIsAlreadyInSet);
+	bRequiresRefresh = bRequiresRefresh || bIsAlreadyInSet;
 }
 
 void FOwnershipCompletenessHandler::TryRemovePlayerEntity(Worker_EntityId EntityId)
 {
-	PlayerOwnedEntities.Remove(EntityId);
-
-	for (FSubView* SubViewToRefresh : SubViewsToRefresh)
-	{
-		SubViewToRefresh->Refresh();
-	}
+	int32 CountRemoved = PlayerOwnedEntities.Remove(EntityId);
+	bRequiresRefresh = bRequiresRefresh || CountRemoved > 0;
 }
 
 void FOwnershipCompletenessHandler::AddSubView(FSubView& InSubView)
 {
 	SubViewsToRefresh.Emplace(&InSubView);
+}
+
+void FOwnershipCompletenessHandler::Advance()
+{
+	if (bRequiresRefresh)
+	{
+		bRequiresRefresh = false;
+
+		for (FSubView* SubViewToRefresh : SubViewsToRefresh)
+		{
+			SubViewToRefresh->Refresh();
+		}
+	}
 }
 
 TArray<FDispatcherRefreshCallback> FOwnershipCompletenessHandler::GetCallbacks(ViewCoordinator& Coordinator)
