@@ -299,7 +299,7 @@ void ActorSystem::Advance()
 		ProcessAdds(SubView);
 	}
 
-	SendRepNotifies();
+	InvokeRepNotifies();
 
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
 	{
@@ -1692,23 +1692,31 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 	return Channel;
 }
 
-void ActorSystem::SendRepNotifies()
+void ActorSystem::InvokeRepNotifies()
 {
 	for (FObjectRepNotifies ObjectRepNotifies : RepNotifiesToSend)
 	{
-		if (UObject* Object = ObjectRepNotifies.Object.Get())
+		UObject* Object = ObjectRepNotifies.Object.Get();
+		if (!IsValid(Object))
 		{
-			Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Object);
-			if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
-			{
-				USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
-				if (IsValid(Channel))
-				{
-					RemoveRepNotifiesWithUnresolvedObjs(*Object, *Channel, ObjectRepNotifies.RepNotifies);
-					Channel->PostReceiveSpatialUpdate(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
-				}
-			}
+			continue;
 		}
+		Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Object);
+		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+		{
+			UE_LOG(LogActorSystem, Warning,
+					TEXT("Failed to invoke rep notifies for an object as its entity id was invalid. Object: %s"), *Object->GetName());
+			continue;
+		}
+		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+		if (!IsValid(Channel))
+		{
+			UE_LOG(LogActorSystem, Warning,
+				TEXT("Failed to invoke rep notifies for an object as its channel was invalid. Object: %s, Entity: %lld"), *Object->GetName(), EntityId);
+			continue;
+		}
+		RemoveRepNotifiesWithUnresolvedObjs(*Object, *Channel, ObjectRepNotifies.RepNotifies);
+		Channel->PostReceiveSpatialUpdate(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
 	}
 	RepNotifiesToSend.Empty();
 }

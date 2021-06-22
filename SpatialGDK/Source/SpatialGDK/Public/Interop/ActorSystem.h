@@ -133,7 +133,7 @@ private:
 	void RefreshEntity(const Worker_EntityId EntityId);
 	void ApplyFullState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor);
 
-	void SendRepNotifies();
+	void InvokeRepNotifies();
 	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, USpatialActorChannel& Channel,
 													TArray<GDK_PROPERTY(Property) *>& RepNotifies);
 
