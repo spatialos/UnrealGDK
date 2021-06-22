@@ -983,6 +983,11 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 		NetDriver->AddActorChannel(EntityId, this);
 		NetDriver->UnregisterDormantEntityId(EntityId);
 	}
+
+	if (Actor)
+	{
+		SetAutonomousProxyOnAuthority(Actor->RemoteRole == ROLE_AutonomousProxy);
+	}
 }
 
 bool USpatialActorChannel::TryResolveActor()
