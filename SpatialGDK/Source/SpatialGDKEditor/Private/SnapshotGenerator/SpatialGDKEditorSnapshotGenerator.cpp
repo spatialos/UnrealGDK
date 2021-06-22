@@ -227,15 +227,6 @@ bool CreateStrategyPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 
 	{
 		Query ServerQuery = {};
-		ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID,
-										   SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
-										   SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_ID,
-										   SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID };
-		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID;
-		InterestSet.Queries.Add(ServerQuery);
-	}
-	{
-		Query ServerQuery = {};
 		ServerQuery.ResultComponentIds = { SpatialConstants::SERVER_WORKER_COMPONENT_ID };
 		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
 		InterestSet.Queries.Add(ServerQuery);

@@ -3399,20 +3399,23 @@ void USpatialNetDriver::TryFinishStartup()
 #endif
 
 #if WITH_GAMEPLAY_DEBUGGER
-				const FFilterPredicate GameplayDebuggerCompFilter = [this](const Worker_EntityId EntityId,
-																		   const SpatialGDK::EntityViewElement& Element) {
-					return Element.Components.ContainsByPredicate(
-						SpatialGDK::ComponentIdEquality{ SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID });
-				};
+				if (!USpatialStatics::IsStrategyWorkerEnabled())
+				{
+					const FFilterPredicate GameplayDebuggerCompFilter = [this](const Worker_EntityId EntityId,
+																			   const SpatialGDK::EntityViewElement& Element) {
+						return Element.Components.ContainsByPredicate(
+							SpatialGDK::ComponentIdEquality{ SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID });
+					};
 
-				const TArray<FDispatcherRefreshCallback> GameplayDebuggerCompRefresh = {
-					Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
-						SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID)
-				};
+					const TArray<FDispatcherRefreshCallback> GameplayDebuggerCompRefresh = {
+						Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+							SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID)
+					};
 
-				const SpatialGDK::FSubView& GameplayDebuggerActorSubView =
-					SpatialGDK::ActorSubviews::CreateCustomActorSubView({}, GameplayDebuggerCompFilter, GameplayDebuggerCompRefresh, *this);
-				USpatialNetDriverGameplayDebuggerContext::Enable(GameplayDebuggerActorSubView, *this);
+					const SpatialGDK::FSubView& GameplayDebuggerActorSubView = SpatialGDK::ActorSubviews::CreateCustomActorSubView(
+						{}, GameplayDebuggerCompFilter, GameplayDebuggerCompRefresh, *this);
+					USpatialNetDriverGameplayDebuggerContext::Enable(GameplayDebuggerActorSubView, *this);
+				}
 #endif // WITH_GAMEPLAY_DEBUGGER
 
 				// We've found and dispatched all ops we need for startup,
