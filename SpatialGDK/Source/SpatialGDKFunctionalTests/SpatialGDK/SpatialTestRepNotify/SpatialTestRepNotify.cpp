@@ -297,22 +297,22 @@ void ASpatialTestRepNotify::PrepareTest()
 		nullptr);
 
 	AddStep(
-		TEXT("SpatialTestRepNotifyClientCheckOrderingWasCorrect"), FWorkerDefinition::AllClients,
-		nullptr,
+		TEXT("SpatialTestRepNotifyClientCheckOrderingWasCorrect"), FWorkerDefinition::AllClients, nullptr,
 		[this]() {
 			RequireEqual_Int(TestSubobject->OnChangedRepNotifyInt, 400,
-				TEXT("The subobject's OnChangedRepNotifyInt property should have been updated to 400"));
+							 TEXT("The subobject's OnChangedRepNotifyInt property should have been updated to 400"));
 			RequireEqual_Int(OnChangedRepNotifyInt1, 350,
-							TEXT("The actors OnChangedRepNotifyInt1 property should have been updated to 350"));
+							 TEXT("The actors OnChangedRepNotifyInt1 property should have been updated to 350"));
 
 			RequireTrue(IsValid(TestSubobject), TEXT("TestSubobject should be valid."));
 
-			RequireEqual_Bool(TestSubobject->bParentPropertyWasExpectedProperty, true,
-							 TEXT("The OnChangedRepNotifyInt1 on parent actor ASpatialTestRepNotify should have been set to 350 before the "
-								  "subobject's RepNotify was called"));
+			RequireEqual_Bool(
+				TestSubobject->bParentPropertyWasExpectedProperty, true,
+				TEXT("The OnChangedRepNotifyInt1 on parent actor ASpatialTestRepNotify should have been set to 350 before the "
+					 "subobject's RepNotify was called"));
 			RequireEqual_Bool(bSubobjectIntPropertyWasExpectedProperty, true,
-							 TEXT("The OnChangedRepNotifyInt1 on subobject USpatialTestRepNotifySubobject should have been set to 400 "
-								  "before the actor's RepNotify was called"));
+							  TEXT("The OnChangedRepNotifyInt1 on subobject USpatialTestRepNotifySubobject should have been set to 400 "
+								   "before the actor's RepNotify was called"));
 			FinishStep();
 		},
 		nullptr);
