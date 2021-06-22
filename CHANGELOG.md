@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug fixes:
 
 ### Internal:
+- Unused worker types will no longer generate worker configuration files.
 
 ## [`0.14.0-rc`] - Unreleased
 
