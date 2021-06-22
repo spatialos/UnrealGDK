@@ -20,7 +20,7 @@ public:
 							 SpatialEventTracer* InEventTracer);
 
 	void ApplyComponentData(const Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object,
-							USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged);
+							USpatialActorChannel& Channel, FObjectRepNotifies& OutObjectRepNotifies, bool& bOutReferencesChanged);
 	void ApplyComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& Object,
 							  USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged);
 
