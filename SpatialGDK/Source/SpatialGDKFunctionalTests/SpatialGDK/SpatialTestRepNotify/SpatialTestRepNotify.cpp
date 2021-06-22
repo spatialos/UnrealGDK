@@ -299,8 +299,10 @@ void ASpatialTestRepNotify::PrepareTest()
 	AddStep(
 		TEXT("SpatialTestRepNotifyClientCheckOrderingWasCorrect"), FWorkerDefinition::AllClients,
 		[this]() -> bool {
-			RequireEqual_Int(TestSubobject->OnChangedRepNotifyInt, 400, TEXT("The subobject's OnChangedRepNotifyInt property should have been updated to 400"));
-			RequireEqual_Int(OnChangedRepNotifyInt1, 350, TEXT("The actors OnChangedRepNotifyInt1 property should have been updated to 350"));
+			RequireEqual_Int(TestSubobject->OnChangedRepNotifyInt, 400,
+							 TEXT("The subobject's OnChangedRepNotifyInt property should have been updated to 400"));
+			RequireEqual_Int(OnChangedRepNotifyInt1, 350,
+							 TEXT("The actors OnChangedRepNotifyInt1 property should have been updated to 350"));
 			return true;
 		},
 		[this]() {
