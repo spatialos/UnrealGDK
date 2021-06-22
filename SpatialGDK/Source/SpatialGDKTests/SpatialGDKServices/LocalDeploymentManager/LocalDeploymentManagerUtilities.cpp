@@ -38,16 +38,34 @@ bool GenerateWorkerAssemblies()
 	return ExitCode == SpatialGDKServicesConstants::ExitCodeSuccess;
 }
 
-bool GenerateWorkerJson()
+FString GetWorkerJsonPath()
 {
 	const FString WorkerJsonDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("workers/unreal"));
 
 	FString Filename = FString(TEXT("spatialos.")) + *AutomationWorkerType.ToString() + FString(TEXT(".worker.json"));
 	FString JsonPath = FPaths::Combine(WorkerJsonDir, Filename);
+	return JsonPath;
+}
+
+bool GenerateWorkerJson()
+{
+	FString JsonPath = GetWorkerJsonPath();
 	if (!FPaths::FileExists(JsonPath))
 	{
-		bool bRedeployRequired = false;
-		return GenerateDefaultWorkerJson(JsonPath, bRedeployRequired);
+		bool bOutRedeployRequired = false;
+		return GenerateDefaultWorkerJson(JsonPath, bOutRedeployRequired);
+	}
+
+	return true;
+}
+
+bool DeleteWorkerJson()
+{
+	FString JsonPath = GetWorkerJsonPath();
+	if (FPaths::FileExists(JsonPath))
+	{
+		IFileManager& FileManager = IFileManager::Get();
+		return FileManager.Delete(*JsonPath);
 	}
 
 	return true;
@@ -113,12 +131,14 @@ bool FStopDeployment::Update()
 
 	if (!LocalDeploymentManager->IsLocalDeploymentRunning() && !LocalDeploymentManager->IsDeploymentStopping())
 	{
+		DeleteWorkerJson();
 		return true;
 	}
 
 	if (!LocalDeploymentManager->IsDeploymentStopping())
 	{
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager] {
+			DeleteWorkerJson();
 			LocalDeploymentManager->TryStopLocalDeployment();
 		});
 	}
