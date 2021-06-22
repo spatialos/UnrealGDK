@@ -11,7 +11,6 @@
 #include "SpatialView/CommandRequest.h"
 #include "SpatialView/CommandRetryHandler.h"
 #include "SpatialView/ComponentData.h"
-#include "SpatialView/ConnectionHandler/InitialOpListConnectionHandler.h"
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
@@ -113,16 +112,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 	StartupComplete = false;
 	TUniquePtr<SpatialGDK::SpatialOSConnectionHandler> Handler =
 		MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn, SharedEventTracer);
-	TUniquePtr<SpatialGDK::InitialOpListConnectionHandler> InitialOpListHandler = MakeUnique<SpatialGDK::InitialOpListConnectionHandler>(
-		MoveTemp(Handler), [this](SpatialGDK::OpList& Ops, SpatialGDK::ExtractedOpListData& ExtractedOps) {
-			if (StartupComplete)
-			{
-				return true;
-			}
-			ExtractStartupOps(Ops, ExtractedOps);
-			return false;
-		});
-	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(InitialOpListHandler), SharedEventTracer, MoveTemp(ComponentSetData));
+	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(Handler), SharedEventTracer, MoveTemp(ComponentSetData));
 }
 
 void USpatialWorkerConnection::FinishDestroy()
@@ -363,81 +353,5 @@ void USpatialWorkerConnection::CreateServerWorkerEntity()
 	{
 		USpatialNetDriver* SpatialNetDriver = CastChecked<USpatialNetDriver>(GetWorld()->GetNetDriver());
 		WorkerEntityCreator.Emplace(*SpatialNetDriver, *this);
-	}
-}
-
-bool USpatialWorkerConnection::IsStartupComponent(Worker_ComponentId Id)
-{
-	return Id == SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID || Id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID
-		   || Id == SpatialConstants::SERVER_WORKER_COMPONENT_ID || Id == SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID;
-}
-
-void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, SpatialGDK::ExtractedOpListData& ExtractedOpList)
-{
-	for (uint32 i = 0; i < OpList.Count; ++i)
-	{
-		Worker_Op& Op = OpList.Ops[i];
-		switch (static_cast<Worker_OpType>(Op.op_type))
-		{
-		case WORKER_OP_TYPE_ADD_ENTITY:
-			ExtractedOpList.AddOp(Op);
-			break;
-		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			ExtractedOpList.AddOp(Op);
-			break;
-		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-			ExtractedOpList.AddOp(Op);
-			break;
-		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			ExtractedOpList.AddOp(Op);
-			break;
-		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
-			ExtractedOpList.AddOp(Op);
-			break;
-		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
-			ExtractedOpList.AddOp(Op);
-			break;
-		case WORKER_OP_TYPE_ADD_COMPONENT:
-			if (IsStartupComponent(Op.op.add_component.data.component_id))
-			{
-				ExtractedOpList.AddOp(Op);
-			}
-			break;
-		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			if (IsStartupComponent(Op.op.remove_component.component_id))
-			{
-				ExtractedOpList.AddOp(Op);
-			}
-			break;
-		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
-			if (Op.op.component_set_authority_change.component_set_id == SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID
-				|| Op.op.component_set_authority_change.component_set_id == SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID)
-			{
-				ExtractedOpList.AddOp(Op);
-			}
-			break;
-		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			if (IsStartupComponent(Op.op.component_update.update.component_id))
-			{
-				ExtractedOpList.AddOp(Op);
-			}
-			break;
-		case WORKER_OP_TYPE_COMMAND_REQUEST:
-			break;
-		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			ExtractedOpList.AddOp(Op);
-			break;
-		case WORKER_OP_TYPE_DISCONNECT:
-			ExtractedOpList.AddOp(Op);
-			break;
-		case WORKER_OP_TYPE_FLAG_UPDATE:
-			break;
-		case WORKER_OP_TYPE_METRICS:
-			break;
-		case WORKER_OP_TYPE_CRITICAL_SECTION:
-			break;
-		default:
-			break;
-		}
 	}
 }
