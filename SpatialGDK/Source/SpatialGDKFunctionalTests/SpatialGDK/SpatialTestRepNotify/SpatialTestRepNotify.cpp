@@ -299,7 +299,9 @@ void ASpatialTestRepNotify::PrepareTest()
 	AddStep(
 		TEXT("SpatialTestRepNotifyClientCheckOrderingWasCorrect"), FWorkerDefinition::AllClients,
 		[this]() -> bool {
-			return TestSubobject->OnChangedRepNotifyInt == 400 && OnChangedRepNotifyInt1 == 350;
+			RequireEqual_Int(TestSubobject->OnChangedRepNotifyInt, 400, TEXT("The subobject's OnChangedRepNotifyInt property should have been updated to 400"));
+			RequireEqual_Int(OnChangedRepNotifyInt1, 350, TEXT("The actors OnChangedRepNotifyInt1 property should have been updated to 350"));
+			return true;
 		},
 		[this]() {
 			AssertIsValid(TestSubobject, TEXT("TestSubobject should be valid."));
@@ -320,10 +322,8 @@ void ASpatialTestRepNotify::OnRep_OnChangedRepNotifyInt1(int32 OldOnChangedRepNo
 	bSubobjectIntPropertyWasExpectedProperty = false;
 
 	ensureAlwaysMsgf(IsValid(TestSubobject), TEXT("TestSubobject should be valid"));
-	if (TestSubobject->OnChangedRepNotifyInt == ExpectedSubobjectIntProperty)
-	{
-		bSubobjectIntPropertyWasExpectedProperty = true;
-	}
+
+	bSubobjectIntPropertyWasExpectedProperty = TestSubobject->OnChangedRepNotifyInt == ExpectedSubobjectIntProperty;
 }
 
 void ASpatialTestRepNotify::OnRep_AlwaysRepNotifyInt1(int32 OldAlwaysRepNotifyInt1)
