@@ -47,7 +47,7 @@ void FOwnershipCompletenessHandler::AddPlayerEntity(Worker_EntityId EntityId)
 {
 	bool bIsAlreadyInSet = false;
 	PlayerOwnedEntities.Add(EntityId, &bIsAlreadyInSet);
-	bRequiresRefresh = bRequiresRefresh || bIsAlreadyInSet;
+	bRequiresRefresh = bRequiresRefresh || !bIsAlreadyInSet;
 }
 
 void FOwnershipCompletenessHandler::TryRemovePlayerEntity(Worker_EntityId EntityId)
