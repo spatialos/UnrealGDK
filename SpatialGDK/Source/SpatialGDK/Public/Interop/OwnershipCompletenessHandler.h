@@ -33,6 +33,7 @@ public:
 	void AddPlayerEntity(Worker_EntityId EntityId);
 	void TryRemovePlayerEntity(Worker_EntityId EntityId);
 	void AddSubView(FSubView& InSubView);
+	void Advance();
 
 	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator);
 
@@ -47,5 +48,6 @@ private:
 	EOwnershipCompletenessStrategy Strategy;
 	TSet<Worker_EntityId_Key> PlayerOwnedEntities;
 	TArray<FSubView*> SubViewsToRefresh;
+	bool bRequiresRefresh = false;
 };
 } // namespace SpatialGDK
