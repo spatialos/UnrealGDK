@@ -111,11 +111,8 @@ Worker_EntityId FDistributedStartupActorSkeletonEntityCreator::CreateSkeletonEnt
 	Factory.WriteLBComponents(EntityComponents, &Actor);
 
 	// RPC components.
-	auto RPCService = NetDriver->RPCService.Get();
-
-	checkf(RPCService != nullptr, TEXT("Attempting to create an entity with a null RPCService."));
-	EntityComponents.Append(RPCService->GetRPCComponentsOnEntityCreation(ActorEntityId));
-	EntityComponents.Append(NetDriver->RPCs->GetRPCComponentsOnEntityCreation(ActorEntityId));
+	Algo::Transform(SpatialRPCService::GetRPCComponents(), EntityComponents, &ComponentFactory::CreateEmptyComponentData);
+	Algo::Transform(FSpatialNetDriverRPC::GetRPCComponentIds(), EntityComponents, &ComponentFactory::CreateEmptyComponentData);
 
 	// Skeleton entity markers		.
 	EntityComponents.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID));
@@ -431,7 +428,7 @@ void FSkeletonEntityPopulator::PopulateEntity(Worker_EntityId SkeletonEntityId, 
 						   .Components.FindByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId })
 						   ->GetWorkerComponentData());
 
-	USpatialActorChannel* Channel = NetDriver->ActorSystem->SetUpActorChannel(&SkeletonEntityStartupActor, SkeletonEntityId);
+	USpatialActorChannel* Channel = ActorSystem::SetUpActorChannel(NetDriver, &SkeletonEntityStartupActor, SkeletonEntityId);
 
 	check(IsValid(Channel));
 

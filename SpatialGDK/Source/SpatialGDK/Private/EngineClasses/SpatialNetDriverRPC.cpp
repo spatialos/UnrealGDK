@@ -164,7 +164,7 @@ void FSpatialNetDriverRPC::ProcessReceivedRPCs()
 	// MulticastReceiver->
 }
 
-TArray<FWorkerComponentData> FSpatialNetDriverRPC::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId)
+TArray<Worker_ComponentId> FSpatialNetDriverRPC::GetRPCComponentIds()
 {
 	static TArray<Worker_ComponentId> EndpointComponentIds = {
 		SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
@@ -172,6 +172,13 @@ TArray<FWorkerComponentData> FSpatialNetDriverRPC::GetRPCComponentsOnEntityCreat
 		/*SpatialConstants::MULTICAST_RPCS_COMPONENT_ID,
 		SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID*/
 	};
+
+	return EndpointComponentIds;
+}
+
+TArray<FWorkerComponentData> FSpatialNetDriverRPC::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId)
+{
+	static TArray<Worker_ComponentId> EndpointComponentIds = GetRPCComponentIds();
 
 	TArray<FWorkerComponentData> Components;
 	GetRPCComponentsOnEntityCreation(EntityId, Components);

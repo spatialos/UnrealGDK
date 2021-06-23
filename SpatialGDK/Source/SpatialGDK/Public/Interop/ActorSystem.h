@@ -155,6 +155,7 @@ private:
 										   USpatialActorChannel& Channel, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 
 public:
+	static USpatialActorChannel* SetUpActorChannel(USpatialNetDriver* NetDriver, AActor* Actor, Worker_EntityId EntityId);
 	USpatialActorChannel* SetUpActorChannel(AActor* Actor, Worker_EntityId EntityId);
 
 private:

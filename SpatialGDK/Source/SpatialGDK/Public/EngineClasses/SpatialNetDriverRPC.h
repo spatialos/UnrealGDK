@@ -138,6 +138,7 @@ public:
 	virtual void FlushRPCUpdates();
 	void FlushRPCQueue(StandardQueue& Queue);
 	void FlushRPCQueueForEntity(Worker_EntityId, StandardQueue& Queue);
+	static TArray<Worker_ComponentId> GetRPCComponentIds();
 	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId);
 
 	FSpatialGDKSpanId CreatePushRPCEvent(UObject* TargetObject, UFunction* Function);
