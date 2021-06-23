@@ -353,10 +353,11 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 						}
 						if (!FlowController->OwningTest->HasPreparedTest())
 						{
-							ReasonForTimeout +=FString::Printf(TEXT("Owning test was not ready. "));
+							ReasonForTimeout += FString::Printf(TEXT("Owning test was not ready. "));
 						}
-						UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("Spatial flow controller %s was not ready to run test because: %s"), *FlowController->GetName(), *ReasonForTimeout);
-						
+						UE_LOG(LogSpatialGDKFunctionalTests, Warning,
+							   TEXT("Spatial flow controller %s was not ready to run test because: %s"), *FlowController->GetName(),
+							   *ReasonForTimeout);
 					}
 				}
 
@@ -460,7 +461,6 @@ void ASpatialFunctionalTest::RegisterFlowControllerOnAuthServer(ASpatialFunction
 		FlowControllers.Add(FlowController);
 	}
 }
-
 
 void ASpatialFunctionalTest::DeregisterFlowController(ASpatialFunctionalTestFlowController* FlowController)
 {
