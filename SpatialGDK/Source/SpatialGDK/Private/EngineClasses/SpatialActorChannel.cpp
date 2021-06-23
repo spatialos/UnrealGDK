@@ -210,6 +210,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, EventTracer(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
 	, TimeWhenPositionLastUpdated(0.0)
+	, bIsAutonomousProxyOnAuthority(false)
 {
 }
 
@@ -229,6 +230,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	TimeWhenPositionLastUpdated = 0.0;
 	AuthorityReceivedTimestamp = 0;
 	bNeedOwnerInterestUpdate = false;
+	bIsAutonomousProxyOnAuthority = false;
 
 	PendingDynamicSubobjects.Empty();
 	SavedInterestBucketComponentID = SpatialConstants::INVALID_COMPONENT_ID;
@@ -686,6 +688,8 @@ int64 USpatialActorChannel::ReplicateActor()
 
 			bCreatedEntity = true;
 
+			SetAutonomousProxyOnAuthority(Actor->RemoteRole == ROLE_AutonomousProxy);
+
 			// We preemptively set the Actor role to SimulatedProxy if load balancing is disabled
 			// (since the legacy behaviour is to wait until Spatial tells us we have authority)
 			if (NetDriver->LoadBalanceStrategy == nullptr)
@@ -978,6 +982,11 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 		}
 		NetDriver->AddActorChannel(EntityId, this);
 		NetDriver->UnregisterDormantEntityId(EntityId);
+	}
+
+	if (Actor != nullptr)
+	{
+		SetAutonomousProxyOnAuthority(Actor->RemoteRole == ROLE_AutonomousProxy);
 	}
 }
 

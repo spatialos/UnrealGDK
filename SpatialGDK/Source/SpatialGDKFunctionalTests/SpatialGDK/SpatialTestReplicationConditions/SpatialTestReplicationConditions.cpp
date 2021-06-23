@@ -184,16 +184,13 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			}
 		}
 
-		if (!bSpatialEnabled) // TODO: UNR-5213 - fix COND_AutonomousOnly replication
+		if (AssertTrue(TestActor_AutonomousOnly->AreAllDynamicComponentsValid(),
+					   TEXT("TestActor_AutonomousOnly - All dynamic components should have arrived")))
 		{
-			if (AssertTrue(TestActor_AutonomousOnly->AreAllDynamicComponentsValid(),
-						   TEXT("TestActor_AutonomousOnly - All dynamic components should have arrived")))
-			{
-				const bool bWrite = false;
-				const bool bAutonomousExpected = true;
-				const bool bSimulatedExpected = false;
-				ProcessAutonomousOnlyActorProperties(bWrite, bAutonomousExpected, bSimulatedExpected);
-			}
+			const bool bWrite = false;
+			const bool bAutonomousExpected = true;
+			const bool bSimulatedExpected = false;
+			ProcessAutonomousOnlyActorProperties(bWrite, bAutonomousExpected, bSimulatedExpected);
 		}
 
 		if (AssertTrue(TestActor_PhysicsEnabled->AreAllDynamicComponentsValid(),
@@ -205,16 +202,13 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessPhysicsActorProperties(TestActor_PhysicsEnabled, bWrite, bPhysicsEnabled, bPhysicsExpected);
 		}
 
-		if (!bSpatialEnabled) // TODO: UNR-5214 - fix physics condition replications
+		if (AssertTrue(TestActor_PhysicsDisabled->AreAllDynamicComponentsValid(),
+					   TEXT("TestActor_PhysicsDisabled - All dynamic components should have arrived")))
 		{
-			if (AssertTrue(TestActor_PhysicsDisabled->AreAllDynamicComponentsValid(),
-						   TEXT("TestActor_PhysicsDisabled - All dynamic components should have arrived")))
-			{
-				const bool bWrite = false;
-				const bool bPhysicsEnabled = false;
-				const bool bPhysicsExpected = false; // Won't be replicated as no physics or simulated status
-				ProcessPhysicsActorProperties(TestActor_PhysicsDisabled, bWrite, bPhysicsEnabled, bPhysicsExpected);
-			}
+			const bool bWrite = false;
+			const bool bPhysicsEnabled = false;
+			const bool bPhysicsExpected = false; // Won't be replicated as no physics or simulated status
+			ProcessPhysicsActorProperties(TestActor_PhysicsDisabled, bWrite, bPhysicsEnabled, bPhysicsExpected);
 		}
 
 		FinishStep();
