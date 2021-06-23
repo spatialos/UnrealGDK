@@ -175,8 +175,9 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 	// Unreal load balancing components
 	VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
 
-	// Authority intent component to handle scattered hierarchies
-	AUTHORITY_INTENT_COMPONENT_ID,
+    // Authority intent component to handle scattered hierarchies
+    AUTHORITY_INTENT_COMPONENT_ID,
+    AUTHORITY_INTENTV2_COMPONENT_ID,
 
 	// Tags: Well known entities, non-auth actors, and tombstone tags
 	GDK_KNOWN_ENTITY_TAG_COMPONENT_ID,
@@ -207,8 +208,9 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
 								// Actor tags
 								ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
 
-								PARTITION_COMPONENT_ID
-	};
+                            	AUTHORITY_INTENTV2_COMPONENT_ID,
+                            	PARTITION_COMPONENT_ID
+};
 
 const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
 	"improbable/standard_library.schema",
@@ -234,30 +236,30 @@ const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
 };
 
 const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
-	{ POSITION_COMPONENT_ID, "improbable.Position" },
-	{ INTEREST_COMPONENT_ID, "improbable.Interest" },
-	{ AUTHORITY_DELEGATION_COMPONENT_ID, "improbable.AuthorityDelegation" },
-	{ AUTHORITY_INTENT_COMPONENT_ID, "unreal.AuthorityIntent" },
-	{ GDK_DEBUG_COMPONENT_ID, "unreal.DebugComponent" },
+    { POSITION_COMPONENT_ID, "improbable.Position" },
+    { INTEREST_COMPONENT_ID, "improbable.Interest" },
+    { AUTHORITY_INTENT_COMPONENT_ID, "unreal.AuthorityIntent" },
+    { AUTHORITY_INTENT_ACK_COMPONENT_ID, "unreal.AuthorityIntentAck" },
+    { GDK_DEBUG_COMPONENT_ID, "unreal.DebugComponent" },
 	{ GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID, "unreal.GameplayDebuggerComponent" },
-	{ DEBUG_METRICS_COMPONENT_ID, "unreal.DebugMetrics" },
-	{ NET_OWNING_CLIENT_WORKER_COMPONENT_ID, "unreal.NetOwningClientWorker" },
-	{ NOT_STREAMED_COMPONENT_ID, "unreal.NotStreamed" },
-	{ ALWAYS_RELEVANT_COMPONENT_ID, "unreal.AlwaysRelevant" },
-	{ DORMANT_COMPONENT_ID, "unreal.Dormant" },
-	{ VISIBLE_COMPONENT_ID, "unreal.Visible" },
-	{ SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, "unreal.UnrealServerToServerCommandEndpoint" },
-	{ SPATIAL_DEBUGGING_COMPONENT_ID, "unreal.SpatialDebugging" },
-	{ SPAWN_DATA_COMPONENT_ID, "unreal.SpawnData" },
-	{ TOMBSTONE_COMPONENT_ID, "unreal.Tombstone" },
-	{ UNREAL_METADATA_COMPONENT_ID, "unreal.UnrealMetadata" },
-	{ ACTOR_GROUP_MEMBER_COMPONENT_ID, "unreal.ActorGroupMember" },
-	{ ACTOR_SET_MEMBER_COMPONENT_ID, "unreal.ActorSetMember" },
-	{ SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },
-	{ MULTICAST_RPCS_COMPONENT_ID, "unreal.generated.UnrealMulticastRPCs" },
-	{ SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },
-	{ CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderRPCs" },
-	{ CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverACKRPCs" },
+    { DEBUG_METRICS_COMPONENT_ID, "unreal.DebugMetrics" },
+    { NET_OWNING_CLIENT_WORKER_COMPONENT_ID, "unreal.NetOwningClientWorker" },
+    { NOT_STREAMED_COMPONENT_ID, "unreal.NotStreamed" },
+    { ALWAYS_RELEVANT_COMPONENT_ID, "unreal.AlwaysRelevant" },
+    { DORMANT_COMPONENT_ID, "unreal.Dormant" },
+    { VISIBLE_COMPONENT_ID, "unreal.Visible" },
+    { SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, "unreal.UnrealServerToServerCommandEndpoint" },
+    { SPATIAL_DEBUGGING_COMPONENT_ID, "unreal.SpatialDebugging" },
+    { SPAWN_DATA_COMPONENT_ID, "unreal.SpawnData" },
+    { TOMBSTONE_COMPONENT_ID, "unreal.Tombstone" },
+    { UNREAL_METADATA_COMPONENT_ID, "unreal.UnrealMetadata" },
+    { ACTOR_GROUP_MEMBER_COMPONENT_ID, "unreal.ActorGroupMember" },
+    { ACTOR_SET_MEMBER_COMPONENT_ID, "unreal.ActorSetMember" },
+    { SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },
+    { MULTICAST_RPCS_COMPONENT_ID, "unreal.generated.UnrealMulticastRPCs" },
+    { SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },
+    { CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderRPCs" },
+    { CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverACKRPCs" },
 	{ MIGRATION_DIAGNOSTIC_COMPONENT_ID, "unreal.MigrationDiagnostic" },
 	{ ACTOR_OWNERSHIP_COMPONENT_ID, "unreal.ActorOwnership" },
 };
@@ -276,6 +278,12 @@ const TMap<Worker_ComponentId, FString> RoutingWorkerComponents = {
 };
 
 const TArray<FString> RoutingWorkerSchemaImports = { "unreal/gdk/rpc_components.schema", "unreal/generated/rpc_endpoints.schema" };
+
+const TMap<Worker_ComponentId, FString> StrategyWorkerComponents = {
+    { AUTHORITY_INTENTV2_COMPONENT_ID, "unreal.AuthorityIntentV2" },
+};
+
+const TArray<FString> StrategyWorkerSchemaImports = { "unreal/gdk/authority_intent.schema" };
 
 const TArray<Worker_ComponentId> KnownEntityAuthorityComponents = { POSITION_COMPONENT_ID,		 METADATA_COMPONENT_ID,
 																	INTEREST_COMPONENT_ID,		 PLAYER_SPAWNER_COMPONENT_ID,
