@@ -60,7 +60,7 @@ FDistributedStartupActorSkeletonEntityCreator::FDistributedStartupActorSkeletonE
 {
 }
 
-void FDistributedStartupActorSkeletonEntityCreator::CreateSkeletonEntitiesForLevel(UWorld& World)
+void FDistributedStartupActorSkeletonEntityCreator::CreateSkeletonEntitiesForWorld(UWorld& World)
 {
 	ensure(Stage == EStage::Initial);
 
@@ -178,7 +178,7 @@ void FDistributedStartupActorSkeletonEntityCreator::Advance()
 			AuthorityDelegation AuthorityDelegationComponent;
 			AuthorityDelegationComponent.Delegations.Emplace(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthWorkerPartition);
 
-			EntitiesToPopulatingWorkers.Emplace(CreatedSkeletonEntityId, AuthWorkerId);
+			PopulatingWorkersToEntities.FindOrAdd(AuthWorkerId).Emplace(CreatedSkeletonEntityId);
 
 			NetDriver->Connection->GetCoordinator().SendComponentUpdate(
 				CreatedSkeletonEntityId,
@@ -196,20 +196,15 @@ void FDistributedStartupActorSkeletonEntityCreator::Advance()
 
 	if (Stage == EStage::SigningManifest)
 	{
-		TMap<VirtualWorkerId, TSet<Worker_EntityId_Key>> WorkerToEntitiesToPopulate;
 		// Every worker should get a manifest to proceed through the skeleton entity flow.
 		for (const auto& VirtualWorker : NetDriver->WellKnownEntitySystem->VirtualWorkerTranslationManager->GetVirtualWorkerMapping())
 		{
-			WorkerToEntitiesToPopulate.FindOrAdd(VirtualWorker.Key);
+			PopulatingWorkersToEntities.FindOrAdd(VirtualWorker.Key);
 		}
-		for (const auto& SkeletonEntityToPopulatingWorker : EntitiesToPopulatingWorkers)
+		for (const auto& WorkerToEntities : PopulatingWorkersToEntities)
 		{
-			WorkerToEntitiesToPopulate.FindOrAdd(SkeletonEntityToPopulatingWorker.Value).Add(SkeletonEntityToPopulatingWorker.Key);
-		}
-		for (const auto& WorkerToEntitiesToPopulateEl : WorkerToEntitiesToPopulate)
-		{
-			const VirtualWorkerId WorkerId = WorkerToEntitiesToPopulateEl.Key;
-			const TSet<Worker_EntityId_Key>& EntitiesToPopulate = WorkerToEntitiesToPopulateEl.Value;
+			const VirtualWorkerId WorkerId = WorkerToEntities.Key;
+			const TSet<Worker_EntityId_Key>& EntitiesToPopulate = WorkerToEntities.Value;
 
 			TArray<ComponentData> SkeletonEntityManifestComponents;
 
@@ -224,25 +219,21 @@ void FDistributedStartupActorSkeletonEntityCreator::Advance()
 				NetDriver->VirtualWorkerTranslator->GetPartitionEntityForVirtualWorker(WorkerId);
 
 			{
-				const Worker_PartitionId ThisWorkerPartitionId = NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId();
 				AuthorityDelegation Authority;
 				Authority.Delegations.Emplace(SpatialConstants::SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID, ServerWorkerPartitionId);
-				Authority.Delegations.Emplace(SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID, ThisWorkerPartitionId);
 
 				SkeletonEntityManifestComponents.Emplace(
 					ComponentData(OwningComponentDataPtr(Authority.CreateComponentData().schema_type), AuthorityDelegation::ComponentId));
 			}
 
 			{
-				Query Q;
-				Q.Constraint.bSelfConstraint = true;
-				Q.ResultComponentIds.Append({ SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID });
-
-				ComponentSetInterest Interest1{ { Q } };
+				Query ManifestQuery;
+				ManifestQuery.Constraint.bSelfConstraint = true;
+				ManifestQuery.ResultComponentIds.Append({ SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID });
 
 				Interest ManifestInterest;
-				ManifestInterest.ComponentInterestMap.Emplace(SpatialConstants::SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID, Interest1);
-				ManifestInterest.ComponentInterestMap.Emplace(SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID, Interest1);
+				ManifestInterest.ComponentInterestMap.Emplace(SpatialConstants::SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID,
+															  ComponentSetInterest{ { ManifestQuery } });
 
 				SkeletonEntityManifestComponents.Emplace(
 					ComponentData(OwningComponentDataPtr(ManifestInterest.CreateComponentData().schema_type), Interest::ComponentId));
@@ -257,7 +248,7 @@ void FDistributedStartupActorSkeletonEntityCreator::Advance()
 				   ServerWorkerPartitionId);
 		}
 
-		ManifestsCreatedCount = WorkerToEntitiesToPopulate.Num();
+		ManifestsCreatedCount = PopulatingWorkersToEntities.Num();
 
 		UE_LOG(LogSpatialSkeletonEntityCreator, Log, TEXT("Finished creating manifests"));
 		Stage = EStage::WaitingForPopulation;
@@ -321,10 +312,74 @@ void FDistributedStartupActorSkeletonEntityCreator::HackAddManifest(const Worker
 
 FSkeletonEntityPopulator::FSkeletonEntityPopulator(USpatialNetDriver& InNetDriver)
 	: NetDriver(&InNetDriver)
-	, SubView(&InNetDriver.Connection->GetCoordinator().CreateSubView(SpatialConstants::SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID,
-																	  FSubView::NoFilter, FSubView::NoDispatcherCallbacks))
+	, SkeletonEntitiesRequiringPopulationSubview(&InNetDriver.Connection->GetCoordinator().CreateSubView(
+		  SpatialConstants::SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID, FSubView::NoFilter, FSubView::NoDispatcherCallbacks))
 {
 	Stage = EStage::ReceivingManifest;
+}
+
+void FSkeletonEntityPopulator::Advance()
+{
+	if (Stage == EStage::ReceivingManifest)
+	{
+		for (const auto& Kvp : GetCoordinator().GetView())
+		{
+			const Worker_EntityId EntityId = Kvp.Key;
+			const ComponentData* ManifestPtr = GetCoordinator().GetComponent(EntityId, FSkeletonEntityManifest::ComponentId);
+			if (ManifestPtr == nullptr)
+			{
+				continue;
+			}
+			if (!Kvp.Value.Authority.Contains(SpatialConstants::SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID))
+			{
+				continue;
+			}
+			check(!ManifestEntityId);
+			ManifestEntityId = EntityId;
+			Manifest = FSkeletonEntityManifest(*ManifestPtr);
+		}
+		if (Manifest)
+		{
+			Stage = EStage::PopulatingEntities;
+		}
+	}
+
+	if (Stage == EStage::PopulatingEntities)
+	{
+		ForEachCompleteEntity(bIsFirstPopulatingEntitiesCall, *SkeletonEntitiesRequiringPopulationSubview,
+							  [this](const Worker_EntityId EntityId) {
+								  const EntityViewElement* EntityPtr = NetDriver->Connection->GetCoordinator().GetView().Find(EntityId);
+
+								  check(EntityPtr != nullptr);
+
+								  ConsiderEntityPopulation(EntityId, *EntityPtr);
+							  });
+
+		if (OnManifestUpdated)
+		{
+			OnManifestUpdated(*ManifestEntityId, *Manifest);
+		}
+
+		GetCoordinator().SendComponentUpdate(*ManifestEntityId, Manifest->CreateComponentUpdate(), {});
+
+		if (Manifest->PopulatedEntities.Num() == Manifest->EntitiesToPopulate.Num())
+		{
+			UE_LOG(LogSpatialSkeletonEntityCreator, Log, TEXT("All %d entities populated"), Manifest->PopulatedEntities.Num());
+			Stage = EStage::SigningManifest;
+		}
+	}
+
+	if (Stage == EStage::SigningManifest)
+	{
+		// All locally populated entities need entity refreshes as this worker won't receive
+		// deltas for all the components it has added, and these can impact entity completeness.
+		for (const Worker_EntityId EntityId : Manifest->PopulatedEntities)
+		{
+			GetCoordinator().RefreshEntityCompleteness(EntityId);
+		}
+
+		Stage = EStage::Finished;
+	}
 }
 
 void FSkeletonEntityPopulator::ConsiderEntityPopulation(const Worker_EntityId EntityId, const EntityViewElement& Element)
@@ -357,71 +412,6 @@ void FSkeletonEntityPopulator::ConsiderEntityPopulation(const Worker_EntityId En
 		PopulateEntity(EntityId, *StartupActor);
 
 		Manifest->PopulatedEntities.Emplace(EntityId);
-	}
-}
-
-void FSkeletonEntityPopulator::Advance()
-{
-	if (Stage == EStage::ReceivingManifest)
-	{
-		for (const auto& Kvp : GetCoordinator().GetView())
-		{
-			const Worker_EntityId EntityId = Kvp.Key;
-			const ComponentData* ManifestPtr = GetCoordinator().GetComponent(EntityId, FSkeletonEntityManifest::ComponentId);
-			if (ManifestPtr == nullptr)
-			{
-				continue;
-			}
-			if (!Kvp.Value.Authority.Contains(SpatialConstants::SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID))
-			{
-				continue;
-			}
-			check(!ManifestEntityId);
-			ManifestEntityId = EntityId;
-			Manifest = FSkeletonEntityManifest(*ManifestPtr);
-		}
-		if (Manifest)
-		{
-			Stage = EStage::PopulatingEntities;
-		}
-	}
-
-	if (Stage == EStage::PopulatingEntities)
-	{
-		ForEachCompleteEntity(bIsFirstPopulatingEntitiesCall, *SubView, [this](const Worker_EntityId EntityId) {
-			const EntityViewElement* EntityPtr = NetDriver->Connection->GetCoordinator().GetView().Find(EntityId);
-
-			check(EntityPtr != nullptr);
-
-			ConsiderEntityPopulation(EntityId, *EntityPtr);
-		});
-
-		if (OnManifestUpdated)
-		{
-			OnManifestUpdated(*ManifestEntityId, *Manifest);
-		}
-		else
-		{
-			GetCoordinator().SendComponentUpdate(*ManifestEntityId, Manifest->CreateComponentUpdate(), {});
-		}
-
-		if (Manifest->PopulatedEntities.Num() == Manifest->EntitiesToPopulate.Num())
-		{
-			UE_LOG(LogSpatialSkeletonEntityCreator, Log, TEXT("All %d entities populated"), Manifest->PopulatedEntities.Num());
-			Stage = EStage::SigningManifest;
-		}
-	}
-
-	if (Stage == EStage::SigningManifest)
-	{
-		// All locally populated entities need entity refreshes as this worker won't receive
-		// deltas for all the components it has added, and these can impact entity completeness.
-		for (const Worker_EntityId EntityId : Manifest->PopulatedEntities)
-		{
-			GetCoordinator().RefreshEntityCompleteness(EntityId);
-		}
-
-		Stage = EStage::Finished;
 	}
 }
 

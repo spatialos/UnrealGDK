@@ -224,6 +224,7 @@ const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
     "unreal/gdk/authority_intent.schema",
     "unreal/gdk/debug_component.schema",
     "unreal/gdk/debug_metrics.schema",
+    "unreal/gdk/gameplay_debugger_component.schema",
     "unreal/gdk/net_owning_client_worker.schema",
     "unreal/gdk/not_streamed.schema",
     "unreal/gdk/query_tags.schema",

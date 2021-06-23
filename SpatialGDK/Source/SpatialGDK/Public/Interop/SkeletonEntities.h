@@ -12,19 +12,13 @@ namespace SpatialGDK
 {
 class FSubView;
 
-struct FDebugSkelEntityData
-{
-	Worker_EntityId EntityId;
-	VirtualWorkerId WorkerId;
-};
-
 class FDistributedStartupActorSkeletonEntityCreator
 {
 public:
 	explicit FDistributedStartupActorSkeletonEntityCreator(USpatialNetDriver& InNetDriver);
 
+	void CreateSkeletonEntitiesForWorld(UWorld& World);
 	Worker_EntityId CreateSkeletonEntityForActor(AActor& Actor);
-	void CreateSkeletonEntitiesForLevel(UWorld& World);
 	void Advance();
 	bool IsReady() const;
 
@@ -37,9 +31,8 @@ private:
 	CreateEntityHandler CreateHandler;
 	TSet<Worker_EntityId_Key> RemainingSkeletonEntities;
 	TArray<TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>> SkeletonEntitiesToDelegate;
-	TSet<Worker_EntityId_Key> CreatedSkeletonEntities;
 
-	TMap<Worker_EntityId_Key, VirtualWorkerId> EntitiesToPopulatingWorkers;
+	TMap<VirtualWorkerId, TSet<Worker_EntityId_Key>> PopulatingWorkersToEntities;
 
 	int ManifestsCreatedCount = 0;
 
@@ -69,8 +62,9 @@ public:
 	{
 		OnManifestUpdated = InOnManifestUpdated;
 	}
-	void ConsiderEntityPopulation(Worker_EntityId EntityId, const EntityViewElement& Element);
+
 	void Advance();
+	void ConsiderEntityPopulation(Worker_EntityId EntityId, const EntityViewElement& Element);
 	void PopulateEntity(Worker_EntityId SkeletonEntityId, AActor& SkeletonEntityStartupActor);
 	bool IsReady() const;
 
@@ -78,7 +72,7 @@ private:
 	ViewCoordinator& GetCoordinator();
 
 	USpatialNetDriver* NetDriver;
-	FSubView* SubView;
+	FSubView* SkeletonEntitiesRequiringPopulationSubview;
 
 	TFunction<void(Worker_EntityId, FSkeletonEntityManifest)> OnManifestUpdated;
 

@@ -41,8 +41,6 @@ bool FSkeletonEntityCreationStep::TryFinish()
 
 void FSkeletonEntityCreationStep::Initialize()
 {
-	using namespace SpatialGDK;
-
 	const ViewCoordinator& Coordinator = NetDriver->Connection->GetCoordinator();
 	const Worker_EntityId GlobalStateManagerEntityId = NetDriver->GlobalStateManager->GlobalStateManagerEntityId;
 	const EntityViewElement* GlobalStateManagerEntityPtr = Coordinator.GetView().Find(GlobalStateManagerEntityId);
@@ -52,7 +50,7 @@ void FSkeletonEntityCreationStep::Initialize()
 		UE_LOG(LogSpatialSkeletonEntityCreationStep, Log, TEXT("Starting GSM-auth skeleton entity creation step"));
 
 		ServerEntityCreator.Emplace(*NetDriver);
-		ServerEntityCreator->CreateSkeletonEntitiesForLevel(*NetDriver->GetWorld());
+		ServerEntityCreator->CreateSkeletonEntitiesForWorld(*NetDriver->GetWorld());
 	}
 
 	{
