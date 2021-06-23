@@ -616,14 +616,15 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::LB_TAG_COMPONENT_ID,
 		[](const Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element) {
-			return !(
-				Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::FLESHOUT_QUERY_TAG_COMPONENT_ID })
-				&& !Element.Components.ContainsByPredicate(
-					SpatialGDK::ComponentIdEquality{ SpatialConstants::FLESHOUT_FINISHED_TAG_COMPONENT_ID }));
+			return !(Element.Components.ContainsByPredicate(
+						 SpatialGDK::ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID })
+					 && !Element.Components.ContainsByPredicate(
+						 SpatialGDK::ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID }));
 		},
 		{
-			Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::FLESHOUT_QUERY_TAG_COMPONENT_ID),
-			Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::FLESHOUT_FINISHED_TAG_COMPONENT_ID),
+			Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID),
+			Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+				SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID),
 		});
 
 	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AuthorityUpdate)> AuthorityUpdateSender =

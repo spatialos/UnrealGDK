@@ -144,7 +144,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 	ACTOR_OWNERSHIP_COMPONENT_ID,
 
 	// Skeleton entity tags.
-	FLESHOUT_QUERY_TAG_COMPONENT_ID, FLESHOUT_FINISHED_TAG_COMPONENT_ID,
+	SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID, SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID,
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>{
@@ -197,7 +197,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
     ACTOR_OWNERSHIP_COMPONENT_ID,
 
     // Skeleton entity tags.
-    FLESHOUT_QUERY_TAG_COMPONENT_ID, FLESHOUT_FINISHED_TAG_COMPONENT_ID,
+    SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID, SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID,
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
@@ -216,7 +216,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
                             PARTITION_COMPONENT_ID,
 
                             // Skeleton entity tags.
-                            FLESHOUT_QUERY_TAG_COMPONENT_ID, FLESHOUT_REQUIRED_TAG_COMPONENT_ID, FLESHOUT_FINISHED_TAG_COMPONENT_ID,
+                            SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID, SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID, SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID,
 };
 
 const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
@@ -270,7 +270,7 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
 	{ MIGRATION_DIAGNOSTIC_COMPONENT_ID, "unreal.MigrationDiagnostic" },
 	{ ACTOR_OWNERSHIP_COMPONENT_ID, "unreal.ActorOwnership" },
     
-    { FLESHOUT_FINISHED_TAG_COMPONENT_ID, "unreal.FleshoutFinishedTag"},
+    { SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID, "unreal.SkeletonEntityPopulationFinishedTag"},
 };
 
 const TArray<FString> ClientAuthorityWellKnownSchemaImports = { "unreal/gdk/player_controller.schema", "unreal/gdk/rpc_components.schema",

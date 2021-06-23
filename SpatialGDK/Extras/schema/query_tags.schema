@@ -27,14 +27,14 @@ component RoutingWorkerEntityTag {
     id = 2009;
 }
 
-component FleshoutRequiredTag {
+component SkeletonEntityQueryTag {
     id = 2012;
 }
 
-component FleshoutQueryTag {
+component SkeletonEntityPopulationAuthTag {
     id = 2013;
 }
 
-component FleshoutFinishedTag {
+component SkeletonEntityPopulationFinishedTag {
     id = 2014;
 }

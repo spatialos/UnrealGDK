@@ -118,8 +118,9 @@ Worker_EntityId FDistributedStartupActorSkeletonEntityCreator::CreateSkeletonEnt
 	EntityComponents.Append(NetDriver->RPCs->GetRPCComponentsOnEntityCreation(ActorEntityId));
 
 	// Skeleton entity markers		.
-	EntityComponents.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::FLESHOUT_QUERY_TAG_COMPONENT_ID));
-	EntityComponents.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::FLESHOUT_REQUIRED_TAG_COMPONENT_ID));
+	EntityComponents.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID));
+	EntityComponents.Emplace(
+		ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID));
 
 	EntityComponents.Add(NetDriver->InterestFactory->CreateInterestData(
 		&Actor, NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(&Actor), ActorEntityId));
@@ -320,7 +321,7 @@ void FDistributedStartupActorSkeletonEntityCreator::HackAddManifest(const Worker
 
 FSkeletonEntityPopulator::FSkeletonEntityPopulator(USpatialNetDriver& InNetDriver)
 	: NetDriver(&InNetDriver)
-	, SubView(&InNetDriver.Connection->GetCoordinator().CreateSubView(SpatialConstants::FLESHOUT_REQUIRED_TAG_COMPONENT_ID,
+	, SubView(&InNetDriver.Connection->GetCoordinator().CreateSubView(SpatialConstants::SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID,
 																	  FSubView::NoFilter, FSubView::NoDispatcherCallbacks))
 {
 	Stage = EStage::ReceivingManifest;
@@ -470,7 +471,8 @@ void FSkeletonEntityPopulator::PopulateEntity(Worker_EntityId SkeletonEntityId, 
 
 	// NOTE: This one is added last to ensure all data components are in before the tag is. The Runtime guarantees
 	// this ordering for dynamic components.
-	Coordinator.SendAddComponent(SkeletonEntityId, ComponentData(SpatialConstants::FLESHOUT_FINISHED_TAG_COMPONENT_ID), {});
+	Coordinator.SendAddComponent(SkeletonEntityId, ComponentData(SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID),
+								 {});
 }
 
 bool FSkeletonEntityPopulator::IsReady() const

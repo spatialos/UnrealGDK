@@ -60,8 +60,9 @@ bool MainActorSubviewSetup::IsActorEntity(const Worker_EntityId EntityId, const 
 		return false;
 	}
 
-	if (Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::FLESHOUT_QUERY_TAG_COMPONENT_ID })
-		&& !Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::FLESHOUT_FINISHED_TAG_COMPONENT_ID }))
+	if (Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID })
+		&& !Entity.Components.ContainsByPredicate(
+			ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID }))
 	{
 		return false;
 	}
@@ -101,8 +102,8 @@ TArray<FDispatcherRefreshCallback> MainActorSubviewSetup::GetCallbacks(ViewCoord
 		Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
 		Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
 		Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID),
-		Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::FLESHOUT_QUERY_TAG_COMPONENT_ID),
-		Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::FLESHOUT_FINISHED_TAG_COMPONENT_ID),
+		Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID),
+		Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID),
 	};
 }
 
