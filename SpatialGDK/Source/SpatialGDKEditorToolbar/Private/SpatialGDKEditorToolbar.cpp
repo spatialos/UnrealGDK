@@ -1449,6 +1449,9 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 		return FReply::Unhandled();
 	}
 
+	bool bIgnoredRedeployRequired = false;
+	GenerateAllDefaultWorkerJsons(bIgnoredRedeployRequired);
+
 	if (SpatialGDKEditorSettings->ShouldAutoGenerateCloudLaunchConfig())
 	{
 		GenerateCloudConfigFromCurrentMap();

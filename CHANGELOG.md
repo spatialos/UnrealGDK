@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug fixes:
 
 ### Internal:
+- Modified startup flow to only create ActorSystem, RPCService and some others after startup has otherwise finished; removed initial op reordering.
+- Unused worker types will no longer generate worker configuration files.
 
 ## [`0.14.0-rc`] - Unreleased
 
@@ -37,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed `StartInsights` command args - `trace` -> `channel` and `tracefile` -> `file`
 
 ### Bug fixes:
+- An issue with `AActor::SetAutonomousProxy` has been fixed, where actors that were manually set as `AutonomousProxy` could get downgraded to `SimulatedProxy`. The functions `SetAutonomousProxyOnAuthority` and `IsAutonomousProxyOnAuthority` have been added to USpatialActorChannel, along with a change to `ActorSystem::HandleActorAuthority` which will upgrade an actor's role from `SimulatedProxy` to `AutonomousProxy` if the actor gains Authority when `IsAutonomousProxyOnAuthority` is true.
 - Added a pop-up message when schema generation fails, which suggests running a Clean and Generate to fix a bad schema state.
 - Fixed a bug that left the SchemaDatabase.uasset file locked after a failed schema generation.
 - Fixed an issue with migration diagnostic logging failing, when the actor did not have authority.
