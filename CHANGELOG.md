@@ -52,7 +52,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue that caused `UnrealGDK/Setup.sh` to report `sed: can't read : No such file or directory` when run on macOS.
 - Static subobjects on bNetLoadOnClient actors are now removed on clients in a manner matching native unreal's behavior. This change affects subobjects removed by the server while the actor is not in the client's interest.
 - Fixed an issue where multicast rpcs could be overwritten and then dropped on authority flicker.
-- Fixed an issue with registering spatial flow controllers in the Spatial Testing Framework.
 - Fixed issue using the runtime snapshot endpoint with a local deployment, using `localhost:5006/snapshot` works again and creates a snapshot.
 
 ### Internal:
@@ -61,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A test was calling `SetReplicates` on an actor over which it did not have authority. This was causing warnings to be triggered. We've fixed this by reverting the actor's role at the end of the test, so that the actor is not left in an unexpected state.
 - Added support for clients to disconnect during a test in the automated test framework.
 - Modified ActorSystem's Ownership and Simulated Subviews to take player ownership into account.
+- Fixed an issue with registering spatial flow controllers in the Spatial Testing Framework.
 
 ## [`0.13.1`] - 2021-06-02
 

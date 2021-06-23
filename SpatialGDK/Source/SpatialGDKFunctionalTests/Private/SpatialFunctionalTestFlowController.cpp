@@ -43,7 +43,31 @@ void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray<FLi
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, WorkerDefinition);
 }
 
-void ASpatialFunctionalTestFlowController::OnAuthorityGained() {}
+void ASpatialFunctionalTestFlowController::OnActorReady(bool bHasAuthority)
+{
+	if (bHasAuthority)
+	{
+		// Registration of authoritative flow controllers (server and client)
+		OwningTest->RegisterFlowControllerOnAuthServer(this);
+
+		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+		{
+			// Local registration of server flow controllers
+			OwningTest->RegisterLocalFlowController(this);
+			TrySetReadyToRunTest();
+		}
+	}
+}
+
+void ASpatialFunctionalTestFlowController::OnClientOwnershipGained()
+{
+	if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
+	{
+		// Local registration of client flow controllers
+		OwningTest->RegisterLocalFlowController(this);
+		TrySetReadyToRunTest();
+	}
+}
 
 void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
 {
@@ -67,21 +91,15 @@ void ASpatialFunctionalTestFlowController::CrossServerSetWorkerId_Implementation
 
 void ASpatialFunctionalTestFlowController::OnRep_OwningTest()
 {
-	// Register replicated flow controllers
-	RegisterFlowController();
-}
-
-void ASpatialFunctionalTestFlowController::RegisterFlowController()
-{
-	OwningTest->RegisterFlowController(this);
+	// Register replicated flow controllers (server and client)
+	OwningTest->RegisterFlowControllerOnAuthServer(this);
 }
 
 void ASpatialFunctionalTestFlowController::TrySetReadyToRunTest()
 {
 	if (IsLocalController())
 	{
-		if (HasActorBegunPlay() && IsActorReady() && OwningTest->HasActorBegunPlay() && OwningTest->IsActorReady()
-			&& OwningTest->HasPreparedTest())
+		if (IsActorReady() && OwningTest->HasPreparedTest())
 		{
 			SetReadyToRunTest(true);
 		}

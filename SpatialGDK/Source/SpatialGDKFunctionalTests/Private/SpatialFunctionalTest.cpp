@@ -343,6 +343,21 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 							++NumRegisteredClients;
 						}
 					}
+					else
+					{
+						// Output reason why the flow controller was not ready
+						FString ReasonForTimeout;
+						if (!FlowController->IsActorReady())
+						{
+							ReasonForTimeout += FString::Printf(TEXT("Spatial flow controller was not ready. "));
+						}
+						if (!FlowController->OwningTest->HasPreparedTest())
+						{
+							ReasonForTimeout +=FString::Printf(TEXT("Owning test was not ready. "));
+						}
+						UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("Spatial flow controller %s was not ready to run test because: %s"), *FlowController->GetName(), *ReasonForTimeout);
+						
+					}
 				}
 
 				if (NumRegisteredClients < GetNumRequiredClients())
@@ -423,29 +438,29 @@ void ASpatialFunctionalTest::CrossServerFinishTest_Implementation(EFunctionalTes
 	FinishTest(TestResult, Message);
 }
 
-void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowController* FlowController)
+void ASpatialFunctionalTest::RegisterLocalFlowController(ASpatialFunctionalTestFlowController* FlowController)
 {
 	if (FlowController->IsLocalController())
 	{
 		checkf(LocalFlowController == nullptr, TEXT("OwningTest already had a LocalFlowController, this shouldn't happen"));
 		LocalFlowController = FlowController;
-		LocalFlowController->TrySetReadyToRunTest();
 	}
-
-	if (!HasAuthority())
-	{
-		// FlowControllers invoke this on each worker's local context when checkout and ready, we only want to act in the authority
-		return;
-	}
-
-	if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
-	{
-		// Since Clients can spawn on any worker we need to centralize the assignment of their ids to the Test Authority.
-		FlowControllerSpawner.AssignClientFlowControllerId(FlowController);
-	}
-	checkf(!FlowControllers.Contains(FlowController), TEXT("Auth test already registered this flow controller, this shouldn't happen"));
-	FlowControllers.Add(FlowController);
 }
+
+void ASpatialFunctionalTest::RegisterFlowControllerOnAuthServer(ASpatialFunctionalTestFlowController* FlowController)
+{
+	if (HasAuthority())
+	{
+		if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
+		{
+			// Since Clients can spawn on any worker we need to centralize the assignment of their ids to the Test Authority.
+			FlowControllerSpawner.AssignClientFlowControllerId(FlowController);
+		}
+		checkf(!FlowControllers.Contains(FlowController), TEXT("Auth test already registered this flow controller, this shouldn't happen"));
+		FlowControllers.Add(FlowController);
+	}
+}
+
 
 void ASpatialFunctionalTest::DeregisterFlowController(ASpatialFunctionalTestFlowController* FlowController)
 {
@@ -726,13 +741,6 @@ void ASpatialFunctionalTest::PrepareTestAfterBeginPlay()
 	if (!HasAuthority())
 	{
 		PrepareTest();
-	}
-
-	// Currently PrepareTest() happens before FlowControllers are registered,
-	// but that is most likely because of the bug that forces us to delay their registration.
-	if (LocalFlowController != nullptr)
-	{
-		LocalFlowController->SetReadyToRunTest(true);
 	}
 }
 

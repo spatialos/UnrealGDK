@@ -24,7 +24,8 @@ public:
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	virtual void OnAuthorityGained() override;
+	virtual void OnActorReady(bool bHasAuthority) override;
+	virtual void OnClientOwnershipGained() override;
 
 	virtual void Tick(float DeltaSeconds) override;
 
@@ -76,8 +77,6 @@ public:
 	// Let's you know if the owning worker has acknowledged the FinishTest flow.
 	bool HasAckFinishedTest() const { return bHasAckFinishedTest; }
 
-	UFUNCTION()
-	void RegisterFlowController();
 	UFUNCTION()
 	void TrySetReadyToRunTest();
 	UFUNCTION()
