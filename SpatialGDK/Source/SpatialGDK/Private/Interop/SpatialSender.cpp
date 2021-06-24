@@ -85,7 +85,8 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
 	FWorkerComponentUpdate InterestUpdate =
 		NetDriver->InterestFactory
-			->CreatePartitionInterest(NetDriver->LoadBalanceStrategy, VirtualId, NetDriver->DebugCtx != nullptr /*bDebug*/)
+			->CreatePartitionInterest(NetDriver->LoadBalanceStrategy->GetWorkerInterestQueryConstraint(VirtualId),
+									  NetDriver->DebugCtx != nullptr /*bDebug*/)
 			.CreateInterestUpdate();
 
 	Connection->SendComponentUpdate(PartitionId, &InterestUpdate);
@@ -145,9 +146,12 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& InActor, VirtualWor
 
 	Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 
-	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
-	// This should always happen with USLB.
-	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+	if (NetDriver->LoadBalanceEnforcer)
+	{
+		// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
+		// This should always happen with USLB.
+		NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+	}
 
 	if (NetDriver->SpatialDebuggerSystem.IsValid())
 	{

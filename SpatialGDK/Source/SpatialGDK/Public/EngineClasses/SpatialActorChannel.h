@@ -120,7 +120,7 @@ public:
 
 	void UpdateRefToRepStateMap(FObjectToRepStateMap& ReplicatorMap);
 	bool MoveMappedObjectToUnmapped(const FUnrealObjectRef& ObjRef);
-	bool HasUnresolved() const { return UnresolvedRefs.Num() == 0; }
+	bool HasUnresolved() const { return UnresolvedRefs.Num() != 0; }
 
 	const FChannelObjectPair& GetChannelObjectPair() const { return ThisObj; }
 
@@ -258,6 +258,7 @@ public:
 
 	void UpdateShadowData();
 	void UpdateSpatialPosition();
+	void ForcePositionReplication() { TimeWhenPositionLastUpdated = 0; }
 
 	void ServerProcessOwnershipChange();
 	void ClientProcessOwnershipChange(bool bNewNetOwned);

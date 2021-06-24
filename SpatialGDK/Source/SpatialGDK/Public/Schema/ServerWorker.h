@@ -37,8 +37,13 @@ struct ServerWorker : Component
 	}
 
 	ServerWorker(const Worker_ComponentData& Data)
+		: ServerWorker(Data.schema_type)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	}
+
+	ServerWorker(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 		WorkerName = GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
 		bReadyToBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
@@ -73,13 +78,24 @@ struct ServerWorker : Component
 		return Update;
 	}
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
-	{
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) { ApplyComponentUpdate(Update.schema_type); }
 
-		WorkerName = GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
-		bReadyToBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
-		SystemEntityId = Schema_GetEntityId(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID);
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
+
+		if (Schema_GetObjectCount(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID) > 0)
+		{
+			WorkerName = GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
+		}
+		if (Schema_GetBoolCount(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID) > 0)
+		{
+			bReadyToBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
+		}
+		if (Schema_GetEntityIdCount(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID) > 0)
+		{
+			SystemEntityId = Schema_GetEntityId(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID);
+		}
 	}
 
 	static Worker_CommandRequest CreateForwardPlayerSpawnRequest(Schema_CommandRequest* SchemaCommandRequest)

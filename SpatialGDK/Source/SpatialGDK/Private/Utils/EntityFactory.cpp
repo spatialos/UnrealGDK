@@ -101,6 +101,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID));
 
@@ -116,6 +117,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 
 void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDatas, AActor* Actor)
 {
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 	const Worker_PartitionId AuthoritativeServerPartitionId = NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId();
@@ -130,6 +132,15 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
+	if (!SpatialSettings->bRunStrategyWorker)
+	{
+		DelegationMap.Add(SpatialConstants::LB_DELEGATION_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
+	}
+	else
+	{
+		DelegationMap.Add(SpatialConstants::LB_DELEGATION_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
+		DelegationMap.Add(SpatialConstants::STRATEGY_WORKER_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
+	}
 	DelegationMap.Add(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, AuthoritativeClientPartitionId);
 	DelegationMap.Add(SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_ROUTING_PARTITION_ENTITY_ID);
 
@@ -157,7 +168,27 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 
 	// Add actual load balancing components
 	ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId).CreateComponentData());
-	ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
+	if (SpatialSettings->bRunStrategyWorker)
+	{
+		ComponentDatas.Add(AuthorityIntentV2(AuthoritativeServerPartitionId).CreateComponentData());
+		ComponentDatas.Add(AuthorityIntentACK().CreateComponentData());
+		if (NetDriver->LoadBalanceStrategy->IsStrategyWorkerAware())
+		{
+			TArray<SpatialGDK::ComponentData> DecoratorData = NetDriver->LoadBalanceStrategy->CreateStaticLoadBalancingData(*Actor);
+			for (auto& Component : DecoratorData)
+			{
+				FWorkerComponentData DecoratorComponent;
+				DecoratorComponent.component_id = Component.GetComponentId();
+				DecoratorComponent.schema_type = MoveTemp(Component).Release();
+				ComponentDatas.Add(DecoratorComponent);
+			}
+		}
+	}
+	if (!(SpatialSettings->bRunStrategyWorker && NetDriver->LoadBalanceStrategy->IsStrategyWorkerAware()))
+	{
+		ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
+	}
+
 	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
 	if (GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents)
@@ -413,19 +444,32 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	return Components;
 }
 
-TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const Worker_EntityId EntityId,
+TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const FString& PartitionName, const Worker_EntityId EntityId,
 																			const InterestFactory* InterestFactory,
-																			const UAbstractLBStrategy* LbStrategy,
+																			const SpatialGDK::QueryConstraint& LoadBalancingConstraint,
 																			VirtualWorkerId VirtualWorker, bool bDebugContextValid)
 {
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+
 	AuthorityDelegationMap DelegationMap;
-	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, EntityId);
+	if (SpatialSettings->bRunStrategyWorker)
+	{
+		DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
+		DelegationMap.Add(SpatialConstants::PARTITION_WORKER_AUTH_COMPONENT_SET_ID, EntityId);
+	}
+	else
+	{
+		DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, EntityId);
+	}
 
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreateComponentData());
 	Components.Add(Persistence().CreateComponentData());
-	Components.Add(Metadata(FString::Format(TEXT("PartitionEntity:{0}"), { VirtualWorker })).CreateComponentData());
-	Components.Add(InterestFactory->CreatePartitionInterest(LbStrategy, VirtualWorker, bDebugContextValid).CreateComponentData());
+	Components.Add(Metadata(FString::Format(TEXT("{0}:{1}"), { *PartitionName, VirtualWorker })).CreateComponentData());
+	if (InterestFactory != nullptr)
+	{
+		Components.Add(InterestFactory->CreatePartitionInterest(LoadBalancingConstraint, bDebugContextValid).CreateComponentData());
+	}
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_SHADOW_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));

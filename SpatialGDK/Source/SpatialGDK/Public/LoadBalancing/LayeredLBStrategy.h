@@ -31,6 +31,8 @@ class SPATIALGDK_API ULayeredLBStrategy : public UAbstractLBStrategy
 
 public:
 	ULayeredLBStrategy();
+	ULayeredLBStrategy(FVTableHelper& Helper);
+	~ULayeredLBStrategy();
 
 	void SetLayers(const TArray<FLayerInfo>& WorkerLayers);
 
@@ -69,9 +71,12 @@ public:
 
 	FName GetLocalLayerName() const;
 
+	virtual bool IsStrategyWorkerAware() const override;
+	virtual void GetLegacyLBInformation(FLegacyLBContext& Ctx) const override;
+	virtual TArray<SpatialGDK::ComponentData> CreateStaticLoadBalancingData(const AActor& Actor) const override;
+
 private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;
-
 	mutable TMap<TSoftClassPtr<AActor>, FName> ClassPathToLayerName;
 
 	struct FLayerData

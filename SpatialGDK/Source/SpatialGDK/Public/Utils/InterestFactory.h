@@ -45,20 +45,14 @@ namespace SpatialGDK
 class SPATIALGDK_API InterestFactory
 {
 public:
-	InterestFactory(USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap);
-
-	Worker_ComponentData CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
-	Worker_ComponentUpdate CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
+	InterestFactory(USpatialClassInfoManager* InClassInfoManager);
 
 	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy) const;
-	Interest CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, bool bDebug) const;
+	Interest CreatePartitionInterest(const QueryConstraint& LoadBalancingConstraint, bool bDebug) const;
 	void AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, Interest& OutInterest) const;
 	static Interest CreateRoutingWorkerInterest();
 
-	// Returns false if we could not get an owner's entityId in the Actor's owner chain.
-	bool DoOwnersHaveEntityId(const AActor* Actor) const;
-
-private:
+protected:
 	// Shared constraints and result types are created at initialization and reused throughout the lifetime of the factory.
 	void CreateAndCacheInterestState();
 
@@ -68,8 +62,6 @@ private:
 	SchemaResultType CreateClientAuthInterestResultType();
 	SchemaResultType CreateServerNonAuthInterestResultType();
 	SchemaResultType CreateServerAuthInterestResultType();
-
-	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
 	// Defined Constraint AND Level Constraint
 	void AddClientPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const;
@@ -82,14 +74,10 @@ private:
 	void AddClientSelfInterest(Interest& OutInterest) const;
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
 	void AddServerSelfInterest(Interest& OutInterest) const;
-	// Add interest to the actor's owner.
-	void AddServerActorOwnerInterest(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const;
 
 	// Add the always relevant and the always interested query.
 	void AddClientAlwaysRelevantQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,
 									  const QueryConstraint& LevelConstraint) const;
-
-	void AddAlwaysInterestedInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const;
 
 	void AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const;
 	FrequencyToConstraintsMap GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;
@@ -103,7 +91,6 @@ private:
 
 	// System Defined Constraints
 	bool ShouldAddNetCullDistanceInterest(const AActor* InActor) const;
-	QueryConstraint CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const;
 	QueryConstraint CreateGDKSnapshotEntitiesConstraint() const;
 	QueryConstraint CreateClientAlwaysRelevantConstraint() const;
 	QueryConstraint CreateServerAlwaysRelevantConstraint() const;
@@ -112,10 +99,7 @@ private:
 	// Only checkout entities that are in loaded sub-levels
 	QueryConstraint CreateLevelConstraints(const AActor* InActor) const;
 
-	void AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase) * Property, uint8* Data, QueryConstraint& OutConstraint) const;
-
 	USpatialClassInfoManager* ClassInfoManager;
-	USpatialPackageMapClient* PackageMap;
 
 	// The checkout radius constraint is built once for all actors in CreateCheckoutRadiusConstraint as it is equivalent for all actors.
 	// It is built once per net driver initialization.
@@ -126,6 +110,31 @@ private:
 	SchemaResultType ClientAuthInterestResultType;
 	SchemaResultType ServerNonAuthInterestResultType;
 	SchemaResultType ServerAuthInterestResultType;
+};
+
+class SPATIALGDK_API UnrealServerInterestFactory : public InterestFactory
+{
+public:
+	UnrealServerInterestFactory(USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap);
+
+	Worker_ComponentData CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
+	Worker_ComponentUpdate CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
+
+	// Returns false if we could not get an owner's entityId in the Actor's owner chain.
+	bool DoOwnersHaveEntityId(const AActor* Actor) const;
+
+private:
+	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
+
+	void AddAlwaysInterestedInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const;
+	QueryConstraint CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const;
+
+	// Add interest to the actor's owner.
+	void AddServerActorOwnerInterest(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const;
+
+	void AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase) * Property, uint8* Data, QueryConstraint& OutConstraint) const;
+
+	USpatialPackageMapClient* PackageMap;
 };
 
 } // namespace SpatialGDK
