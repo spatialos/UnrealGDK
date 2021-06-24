@@ -11,7 +11,29 @@ class FLBDataStorage
 public:
 	virtual ~FLBDataStorage() = default;
 
-	virtual void OnAdded(Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element) = 0;
+	virtual void OnAdded(Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element)
+	{
+		for (const auto& Component : Element.Components)
+		{
+			if (Components.Contains(Component.GetComponentId()))
+			{
+				OnComponentAdded(EntityId, Component.GetComponentId(), Component.GetUnderlying());
+			}
+		}
+	}
+
+	virtual void OnRefresh(Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element)
+	{
+		OnRemoved(EntityId);
+		OnAdded(EntityId, Element);
+	}
+
+	virtual void OnComponentRefreshed(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data)
+	{
+		OnComponentAdded(EntityId, ComponentId, Data);
+	}
+
+	virtual void OnComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data) = 0;
 	virtual void OnRemoved(Worker_EntityId EntityId) = 0;
 	virtual void OnUpdate(Worker_EntityId EntityId, Worker_ComponentId InComponentId, Schema_ComponentUpdate* Update) = 0;
 
@@ -26,12 +48,24 @@ protected:
 	TSet<Worker_ComponentId> Components;
 };
 
+struct FLBDataCollection
+{
+	FLBDataCollection(const FSubView& InSubView)
+		: SubView(InSubView)
+	{
+	}
+	void Advance();
+	TSet<Worker_ComponentId> GetComponentsToWatch() const;
+	TArray<FLBDataStorage*> DataStorages;
+	const FSubView& SubView;
+};
+
 class FSpatialPositionStorage : public FLBDataStorage
 {
 public:
 	FSpatialPositionStorage();
 
-	virtual void OnAdded(Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element) override;
+	virtual void OnComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data) override;
 	virtual void OnRemoved(Worker_EntityId EntityId) override;
 	virtual void OnUpdate(Worker_EntityId EntityId, Worker_ComponentId InComponentId, Schema_ComponentUpdate* Update) override;
 
@@ -46,7 +80,7 @@ class FActorGroupStorage : public FLBDataStorage
 public:
 	FActorGroupStorage();
 
-	virtual void OnAdded(Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element) override;
+	virtual void OnComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data) override;
 	virtual void OnRemoved(Worker_EntityId EntityId) override;
 	virtual void OnUpdate(Worker_EntityId EntityId, Worker_ComponentId InComponentId, Schema_ComponentUpdate* Update) override;
 
@@ -56,18 +90,46 @@ protected:
 	TMap<Worker_EntityId_Key, int32> Groups;
 };
 
-class FDirectAssignmentStorage : public FLBDataStorage
+template <typename T>
+class TLBDataStorage : public FLBDataStorage
 {
 public:
-	FDirectAssignmentStorage();
+	TLBDataStorage() { Components.Add(T::ComponentId); }
 
-	virtual void OnAdded(Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element) override;
-	virtual void OnRemoved(Worker_EntityId EntityId) override;
-	virtual void OnUpdate(Worker_EntityId EntityId, Worker_ComponentId InComponentId, Schema_ComponentUpdate* Update) override;
+	virtual void OnComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data) override
+	{
+		if (ensureAlways(T::ComponentId == ComponentId))
+		{
+			T NewSchemaObject(Data);
+			SchemaObjects.Add(EntityId, NewSchemaObject);
+			Modified.Add(EntityId);
+		}
+	}
+	virtual void OnRemoved(Worker_EntityId EntityId) override
+	{
+		SchemaObjects.Remove(EntityId);
+		Modified.Remove(EntityId);
+	}
+	virtual void OnUpdate(Worker_EntityId EntityId, Worker_ComponentId InComponentId, Schema_ComponentUpdate* Update) override
+	{
+		T* Object = SchemaObjects.Find(EntityId);
+		if (!ensure(Object != nullptr))
+		{
+			return;
+		}
 
-	TMap<Worker_EntityId_Key, AuthorityIntent> const& GetAssignments() const { return Intents; }
+		Object->ApplyComponentUpdate(Update);
+		Modified.Add(EntityId);
+	}
+
+	TMap<Worker_EntityId_Key, T> const& GetObjects() const { return SchemaObjects; }
 
 protected:
-	TMap<Worker_EntityId_Key, AuthorityIntent> Intents;
+	TMap<Worker_EntityId_Key, T> SchemaObjects;
 };
+
+class FDirectAssignmentStorage : public TLBDataStorage<AuthorityIntent>
+{
+};
+
 } // namespace SpatialGDK
