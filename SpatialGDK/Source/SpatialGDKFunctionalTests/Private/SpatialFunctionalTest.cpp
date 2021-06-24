@@ -351,7 +351,11 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 						{
 							ReasonForTimeout += FString::Printf(TEXT("Spatial flow controller was not ready. "));
 						}
-						if (!FlowController->OwningTest->HasPreparedTest())
+						if (FlowController->OwningTest == nullptr)
+						{
+							ReasonForTimeout += FString::Printf(TEXT("Owning test was not set. "));
+						}
+						else if (!FlowController->OwningTest->HasPreparedTest())
 						{
 							ReasonForTimeout += FString::Printf(TEXT("Owning test was not ready. "));
 						}
