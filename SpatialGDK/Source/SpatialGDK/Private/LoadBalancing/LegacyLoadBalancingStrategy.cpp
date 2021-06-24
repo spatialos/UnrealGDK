@@ -243,7 +243,7 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 		}
 		else
 		{
-			const TMap<Worker_EntityId_Key, AuthorityIntent>& AssignmentMap = AssignmentStorage->GetAssignments();
+			const TMap<Worker_EntityId_Key, AuthorityIntent>& AssignmentMap = AssignmentStorage->GetObjects();
 			for (Worker_EntityId ToMigrate : Ctx.ModifiedEntities)
 			{
 				if (!ensureAlways(!Ctx.MigratingEntities.Contains(ToMigrate)))
