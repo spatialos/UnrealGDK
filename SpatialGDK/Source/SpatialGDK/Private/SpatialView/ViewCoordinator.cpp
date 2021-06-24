@@ -90,6 +90,11 @@ const TArray<Worker_Op>& ViewCoordinator::GetWorkerMessages() const
 	return View.GetViewDelta().GetWorkerMessages();
 }
 
+FString ViewCoordinator::GetViewDeltaInfo() const
+{
+	return View.GetViewDelta().GetPrintInfo();
+}
+
 const EntityView& ViewCoordinator::GetView() const
 {
 	return View.GetView();

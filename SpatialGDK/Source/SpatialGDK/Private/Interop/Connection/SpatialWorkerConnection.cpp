@@ -143,6 +143,11 @@ const TArray<Worker_Op>& USpatialWorkerConnection::GetWorkerMessages()
 	return Coordinator->GetWorkerMessages();
 }
 
+FString USpatialWorkerConnection::GetViewDeltaInfo() const
+{
+	return Coordinator->GetViewDeltaInfo();
+}
+
 void USpatialWorkerConnection::DestroyConnection()
 {
 	Coordinator.Reset();

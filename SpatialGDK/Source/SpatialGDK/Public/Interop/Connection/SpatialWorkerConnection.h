@@ -95,6 +95,7 @@ public:
 
 	const SpatialGDK::EntityView& GetView() const;
 	SpatialGDK::ViewCoordinator& GetCoordinator() const;
+	FString GetViewDeltaInfo() const;
 	// TODO: UNR-5481 - Fix this hack for fixing spatial debugger crash after client travel
 	bool HasValidCoordinator() const { return Coordinator.IsValid(); }
 

@@ -18,6 +18,10 @@ public:
 	void StartupModule() override;
 	void ShutdownModule() override;
 
+	void PrintCustomAllocateInfo();
+	size_t DeltaSize;
+	size_t LastSize;
+
 private:
 	FSpatialGDKLoader Loader;
 };

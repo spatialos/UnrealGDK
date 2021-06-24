@@ -34,6 +34,7 @@ public:
 
 	void Advance(float DeltaTimeS);
 	const ViewDelta& GetViewDelta() const;
+	FString GetViewDeltaInfo() const;
 	void FlushMessagesToSend();
 
 	// Create a subview with the specified tag, filter, and refresh callbacks.

@@ -9,6 +9,16 @@
 
 namespace SpatialGDK
 {
+
+const FString ViewDelta::GetPrintInfo() const
+{
+	return FString::Format(
+		TEXT("ViewDelat: Changes: Ent={0}, Comp={1}, Auth={2}. Deltas: Ent={3}, Msg={4}, Add={5}, Remv={6}, Upd={7}, Refr={8}. Opl={9}."),
+		{ EntityChanges.Num(), ComponentChanges.Num(), AuthorityChanges.Num(), EntityDeltas.Num(), WorkerMessages.Num(),
+		  ComponentsAddedForDelta.Num(), ComponentsRemovedForDelta.Num(), ComponentUpdatesForDelta.Num(), ComponentsRefreshedForDelta.Num(),
+		  OpListStorage.Num() });
+}
+	
 void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View, const FComponentSetData& ComponentSetData)
 {
 	Clear();

@@ -49,6 +49,8 @@ public:
 	Worker_ConnectionStatusCode GetConnectionStatusChange() const;
 	FString GetConnectionStatusChangeMessage() const;
 
+	const FString GetPrintInfo() const;
+
 private:
 	struct ReceivedComponentChange
 	{
