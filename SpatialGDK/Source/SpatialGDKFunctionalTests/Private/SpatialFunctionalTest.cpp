@@ -439,7 +439,7 @@ void ASpatialFunctionalTest::CrossServerFinishTest_Implementation(EFunctionalTes
 	FinishTest(TestResult, Message);
 }
 
-void ASpatialFunctionalTest::RegisterLocalFlowController(ASpatialFunctionalTestFlowController* FlowController)
+void ASpatialFunctionalTest::SetLocalFlowController(ASpatialFunctionalTestFlowController* FlowController)
 {
 	if (FlowController->IsLocalController())
 	{
@@ -448,7 +448,7 @@ void ASpatialFunctionalTest::RegisterLocalFlowController(ASpatialFunctionalTestF
 	}
 }
 
-void ASpatialFunctionalTest::RegisterFlowControllerOnAuthServer(ASpatialFunctionalTestFlowController* FlowController)
+void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowController* FlowController)
 {
 	if (HasAuthority())
 	{
