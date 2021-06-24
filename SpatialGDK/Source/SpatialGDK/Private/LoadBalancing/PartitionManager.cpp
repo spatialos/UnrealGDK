@@ -224,8 +224,8 @@ struct FPartitionManager::Impl
 		WorkersDispatcher.Advance();
 		SystemWorkersDispatcher.Advance();
 
-		TSet<Worker_EntityId> WorkersToInspect = WorkersData.GetModifiedEntities();
-		const TSet<Worker_EntityId>& SystemWorkerModified = SystemWorkersData.GetModifiedEntities();
+		TSet<Worker_EntityId_Key> WorkersToInspect = WorkersData.GetModifiedEntities();
+		const TSet<Worker_EntityId_Key>& SystemWorkerModified = SystemWorkersData.GetModifiedEntities();
 		if (SystemWorkerModified.Num() != 0)
 		{
 			for (const auto& Entry : WorkersData.GetObjects())
