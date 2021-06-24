@@ -9,7 +9,6 @@
 
 namespace SpatialGDK
 {
-
 const FString ViewDelta::GetPrintInfo() const
 {
 	return FString::Format(
@@ -18,7 +17,7 @@ const FString ViewDelta::GetPrintInfo() const
 		  ComponentsAddedForDelta.Num(), ComponentsRemovedForDelta.Num(), ComponentUpdatesForDelta.Num(), ComponentsRefreshedForDelta.Num(),
 		  OpListStorage.Num() });
 }
-	
+
 void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View, const FComponentSetData& ComponentSetData)
 {
 	Clear();

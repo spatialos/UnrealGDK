@@ -46,15 +46,14 @@ void FSpatialGDKModule::PrintCustomAllocateInfo()
 void FSpatialGDKModule::StartupModule()
 {
 	LastSize = 0;
-	
+
 	user_data u_data;
 	u_data.call_point = "worker api";
-	//Worker_AllocateFunction custom_allocate = &FSpatialGDKModule::my_allocate;
-	//Worker_DeallocateFunction custom_deallocate = &FSpatialGDKModule::my_free;
+	// Worker_AllocateFunction custom_allocate = &FSpatialGDKModule::my_allocate;
+	// Worker_DeallocateFunction custom_deallocate = &FSpatialGDKModule::my_free;
 	Worker_Alpha_SetAllocator(&my_allocate, &my_free, &u_data);
 }
 
 void FSpatialGDKModule::ShutdownModule() {}
-
 
 #undef LOCTEXT_NAMESPACE
