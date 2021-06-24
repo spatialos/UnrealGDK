@@ -2,6 +2,7 @@
 
 #include "LoadBalancing/PartitionManager.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/PartitionManager.h"
 #include "Schema/ServerWorker.h"
 #include "Schema/StandardLibrary.h"
@@ -72,7 +73,11 @@ struct FPartitionManager::Impl
 		, PartitionView(Coordinator.CreateSubView(SpatialConstants::PARTITION_ACK_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
 												  SpatialGDK::FSubView::NoDispatcherCallbacks))
 		, InterestF(MoveTemp(InInterestF))
+		, WorkersDispatcher(WorkerView)
+		, SystemWorkersDispatcher(SystemWorkerView)
 	{
+		WorkersDispatcher.DataStorages.Add(&WorkersData);
+		SystemWorkersDispatcher.DataStorages.Add(&SystemWorkersData);
 	}
 
 	void AdvanceView(ISpatialOSWorker& Connection)
@@ -216,102 +221,50 @@ struct FPartitionManager::Impl
 			}
 		}
 
-		for (const EntityDelta& Delta : WorkerView.GetViewDelta().EntityDeltas)
+		WorkersDispatcher.Advance();
+		SystemWorkersDispatcher.Advance();
+
+		TSet<Worker_EntityId> WorkersToInspect = WorkersData.GetModifiedEntities();
+		const TSet<Worker_EntityId>& SystemWorkerModified = SystemWorkersData.GetModifiedEntities();
+		if (SystemWorkerModified.Num() != 0)
 		{
-			switch (Delta.Type)
+			for (const auto& Entry : WorkersData.GetObjects())
 			{
-			case EntityDelta::UPDATE:
-			{
-				ServerWorker& ServerWorkerData = WorkersData.FindChecked(Delta.EntityId);
-				bool bWasReady = ServerWorkerData.bReadyToBeginPlay;
-				for (const auto& CompleteUpdate : Delta.ComponentsRefreshed)
+				if (SystemWorkerModified.Contains(Entry.Value.SystemEntityId))
 				{
-					if (CompleteUpdate.ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
-					{
-						ServerWorkerData = ServerWorker(CompleteUpdate.Data);
-					}
+					WorkersToInspect.Add(Entry.Key);
 				}
-				for (const auto& Update : Delta.ComponentUpdates)
-				{
-					if (Update.ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
-					{
-						ServerWorkerData.ApplyComponentUpdate(Update.Update);
-					}
-				}
-				if (!bWasReady && ServerWorkerData.bReadyToBeginPlay)
-				{
-					WorkerConnected(Delta.EntityId);
-				}
-			}
-			break;
-			case EntityDelta::ADD:
-			{
-				const EntityViewElement& WorkerDesc = WorkerView.GetView().FindChecked(Delta.EntityId);
-				for (const auto& Component : WorkerDesc.Components)
-				{
-					if (Component.GetComponentId() == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
-					{
-						ServerWorker& ServerWorkerData = WorkersData.Add(Delta.EntityId, ServerWorker(Component.GetUnderlying()));
-						if (ServerWorkerData.bReadyToBeginPlay)
-						{
-							WorkerConnected(Delta.EntityId);
-						}
-					}
-				}
-			}
-			break;
-			case EntityDelta::REMOVE:
-			{
-				WorkersData.Remove(Delta.EntityId);
-			}
-			case EntityDelta::TEMPORARILY_REMOVED:
-			{
-			}
-			break;
-			default:
-				break;
 			}
 		}
 
-		for (const EntityDelta& Delta : SystemWorkerView.GetViewDelta().EntityDeltas)
+		for (Worker_EntityId UpdatedWorker : WorkersToInspect)
 		{
-			switch (Delta.Type)
+			const ServerWorker& ServerWorkerData = WorkersData.GetObjects().FindChecked(UpdatedWorker);
+			if (ServerWorkerData.bReadyToBeginPlay)
 			{
-			case EntityDelta::ADD:
-			{
-				const EntityViewElement& WorkerDesc = SystemWorkerView.GetView().FindChecked(Delta.EntityId);
-				for (const auto& Component : WorkerDesc.Components)
+				bool bIsAlreadyConnected = false;
+				for (FLBWorkerHandle Connected : ConnectedWorkers)
 				{
-					if (Component.GetComponentId() == SpatialConstants::WORKER_COMPONENT_ID)
+					bIsAlreadyConnected |= Connected->State->ServerWorkerId == UpdatedWorker;
+				}
+				if (!bIsAlreadyConnected)
+				{
+					if (ensureAlways(SystemWorkersData.GetObjects().Contains(ServerWorkerData.SystemEntityId)))
 					{
-						Worker_ComponentData temp;
-						temp.component_id = SpatialConstants::WORKER_COMPONENT_ID;
-						temp.schema_type = Component.GetUnderlying();
-						SystemWorkersData.Add(Delta.EntityId, Worker(temp));
+						WorkerConnected(UpdatedWorker);
 					}
 				}
 			}
-			break;
-			case EntityDelta::REMOVE:
-			{
-				SystemWorkersData.Remove(Delta.EntityId);
-				// TODO : Disconnect
-			}
-			case EntityDelta::TEMPORARILY_REMOVED:
-			{
-			}
-			break;
-			default:
-				break;
-			}
 		}
+		WorkersData.ClearModified();
+		SystemWorkersData.ClearModified();
 	}
 
 	void WorkerConnected(Worker_EntityId ServerWorkerEntityId)
 	{
-		const ServerWorker& ServerWorkerData = WorkersData.FindChecked(ServerWorkerEntityId);
+		const ServerWorker& ServerWorkerData = WorkersData.GetObjects().FindChecked(ServerWorkerEntityId);
 		Worker_EntityId SysEntityId = ServerWorkerData.SystemEntityId;
-		const Worker& SystemWorkerData = SystemWorkersData.FindChecked(SysEntityId);
+		const Worker& SystemWorkerData = SystemWorkersData.GetObjects().FindChecked(SysEntityId);
 
 		FLBWorkerHandle ConnectedWorker = MakeShared<FLBWorkerDesc>(FName(SystemWorkerData.WorkerType));
 		ConnectedWorker->State = MakeUnique<FLBWorkerInternalState>();
@@ -426,26 +379,33 @@ struct FPartitionManager::Impl
 	const FSubView& WorkerView;
 	const FSubView& SystemWorkerView;
 	const FSubView& PartitionView;
+
 	TUniquePtr<InterestFactory> InterestF;
 
 	Worker_EntityId StrategyWorkerEntityId = 0;
 	TOptional<Worker_RequestId> StrategyWorkerRequest;
+
+	// +++ Partition management data +++
+	Worker_EntityId FirstPartitionId = 0;
+	Worker_EntityId CurPartitionId = 0;
 
 	TMap<Worker_RequestId_Key, FPartitionHandle> PartitionCreationRequests;
 	TOptional<Worker_RequestId> PartitionReserveRequest = 0;
 
 	TMap<Worker_EntityId_Key, FPartitionHandle> IdToPartitionsMap;
 	TSet<FPartitionHandle> Partitions;
+	// --- Partition management data ---
 
-	TMap<Worker_EntityId_Key, ServerWorker> WorkersData;
-	TMap<Worker_EntityId_Key, Worker> SystemWorkersData;
-
-	Worker_EntityId FirstPartitionId = 0;
-	Worker_EntityId CurPartitionId = 0;
+	// +++ Server worker management data +++
+	TLBDataStorage<ServerWorker> WorkersData;
+	TLBDataStorage<Worker> SystemWorkersData;
+	FLBDataCollection WorkersDispatcher;
+	FLBDataCollection SystemWorkersDispatcher;
 
 	TSet<FLBWorkerHandle> ConnectedWorkers;
 	TArray<FLBWorkerHandle> ConnectedWorkersThisFrame;
 	TArray<FLBWorkerHandle> DisconnectedWorkersThisFrame;
+	// --- Server worker management data ---
 };
 
 FPartitionManager::~FPartitionManager() = default;

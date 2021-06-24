@@ -208,13 +208,22 @@ struct Worker : Component
 
 	Worker() = default;
 	Worker(const Worker_ComponentData& Data)
+		: Worker(Data.schema_type)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	}
+
+	Worker(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 		WorkerId = GetStringFromSchema(ComponentObject, 1);
 		WorkerType = GetStringFromSchema(ComponentObject, 2);
 		Connection.ReadConnectionData(Schema_GetObject(ComponentObject, 3));
 	}
+
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) {}
+
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update) {}
 
 	FString WorkerId;
 	FString WorkerType;
