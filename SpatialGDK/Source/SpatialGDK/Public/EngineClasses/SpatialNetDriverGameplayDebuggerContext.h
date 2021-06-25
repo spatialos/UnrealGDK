@@ -72,7 +72,8 @@ protected:
 	void RemoveAuthority(Worker_EntityId InEntityId, FEntityData* InOptionalEntityData);
 	void RegisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
 	void UnregisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
-	void OnServerRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator, FString InServerWorkerId);
+	void OnServerTrackingRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator,
+								 bool InTrackPlayer, FString InOptionalServerWorkerId);
 
 	USpatialNetDriver* NetDriver = nullptr;
 	const SpatialGDK::FSubView* SubView = nullptr;
