@@ -132,13 +132,12 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const ch
 	// This would allow for sampling dependent on trace event data.
 	Trace_Event Event = { nullptr, 0, Message, EventType, nullptr };
 
-	if (!Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event))
+	FSpatialGDKSpanId TraceSpanId;
+	if (Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event))
 	{
-		return {};
+		Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, &Event, TraceSpanId.GetId());
 	}
 
-	FSpatialGDKSpanId TraceSpanId;
-	Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, &Event, TraceSpanId.GetId());
 	Event.span_id = TraceSpanId.GetConstId();
 
 	if (!Trace_EventTracer_PreFilterAcceptsEvent(EventTracer, &Event))
