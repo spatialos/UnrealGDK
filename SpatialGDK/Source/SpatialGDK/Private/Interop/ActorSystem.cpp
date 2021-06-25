@@ -2068,7 +2068,9 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 	const Worker_RequestId CreateEntityRequestId =
 		NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
 
-	CreateEntityHandler.AddRequest(CreateEntityRequestId, CreateEntityDelegate::CreateRaw(this, &ActorSystem::OnEntityCreated, SpanId));
+	CreateEntityHandler.AddRequest(CreateEntityRequestId, [this, SpanId](const Worker_CreateEntityResponseOp& Op) {
+		OnEntityCreated(Op, SpanId);
+	});
 
 	CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
 }
@@ -2299,10 +2301,8 @@ void ActorSystem::CreateEntityWithRetries(Worker_EntityId EntityId, FString Enti
 	const Worker_RequestId RequestId =
 		NetDriver->Connection->SendCreateEntityRequest(CopyEntityComponentData(EntityComponents), &EntityId, RETRY_UNTIL_COMPLETE);
 
-	CreateEntityDelegate Delegate;
-
-	Delegate.BindLambda([this, EntityId, Name = MoveTemp(EntityName),
-						 Components = MoveTemp(EntityComponents)](const Worker_CreateEntityResponseOp& Op) mutable {
+	CreateEntityDelegate Delegate = [this, EntityId, Name = MoveTemp(EntityName),
+									 Components = MoveTemp(EntityComponents)](const Worker_CreateEntityResponseOp& Op) mutable {
 		switch (Op.status_code)
 		{
 		case WORKER_STATUS_CODE_SUCCESS:
@@ -2327,7 +2327,7 @@ void ActorSystem::CreateEntityWithRetries(Worker_EntityId EntityId, FString Enti
 			DeleteEntityComponentData(Components);
 			break;
 		}
-	});
+	};
 
 	CreateEntityHandler.AddRequest(RequestId, MoveTemp(Delegate));
 }

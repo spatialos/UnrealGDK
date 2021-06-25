@@ -13,6 +13,8 @@
 
 DECLARE_CYCLE_STAT(TEXT("EntityQueryHandler"), STAT_EntityQueryHandler, STATGROUP_SpatialNet);
 
+using EntityQueryDelegate = TFunction<void(const Worker_EntityQueryResponseOp&)>;
+
 namespace SpatialGDK
 {
 class EntityQueryHandler
@@ -32,9 +34,9 @@ public:
 				EntityQueryDelegate CallableToCall;
 				if (Handlers.RemoveAndCopyValue(RequestId, CallableToCall))
 				{
-					if (ensure(CallableToCall.IsBound()))
+					if (ensure(CallableToCall))
 					{
-						CallableToCall.Execute(TypedOp);
+						CallableToCall(TypedOp);
 					}
 				}
 			}

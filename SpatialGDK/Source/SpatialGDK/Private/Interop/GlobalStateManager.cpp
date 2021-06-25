@@ -553,8 +553,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 	Worker_RequestId RequestID;
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery, RETRY_UNTIL_COMPLETE);
 
-	EntityQueryDelegate GSMQueryDelegate;
-	GSMQueryDelegate.BindLambda([this, Callback](const Worker_EntityQueryResponseOp& Op) {
+	EntityQueryDelegate GSMQueryDelegate = [this, Callback](const Worker_EntityQueryResponseOp& Op) {
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogGlobalStateManager, Warning, TEXT("Could not find GSM via entity query: %s"), UTF8_TO_TCHAR(Op.message));
@@ -568,7 +567,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 			ApplyDataFromQueryResponse(Op);
 			Callback.ExecuteIfBound(Op);
 		}
-	});
+	};
 
 	QueryHandler.AddRequest(RequestID, GSMQueryDelegate);
 }
@@ -596,8 +595,7 @@ void UGlobalStateManager::QueryTranslation()
 	bTranslationQueryInFlight = true;
 
 	TWeakObjectPtr<UGlobalStateManager> WeakGlobalStateManager(this);
-	EntityQueryDelegate TranslationQueryDelegate;
-	TranslationQueryDelegate.BindLambda([WeakGlobalStateManager](const Worker_EntityQueryResponseOp& Op) {
+	EntityQueryDelegate TranslationQueryDelegate = [WeakGlobalStateManager](const Worker_EntityQueryResponseOp& Op) {
 		if (!WeakGlobalStateManager.IsValid())
 		{
 			// The GSM was destroyed before receiving the response.
@@ -613,7 +611,7 @@ void UGlobalStateManager::QueryTranslation()
 			}
 		}
 		GlobalStateManager->bTranslationQueryInFlight = false;
-	});
+	};
 	QueryHandler.AddRequest(RequestID, TranslationQueryDelegate);
 }
 

@@ -78,8 +78,9 @@ void ServerWorkerEntityCreator::CreateWorkerEntity()
 	const Worker_RequestId CreateEntityRequestId =
 		Connection.SendCreateEntityRequest(MoveTemp(Components), &EntityId, RETRY_UNTIL_COMPLETE);
 
-	CreateEntityHandler.AddRequest(CreateEntityRequestId,
-								   CreateEntityDelegate::CreateRaw(this, &ServerWorkerEntityCreator::OnEntityCreated));
+	CreateEntityHandler.AddRequest(CreateEntityRequestId, [this](const Worker_CreateEntityResponseOp& Op) {
+		ServerWorkerEntityCreator::OnEntityCreated(Op);
+	});
 }
 
 void ServerWorkerEntityCreator::OnEntityCreated(const Worker_CreateEntityResponseOp& CreateEntityResponse)

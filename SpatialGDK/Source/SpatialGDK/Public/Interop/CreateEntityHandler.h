@@ -12,6 +12,8 @@
 
 DECLARE_CYCLE_STAT(TEXT("CreateEntityHandler"), STAT_CreateEntityHandler, STATGROUP_SpatialNet);
 
+using CreateEntityDelegate = TFunction<void(const Worker_CreateEntityResponseOp&)>;
+
 namespace SpatialGDK
 {
 class CreateEntityHandler
@@ -21,7 +23,7 @@ class CreateEntityHandler
 public:
 	void AddRequest(Worker_RequestId RequestId, CreateEntityDelegate&& Handler)
 	{
-		if (!ensureAlwaysMsgf(Handler.IsBound(), TEXT("Failed to add create entity requested handler. Handler delegate was unbound")))
+		if (!ensureAlwaysMsgf(Handler, TEXT("Failed to add create entity requested handler. Handler delegate was unbound")))
 		{
 			return;
 		}
@@ -53,9 +55,9 @@ public:
 				const bool bHasHandler = Handlers.RemoveAndCopyValue(RequestId, Handler);
 				if (bHasHandler)
 				{
-					if (ensure(Handler.IsBound()))
+					if (ensure(Handler))
 					{
-						Handler.Execute(EntityIdsOp);
+						Handler(EntityIdsOp);
 					}
 				}
 			}

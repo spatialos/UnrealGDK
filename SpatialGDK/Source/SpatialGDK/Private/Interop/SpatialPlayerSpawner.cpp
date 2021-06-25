@@ -129,8 +129,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 
 	const Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&SpatialSpawnerQuery, RETRY_UNTIL_COMPLETE);
 
-	EntityQueryDelegate SpatialSpawnerQueryDelegate;
-	SpatialSpawnerQueryDelegate.BindLambda([this, RequestID](const Worker_EntityQueryResponseOp& Op) {
+	EntityQueryDelegate SpatialSpawnerQueryDelegate = [this](const Worker_EntityQueryResponseOp& Op) {
 		FString Reason;
 
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
@@ -155,7 +154,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("%s"), *Reason);
 			OnPlayerSpawnFailed.ExecuteIfBound(Reason);
 		}
-	});
+	};
 
 	UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Sending player spawn request"));
 	QueryHandler.AddRequest(RequestID, SpatialSpawnerQueryDelegate);

@@ -27,7 +27,23 @@ void ClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worke
 	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionToClaim);
 	const Worker_RequestId ClaimEntityRequestId =
 		WorkerInterface.SendCommandRequest(SystemEntityId, &CommandRequest, RETRY_UNTIL_COMPLETE, {});
-	ClaimPartitionRequestIds.Add(ClaimEntityRequestId, PartitionToClaim);
+	ClaimPartitionRequest Request = { PartitionToClaim, SystemEntityCommandDelegate() };
+	ClaimPartitionRequestIds.Add(ClaimEntityRequestId, MoveTemp(Request));
+}
+
+void ClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim,
+										   SystemEntityCommandDelegate Delegate)
+{
+	UE_LOG(LogClaimPartitionHandler, Log,
+		   TEXT("SendClaimPartitionRequest. SystemWorkerEntityId: %lld. "
+				"PartitionId: %lld"),
+		   SystemEntityId, PartitionToClaim);
+
+	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionToClaim);
+	const Worker_RequestId ClaimEntityRequestId =
+		WorkerInterface.SendCommandRequest(SystemEntityId, &CommandRequest, RETRY_UNTIL_COMPLETE, {});
+	ClaimPartitionRequest Request = { PartitionToClaim, MoveTemp(Delegate) };
+	ClaimPartitionRequestIds.Add(ClaimEntityRequestId, MoveTemp(Request));
 }
 
 void ClaimPartitionHandler::ProcessOps(const TArray<Worker_Op>& Ops)
@@ -37,14 +53,18 @@ void ClaimPartitionHandler::ProcessOps(const TArray<Worker_Op>& Ops)
 		if (Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE)
 		{
 			const Worker_CommandResponseOp& CommandResponse = Op.op.command_response;
-			Worker_PartitionId ClaimedPartitionId = SpatialConstants::INVALID_PARTITION_ID;
-			const bool bIsRequestHandled = ClaimPartitionRequestIds.RemoveAndCopyValue(CommandResponse.request_id, ClaimedPartitionId);
+			ClaimPartitionRequest Request{ SpatialConstants::INVALID_PARTITION_ID, SystemEntityCommandDelegate() };
+			const bool bIsRequestHandled = ClaimPartitionRequestIds.RemoveAndCopyValue(CommandResponse.request_id, Request);
 			if (bIsRequestHandled)
 			{
 				ensure(CommandResponse.response.component_id == SpatialConstants::WORKER_COMPONENT_ID);
 				UE_CLOG(CommandResponse.status_code != WORKER_STATUS_CODE_SUCCESS, LogClaimPartitionHandler, Error,
-						TEXT("Claim partition request for partition %lld finished, SDK returned code %d [%s]"), ClaimedPartitionId,
+						TEXT("Claim partition request for partition %lld finished, SDK returned code %d [%s]"), Request.PartitionId,
 						(int)CommandResponse.status_code, UTF8_TO_TCHAR(CommandResponse.message));
+				if (Request.Delegate)
+				{
+					Request.Delegate(CommandResponse);
+				}
 			}
 		}
 	}

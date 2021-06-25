@@ -13,6 +13,8 @@
 
 DECLARE_CYCLE_STAT(TEXT("ReserveEntityHandler"), STAT_ReserveEntityHandler, STATGROUP_SpatialNet);
 
+using ReserveEntityIDsDelegate = TFunction<void(const Worker_ReserveEntityIdsResponseOp&)>;
+
 namespace SpatialGDK
 {
 class ReserveEntityIdsHandler
@@ -32,9 +34,9 @@ public:
 				ReserveEntityIDsDelegate CallableToCall;
 				if (Handlers.RemoveAndCopyValue(RequestId, CallableToCall))
 				{
-					if (ensure(CallableToCall.IsBound()))
+					if (ensure(CallableToCall))
 					{
-						CallableToCall.Execute(TypedOp);
+						CallableToCall(TypedOp);
 					}
 				}
 			}

@@ -7,6 +7,8 @@
 
 class SpatialOSWorkerInterface;
 
+using SystemEntityCommandDelegate = TFunction<void(const Worker_CommandResponseOp&)>;
+
 namespace SpatialGDK
 {
 class ClaimPartitionHandler
@@ -15,11 +17,18 @@ public:
 	ClaimPartitionHandler(SpatialOSWorkerInterface& InWorkerInterface);
 
 	void ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim);
+	void ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim, SystemEntityCommandDelegate Delegate);
 
 	void ProcessOps(const TArray<Worker_Op>& Ops);
 
 private:
-	TMap<Worker_RequestId_Key, Worker_PartitionId> ClaimPartitionRequestIds;
+	struct ClaimPartitionRequest
+	{
+		Worker_PartitionId PartitionId;
+		SystemEntityCommandDelegate Delegate;
+	};
+
+	TMap<Worker_RequestId_Key, ClaimPartitionRequest> ClaimPartitionRequestIds;
 
 	SpatialOSWorkerInterface& WorkerInterface;
 };
