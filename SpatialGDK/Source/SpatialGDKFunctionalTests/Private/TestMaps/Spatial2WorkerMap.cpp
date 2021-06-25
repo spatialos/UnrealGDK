@@ -7,6 +7,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/RelevancyTest/RelevancyTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestMultiServerUnrealComponents/SpatialTestMultiServerUnrealComponents.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestReplicationConditions/SpatialTestReplicationConditions.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestPropertyReplication/SpatialTestPropertyReplicationMultiworker.h"
 #include "TestWorkerSettings.h"
 
 USpatial2WorkerMap::USpatial2WorkerMap()
@@ -29,6 +30,7 @@ void USpatial2WorkerMap::CreateCustomContentForMap()
 	AddActorToLevel<ARegisterAutoDestroyActorsTestPart1>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ARegisterAutoDestroyActorsTestPart2>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ARelevancyTest>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ASpatialTestPropertyReplicationMultiworker>(CurrentLevel, Server1Pos);
 	// Test actor is placed in Server 1 load balancing area to ensure Server 1 becomes authoritative.
 	AddActorToLevel<ASpatialTestMultiServerUnrealComponents>(CurrentLevel, Server1Pos);
 	AddActorToLevel<ASpatialTestReplicationConditions>(CurrentLevel, Server1Pos);
