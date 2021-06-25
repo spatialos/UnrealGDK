@@ -2,6 +2,7 @@
 
 #include "SpatialTestRepNotify.h"
 
+#include "SpatialTestRepNotifyActor.h"
 #include "SpatialGDK/Public/EngineClasses/SpatialNetDriver.h"
 #include "SpatialTestRepNotifySubobject.h"
 
@@ -31,26 +32,70 @@ ASpatialTestRepNotify::ASpatialTestRepNotify()
 {
 	Author = "Miron + Andrei + Arthur";
 	Description = TEXT("Test RepNotify replication and shadow data");
-
-	TestSubobject = CreateDefaultSubobject<USpatialTestRepNotifySubobject>(TEXT("USpatialTestRepNotifySubobject"));
-	TestSubobject->SetIsReplicated(true);
 }
 
 void ASpatialTestRepNotify::PrepareTest()
 {
 	Super::PrepareTest();
 
-	// The Server sets some initial values to the replicated variables.
-	AddStep(TEXT("SpatialTestRepNotifyServerSetReplicatedVariables"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		OnChangedRepNotifyInt1 = 1;
-		AlwaysRepNotifyInt1 = 2;
-		OnChangedRepNotifyInt2 = 3;
-		AlwaysRepNotifyInt2 = 4;
-		TestArray.Empty();
-		TestArray.Add(1);
-		TestArray.Add(2);
-		TestSubobject->OnChangedRepNotifyInt = 1;
+	/**
+	* Here we check core rep notify functionality and the order rep notifies are called in.
+	* In native, data will be applied for an actor, its subobjects, and only THEN will repnotifies be called for the updated data.
+	*
+	* To test this, we set the update a replicated property on an actor and a subobject of its.
+	* Then in repnotifies on both the actor and the subobject, we check that the property on the other object has already been updated.
+	* */
+	AddStep(TEXT("SpatialTestRepNotifyServerSetReplicatedVariables1"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		TestActor = GetWorld()->SpawnActor<ASpatialTestRepNotifyActor>(FVector(0, 0, 0), FRotator::ZeroRotator, FActorSpawnParameters());
+		RegisterAutoDestroyActor(TestActor);
 
+		TestActor->TestSubobject->OnChangedRepNotifyInt = 400;
+		TestActor->OnChangedRepNotifyInt1 = 350;
+
+		FinishStep();
+	});
+
+	AddStep(
+		TEXT("SpatialTestRepNotifyClientCheckOrderingWasCorrect"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		[this](float DeltaTime) {
+			if (!RequireEqual_Bool(IsValid(TestActor), true, TEXT("TestActor should be valid.")))
+			{
+				return;
+			}
+			if (!RequireEqual_Bool(IsValid(TestActor->TestSubobject), true, TEXT("TestActor's subobject should be valid.")))
+			{
+				return;
+			}
+
+
+			RequireEqual_Int(TestActor->TestSubobject->OnChangedRepNotifyInt, 400,
+							 TEXT("The subobject's OnChangedRepNotifyInt property should have been updated to 400."));
+			RequireEqual_Int(TestActor->OnChangedRepNotifyInt1, 350,
+							 TEXT("The actors OnChangedRepNotifyInt1 property should have been updated to 350."));
+
+			RequireEqual_Bool(
+				TestActor->TestSubobject->bParentPropertyWasExpectedProperty, true,
+				TEXT("The OnChangedRepNotifyInt1 on parent actor ASpatialTestRepNotifyActor should have been set to 350 before the "
+					 "subobject's RepNotify was called."));
+			RequireEqual_Bool(TestActor->bSubobjectIntPropertyWasExpectedProperty, true,
+							  TEXT("The OnChangedRepNotifyInt1 on subobject USpatialTestRepNotifySubobject should have been set to 400 "
+								   "before the actor's RepNotify was called."));
+			FinishStep();
+		},
+		5.0f);
+
+	// Further core Rep Notify functionality testing
+	// The Server modifies the replicated variables.
+	AddStep(TEXT("SpatialTestRepNotifyServerChangeReplicatedVariables2"), FWorkerDefinition::Server(1), nullptr, [this]()
+	{
+		TestActor->OnChangedRepNotifyInt1 = 1;
+		TestActor->AlwaysRepNotifyInt1 = 2;
+		TestActor->OnChangedRepNotifyInt2 = 3;
+		TestActor->AlwaysRepNotifyInt2 = 4;
+		TestActor->TestArray.Empty();
+		TestActor->TestArray.Add(1);
+		TestActor->TestArray.Add(2);
+		TestActor->TestSubobject->OnChangedRepNotifyInt = 2;
 		FinishStep();
 	});
 
@@ -58,22 +103,32 @@ void ASpatialTestRepNotify::PrepareTest()
 	AddStep(
 		TEXT("SpatialTestRepNotifyAllClientsCheckReplicatedVariables"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			if (bOnRepOnChangedRepNotifyInt1Called && bOnRepAlwaysRepNotifyInt1Called && OnChangedRepNotifyInt1 == 1
-				&& AlwaysRepNotifyInt1 == 2 && OnChangedRepNotifyInt2 == 3 && AlwaysRepNotifyInt2 == 4 && TestArray.Num() == 2
-				&& TestArray[0] == 1 && TestArray[1] == 2)
+			RequireEqual_Bool(TestActor->bOnRepOnChangedRepNotifyInt1Called, true, TEXT("Test actor's OnChangedInt1 Rep Notify should have been called"));
+			RequireEqual_Bool(TestActor->bOnRepAlwaysRepNotifyInt1Called, true, TEXT("Test actor's AlwaysInt1 Rep Notify should have been called"));
+
+			RequireEqual_Int(TestActor->OnChangedRepNotifyInt1, 1, TEXT("Test actor's OnChangedRepNotifyInt1 property should be 1"));
+			RequireEqual_Int(TestActor->AlwaysRepNotifyInt1, 2, TEXT("Test actor's AlwaysRepNotifyInt1 property should be 2"));
+			RequireEqual_Int(TestActor->OnChangedRepNotifyInt2, 3, TEXT("Test actor's OnChangedRepNotifyInt2 property should be 3"));
+			RequireEqual_Int(TestActor->AlwaysRepNotifyInt2, 4, TEXT("Test actor's AlwaysRepNotifyInt2 property should be 4"));
+			if (RequireEqual_Int(TestActor->TestArray.Num(), 2, TEXT("Test actor's TestArray should have 2 elements")))
 			{
-				FinishStep();
+				RequireEqual_Int(TestActor->TestArray[0], 1, TEXT("Test actor's TestArray should have 1 at index 0"));
+				RequireEqual_Int(TestActor->TestArray[1], 2, TEXT("Test actor's TestArray should have 2 at index 1"));
 			}
+
+			RequireEqual_Int(TestActor->TestSubobject->OnChangedRepNotifyInt, 2, TEXT("Test actor subobject's OnChangedRepNotifyInt property should be 2"));
+
+			FinishStep();
 		},
 		5.0f);
 
 	// All clients reset the values modified by the RepNotifies called due to the Server modifying the replicated variables.
 	AddStep(TEXT("SpatialTestRepNotifiyAllClientsLocallyChangeVariables"), FWorkerDefinition::AllClients, nullptr, [this]() {
-		bOnRepOnChangedRepNotifyInt1Called = false;
-		bOnRepAlwaysRepNotifyInt1Called = false;
-		OldOnChangedRepNotifyInt2 = -3;
-		OldAlwaysRepNotifyInt2 = -4;
-		OldTestArray.Empty();
+		TestActor->bOnRepOnChangedRepNotifyInt1Called = false;
+		TestActor->bOnRepAlwaysRepNotifyInt1Called = false;
+		TestActor->OldOnChangedRepNotifyInt2 = -3;
+		TestActor->OldAlwaysRepNotifyInt2 = -4;
+		TestActor->OldTestArray.Empty();
 
 		FinishStep();
 	});
@@ -85,79 +140,62 @@ void ASpatialTestRepNotify::PrepareTest()
 			// Note that OnChangedRepNotifyInt2 is specifically not modified, this will be relevant in the
 			// SpatialTestRepNotifyAllClientsCheckValuesAndRepNotifies step.
 
-			OnChangedRepNotifyInt1 = 10;
-			AlwaysRepNotifyInt1 = 20;
-			AlwaysRepNotifyInt2 = 50;
+			TestActor->OnChangedRepNotifyInt1 = 10;
+			TestActor->AlwaysRepNotifyInt1 = 20;
+			TestActor->AlwaysRepNotifyInt2 = 50;
 
 			FinishStep();
 		},
 		nullptr, 5.0f);
 
 	// The Server modifies the replicated variables once again.
-	AddStep(TEXT("SpatialTestRepNotifyServerChangeReplicatedVariables"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		OnChangedRepNotifyInt1 = 10;
-		OnChangedRepNotifyInt2 = 30;
+	AddStep(TEXT("SpatialTestRepNotifyServerChangeReplicatedVariables3"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		TestActor->OnChangedRepNotifyInt1 = 10;
+		TestActor->OnChangedRepNotifyInt2 = 30;
 
-		AlwaysRepNotifyInt1 = 20;
-		AlwaysRepNotifyInt2 = 40;
+		TestActor->AlwaysRepNotifyInt1 = 20;
+		TestActor->AlwaysRepNotifyInt2 = 40;
 
-		TestArray.Add(30);
+		TestActor->TestArray.Add(30);
 		FinishStep();
 	});
 
 	// All clients check that the replicated variables were received correctly and that RepNotify acted as expected.
 	AddStep(
 		TEXT("SpatialTestRepNotifyAllClientsCheckValuesAndRepNotifies"), FWorkerDefinition::AllClients,
-		[this]() -> bool {
-			// First make sure that we have correctly received the replicated variables, before checking the RepNotify behaviour.
-			if (!(OnChangedRepNotifyInt1 == 10 && AlwaysRepNotifyInt1 == 20 && OnChangedRepNotifyInt2 == 30 && AlwaysRepNotifyInt2 == 40))
+		nullptr, nullptr,
+		[this](float DeltaTime) {
+
+			// First make sure that we have correctly received the replicated variables.
+			RequireEqual_Int(TestActor->OnChangedRepNotifyInt1, 10, TEXT("Test actor's OnChangedRepNotifyInt1 property should be 10"));
+			RequireEqual_Int(TestActor->AlwaysRepNotifyInt1, 20, TEXT("Test actor's AlwaysRepNotifyInt1 property should be 20"));
+			RequireEqual_Int(TestActor->OnChangedRepNotifyInt2, 30, TEXT("Test actor's OnChangedRepNotifyInt2 property should be 30"));
+			RequireEqual_Int(TestActor->AlwaysRepNotifyInt2, 40, TEXT("Test actor's AlwaysRepNotifyInt2 property should be 40"));
+
+			if (RequireEqual_Int(TestActor->TestArray.Num(), 3, TEXT("Test actor's TestArray should have 3 elements")))
 			{
-				return false;
+				RequireEqual_Int(TestActor->TestArray[0], 1, TEXT("Test actor's TestArray should have 1 at index 0"));
+				RequireEqual_Int(TestActor->TestArray[1], 2, TEXT("Test actor's TestArray should have 2 at index 1"));
+				RequireEqual_Int(TestActor->TestArray[2], 30, TEXT("Test actor's TestArray should have 30 at index 2"));
 			}
 
-			if (!(TestArray.Num() == 3 && TestArray[0] == 1 && TestArray[1] == 2 && TestArray[2] == 30))
-			{
-				return false;
-			}
 
-			return true;
-		},
-		[this]() {
 			// At this point, we have correctly received the values of all replicated variables, therefore the RepNotify behaviour can be
 			// checked.
 
 			// Since the RepNotify for this variable is using the default REPNOTIFY_OnChanged, we expect it not to get called on the
 			// clients.
-			if (bOnRepOnChangedRepNotifyInt1Called)
-			{
-				FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepOnChangedRepNotifyInt1 should not be called on the clients"));
-				return;
-			}
+			RequireEqual_Bool(TestActor->bOnRepOnChangedRepNotifyInt1Called, false, TEXT("Test actor's OnChangedInt1 Rep Notify should not be called as the value stayed the same"));
+			RequireEqual_Bool(TestActor->bOnRepAlwaysRepNotifyInt1Called, true, TEXT("Test actor's AlwaysInt1 Rep Notify should be called"));
 
-			// In this case, the RepNotify uses REPNOTIFY_Always so we expect it to be called on the clients.
-			if (!bOnRepAlwaysRepNotifyInt1Called)
-			{
-				FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepOnChangedRepNotifyInt1 should be called on the clients"));
-				return;
-			}
 
 			// From the Clients, we have not modified the value of this particular variable, so we still expect the old value to be the one
 			// initially set by the Server in the first step.
-			if (OldOnChangedRepNotifyInt2 != 3)
-			{
-				FinishTest(EFunctionalTestResult::Failed,
-						   TEXT("OnRepOnChangedRepNotifyInt2 should have been called with the old value of 3"));
-				return;
-			}
+			RequireEqual_Int(TestActor->OldOnChangedRepNotifyInt2, 3, TEXT("OnRepOnChangedRepNotifyInt2 should be called with the old value of 3"));
 
 			// Since we have modified this value from the Clients, we expect its value to be the same as set in
 			// SpatialTestRepNotifyAllClientsModifyReplicatedVariables.
-			if (OldAlwaysRepNotifyInt2 != 50)
-			{
-				FinishTest(EFunctionalTestResult::Failed,
-						   TEXT("OnRepAlwaysRepNotifyInt2 should have been called with the old value of 40"));
-				return;
-			}
+			RequireEqual_Int(TestActor->OldAlwaysRepNotifyInt2, 50, TEXT("OnRepAlwaysRepNotifyInt2 should be called with the old value of 40"));
 
 		// We consciously differ from native UE here
 		// Also, the native behaviour changed when going from 4.25 to 4.26.
@@ -171,61 +209,41 @@ void ASpatialTestRepNotify::PrepareTest()
 			bOldArrayShouldHaveTwoElements = bOldArrayShouldHaveTwoElements || GetNetDriver()->IsA(USpatialNetDriver::StaticClass());
 			if (bOldArrayShouldHaveTwoElements)
 			{
-				if (OldTestArray.Num() != 2)
-				{
-					FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepTestArray should have been called with 2 entries in the old Array "
-																   "on Spatial or in Native on 4.26 and above"));
-					return;
-				}
+				RequireEqual_Int(TestActor->OldTestArray.Num(), 2, TEXT("OnRepTestArray should been called with 2 entries in the old Array "
+															"on Spatial or in Native on 4.26 and above"));
 			}
 			else
 			{
-				if (OldTestArray.Num() != 3)
+				if (RequireEqual_Int(TestActor->OldTestArray.Num(), 3, TEXT("OnRepTestArray should be called with 3 entries in the old Array on Native in 4.25 and below")))
 				{
-					FinishTest(EFunctionalTestResult::Failed,
-							   TEXT("OnRepTestArray should have been called with 3 entries in the old Array on Native in 4.25 and below"));
-					return;
-				}
-
-				if (OldTestArray[2] != 0)
-				{
-					FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepTestArray should have been called with 0 as its third entry in "
-																   "the old Array on Native in 4.25 and below"));
-					return;
+					RequireEqual_Int(TestActor->OldTestArray[2], 0, TEXT("OnRepTestArray should be called with 0 as its third entry in "
+												"the old Array on Native in 4.25 and below"));
 				}
 			}
 
-			if (OldTestArray[0] != 1)
+			if (TestActor->OldTestArray.Num() >= 2)
 			{
-				FinishTest(EFunctionalTestResult::Failed,
-						   TEXT("OnRepTestArray should have been called with 1 as its first entry in the old Array"));
-				return;
-			}
-
-			if (OldTestArray[1] != 2)
-			{
-				FinishTest(EFunctionalTestResult::Failed,
-						   TEXT("OnRepTestArray should have been called with 2 as its second entry in the old Array"));
-				return;
+				RequireEqual_Int(TestActor->OldTestArray[0], 1, TEXT("OnRepTestArray should be called with 1 as its first entry in the old Array"));
+				RequireEqual_Int(TestActor->OldTestArray[1], 2, TEXT("OnRepTestArray should be called with 2 as its second entry in the old Array"));
 			}
 
 			FinishStep();
 		},
-		nullptr, 5.0f);
+		5.0f);
 
 	AddStep(TEXT("SpatialTestRepNotifyServerTestRemovalFromArray"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		TestArray.Pop(true);
+		TestActor->TestArray.Pop(true);
 
 		FinishStep();
 	});
 
 	AddStep(
 		TEXT("SpatialTestRepNotifyClientsCheckArrayRemoval"), FWorkerDefinition::AllClients,
-		[this]() -> bool {
-			// First make sure that we have correctly received the replicated variables, before checking RepNotify behaviour.
-			return TestArray.Num() == 2;
-		},
-		[this]() {
+		nullptr, nullptr,
+		[this](float DeltaTime) {
+			// First make sure that we have correctly received the replicated variables
+			RequireEqual_Int(TestActor->TestArray.Num(), 2, TEXT("TestArray should contain 2 elements."));
+
 	// At this point, we have received the update for the TestArray, so it makes sense to check RepNotify beahviour.
 
 	// We consciously differ from native UE here
@@ -239,124 +257,26 @@ void ASpatialTestRepNotify::PrepareTest()
 			bOldArrayShouldHaveThreeElements = bOldArrayShouldHaveThreeElements || GetNetDriver()->IsA(USpatialNetDriver::StaticClass());
 			if (bOldArrayShouldHaveThreeElements)
 			{
-				if (OldTestArray.Num() != 3)
+				if (RequireEqual_Int(TestActor->OldTestArray.Num(), 3, TEXT("OnRepTestArray should be called with 3 elements after shrinking "
+																"on Spatial or in Native on 4.26 and above")))
 				{
-					FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepTestArray should have been called with 3 elements after shrinking "
-																   "on Spatial or in Native on 4.26 and above"));
-					return;
-				}
-				if (OldTestArray[2] != 30)
-				{
-					FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepTestArray should have been called with 30 as its third entry "
-																   "after shrinking on Spatial or in Native on 4.26 and above"));
-					return;
+					RequireEqual_Int(TestActor->OldTestArray[2], 30, TEXT("OnRepTestArray should be called with 30 as its third entry "
+												"after shrinking on Spatial or in Native on 4.26 and above"));
 				}
 			}
 			else
 			{
-				if (OldTestArray.Num() != 2)
-				{
-					FinishTest(EFunctionalTestResult::Failed,
-							   TEXT("OnRepTestArray should have been called with 2 elements after shrinking on Native on 4.25 and below"));
-					return;
-				}
+				RequireEqual_Int(TestActor->OldTestArray.Num(), 2, TEXT("OnRepTestArray should be called with 2 elements after shrinking on Native on 4.25 and below"));
 			}
 
 			FinishStep();
 		},
-		nullptr, 5.0f);
-
-	/**
-	 * In this section of the test, we check the order rep notifies are called in.
-	 * In native, data will be applied for an actor, its subobjects, and only THEN will repnotifies be called for the updated data.
-	 *
-	 * To test this, we set the update a replicated property on an actor (the test itself) and a subobject.
-	 * Then in repnotifies on both the actor and the subobject, we check that the property on the other object has already been updated.
-	 *
-	 * This could in theory not pass until we have component set updates (though it is very low probability)
-	 * */
-
-	AddStep(
-		TEXT("SpatialTestRepNotifyAllWorkersInitialiseExpectedOrderingProps"), FWorkerDefinition::AllWorkers, nullptr,
-		[this]() {
-			AssertIsValid(TestSubobject, TEXT("TestSubobject should be valid."));
-			TestSubobject->ExpectedParentInt1Property = 350;
-			TestSubobject->bParentPropertyWasExpectedProperty = false;
-			ExpectedSubobjectIntProperty = 400;
-			bSubobjectIntPropertyWasExpectedProperty = false;
-			FinishStep();
-		},
-		nullptr);
-
-	AddStep(
-		TEXT("SpatialTestRepNotifyServerChangeReplicatedVariables2"), FWorkerDefinition::Server(1), nullptr,
-		[this]() {
-			AssertIsValid(TestSubobject, TEXT("TestSubobject should be valid."));
-			TestSubobject->OnChangedRepNotifyInt = 400;
-			OnChangedRepNotifyInt1 = 350;
-			FinishStep();
-		},
-		nullptr);
-
-	AddStep(
-		TEXT("SpatialTestRepNotifyClientCheckOrderingWasCorrect"), FWorkerDefinition::AllClients, nullptr,
-		[this]() {
-			RequireEqual_Int(TestSubobject->OnChangedRepNotifyInt, 400,
-							 TEXT("The subobject's OnChangedRepNotifyInt property should have been updated to 400"));
-			RequireEqual_Int(OnChangedRepNotifyInt1, 350,
-							 TEXT("The actors OnChangedRepNotifyInt1 property should have been updated to 350"));
-
-			RequireTrue(IsValid(TestSubobject), TEXT("TestSubobject should be valid."));
-
-			RequireEqual_Bool(
-				TestSubobject->bParentPropertyWasExpectedProperty, true,
-				TEXT("The OnChangedRepNotifyInt1 on parent actor ASpatialTestRepNotify should have been set to 350 before the "
-					 "subobject's RepNotify was called"));
-			RequireEqual_Bool(bSubobjectIntPropertyWasExpectedProperty, true,
-							  TEXT("The OnChangedRepNotifyInt1 on subobject USpatialTestRepNotifySubobject should have been set to 400 "
-								   "before the actor's RepNotify was called"));
-			FinishStep();
-		},
-		nullptr);
-}
-
-void ASpatialTestRepNotify::OnRep_OnChangedRepNotifyInt1(int32 OldOnChangedRepNotifyInt1)
-{
-	bOnRepOnChangedRepNotifyInt1Called = true;
-
-	ensureAlwaysMsgf(IsValid(TestSubobject), TEXT("TestSubobject should be valid"));
-	bSubobjectIntPropertyWasExpectedProperty = TestSubobject->OnChangedRepNotifyInt == ExpectedSubobjectIntProperty;
-}
-
-void ASpatialTestRepNotify::OnRep_AlwaysRepNotifyInt1(int32 OldAlwaysRepNotifyInt1)
-{
-	bOnRepAlwaysRepNotifyInt1Called = true;
-}
-
-void ASpatialTestRepNotify::OnRep_OnChangedRepNotifyInt2(int32 InOldOnChangedRepNotifyInt2)
-{
-	OldOnChangedRepNotifyInt2 = InOldOnChangedRepNotifyInt2;
-}
-
-void ASpatialTestRepNotify::OnRep_AlwaysRepNotifyInt2(int32 InOldAlwaysRepNotifyInt2)
-{
-	OldAlwaysRepNotifyInt2 = InOldAlwaysRepNotifyInt2;
-}
-
-void ASpatialTestRepNotify::OnRep_TestArray(TArray<int32> InOldTestArray)
-{
-	OldTestArray = InOldTestArray;
+		5.0f);
 }
 
 void ASpatialTestRepNotify::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ASpatialTestRepNotify, OnChangedRepNotifyInt1);
-	DOREPLIFETIME_CONDITION_NOTIFY(ASpatialTestRepNotify, AlwaysRepNotifyInt1, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME(ASpatialTestRepNotify, OnChangedRepNotifyInt2);
-	DOREPLIFETIME_CONDITION_NOTIFY(ASpatialTestRepNotify, AlwaysRepNotifyInt2, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME(ASpatialTestRepNotify, TestArray);
-
-	DOREPLIFETIME(ASpatialTestRepNotify, TestSubobject);
+	DOREPLIFETIME(ASpatialTestRepNotify, TestActor);
 }

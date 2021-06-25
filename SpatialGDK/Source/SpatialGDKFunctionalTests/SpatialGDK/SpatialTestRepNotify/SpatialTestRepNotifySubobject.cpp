@@ -4,6 +4,7 @@
 
 #include "Net/UnrealNetwork.h"
 #include "SpatialTestRepNotify.h"
+#include "SpatialTestRepNotifyActor.h"
 
 USpatialTestRepNotifySubobject::USpatialTestRepNotifySubobject()
 	: Super()
@@ -14,7 +15,7 @@ USpatialTestRepNotifySubobject::USpatialTestRepNotifySubobject()
 void USpatialTestRepNotifySubobject::OnRep_OnChangedRepNotifyInt(int32 OldOnChangedRepNotifyInt)
 {
 	bParentPropertyWasExpectedProperty = false;
-	if (ASpatialTestRepNotify* Parent = Cast<ASpatialTestRepNotify>(GetOwner()))
+	if (ASpatialTestRepNotifyActor* Parent = Cast<ASpatialTestRepNotifyActor>(GetOwner()))
 	{
 		bParentPropertyWasExpectedProperty = Parent->OnChangedRepNotifyInt1 == ExpectedParentInt1Property;
 	}
