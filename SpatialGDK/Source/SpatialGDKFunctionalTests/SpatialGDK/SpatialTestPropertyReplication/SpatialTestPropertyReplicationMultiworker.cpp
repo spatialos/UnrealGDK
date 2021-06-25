@@ -24,7 +24,9 @@ ASpatialTestPropertyReplicationMultiworker::ASpatialTestPropertyReplicationMulti
 	: Super()
 {
 	Author = "Victoria Bloom";
-	Description = TEXT("This tests that an Actor can replicate a property across the network during play. It is an example test intended to teach the basics of the UnrealGDK Functional Test Framework. It's accompanied by this document: https://brevi.link/how-to-test-unrealgdk");
+	Description = TEXT(
+		"This tests that an Actor can replicate a property across the network during play. It is an example test intended to teach the "
+		"basics of the UnrealGDK Functional Test Framework. It's accompanied by this document: https://brevi.link/how-to-test-unrealgdk");
 }
 
 void ASpatialTestPropertyReplicationMultiworker::PrepareTest()
@@ -33,13 +35,16 @@ void ASpatialTestPropertyReplicationMultiworker::PrepareTest()
 
 	// TODO: add override flag to turn on debug settings -> may want this test therefore on its own map!
 
-	AddStep(TEXT("The auth server spawns one ReplicatedTestActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		TestActor =
-			GetWorld()->SpawnActor<AReplicatedTestActor>(FVector(0.0f, 0.0f, 50.0f), FRotator::ZeroRotator, FActorSpawnParameters());
-		RegisterAutoDestroyActor(TestActor);
+	AddStep(
+		TEXT("The auth server spawns one ReplicatedTestActor"), FWorkerDefinition::Server(1), nullptr,
+		[this]() {
+			TestActor =
+				GetWorld()->SpawnActor<AReplicatedTestActor>(FVector(0.0f, 0.0f, 50.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+			RegisterAutoDestroyActor(TestActor);
 
-		FinishStep();
-	}, nullptr, 5.0f);
+			FinishStep();
+		},
+		nullptr, 5.0f);
 
 	AddStep(
 		TEXT("All workers check that they can see exactly 1 ReplicatedTestActor"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
@@ -77,8 +82,7 @@ void ASpatialTestPropertyReplicationMultiworker::PrepareTest()
 		},
 		nullptr,
 		[this](float DeltaTime) {
-			RequireEqual_Int(TestActor->TestReplicatedProperty, 99,
-							 TEXT("The ReplicatedProperty should equal 99."));
+			RequireEqual_Int(TestActor->TestReplicatedProperty, 99, TEXT("The ReplicatedProperty should equal 99."));
 			FinishStep();
 		},
 		5.0f);
