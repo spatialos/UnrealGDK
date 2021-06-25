@@ -2,8 +2,8 @@
 
 #include "SpatialTestRepNotifyActor.h"
 
-#include "SpatialTestRepNotifySubobject.h"
 #include "Net/UnrealNetwork.h"
+#include "SpatialTestRepNotifySubobject.h"
 
 ASpatialTestRepNotifyActor::ASpatialTestRepNotifyActor()
 {
@@ -65,4 +65,3 @@ void ASpatialTestRepNotifyActor::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 
 	DOREPLIFETIME(ASpatialTestRepNotifyActor, TestSubobject);
 }
-
