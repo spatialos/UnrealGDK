@@ -120,7 +120,7 @@ public:
 
 	void UpdateRefToRepStateMap(FObjectToRepStateMap& ReplicatorMap);
 	bool MoveMappedObjectToUnmapped(const FUnrealObjectRef& ObjRef);
-	bool HasUnresolved() const { return UnresolvedRefs.Num() == 0; }
+	bool HasUnresolved() const { return UnresolvedRefs.Num() != 0; }
 
 	const FChannelObjectPair& GetChannelObjectPair() const { return ThisObj; }
 
