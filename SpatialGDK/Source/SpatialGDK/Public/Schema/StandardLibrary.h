@@ -75,7 +75,7 @@ inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId
 
 struct Metadata : AbstractMutableComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::METADATA_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::METADATA_COMPONENT_ID;
 
 	Metadata() = default;
 
@@ -108,7 +108,7 @@ struct Metadata : AbstractMutableComponent
 
 struct Position : AbstractMutableComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::POSITION_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::POSITION_COMPONENT_ID;
 
 	Position() = default;
 
@@ -162,7 +162,7 @@ struct Position : AbstractMutableComponent
 
 struct Persistence : AbstractMutableComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::PERSISTENCE_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::PERSISTENCE_COMPONENT_ID;
 
 	Persistence() = default;
 	Persistence(const Worker_ComponentData& Data) {}
@@ -204,7 +204,7 @@ struct Connection
 
 struct Worker : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::WORKER_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::WORKER_COMPONENT_ID;
 
 	Worker() = default;
 	Worker(const Worker_ComponentData& Data)
@@ -245,7 +245,7 @@ struct Worker : Component
 
 struct AuthorityDelegation : AbstractMutableComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
 
 	AuthorityDelegation() = default;
 

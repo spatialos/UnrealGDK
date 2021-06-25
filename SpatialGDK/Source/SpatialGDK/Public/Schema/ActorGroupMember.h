@@ -16,7 +16,7 @@ using FActorLoadBalancingGroupId = uint32;
 // SpatialDebugger on clients but which would not normally be available to clients.
 struct SPATIALGDK_API ActorGroupMember
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ID;
 
 	ActorGroupMember(FActorLoadBalancingGroupId InGroupId)
 		: ActorGroupId(InGroupId)
