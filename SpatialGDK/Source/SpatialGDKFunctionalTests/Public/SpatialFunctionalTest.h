@@ -106,6 +106,7 @@ public:
 
 	// # FlowController related APIs.
 
+	void SetLocalFlowController(ASpatialFunctionalTestFlowController* FlowController);
 	void RegisterFlowController(ASpatialFunctionalTestFlowController* FlowController);
 	void DeregisterFlowController(ASpatialFunctionalTestFlowController* FlowController);
 
