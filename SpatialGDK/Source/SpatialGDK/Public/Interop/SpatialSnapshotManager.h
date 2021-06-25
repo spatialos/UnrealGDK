@@ -38,6 +38,6 @@ private:
 
 	TWeakObjectPtr<USpatialWorkerConnection> Connection;
 	TWeakObjectPtr<UGlobalStateManager> GlobalStateManager;
-	SpatialGDK::ReserveEntityIdsHandler ReserveEntityIdsHandler;
-	SpatialGDK::EntityQueryHandler QueryHandler;
+	SpatialGDK::FReserveEntityIdsHandler ReserveEntityIdsHandler;
+	SpatialGDK::FEntityQueryHandler QueryHandler;
 };

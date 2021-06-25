@@ -34,7 +34,7 @@ using namespace SpatialGDK;
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-	ClaimHandler = MakeUnique<ClaimPartitionHandler>(*NetDriver->Connection);
+	ClaimHandler = MakeUnique<FClaimPartitionHandler>(*NetDriver->Connection);
 	ViewCoordinator = &InNetDriver->Connection->GetCoordinator();
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 

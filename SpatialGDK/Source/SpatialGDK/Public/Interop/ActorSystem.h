@@ -180,8 +180,8 @@ private:
 	SpatialEventTracer* EventTracer;
 	FClientNetLoadActorHelper ClientNetLoadActorHelper;
 
-	CreateEntityHandler CreateEntityHandler;
-	ClaimPartitionHandler ClaimPartitionHandler;
+	FCreateEntityHandler CreateEntityHandler;
+	FClaimPartitionHandler ClaimPartitionHandler;
 
 	TSet<Worker_EntityId_Key> PresentEntities;
 

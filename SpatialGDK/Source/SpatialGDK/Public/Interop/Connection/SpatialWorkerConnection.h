@@ -40,8 +40,8 @@ private:
 	USpatialNetDriver& NetDriver;
 	USpatialWorkerConnection& Connection;
 
-	CreateEntityHandler CreateEntityHandler;
-	ClaimPartitionHandler ClaimPartitionHandler;
+	FCreateEntityHandler CreateEntityHandler;
+	FClaimPartitionHandler ClaimPartitionHandler;
 };
 } // namespace SpatialGDK
 

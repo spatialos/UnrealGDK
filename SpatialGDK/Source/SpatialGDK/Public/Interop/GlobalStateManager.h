@@ -128,8 +128,8 @@ private:
 
 	SpatialGDK::ViewCoordinator* ViewCoordinator;
 
-	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimHandler;
-	SpatialGDK::EntityQueryHandler QueryHandler;
+	TUniquePtr<SpatialGDK::FClaimPartitionHandler> ClaimHandler;
+	SpatialGDK::FEntityQueryHandler QueryHandler;
 
 #if WITH_EDITOR
 	SpatialGDK::EntityCommandRequestHandler RequestHandler;

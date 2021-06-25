@@ -12,12 +12,12 @@ DEFINE_LOG_CATEGORY_STATIC(LogClaimPartitionHandler, Log, All);
 
 namespace SpatialGDK
 {
-ClaimPartitionHandler::ClaimPartitionHandler(SpatialOSWorkerInterface& InConnection)
+FClaimPartitionHandler::FClaimPartitionHandler(SpatialOSWorkerInterface& InConnection)
 	: WorkerInterface(InConnection)
 {
 }
 
-void ClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim)
+void FClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim)
 {
 	UE_LOG(LogClaimPartitionHandler, Log,
 		   TEXT("SendClaimPartitionRequest. SystemWorkerEntityId: %lld. "
@@ -31,8 +31,8 @@ void ClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worke
 	ClaimPartitionRequestIds.Add(ClaimEntityRequestId, MoveTemp(Request));
 }
 
-void ClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim,
-										   SystemEntityCommandDelegate Delegate)
+void FClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim,
+											SystemEntityCommandDelegate Delegate)
 {
 	UE_LOG(LogClaimPartitionHandler, Log,
 		   TEXT("SendClaimPartitionRequest. SystemWorkerEntityId: %lld. "
@@ -46,7 +46,7 @@ void ClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worke
 	ClaimPartitionRequestIds.Add(ClaimEntityRequestId, MoveTemp(Request));
 }
 
-void ClaimPartitionHandler::ProcessOps(const TArray<Worker_Op>& Ops)
+void FClaimPartitionHandler::ProcessOps(const TArray<Worker_Op>& Ops)
 {
 	for (const Worker_Op& Op : Ops)
 	{

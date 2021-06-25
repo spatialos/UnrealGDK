@@ -70,9 +70,9 @@ private:
 
 	bool bWorkerEntityQueryInFlight;
 
-	SpatialGDK::CreateEntityHandler CreateEntityHandler;
-	SpatialGDK::ClaimPartitionHandler ClaimPartitionHandler;
-	SpatialGDK::EntityQueryHandler QueryHandler;
+	SpatialGDK::FCreateEntityHandler CreateEntityHandler;
+	SpatialGDK::FClaimPartitionHandler ClaimPartitionHandler;
+	SpatialGDK::FEntityQueryHandler QueryHandler;
 
 	// Serialization and deserialization of the mapping.
 	void WriteMappingToSchema(Schema_Object* Object) const;

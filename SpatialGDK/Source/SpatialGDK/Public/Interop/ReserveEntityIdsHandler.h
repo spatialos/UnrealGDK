@@ -17,7 +17,7 @@ using ReserveEntityIDsDelegate = TFunction<void(const Worker_ReserveEntityIdsRes
 
 namespace SpatialGDK
 {
-class ReserveEntityIdsHandler
+class FReserveEntityIdsHandler
 {
 public:
 	void ProcessOps(const TArray<Worker_Op>& Ops)

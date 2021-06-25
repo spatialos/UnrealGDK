@@ -16,12 +16,12 @@ using CreateEntityDelegate = TFunction<void(const Worker_CreateEntityResponseOp&
 
 namespace SpatialGDK
 {
-class CreateEntityHandler
+class FCreateEntityHandler
 {
 	DECLARE_LOG_CATEGORY_CLASS(LogCreateEntityHandler, Log, All);
 
 public:
-	void AddRequest(Worker_RequestId RequestId, CreateEntityDelegate&& Handler)
+	void AddRequest(Worker_RequestId RequestId, CreateEntityDelegate Handler)
 	{
 		if (!ensureAlwaysMsgf(Handler, TEXT("Failed to add create entity requested handler. Handler delegate was unbound")))
 		{

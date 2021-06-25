@@ -11,10 +11,10 @@ using SystemEntityCommandDelegate = TFunction<void(const Worker_CommandResponseO
 
 namespace SpatialGDK
 {
-class ClaimPartitionHandler
+class FClaimPartitionHandler
 {
 public:
-	ClaimPartitionHandler(SpatialOSWorkerInterface& InWorkerInterface);
+	FClaimPartitionHandler(SpatialOSWorkerInterface& InWorkerInterface);
 
 	void ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim);
 	void ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim, SystemEntityCommandDelegate Delegate);

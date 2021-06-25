@@ -17,7 +17,7 @@ using EntityQueryDelegate = TFunction<void(const Worker_EntityQueryResponseOp&)>
 
 namespace SpatialGDK
 {
-class EntityQueryHandler
+class FEntityQueryHandler
 {
 public:
 	void ProcessOps(const TArray<Worker_Op>& Ops)
