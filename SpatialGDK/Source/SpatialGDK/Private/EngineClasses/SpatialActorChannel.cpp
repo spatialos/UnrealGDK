@@ -19,6 +19,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineStats.h"
+#include "GameFramework/GameStateBase.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/GlobalStateManager.h"
@@ -33,6 +34,7 @@
 #include "Utils/EntityFactory.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/InterestFactory.h"
+#include "Utils/MetricsExport.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaOption.h"
 #include "Utils/SpatialActorUtils.h"
@@ -1339,6 +1341,14 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 			   RepGraph->GetReplicationGraphFrame(), UpdateThresholdSecs, *Actor->GetName());
 	}
 
+	UMetricsExport* MetricsExport =
+		Cast<UMetricsExport>(Actor->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
+	if (MetricsExport != nullptr)
+	{
+		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
+		MetricsExport->WriteMetricsToProtocolBuffer(*ClientIdentifier, TEXT("interest_update_frequency"),
+													1 / TimeSinceLastClientInterestUpdate);
+	}
 	RepGraphConnection->RepGraphRequestedInterestChange = false;
 	NetConnection->TimeWhenClientInterestLastUpdated = CurrentTime;
 

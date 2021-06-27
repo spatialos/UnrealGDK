@@ -16,9 +16,11 @@
 #include "Engine/Classes/GameFramework/Actor.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
+#include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerController.h"
 #include "ReplicationGraph.h"
 #include "UObject/UObjectIterator.h"
+#include "Utils/MetricsExport.h"
 
 #if WITH_GAMEPLAY_DEBUGGER
 #include "GameplayDebuggerCategoryReplicator.h"
@@ -349,6 +351,15 @@ void InterestFactory::AddClientInterestEntityIdQuery(Interest& OutInterest, cons
 	ClientInterestedEntities.Sort();
 #endif
 
+	UMetricsExport* MetricsExport =
+		Cast<UMetricsExport>(InActor->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
+	if (MetricsExport != nullptr)
+	{
+		USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PlayerController->NetConnection);
+		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
+		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("total_interested_entities"), ClientInterestedEntities.Num());
+	}
+
 	for (Worker_EntityId EntityId : ClientInterestedEntities)
 	{
 		QueryConstraint Constraint;
@@ -374,11 +385,26 @@ TArray<Worker_EntityId> InterestFactory::GetClientInterestedEntityIds(const APla
 	// If and when the Runtime has a better interest changing API, we can ask for a diff here instead.
 	TArray<AActor*> ClientInterestedActors = RepGraph->GatherClientInterestedActors(NetConnection);
 
+	UNetReplicationGraphConnection* ConnectionDriver =
+		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
+	UMetricsExport* MetricsExport =
+		Cast<UMetricsExport>(InPlayerController->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
+	if (MetricsExport != nullptr)
+	{
+		USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(InPlayerController->NetConnection);
+		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), SpatialNetConnection->GetPlayerControllerEntityId());
+		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("interested_spatialized_actors"),
+													ConnectionDriver->InterestedSpatializedActors.Num());
+		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("noninterested_spatialized_actors"),
+													ConnectionDriver->NoninterestedSpatializedActors.Num());
+	}
+
 	InterestedEntityIdList.Reserve(ClientInterestedActors.Num());
 
 	for (const AActor* Actor : ClientInterestedActors)
 	{
 		const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+
 		// We should be assigning entity IDs to replicated Actors as soon as they are created.
 		// The only exception is startup Actors that are authoritative on another server worker.
 		// In this case, we need to wait for the other server to replicate this Actor, and the Runtime
