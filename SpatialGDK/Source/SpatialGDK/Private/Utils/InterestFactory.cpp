@@ -251,8 +251,15 @@ Interest UnrealServerInterestFactory::CreateInterest(AActor* InActor, const FCla
 
 	if (InActor->IsA(APlayerController::StaticClass()))
 	{
-		// Put the "main" client interest queries on the player controller
-		AddClientPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
+		if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
+		{
+			AddClientInterestEntityIdQuery(ResultInterest, InActor);
+		}
+		else
+		{
+			// Put the "main" client interest queries on the player controller
+			AddClientPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
+		}
 	}
 
 #if WITH_GAMEPLAY_DEBUGGER
@@ -280,12 +287,6 @@ Interest UnrealServerInterestFactory::CreateInterest(AActor* InActor, const FCla
 
 void InterestFactory::AddClientPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
 {
-	if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
-	{
-		AddClientInterestEntityIdQuery(OutInterest, InActor);
-		return;
-	}
-
 	const QueryConstraint LevelConstraint = CreateLevelConstraints(InActor);
 	AddClientAlwaysRelevantQuery(OutInterest, InActor, InInfo, LevelConstraint);
 	AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
@@ -330,7 +331,7 @@ void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(I
 }
 #endif
 
-void InterestFactory::AddClientInterestEntityIdQuery(Interest& OutInterest, const AActor* InActor) const
+void UnrealServerInterestFactory::AddClientInterestEntityIdQuery(Interest& OutInterest, const AActor* InActor) const
 {
 	const APlayerController* PlayerController = Cast<APlayerController>(InActor);
 	if (!ensure(GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
@@ -370,7 +371,7 @@ void InterestFactory::AddClientInterestEntityIdQuery(Interest& OutInterest, cons
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, RepGraphEntityIdQuery);
 }
 
-TArray<Worker_EntityId> InterestFactory::GetClientInterestedEntityIds(const APlayerController* InPlayerController) const
+TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityIds(const APlayerController* InPlayerController) const
 {
 	TArray<Worker_EntityId> InterestedEntityIdList{};
 

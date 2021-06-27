@@ -30,7 +30,7 @@ public:
 	void WriteMetricsToProtocolBuffer(const FString& Worker, FString Field, float Value);
 
 private:
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "Influx Metrics")
 	void PostLineProtocolToInfluxDBServer(const FString& Lines);
 
 	void FlushProtocolBufferToDatabase();

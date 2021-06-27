@@ -214,7 +214,6 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, LastPositionSinceUpdate(FVector::ZeroVector)
 	, TimeWhenPositionLastUpdated(0.0)
 	, bIsAutonomousProxyOnAuthority(false)
-	, TimeWhenClientEntityIdListLastUpdated(0.0)
 {
 }
 
