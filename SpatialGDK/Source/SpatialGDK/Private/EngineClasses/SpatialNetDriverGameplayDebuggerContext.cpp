@@ -279,8 +279,9 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 			}
 
 			check(NetDriver->LoadBalanceStrategy);
-			const VirtualWorkerId ReplicatorVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Replicator);
-			if (PlayerControllerVirtualWorkerId == ReplicatorVirtualWorkerId)
+
+			const TOptional<VirtualWorkerId> ReplicatorVirtualWorkerId = GetActorDelegatedWorkerId(*Replicator);
+			if (!ReplicatorVirtualWorkerId.IsSet() || (PlayerControllerVirtualWorkerId == ReplicatorVirtualWorkerId))
 			{
 				// No change in virtual worker, so nothing to do
 				continue;
