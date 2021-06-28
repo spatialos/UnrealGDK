@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 
 #if WITH_GAMEPLAY_DEBUGGER
+#include "GameplayDebuggerCategoryReplicator.h"
 #include "Schema/GameplayDebuggerComponent.h"
 #include "Schema/Interest.h"
 #include "SpatialCommonTypes.h"
@@ -13,7 +14,6 @@
 
 #include "SpatialNetDriverGameplayDebuggerContext.generated.h"
 
-class AGameplayDebuggerCategoryReplicator;
 class UGameplayDebuggerLBStrategy;
 class USpatialNetDriver;
 
@@ -72,8 +72,8 @@ protected:
 	void RemoveAuthority(Worker_EntityId InEntityId, FEntityData* InOptionalEntityData);
 	void RegisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
 	void UnregisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
-	void OnServerTrackingRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator, bool InTrackPlayer,
-								 FString InOptionalServerWorkerId);
+	void OnServerTrackingRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator,
+								 EGameplayDebuggerServerTrackingMode InServerTrackingMode, FString InOptionalServerWorkerId);
 	VirtualWorkerId GetActorVirtualWorkerId(const AActor& InActor) const;
 
 	USpatialNetDriver* NetDriver = nullptr;

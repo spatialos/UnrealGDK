@@ -6,7 +6,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "GameplayDebuggerCategoryReplicator.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "LoadBalancing/GameplayDebuggerLBStrategy.h"
 #include "Schema/AuthorityIntent.h"
@@ -445,7 +444,8 @@ void USpatialNetDriverGameplayDebuggerContext::UnregisterServerRequestCallback(A
 }
 
 void USpatialNetDriverGameplayDebuggerContext::OnServerTrackingRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator,
-																	   bool InTrackPlayer, FString InOptionalServerWorkerId)
+																	   EGameplayDebuggerServerTrackingMode InServerTrackingMode,
+																	   FString InOptionalServerWorkerId)
 {
 	check(NetDriver && NetDriver->PackageMap && NetDriver->Connection);
 
@@ -478,9 +478,10 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerTrackingRequest(AGameplay
 
 	bool ShouldUpdateComponent = false;
 
-	if (InTrackPlayer != EntityData->Component.TrackPlayer)
+	const bool bShouldTrackPlayer = InServerTrackingMode == EGameplayDebuggerServerTrackingMode::Player ? true : false;
+	if (bShouldTrackPlayer != EntityData->Component.TrackPlayer)
 	{
-		EntityData->Component.TrackPlayer = InTrackPlayer;
+		EntityData->Component.TrackPlayer = bShouldTrackPlayer;
 		ShouldUpdateComponent = true;
 	}
 
@@ -517,15 +518,15 @@ VirtualWorkerId USpatialNetDriverGameplayDebuggerContext::GetActorVirtualWorkerI
 	}
 
 	const SpatialGDK::EntityViewElement* EntityViewPtr = SubView->GetView().Find(EntityId);
-	if (EntityViewPtr != nullptr)
+	if (EntityViewPtr == nullptr)
 	{
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
 	const SpatialGDK::ComponentData* IntentComponentData =
 		EntityViewPtr->Components.FindByPredicate([](const SpatialGDK::ComponentData& Data) {
-		return Data.GetComponentId() == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
-	});
+			return Data.GetComponentId() == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
+		});
 
 	if (IntentComponentData == nullptr)
 	{
