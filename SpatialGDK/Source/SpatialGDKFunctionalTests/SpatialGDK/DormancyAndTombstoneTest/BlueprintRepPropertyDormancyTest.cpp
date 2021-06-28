@@ -30,36 +30,34 @@ void ABlueprintRepPropertyDormancyTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	{ // Step 1 - Modify the TestIntProp in blueprints
-		AddStep(TEXT("ServerModifyRepPropertyValueInBlueprints"), FWorkerDefinition::Server(1), nullptr, [this]() {
+	// Step 1 - Modify the TestIntProp in blueprints
+	AddStep(TEXT("ServerModifyRepPropertyValueInBlueprints"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		int Counter = 0;
+		int ExpectedDormancyActors = 1;
+		for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
+		{
+			Counter++;
+			Iter->UpdateTestIntProp();
+		}
+		RequireEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"));
+		FinishStep();
+	});
+
+	// Step 2 - Observe TestIntProp has been changed and the test actor dormancy has been updated on the client.
+	AddStep(
+		TEXT("ClientCheckDormancyAndRepPropertyUpdated"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		[this](float DeltaTime) {
 			int Counter = 0;
 			int ExpectedDormancyActors = 1;
 			for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 			{
-				Counter++;
-				Iter->UpdateTestIntProp();
-			}
-			RequireEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in the server world"));
-			FinishStep();
-		});
-	}
-
-	{ // Step 2 - Observe TestIntProp has been changed and the test actor dormancy has been updated on the client.
-		AddStep(
-			TEXT("ClientCheckDormancyAndRepPropertyUpdated"), FWorkerDefinition::AllClients, nullptr, nullptr,
-			[this](float DeltaTime) {
-				int Counter = 0;
-				int ExpectedDormancyActors = 1;
-				for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
+				if (Iter->NetDormancy != DORM_Initial && Iter->TestIntProp != 0)
 				{
-					if (Iter->NetDormancy != DORM_Initial && Iter->TestIntProp != 0)
-					{
-						Counter++;
-					}
+					Counter++;
 				}
-				RequireEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"));
-				FinishStep();
-			},
-			5.0f);
-	}
+			}
+			RequireEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"));
+			FinishStep();
+		},
+		5.0f);
 }
