@@ -686,8 +686,11 @@ int64 USpatialActorChannel::ReplicateActor()
 
 			NetDriver->ActorSystem->SendCreateEntityRequest(*this, ReplicationBytesWritten);
 
-			bCreatedEntity = true;
-
+			if (!bIsSkeleton)
+			{
+				bCreatedEntity = true;
+			}
+			
 			SetAutonomousProxyOnAuthority(Actor->RemoteRole == ROLE_AutonomousProxy);
 
 			// We preemptively set the Actor role to SimulatedProxy if load balancing is disabled

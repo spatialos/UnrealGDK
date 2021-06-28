@@ -142,6 +142,7 @@ class SPATIALGDK_API USpatialActorChannel : public UActorChannel
 	GENERATED_BODY()
 
 public:
+	bool bIsSkeleton = false;
 	USpatialActorChannel(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	// SpatialOS Entity ID.

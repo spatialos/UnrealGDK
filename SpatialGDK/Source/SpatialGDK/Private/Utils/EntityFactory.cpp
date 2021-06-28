@@ -177,6 +177,13 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	}
 }
 
+void EntityFactory::WriteRPCComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel& Channel)
+{
+	checkf(RPCService != nullptr, TEXT("Attempting to create an entity with a null RPCService."));
+	ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(Channel.GetEntityId()));
+	ComponentDatas.Append(NetDriver->RPCs->GetRPCComponentsOnEntityCreation(Channel.GetEntityId()));
+}
+
 void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel,
 										  uint32& OutBytesWritten)
 {
@@ -272,8 +279,6 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 											 ActorOwnership::CreateFromActor(*Actor, *PackageMap).CreateComponentData().Release(),
 											 nullptr });
 
-	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
-
 	Channel->SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor));
 
 	if (SpatialSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
@@ -284,10 +289,6 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID));
 	}
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
-
-	checkf(RPCService != nullptr, TEXT("Attempting to create an entity with a null RPCService."));
-	ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
-	ComponentDatas.Append(NetDriver->RPCs->GetRPCComponentsOnEntityCreation(EntityId));
 
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
@@ -332,7 +333,11 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 {
 	TArray<FWorkerComponentData> ComponentDatas = CreateSkeletonEntityComponents(Channel->Actor);
 	WriteUnrealComponents(ComponentDatas, Channel, OutBytesWritten);
+	WriteRPCComponents(ComponentDatas, *Channel);
 	WriteLBComponents(ComponentDatas, Channel->Actor);
+	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(
+		Channel->Actor, NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass()), Channel->GetEntityId()));
+
 	// This block of code is just for checking purposes and should be removed in the future
 	// TODO: UNR-4783
 #if !UE_BUILD_SHIPPING
@@ -352,6 +357,21 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	}
 #endif // !UE_BUILD_SHIPPING
 	return ComponentDatas;
+}
+
+void EntityFactory::CreatePopulateSkeletonComponents(USpatialActorChannel& Channel, TArray<FWorkerComponentData>& OutComponentCreates,
+													 TArray<FWorkerComponentUpdate>& OutComponentUpdates, uint32& OutBytesWritten)
+{
+	TArray<FWorkerComponentData> ComponentDatas;
+	const ComponentData* UnrealMetadata =
+		NetDriver->Connection->GetCoordinator().GetView()[Channel.GetEntityId()].Components.FindByPredicate(
+			ComponentIdEquality{ UnrealMetadata::ComponentId });
+	ComponentDatas.Emplace(UnrealMetadata->GetWorkerComponentData());
+	WriteUnrealComponents(ComponentDatas, &Channel, OutBytesWritten);
+	ComponentDatas.RemoveAt(0);
+	OutComponentCreates = ComponentDatas;
+	OutComponentUpdates = { NetDriver->InterestFactory->CreateInterestUpdate(
+		Channel.Actor, NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Channel.Actor->GetClass()), Channel.GetEntityId()) };
 }
 
 TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AActor* Actor) const

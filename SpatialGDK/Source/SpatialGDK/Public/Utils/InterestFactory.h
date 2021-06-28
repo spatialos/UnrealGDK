@@ -78,6 +78,7 @@ private:
 	void AddServerGameplayDebuggerCategoryReplicatorActorInterest(Interest& OutInterest,
 																  const AGameplayDebuggerCategoryReplicator& Replicator) const;
 #endif
+public:
 	// The components clients need to see on entities they have authority over that they don't already see through authority.
 	void AddClientSelfInterest(Interest& OutInterest) const;
 	// The components servers need to see on entities they have authority over that they don't already see through authority.

@@ -156,6 +156,11 @@ void WellKnownEntitySystem::InitializeVirtualWorkerTranslationManager()
 	VirtualWorkerTranslationManager->SetNumberOfVirtualWorkers(NumberOfWorkers);
 }
 
+const SpatialVirtualWorkerTranslationManager* WellKnownEntitySystem::GetVirtualWorkerTranslationManager() const
+{
+	return VirtualWorkerTranslationManager.Get();
+}
+
 void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 {
 	// Perform a naive leader election where we wait for the correct number of server workers to be present in the deployment, and then

@@ -31,8 +31,11 @@ public:
 	static TArray<FWorkerComponentData> CreateSkeletonEntityComponents(AActor* Actor);
 	void WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	void WriteLBComponents(TArray<FWorkerComponentData>& ComponentDatas, AActor* Actor);
+	void WriteRPCComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel& Channel);
 	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor) const;
+	void CreatePopulateSkeletonComponents(USpatialActorChannel& ActorChannel, TArray<FWorkerComponentData>& OutComponentCreates,
+										  TArray<FWorkerComponentUpdate>& OutComponentUpdates, uint32& OutBytesWritten);
 
 	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const Worker_EntityId EntityId,
 																		const InterestFactory* InterestFactory,

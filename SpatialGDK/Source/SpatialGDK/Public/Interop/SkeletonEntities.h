@@ -47,7 +47,6 @@ private:
 		DelegatingEntities,
 		SigningManifest,
 		WaitingForPopulation,
-		FinalizingSkeletons,
 		Finished,
 	} Stage = EStage::Initial;
 };

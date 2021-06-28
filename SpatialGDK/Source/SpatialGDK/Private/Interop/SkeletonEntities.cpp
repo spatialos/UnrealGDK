@@ -77,7 +77,19 @@ void FDistributedStartupActorSkeletonEntityCreator::CreateSkeletonEntitiesForWor
 			continue;
 		}
 
-		if (!(Actor->IsNameStableForNetworking() && Actor->GetIsReplicated()))
+		if (!Actor->GetIsReplicated())
+		{
+			continue;
+		}
+
+		const bool bIsStartupActor = Actor->IsNetStartupActor();
+		const bool bIsStablyNamedAndReplicated = Actor->IsNameStableForNetworking();
+
+		checkf(bIsStartupActor == bIsStablyNamedAndReplicated,
+			   TEXT("Actor %s is startup %s stably named %s replicated; startup should be the same as Stably Named."), *Actor->GetName(),
+			   bIsStartupActor ? TEXT("True") : TEXT("False"), Actor->IsNameStableForNetworking() ? TEXT("True") : TEXT("False"));
+
+		if (!bIsStablyNamedAndReplicated)
 		{
 			continue;
 		}
@@ -119,8 +131,11 @@ Worker_EntityId FDistributedStartupActorSkeletonEntityCreator::CreateSkeletonEnt
 	EntityComponents.Emplace(
 		ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID));
 
-	EntityComponents.Add(NetDriver->InterestFactory->CreateInterestData(
-		&Actor, NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(&Actor), ActorEntityId));
+	Interest SkeletonEntityInterest;
+	NetDriver->InterestFactory->AddServerSelfInterest(SkeletonEntityInterest);
+	EntityComponents.Add(SkeletonEntityInterest.CreateComponentData());
+	// EntityComponents.Add(NetDriver->InterestFactory->CreateInterestData(&Actor,
+	// NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor.GetClass()), ActorEntityId));
 
 	TArray<ComponentData> SkeletonEntityComponentDatas;
 	Algo::Transform(EntityComponents, SkeletonEntityComponentDatas, &Convert);
@@ -194,7 +209,7 @@ void FDistributedStartupActorSkeletonEntityCreator::Advance()
 	if (Stage == EStage::SigningManifest)
 	{
 		// Every worker should get a manifest to proceed through the skeleton entity flow.
-		for (const auto& VirtualWorker : NetDriver->WellKnownEntitySystem->VirtualWorkerTranslationManager->GetVirtualWorkerMapping())
+		for (const auto& VirtualWorker : NetDriver->WellKnownEntitySystem->GetVirtualWorkerTranslationManager()->GetVirtualWorkerMapping())
 		{
 			PopulatingWorkersToEntities.FindOrAdd(VirtualWorker.Key);
 		}
@@ -266,14 +281,9 @@ void FDistributedStartupActorSkeletonEntityCreator::Advance()
 
 			if (bAllManifestsFinished)
 			{
-				Stage = EStage::FinalizingSkeletons;
+				Stage = EStage::Finished;
 			}
 		}
-	}
-
-	if (Stage == EStage::FinalizingSkeletons)
-	{
-		Stage = EStage::Finished;
 	}
 }
 
@@ -395,7 +405,7 @@ void FSkeletonEntityPopulator::ConsiderEntityPopulation(const Worker_EntityId En
 
 	const UnrealMetadata ActorMetadata(UnrealMetadataComponent->GetUnderlying());
 
-	if (ActorMetadata.bNetStartup.IsSet() && ActorMetadata.bNetStartup.GetValue() && ActorMetadata.StablyNamedRef.IsSet())
+	if (ensure(ActorMetadata.bNetStartup.IsSet() && ActorMetadata.bNetStartup.GetValue() && ActorMetadata.StablyNamedRef.IsSet()))
 	{
 		const FUnrealObjectRef& ActorRef = ActorMetadata.StablyNamedRef.GetValue();
 		bool bUnresolved = false;
@@ -418,48 +428,12 @@ void FSkeletonEntityPopulator::PopulateEntity(Worker_EntityId SkeletonEntityId, 
 
 	NetDriver->PackageMap->ResolveEntityActorAndSubobjects(SkeletonEntityId, &SkeletonEntityStartupActor);
 
-	TArray<FWorkerComponentData> Components;
-
-	// HACK: EntityFactory::WriteUnrealComponents expects an UnrealMetadata to be present in the components array,
-	// but since we aren't creating a complete entities but only fleshing out an existing one, we have to get this
-	// specific component from the entity in view.
-	Components.Emplace(NetDriver->Connection->GetCoordinator()
-						   .GetView()[SkeletonEntityId]
-						   .Components.FindByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId })
-						   ->GetWorkerComponentData());
-
 	USpatialActorChannel* Channel = ActorSystem::SetUpActorChannel(NetDriver, &SkeletonEntityStartupActor, SkeletonEntityId);
 
 	check(IsValid(Channel));
 
-	uint32 BytesWrittenDummy = 0;
-	Factory.WriteUnrealComponents(Components, Channel, BytesWrittenDummy);
-	Components.Add(ActorSystem::CreateLevelComponentData(SkeletonEntityStartupActor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
-
-	// HACK: Remove UnrealMetadata as we don't want to update it (see above),
-	// AND it's already in the View's components array.
-	Components.RemoveAll([](const FWorkerComponentData& Component) {
-		return Component.component_id == UnrealMetadata::ComponentId;
-	});
-
-	TArray<ComponentData> OwningComponent;
-
-	Algo::Transform(Components, OwningComponent, &Convert);
-
-	UE_LOG(LogSpatialSkeletonEntityCreator, Log, TEXT("EntityId: %lld Fleshing out with %d components"), SkeletonEntityId,
-		   OwningComponent.Num());
-
-	ViewCoordinator& Coordinator = NetDriver->Connection->GetCoordinator();
-
-	for (ComponentData& ComponentData : OwningComponent)
-	{
-		Coordinator.SendAddComponent(SkeletonEntityId, MoveTemp(ComponentData), {});
-	}
-
-	// NOTE: This one is added last to ensure all data components are in before the tag is. The Runtime guarantees
-	// this ordering for dynamic components.
-	Coordinator.SendAddComponent(SkeletonEntityId, ComponentData(SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID),
-								 {});
+	Channel->bCreatingNewEntity = true;
+	Channel->bIsSkeleton = true;
 }
 
 bool FSkeletonEntityPopulator::IsReady() const
