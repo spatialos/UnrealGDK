@@ -256,17 +256,20 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 		It.RemoveCurrent();
 	}
 
-	for (auto& Pair : TrackedEntities)
+	for (auto& TrackedEntity : TrackedEntities)
 	{
-		if (Pair.Value.Component.TrackPlayer)
+		const Worker_EntityId_Key& TrackedEntityId = TrackedEntity.Key;
+		FEntityData& TrackedEntityData = TrackedEntity.Value;
+		
+		if (TrackedEntityData.Component.TrackPlayer)
 		{
-			if (!NetDriver->HasServerAuthority(Pair.Key))
+			if (!NetDriver->HasServerAuthority(TrackedEntityId))
 			{
 				// Do not track player if we don't have authority
 				continue;
 			}
 
-			TWeakObjectPtr<AGameplayDebuggerCategoryReplicator> ReplicatorWeakObjectPtr = Pair.Value.ReplicatorWeakObjectPtr;
+			TWeakObjectPtr<AGameplayDebuggerCategoryReplicator> ReplicatorWeakObjectPtr = TrackedEntityData.ReplicatorWeakObjectPtr;
 			AGameplayDebuggerCategoryReplicator* Replicator = ReplicatorWeakObjectPtr.Get();
 			if (Replicator == nullptr)
 			{
@@ -305,10 +308,10 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 				continue;
 			}
 
-			Pair.Value.Component.DelegatedVirtualWorkerId = PlayerControllerVirtualWorkerId;
-			Pair.Value.CurrentWorkerId = *PhysicalWorkerName;
+			TrackedEntityData.Component.DelegatedVirtualWorkerId = PlayerControllerVirtualWorkerId;
+			TrackedEntityData.CurrentWorkerId = *PhysicalWorkerName;
 			Replicator->SetCurrentServer(*PhysicalWorkerName);
-			ComponentsUpdated.Add(Pair.Key);
+			ComponentsUpdated.Add(TrackedEntityId);
 		}
 	}
 }
