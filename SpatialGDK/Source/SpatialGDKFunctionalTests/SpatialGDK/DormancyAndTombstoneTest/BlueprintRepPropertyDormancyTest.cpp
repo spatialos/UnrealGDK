@@ -5,11 +5,12 @@
 #include "EngineUtils.h"
 
 /**
- * This test tests whether modifying a replicated property in blueprints on a dormant actor will trigger the actor to wake up and the property to correctly replicated.
+ * This test tests whether modifying a replicated property in blueprints on a dormant actor will trigger the actor to wake up and the
+ * property to correctly replicate.
  *
  * The test includes a single server and two client workers. The client workers begin with a player controller and their default pawns,
- * which they initially possess. The test also REQUIRES the presence of a BP_DormancyTestActor (this actor is initially dormant) in the level
- * where it is placed. The flow is as follows:
+ * which they initially possess. The test also REQUIRES the presence of a BP_DormancyTestActor (this actor is initially dormant) in the
+ * level where it is placed. The flow is as follows:
  *  - Setup:
  *    - (Refer to above about placing instructions).
  *  - Test:
@@ -47,18 +48,18 @@ void ABlueprintRepPropertyDormancyTest::PrepareTest()
 		AddStep(
 			TEXT("ClientCheckDormancyAndRepPropertyUpdated"), FWorkerDefinition::AllClients, nullptr, nullptr,
 			[this](float DeltaTime) {
-			int Counter = 0;
-			int ExpectedDormancyActors = 1;
-			for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
-			{
-				if (Iter->NetDormancy != DORM_Initial && Iter->TestIntProp != 0)
+				int Counter = 0;
+				int ExpectedDormancyActors = 1;
+				for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 				{
-					Counter++;
+					if (Iter->NetDormancy != DORM_Initial && Iter->TestIntProp != 0)
+					{
+						Counter++;
+					}
 				}
-			}
-			RequireEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"));
-			FinishStep();
-		},
-		5.0f);
+				RequireEqual_Int(Counter, ExpectedDormancyActors, TEXT("Number of TestDormancyActors in client world"));
+				FinishStep();
+			},
+			5.0f);
 	}
 }
