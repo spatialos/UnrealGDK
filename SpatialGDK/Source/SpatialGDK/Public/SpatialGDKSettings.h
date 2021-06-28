@@ -70,7 +70,6 @@ class SPATIALGDK_API UEventTracingSamplingSettings : public UObject
 {
 	GENERATED_BODY()
 public:
-
 	struct TraceQueryDeleter
 	{
 		void operator()(Trace_Query* Query) const
@@ -105,7 +104,7 @@ public:
 	FString RuntimeEventPostFilter = "false";
 
 	FString GetGDKEventPreFilterString() const { return IsFilterValid(GDKEventPreFilter) ? GDKEventPreFilter : "false"; }
-	FString GetGDKEventPostFilterString() const { return IsFilterValid(GDKEventPostFilter) ? GDKEventPostFilter : "false";}
+	FString GetGDKEventPostFilterString() const { return IsFilterValid(GDKEventPostFilter) ? GDKEventPostFilter : "false"; }
 	FString GetRuntimeEventPreFilterString() const { return IsFilterValid(RuntimeEventPreFilter) ? RuntimeEventPreFilter : "false"; }
 	FString GetRuntimeEventPostFilterString() const { return IsFilterValid(RuntimeEventPostFilter) ? RuntimeEventPostFilter : "false"; }
 

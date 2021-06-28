@@ -109,7 +109,7 @@ UEventTracingSamplingSettings::TraceQueryPtr UEventTracingSamplingSettings::Pars
 	if (!Ptr.IsValid())
 	{
 		UE_LOG(LogSpatialGDKSettings, Warning, TEXT("The specified query \"%s\" is invalid; defaulting to \"false\" query. %s"),
-			FilterForLog, Trace_GetLastError());
+			   FilterForLog, Trace_GetLastError());
 		Ptr.Reset(Trace_ParseSimpleQuery("false"));
 	}
 
