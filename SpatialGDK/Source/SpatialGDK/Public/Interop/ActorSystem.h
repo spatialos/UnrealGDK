@@ -135,7 +135,7 @@ private:
 
 	void InvokeRepNotifies();
 	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
-	                                                TArray<GDK_PROPERTY(Property) *>& RepNotifies);
+													TArray<GDK_PROPERTY(Property) *>& RepNotifies);
 
 	// Authority
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
