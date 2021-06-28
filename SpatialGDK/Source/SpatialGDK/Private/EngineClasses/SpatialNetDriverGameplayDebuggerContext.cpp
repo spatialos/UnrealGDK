@@ -190,19 +190,6 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 	}
 	ComponentsAdded.Reset();
 
-	for (const auto& EntityUpdated : ComponentsUpdated)
-	{
-		if (NetDriver->HasServerAuthority(EntityUpdated))
-		{
-			if (FEntityData* EntityData = TrackedEntities.Find(EntityUpdated))
-			{
-				FWorkerComponentUpdate ComponentUpdate = EntityData->Component.CreateComponentUpdate();
-				NetDriver->Connection->SendComponentUpdate(EntityUpdated, &ComponentUpdate);
-			}
-		}
-	}
-	ComponentsUpdated.Reset();
-
 	for (auto It = ActorsAdded.CreateIterator(); It; It++)
 	{
 		// If authority lost, then forget about this actor
@@ -260,7 +247,7 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 	{
 		const Worker_EntityId_Key& TrackedEntityId = TrackedEntity.Key;
 		FEntityData& TrackedEntityData = TrackedEntity.Value;
-		
+
 		if (TrackedEntityData.Component.TrackPlayer)
 		{
 			if (!NetDriver->HasServerAuthority(TrackedEntityId))
@@ -314,6 +301,19 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 			ComponentsUpdated.Add(TrackedEntityId);
 		}
 	}
+
+	for (const auto& EntityUpdated : ComponentsUpdated)
+	{
+		if (NetDriver->HasServerAuthority(EntityUpdated))
+		{
+			if (FEntityData* EntityData = TrackedEntities.Find(EntityUpdated))
+			{
+				FWorkerComponentUpdate ComponentUpdate = EntityData->Component.CreateComponentUpdate();
+				NetDriver->Connection->SendComponentUpdate(EntityUpdated, &ComponentUpdate);
+			}
+		}
+	}
+	ComponentsUpdated.Reset();
 }
 
 void USpatialNetDriverGameplayDebuggerContext::TrackEntity(Worker_EntityId InEntityId)
@@ -479,13 +479,13 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerTrackingRequest(AGameplay
 		return;
 	}
 
-	bool ShouldUpdateComponent = false;
+	bool bShouldUpdateComponent = false;
 
 	const bool bShouldTrackPlayer = InServerTrackingMode == EGameplayDebuggerServerTrackingMode::Player ? true : false;
 	if (bShouldTrackPlayer != EntityData->Component.TrackPlayer)
 	{
 		EntityData->Component.TrackPlayer = bShouldTrackPlayer;
-		ShouldUpdateComponent = true;
+		bShouldUpdateComponent = true;
 	}
 
 	if ((InOptionalServerWorkerId.Len() > 0) && (EntityData->CurrentWorkerId != InOptionalServerWorkerId))
@@ -496,7 +496,7 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerTrackingRequest(AGameplay
 			EntityData->Component.DelegatedVirtualWorkerId = *VirtualWorkerId;
 			EntityData->CurrentWorkerId = InOptionalServerWorkerId;
 			InCategoryReplicator->SetCurrentServer(InOptionalServerWorkerId);
-			ShouldUpdateComponent = true;
+			bShouldUpdateComponent = true;
 		}
 		else
 		{
@@ -504,7 +504,7 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerTrackingRequest(AGameplay
 		}
 	}
 
-	if (ShouldUpdateComponent)
+	if (bShouldUpdateComponent)
 	{
 		ComponentsUpdated.Add(EntityId);
 	}
