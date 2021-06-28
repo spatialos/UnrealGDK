@@ -241,7 +241,7 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 			RegisterServerRequestCallback(*CategoryReplicator, *EntityData);
 			RegisterPlayerControllerAuthorityLostCallback(*CategoryReplicator, *EntityData);
 		}
-		
+
 		It.RemoveCurrent();
 	}
 
@@ -422,7 +422,7 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerTrackingRequest(AGameplay
 	bool bShouldUpdateComponent = false;
 
 	FString NewServerWorkerId = InOptionalServerWorkerId;
-	
+
 	const bool bShouldTrackPlayer = InServerTrackingMode == EGameplayDebuggerServerTrackingMode::Player ? true : false;
 	if (bShouldTrackPlayer != EntityData->Component.TrackPlayer)
 	{
@@ -542,7 +542,7 @@ void USpatialNetDriverGameplayDebuggerContext::OnPlayerControllerAuthorityLost(c
 	Worker_EntityId_Key* EntityId = nullptr;
 	FEntityData* EntityData = nullptr;
 	AGameplayDebuggerCategoryReplicator* Replicator = nullptr;
-	
+
 	for (auto& TrackedEntity : TrackedEntities)
 	{
 		Replicator = TrackedEntity.Value.ReplicatorWeakObjectPtr.Get();
@@ -566,7 +566,7 @@ void USpatialNetDriverGameplayDebuggerContext::OnPlayerControllerAuthorityLost(c
 		// If we are not tracking the player, we do not need to track server authority changes
 		return;
 	}
-	
+
 	check(NetDriver->LoadBalanceStrategy);
 	const VirtualWorkerId AuthorativeWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(InPlayerController);
 
@@ -579,7 +579,7 @@ void USpatialNetDriverGameplayDebuggerContext::OnPlayerControllerAuthorityLost(c
 		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Failed to convert virtual worker to physical worker name"));
 		return;
 	}
-	
+
 	if (EntityData->CurrentWorkerId != *PhysicalAuthorativeWorkerName)
 	{
 		EntityData->Component.DelegatedVirtualWorkerId = AuthorativeWorkerId;
