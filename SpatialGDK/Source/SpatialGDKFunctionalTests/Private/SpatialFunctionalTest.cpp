@@ -750,7 +750,7 @@ void ASpatialFunctionalTest::PrepareTestAfterBeginPlay()
 
 void ASpatialFunctionalTest::OnReplicated_bFinishedTest()
 {
-	if (!HasAuthority())
+	if (bFinishedTest && !HasAuthority())
 	{
 		// The server that started this test has to call this in order for the test to properly finish.
 		NotifyTestFinishedObserver();
