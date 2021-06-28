@@ -18,7 +18,7 @@ void SpatialRoutingSystem::ProcessUpdate(Worker_EntityId Entity, const Component
 		{
 		case ComponentChange::COMPLETE_UPDATE:
 		{
-			checkNoEntry();
+			UE_LOG(LogSpatialRoutingSystem, Error, TEXT("Unhandled refresh"));
 			Components.Sender.Emplace(CrossServerEndpoint(Change.CompleteUpdate.Data));
 			break;
 		}
@@ -39,7 +39,7 @@ void SpatialRoutingSystem::ProcessUpdate(Worker_EntityId Entity, const Component
 		{
 		case ComponentChange::COMPLETE_UPDATE:
 		{
-			checkNoEntry();
+			UE_LOG(LogSpatialRoutingSystem, Error, TEXT("Unhandled refresh"));
 			Components.ReceiverACK.Emplace(CrossServerEndpointACK(Change.CompleteUpdate.Data));
 			break;
 		}
@@ -383,7 +383,12 @@ void SpatialRoutingSystem::Advance(SpatialOSWorkerInterface* Connection)
 		}
 		break;
 		case EntityDelta::REMOVE:
+		case EntityDelta::TEMPORARILY_REMOVED:
 		{
+			if(Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
+			{
+				UE_LOG(LogSpatialRoutingSystem, Error, TEXT("Unhandled refresh"));
+			}
 			ReceiversToInspect.Remove(Delta.EntityId);
 			PendingComponentUpdatesToSend.Remove(
 				EntityComponentId(Delta.EntityId, SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID));
@@ -422,9 +427,6 @@ void SpatialRoutingSystem::Advance(SpatialOSWorkerInterface* Connection)
 				RoutingWorkerView.Remove(Delta.EntityId);
 			}
 		}
-		break;
-		case EntityDelta::TEMPORARILY_REMOVED:
-			checkNoEntry();
 		break;
 		default:
 			break;
