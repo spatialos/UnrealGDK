@@ -43,7 +43,8 @@ public:
 		Worker_EntityId SimulatingWorkerSystemEntityId;
 	};
 
-	SpatialVirtualWorkerTranslationManager(SpatialOSWorkerInterface* InConnection, SpatialVirtualWorkerTranslator* InTranslator);
+	SpatialVirtualWorkerTranslationManager(SpatialOSWorkerInterface* InConnection, USpatialNetDriver* NetDriver,
+										   SpatialVirtualWorkerTranslator* InTranslator);
 
 	void SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers);
 
@@ -60,6 +61,7 @@ public:
 
 private:
 	SpatialOSWorkerInterface* Connection;
+	USpatialNetDriver* NetDriver;
 
 	TArray<VirtualWorkerId> VirtualWorkersToAssign;
 	TArray<PartitionInfo> Partitions;

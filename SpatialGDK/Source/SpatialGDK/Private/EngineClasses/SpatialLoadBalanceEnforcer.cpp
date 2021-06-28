@@ -105,6 +105,7 @@ Worker_ComponentUpdate SpatialLoadBalanceEnforcer::CreateAuthorityDelegationUpda
 	AuthorityDelegation& AuthorityDelegationComponent = Components.Delegation;
 	AuthorityDelegationComponent.Delegations.Add(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, ClientWorkerPartitionId);
 	AuthorityDelegationComponent.Delegations.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartition);
+	AuthorityDelegationComponent.Delegations.Add(SpatialConstants::LB_DELEGATION_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartition);
 
 	return AuthorityDelegationComponent.CreateAuthorityDelegationUpdate();
 }

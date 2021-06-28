@@ -243,7 +243,10 @@ ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InAutho
 #if DO_CHECK
 static void ValidateNoSubviewIntersections(const FSubView& Lhs, const FSubView& Rhs, const FString& SubviewDescription)
 {
-	for (const Worker_EntityId Overlapping : Lhs.GetCompleteEntities().Intersect(Rhs.GetCompleteEntities()))
+	TSet<Worker_EntityId_Key> LhsEntities, RhsEntities;
+	Algo::Copy(Lhs.GetCompleteEntities(), LhsEntities);
+	Algo::Copy(Rhs.GetCompleteEntities(), RhsEntities);
+	for (const Worker_EntityId Overlapping : LhsEntities.Intersect(RhsEntities))
 	{
 		UE_LOG(LogActorSystem, Warning, TEXT("Entity %lld is doubly complete on %s"), Overlapping, *SubviewDescription);
 	}
@@ -449,28 +452,9 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						Actor->SetReplicates(true);
 					}
 
-					if (Actor->IsA<APlayerController>())
+					if (Channel != nullptr && Channel->IsAutonomousProxyOnAuthority())
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
-					}
-					else if (APawn* Pawn = Cast<APawn>(Actor))
-					{
-						// The following check will return false on non-authoritative servers if the PlayerState hasn't been received yet.
-						if (Pawn->IsPlayerControlled())
-						{
-							Pawn->RemoteRole = ROLE_AutonomousProxy;
-						}
-					}
-					else if (const APlayerState* PlayerState = Cast<APlayerState>(Actor))
-					{
-						// The following check will return false on non-authoritative servers if the Pawn hasn't been received yet.
-						if (APawn* PawnFromPlayerState = PlayerState->GetPawn())
-						{
-							if (PawnFromPlayerState->IsPlayerControlled() && PawnFromPlayerState->HasAuthority())
-							{
-								PawnFromPlayerState->RemoteRole = ROLE_AutonomousProxy;
-							}
-						}
 					}
 
 					if (!bDormantActor)
@@ -525,12 +509,11 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 		if (Channel != nullptr)
 		{
 			Channel->ClientProcessOwnershipChange(Authority == WORKER_AUTHORITY_AUTHORITATIVE);
-		}
 
-		// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
-		if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
-		{
-			Actor->Role = (Authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
+			if (Channel->IsAutonomousProxyOnAuthority() && Authority == WORKER_AUTHORITY_AUTHORITATIVE)
+			{
+				Actor->Role = ROLE_AutonomousProxy;
+			}
 		}
 	}
 }
@@ -1272,18 +1255,19 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 
 	ActorData& ActorComponents = ActorDataStore[EntityId];
 
-	AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
-	if (EntityActor != nullptr)
 	{
-		if (!EntityActor->IsActorReady())
+		AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get(/*bEvenIfPendingKill =*/true));
+		if (EntityActor != nullptr)
 		{
-			UE_LOG(LogActorSystem, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
-				   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
+			if (!EntityActor->IsActorReady())
+			{
+				UE_LOG(LogActorSystem, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
+					   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
+			}
+
+			return;
 		}
-
-		return;
 	}
-
 	UE_LOG(LogActorSystem, Verbose,
 		   TEXT("%s: Entity has been checked out on a worker which didn't spawn it. "
 				"Entity ID: %lld"),
@@ -1310,7 +1294,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	EntityActor = TryGetOrCreateActor(ActorComponents, EntityId);
+	AActor* EntityActor = TryGetOrCreateActor(ActorComponents, EntityId);
 
 	if (EntityActor == nullptr)
 	{

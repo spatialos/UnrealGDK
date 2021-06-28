@@ -1,9 +1,41 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
+import "improbable/standard_library.schema";
+
 component AuthorityIntent {
      id = 9980;
      // Id assigned to the Unreal server worker which should be authoritative for this entity.
      // 0 is reserved as an invalid/unset value.
      uint32 virtual_worker_id = 1;
+}
+
+component AuthorityIntentV2 {
+     id = 9958;
+     uint64 partition_id = 1;
+     uint64 assignment_counter = 2;
+}
+
+component AuthorityIntentAck {
+     id = 9957;
+     uint64 assignment_counter_ack = 1;
+}
+
+component PartitionIntentAck{
+     id = 9956;
+     uint64 assignment_counter_ack = 1;
+}
+
+component_set StrategyWorkerAuthComponentSet {
+  id = 9909;
+  components = [
+    unreal.AuthorityIntentV2
+  ];
+}
+
+component_set LBDelegationAuthComponentSet {
+  id = 9910;
+  components = [
+    improbable.AuthorityDelegation
+  ];
 }

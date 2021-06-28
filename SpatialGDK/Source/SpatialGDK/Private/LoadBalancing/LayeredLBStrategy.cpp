@@ -13,10 +13,12 @@
 
 DEFINE_LOG_CATEGORY(LogLayeredLBStrategy);
 
+DEFINE_VTABLE_PTR_HELPER_CTOR(ULayeredLBStrategy);
 ULayeredLBStrategy::ULayeredLBStrategy()
 	: Super()
 {
 }
+ULayeredLBStrategy::~ULayeredLBStrategy() = default;
 
 FString ULayeredLBStrategy::ToString() const
 {
@@ -379,4 +381,55 @@ void ULayeredLBStrategy::AddStrategyForLayer(const FName& LayerName, UAbstractLB
 {
 	LayerNameToLBStrategy.Add(LayerName, LBStrategy);
 	LayerNameToLBStrategy[LayerName]->Init();
+}
+
+void ULayeredLBStrategy::GetLegacyLBInformation(FLegacyLBContext& Ctx) const
+{
+	if (!IsStrategyWorkerAware())
+	{
+		return;
+	}
+
+	TArray<FName> LayerNames;
+	LayerNames.SetNum(LayerNameToLBStrategy.Num());
+	for (const auto& Data : LayerData)
+	{
+		LayerNames[Data.Value.LayerIndex] = Data.Key;
+	}
+
+	for (FName& LayerName : LayerNames)
+	{
+		Ctx.Layers.AddDefaulted();
+		Ctx.Layers.Last().Name = LayerName;
+		const UAbstractLBStrategy* Strategy = LayerNameToLBStrategy.FindChecked(LayerName);
+		Strategy->GetLegacyLBInformation(Ctx);
+	}
+}
+
+bool ULayeredLBStrategy::IsStrategyWorkerAware() const
+{
+	for (auto Entry : LayerNameToLBStrategy)
+	{
+		if (!Entry.Value->IsA<UGridBasedLBStrategy>() || !Entry.Value->IsStrategyWorkerAware())
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+TArray<SpatialGDK::ComponentData> ULayeredLBStrategy::CreateStaticLoadBalancingData(const AActor& Actor) const
+{
+	TArray<SpatialGDK::ComponentData> ComponentData;
+	if (IsStrategyWorkerAware())
+	{
+		FName LayerName = GetLayerNameForActor(Actor);
+
+		uint32 LayerIndex = LayerData.FindChecked(LayerName).LayerIndex;
+
+		SpatialGDK::ActorGroupMember MembershipComponent(LayerIndex);
+		ComponentData.Add(MembershipComponent.CreateComponentData());
+	}
+
+	return ComponentData;
 }

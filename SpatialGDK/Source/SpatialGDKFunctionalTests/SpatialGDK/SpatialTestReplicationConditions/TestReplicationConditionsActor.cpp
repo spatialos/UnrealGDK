@@ -190,6 +190,11 @@ void ATestReplicationConditionsActor_AutonomousOnly::SpawnDynamicComponents()
 		TEXT("DynamicTestReplicationConditionsComponent_AutonomousOnly"));
 }
 
+bool UTestReplicationConditionsPrimitiveComponent::IsSimulatingPhysics(FName BoneName /*= NAME_None*/) const
+{
+	return GetOwner()->GetReplicatedMovement().bRepPhysics;
+}
+
 void UTestReplicationConditionsComponent_Physics::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -200,10 +205,13 @@ void UTestReplicationConditionsComponent_Physics::GetLifetimeReplicatedProps(TAr
 
 ATestReplicationConditionsActor_Physics::ATestReplicationConditionsActor_Physics()
 {
+	UTestReplicationConditionsPrimitiveComponent* PrimitiveComponent =
+		CreateDefaultSubobject<UTestReplicationConditionsPrimitiveComponent>(TEXT("UTestReplicationConditionsPrimitiveComponent"));
+
+	SetRootComponent(PrimitiveComponent);
+
 	StaticComponent =
 		CreateDefaultSubobject<UTestReplicationConditionsComponent_Physics>(TEXT("UTestReplicationConditionsComponent_Physics"));
-
-	SetRootComponent(StaticComponent);
 }
 
 void ATestReplicationConditionsActor_Physics::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
