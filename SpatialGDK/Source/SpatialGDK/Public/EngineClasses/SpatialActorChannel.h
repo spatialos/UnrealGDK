@@ -120,7 +120,7 @@ public:
 
 	void UpdateRefToRepStateMap(FObjectToRepStateMap& ReplicatorMap);
 	bool MoveMappedObjectToUnmapped(const FUnrealObjectRef& ObjRef);
-	bool HasUnresolved() const { return UnresolvedRefs.Num() == 0; }
+	bool HasUnresolved() const { return UnresolvedRefs.Num() != 0; }
 
 	const FChannelObjectPair& GetChannelObjectPair() const { return ThisObj; }
 
@@ -215,6 +215,10 @@ public:
 
 	inline bool IsAuthoritativeServer() const { return bIsAuthServer; }
 
+	bool IsAutonomousProxyOnAuthority() const { return bIsAutonomousProxyOnAuthority; }
+
+	void SetAutonomousProxyOnAuthority(bool bAutonomousProxy) { bIsAutonomousProxyOnAuthority = bAutonomousProxy; }
+
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)
 	{
 		check(ObjectHasReplicator(Object));
@@ -254,6 +258,7 @@ public:
 
 	void UpdateShadowData();
 	void UpdateSpatialPosition();
+	void ForcePositionReplication() { TimeWhenPositionLastUpdated = 0; }
 
 	void ServerProcessOwnershipChange();
 	void ClientProcessOwnershipChange(bool bNewNetOwned);
@@ -347,4 +352,7 @@ private:
 	// In case the actor's owner did not have an entity ID when trying to set interest to it
 	// We set this flag in order to try to add interest as soon as possible.
 	bool bNeedOwnerInterestUpdate;
+
+	// Track whether an Actor should have its Role upgrade to AutonomousProxy when it gains authority
+	uint8 bIsAutonomousProxyOnAuthority : 1;
 };

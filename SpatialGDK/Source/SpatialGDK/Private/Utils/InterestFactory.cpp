@@ -29,9 +29,8 @@ DECLARE_CYCLE_STAT(TEXT("AddUserDefinedQueries"), STAT_InterestFactoryAddUserDef
 
 namespace SpatialGDK
 {
-InterestFactory::InterestFactory(USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap)
+InterestFactory::InterestFactory(USpatialClassInfoManager* InClassInfoManager)
 	: ClassInfoManager(InClassInfoManager)
-	, PackageMap(InPackageMap)
 {
 	check(ClassInfoManager != nullptr);
 	CreateAndCacheInterestState();
@@ -110,13 +109,14 @@ SchemaResultType InterestFactory::CreateServerAuthInterestResultType()
 	return ServerAuthResultType;
 }
 
-Worker_ComponentData InterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
+Worker_ComponentData UnrealServerInterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo,
+																	 const Worker_EntityId InEntityId) const
 {
 	return CreateInterest(InActor, InInfo, InEntityId).CreateComponentData();
 }
 
-Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo,
-															 const Worker_EntityId InEntityId) const
+Worker_ComponentUpdate UnrealServerInterestFactory::CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo,
+																		 const Worker_EntityId InEntityId) const
 {
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
@@ -160,26 +160,39 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	return ServerInterest;
 }
 
-Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, bool bDebug) const
+Interest InterestFactory::CreatePartitionInterest(const SpatialGDK::QueryConstraint& LoadBalancingConstraint, bool bDebug) const
 {
 	// Add load balancing query
 	Interest PartitionInterest{};
-	Query PartitionQuery{};
 
-	AddLoadBalancingInterestQuery(LBStrategy, VirtualWorker, PartitionInterest);
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
+	const Worker_ComponentId PartitionAuthComponentSet = Settings->bRunStrategyWorker
+															 ? SpatialConstants::PARTITION_WORKER_AUTH_COMPONENT_SET_ID
+															 : SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID;
+
+	const Worker_ComponentId PartitionCompletenessTag = Settings->bRunStrategyWorker ? SpatialConstants::PARTITION_AUTH_TAG_COMPONENT_ID
+																					 : SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID;
+
+	// Add load balancing query
+	Query PartitionQuery{};
+	PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
+	PartitionQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
+	PartitionQuery.Constraint = LoadBalancingConstraint;
+	AddComponentQueryPairToInterestComponent(PartitionInterest, PartitionAuthComponentSet, PartitionQuery);
 
 	// Ensure server worker receives AlwaysRelevant entities.
 	PartitionQuery = Query();
 	PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
 	PartitionQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
 	PartitionQuery.Constraint = CreateServerAlwaysRelevantConstraint();
-	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, PartitionQuery);
+	AddComponentQueryPairToInterestComponent(PartitionInterest, PartitionAuthComponentSet, PartitionQuery);
 
 	// Add a self query for completeness
 	PartitionQuery = Query();
-	PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+	PartitionQuery.ResultComponentIds = { PartitionCompletenessTag };
 	PartitionQuery.Constraint.bSelfConstraint = true;
-	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, PartitionQuery);
+	AddComponentQueryPairToInterestComponent(PartitionInterest, PartitionAuthComponentSet, PartitionQuery);
 
 	// Query to know about all the actors tagged with a debug component
 	if (bDebug)
@@ -187,14 +200,12 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 		PartitionQuery = Query();
 		PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_DEBUG_COMPONENT_ID };
 		PartitionQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_DEBUG_COMPONENT_ID;
-		AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID,
-												 PartitionQuery);
+		AddComponentQueryPairToInterestComponent(PartitionInterest, PartitionAuthComponentSet, PartitionQuery);
 
 		PartitionQuery = Query();
 		PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID };
 		PartitionQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID;
-		AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID,
-												 PartitionQuery);
+		AddComponentQueryPairToInterestComponent(PartitionInterest, PartitionAuthComponentSet, PartitionQuery);
 	}
 
 #if WITH_GAMEPLAY_DEBUGGER
@@ -206,17 +217,6 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 #endif
 
 	return PartitionInterest;
-}
-
-void InterestFactory::AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker,
-													Interest& OutInterest) const
-{
-	// Add load balancing query
-	Query PartitionQuery{};
-	PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
-	PartitionQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
-	PartitionQuery.Constraint = LBStrategy->GetWorkerInterestQueryConstraint(VirtualWorker);
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, PartitionQuery);
 }
 
 Interest InterestFactory::CreateRoutingWorkerInterest()
@@ -238,7 +238,7 @@ Interest InterestFactory::CreateRoutingWorkerInterest()
 	return ServerInterest;
 }
 
-Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
+Interest UnrealServerInterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -346,54 +346,10 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest) const
 	Query LoadBalanceQuery;
 	LoadBalanceQuery.Constraint.bSelfConstraint = true;
 	LoadBalanceQuery.ResultComponentIds = { SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
+											SpatialConstants::AUTHORITY_INTENTV2_COMPONENT_ID,
 											SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
 											SpatialConstants::LB_TAG_COMPONENT_ID };
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, LoadBalanceQuery);
-}
-
-bool InterestFactory::DoOwnersHaveEntityId(const AActor* Actor) const
-{
-	AActor* Owner = Actor->GetOwner();
-
-	while (Owner != nullptr && !Owner->IsPendingKillPending() && Owner->GetIsReplicated())
-	{
-		if (PackageMap->GetEntityIdFromObject(Owner) == SpatialConstants::INVALID_ENTITY_ID)
-		{
-			return false;
-		}
-		Owner = Owner->GetOwner();
-	}
-
-	return true;
-}
-
-void InterestFactory::AddServerActorOwnerInterest(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const
-{
-	AActor* Owner = InActor->GetOwner();
-	Query OwnerChainQuery;
-
-	while (Owner != nullptr && !Owner->IsPendingKillPending() && Owner->GetIsReplicated())
-	{
-		QueryConstraint OwnerQuery;
-		OwnerQuery.EntityIdConstraint = PackageMap->GetEntityIdFromObject(Owner);
-		if (OwnerQuery.EntityIdConstraint == SpatialConstants::INVALID_ENTITY_ID)
-		{
-			UE_LOG(LogInterestFactory, Warning,
-				   TEXT("Interest for Actor %s (%llu) is out of date because owner %s does not have an entity id."
-						"USpatialActorChannel::NeedOwnerInterestUpdate should be set in order to eventually update it"),
-				   *InActor->GetName(), EntityId, *Owner->GetName());
-			return;
-		}
-		OwnerChainQuery.Constraint.OrConstraint.Add(OwnerQuery);
-		Owner = Owner->GetOwner();
-	}
-
-	if (OwnerChainQuery.Constraint.OrConstraint.Num() != 0)
-	{
-		OwnerChainQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
-		OwnerChainQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
-		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, OwnerChainQuery);
-	}
 }
 
 void InterestFactory::AddClientAlwaysRelevantQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,
@@ -416,7 +372,7 @@ void InterestFactory::AddClientAlwaysRelevantQuery(Interest& OutInterest, const 
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, ClientSystemQuery);
 }
 
-void InterestFactory::AddAlwaysInterestedInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
+void UnrealServerInterestFactory::AddAlwaysInterestedInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
 {
 	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint(InActor, InInfo);
 
@@ -643,7 +599,7 @@ bool InterestFactory::ShouldAddNetCullDistanceInterest(const AActor* InActor) co
 	return true;
 }
 
-QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const
+QueryConstraint UnrealServerInterestFactory::CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const
 {
 	QueryConstraint AlwaysInterestedConstraint;
 
@@ -759,7 +715,15 @@ QueryConstraint InterestFactory::CreateLevelConstraints(const AActor* InActor) c
 	return LevelConstraint;
 }
 
-void InterestFactory::AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase) * Property, uint8* Data, QueryConstraint& OutConstraint) const
+UnrealServerInterestFactory::UnrealServerInterestFactory(USpatialClassInfoManager* InClassInfoManager,
+														 USpatialPackageMapClient* InPackageMap)
+	: InterestFactory(InClassInfoManager)
+	, PackageMap(InPackageMap)
+{
+}
+
+void UnrealServerInterestFactory::AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase) * Property, uint8* Data,
+														QueryConstraint& OutConstraint) const
 {
 	UObject* ObjectOfInterest = Property->GetObjectPropertyValue(Data);
 
@@ -778,6 +742,52 @@ void InterestFactory::AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase) * P
 	QueryConstraint EntityIdConstraint;
 	EntityIdConstraint.EntityIdConstraint = UnrealObjectRef.Entity;
 	OutConstraint.OrConstraint.Add(EntityIdConstraint);
+}
+
+bool UnrealServerInterestFactory::DoOwnersHaveEntityId(const AActor* Actor) const
+{
+	AActor* Owner = Actor->GetOwner();
+
+	while (Owner != nullptr && !Owner->IsPendingKillPending() && Owner->GetIsReplicated())
+	{
+		if (PackageMap->GetEntityIdFromObject(Owner) == SpatialConstants::INVALID_ENTITY_ID)
+		{
+			return false;
+		}
+		Owner = Owner->GetOwner();
+	}
+
+	return true;
+}
+
+void UnrealServerInterestFactory::AddServerActorOwnerInterest(Interest& OutInterest, const AActor* InActor,
+															  const Worker_EntityId& EntityId) const
+{
+	AActor* Owner = InActor->GetOwner();
+	Query OwnerChainQuery;
+
+	while (Owner != nullptr && !Owner->IsPendingKillPending() && Owner->GetIsReplicated())
+	{
+		QueryConstraint OwnerQuery;
+		OwnerQuery.EntityIdConstraint = PackageMap->GetEntityIdFromObject(Owner);
+		if (OwnerQuery.EntityIdConstraint == SpatialConstants::INVALID_ENTITY_ID)
+		{
+			UE_LOG(LogInterestFactory, Warning,
+				   TEXT("Interest for Actor %s (%llu) is out of date because owner %s does not have an entity id."
+						"USpatialActorChannel::NeedOwnerInterestUpdate should be set in order to eventually update it"),
+				   *InActor->GetName(), EntityId, *Owner->GetName());
+			return;
+		}
+		OwnerChainQuery.Constraint.OrConstraint.Add(OwnerQuery);
+		Owner = Owner->GetOwner();
+	}
+
+	if (OwnerChainQuery.Constraint.OrConstraint.Num() != 0)
+	{
+		OwnerChainQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
+		OwnerChainQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
+		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, OwnerChainQuery);
+	}
 }
 
 } // namespace SpatialGDK

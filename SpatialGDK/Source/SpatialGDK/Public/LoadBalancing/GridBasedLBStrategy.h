@@ -65,6 +65,9 @@ public:
 	uint32 GetCols() const { return Cols; }
 	float GetWorldWidth() const { return WorldWidth; }
 	float GetWorldHeight() const { return WorldHeight; }
+	
+	virtual bool IsStrategyWorkerAware() const override;
+	virtual void GetLegacyLBInformation(FLegacyLBContext& Ctx) const override;
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;

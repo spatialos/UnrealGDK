@@ -353,27 +353,31 @@ void SpatialFunctionalTestRequireHandler::LogAndClearStepRequires()
 		return A.Order < B.Order;
 	});
 
-	const FString& WorkerName = OwnerTest->GetLocalFlowController()->GetDisplayName();
-
-	for (const auto& Require : RequiresOrdered)
+	ASpatialFunctionalTestFlowController* FlowController = OwnerTest->GetLocalFlowController();
+	if (FlowController)
 	{
-		FString Msg;
-		if (Require.bPassed)
-		{
-			Msg = FString::Printf(TEXT("%s [Passed] %s : \"%s\""), *WorkerName, *Require.Msg, *Require.StatusMsg);
-			UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
-			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
-		}
-		else
-		{
-			Msg = FString::Printf(TEXT("%s [Failed] %s : %s"), *WorkerName, *Require.Msg, *Require.StatusMsg);
-			UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Msg);
-			UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Msg);
-		}
-	}
+		const FString& WorkerName = FlowController->GetDisplayName();
 
-	NextOrder = 0;
-	Requires.Empty();
+		for (const auto& Require : RequiresOrdered)
+		{
+			FString Msg;
+			if (Require.bPassed)
+			{
+				Msg = FString::Printf(TEXT("%s [Passed] %s : \"%s\""), *WorkerName, *Require.Msg, *Require.StatusMsg);
+				UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
+				UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
+			}
+			else
+			{
+				Msg = FString::Printf(TEXT("%s [Failed] %s : %s"), *WorkerName, *Require.Msg, *Require.StatusMsg);
+				UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Msg);
+				UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Msg);
+			}
+		}
+
+		NextOrder = 0;
+		Requires.Empty();
+	}
 }
 
 bool SpatialFunctionalTestRequireHandler::HasFails()

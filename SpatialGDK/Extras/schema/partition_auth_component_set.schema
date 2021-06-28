@@ -1,0 +1,12 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+import "improbable/standard_library.schema";
+import "unreal/gdk/authority_intent.schema";
+
+component_set PartitionWorkerAuth {
+  id = 9911;
+  components = [
+    PartitionIntentAck
+  ];
+}

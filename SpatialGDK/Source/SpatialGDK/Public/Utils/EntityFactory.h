@@ -19,6 +19,7 @@ namespace SpatialGDK
 {
 class InterestFactory;
 class SpatialRPCService;
+struct QueryConstraint;
 
 class SPATIALGDK_API EntityFactory
 {
@@ -34,9 +35,9 @@ public:
 	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor) const;
 
-	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const Worker_EntityId EntityId,
+	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const FString& PartitionName, const Worker_EntityId EntityId,
 																		const InterestFactory* InterestFactory,
-																		const UAbstractLBStrategy* LbStrategy,
+																		const SpatialGDK::QueryConstraint& LoadBalancingConstraint,
 																		VirtualWorkerId VirtualWorker, bool bDebugContexValid);
 
 	static inline bool IsClientAuthoritativeComponent(Worker_ComponentId ComponentId)
