@@ -229,10 +229,10 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 		}
 
 		// Update tracking mode, and if changed send an update
-		const bool ShouldTrackPlayer = CategoryReplicator->GetServerTrackingMode() == EGameplayDebuggerServerTrackingMode::Player;
-		if (EntityData->Component.TrackPlayer != ShouldTrackPlayer)
+		const bool bShouldTrackPlayer = CategoryReplicator->GetServerTrackingMode() == EGameplayDebuggerServerTrackingMode::Player;
+		if (EntityData->Component.TrackPlayer != bShouldTrackPlayer)
 		{
-			EntityData->Component.TrackPlayer = ShouldTrackPlayer;
+			EntityData->Component.TrackPlayer = bShouldTrackPlayer;
 			ComponentsUpdated.Add(*It);
 		}
 
