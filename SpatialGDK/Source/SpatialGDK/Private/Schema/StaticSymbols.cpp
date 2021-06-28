@@ -17,6 +17,8 @@
 #include "Schema/Tombstone.h"
 #include "Schema/UnrealMetadata.h"
 
+// Support older C++ standard by defining constexpr static members, this file should be removed once UE 4.25 is no longer supported.
+// Comment this section and build UE 4.25 on Linux if you wish to analyze the underlying issue.
 #if __cplusplus <= 201402L
 namespace SpatialGDK
 {
