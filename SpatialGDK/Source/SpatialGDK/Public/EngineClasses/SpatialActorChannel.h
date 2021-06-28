@@ -317,10 +317,12 @@ private:
 	// Used on the client to track gaining/losing ownership.
 	bool bNetOwned;
 
+public:
 	// Used on the server
 	// Tracks the interest bucket component ID for the relevant Actor.
 	Worker_ComponentId SavedInterestBucketComponentID;
 
+private:
 	UPROPERTY(transient)
 	USpatialNetDriver* NetDriver;
 

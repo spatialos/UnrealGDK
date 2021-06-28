@@ -254,6 +254,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));
+		Channel->SavedInterestBucketComponentID = ActorInterestComponentId;
 	}
 
 	if (Actor->NetDormancy >= DORM_DormantAll)
