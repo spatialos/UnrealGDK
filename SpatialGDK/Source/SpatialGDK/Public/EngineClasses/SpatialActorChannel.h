@@ -276,6 +276,8 @@ public:
 
 	bool NeedOwnerInterestUpdate() const { return bNeedOwnerInterestUpdate; }
 
+	const FVector& GetLastUpdatedSpatialPosition() const {	return LastPositionSinceUpdate; }
+
 protected:
 	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;

@@ -79,7 +79,15 @@ FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraint(US
 
 	for (const auto& DistanceComponentPair : NetCullDistancesToComponentIds)
 	{
-		const float MaxCheckoutRadiusMeters = NetCullDistanceInterest::NetCullDistanceSquaredToSpatialDistance(DistanceComponentPair.Key);
+		const float NetCullDistanceSquared = DistanceComponentPair.Key;
+
+		if (NetCullDistanceSquared <= 0.f)
+		{
+			// Ignore NCDs that have been setup with invalid distances
+			continue;
+		}
+
+		const float MaxCheckoutRadiusMeters = NetCullDistanceInterest::NetCullDistanceSquaredToSpatialDistance(NetCullDistanceSquared);
 
 		QueryConstraint ComponentConstraint;
 		ComponentConstraint.ComponentConstraint = DistanceComponentPair.Value;
@@ -106,7 +114,15 @@ FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraintWit
 
 	for (const auto& DistanceComponentPair : NetCullDistancesToComponentIds)
 	{
-		const float MaxCheckoutRadiusMeters = NetCullDistanceInterest::NetCullDistanceSquaredToSpatialDistance(DistanceComponentPair.Key);
+		const float NetCullDistanceSquared = DistanceComponentPair.Key;
+
+		if (NetCullDistanceSquared <= 0.f)
+		{
+			// Ignore NCDs that have been setup with invalid distances
+			continue;
+		}
+
+		const float MaxCheckoutRadiusMeters = NetCullDistanceInterest::NetCullDistanceSquaredToSpatialDistance(NetCullDistanceSquared);
 
 		QueryConstraint ComponentConstraint;
 		ComponentConstraint.ComponentConstraint = DistanceComponentPair.Value;
