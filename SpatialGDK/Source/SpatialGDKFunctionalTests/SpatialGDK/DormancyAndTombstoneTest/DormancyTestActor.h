@@ -20,6 +20,9 @@ public:
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UPROPERTY(Replicated)
+	UFUNCTION(BlueprintImplementableEvent, Category = "DormancyTestActor")
+	void UpdateTestIntProp();
+
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "DormancyTestActor")
 	int TestIntProp;
 };
