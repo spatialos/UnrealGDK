@@ -276,7 +276,7 @@ public:
 
 	bool NeedOwnerInterestUpdate() const { return bNeedOwnerInterestUpdate; }
 
-	const FVector& GetLastUpdatedSpatialPosition() const {	return LastPositionSinceUpdate; }
+	const FVector& GetLastUpdatedSpatialPosition() const { return LastPositionSinceUpdate; }
 
 protected:
 	// Begin UChannel interface
