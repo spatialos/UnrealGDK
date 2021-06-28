@@ -72,8 +72,9 @@ protected:
 	void RemoveAuthority(Worker_EntityId InEntityId, FEntityData* InOptionalEntityData);
 	void RegisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
 	void UnregisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
-	void OnServerTrackingRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator,
-								 bool InTrackPlayer, FString InOptionalServerWorkerId);
+	void OnServerTrackingRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator, bool InTrackPlayer,
+								 FString InOptionalServerWorkerId);
+	VirtualWorkerId GetActorVirtualWorkerId(const AActor& InActor) const;
 
 	USpatialNetDriver* NetDriver = nullptr;
 	const SpatialGDK::FSubView* SubView = nullptr;

@@ -12,6 +12,7 @@
 #include "Schema/AuthorityIntent.h"
 #include "SpatialConstants.h"
 #include "SpatialView/ComponentData.h"
+#include "SpatialView/EntityView.h"
 #include "SpatialView/SubView.h"
 #include "SpatialView/ViewDelta.h"
 #include "Utils/SpatialActorUtils.h"
@@ -275,42 +276,20 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 			}
 
 			const AActor* PlayerControllerActor = Cast<AActor>(Replicator->GetReplicationOwner());
-			if (!ensureMsgf(PlayerControllerActor != nullptr, TEXT("Serious error: Cannot find player controller for replicated gameplay debugger actor")))
+			if (PlayerControllerActor == nullptr)
 			{
+				// Not unexpected due to tests
+				continue;
+			}
+
+			const VirtualWorkerId PlayerControllerVirtualWorkerId = GetActorVirtualWorkerId(*PlayerControllerActor);
+			if (PlayerControllerVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+			{
+				// Not unexpected due to tests
 				continue;
 			}
 
 			check(NetDriver->LoadBalanceStrategy);
-			auto GetActorVirtualWorkerId = [](const AActor& InActor, const USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InSubView)->VirtualWorkerId
-			{
-				check(InNetDriver.PackageMap);
-
-				const Worker_EntityId EntityId = InNetDriver.PackageMap->GetEntityIdFromObject(&InActor);
-				if (!ensureMsgf(EntityId != SpatialConstants::INVALID_ENTITY_ID, TEXT("Serious error: Cannot find actor in package map")))
-				{
-					return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
-				}
-
-				for (const SpatialGDK::ComponentData& Data : InSubView.GetView()[EntityId].Components)
-				{
-					if (Data.GetComponentId() == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
-					{
-						SpatialGDK::AuthorityIntent Intent = SpatialGDK::AuthorityIntent(Data.GetUnderlying());
-						const VirtualWorkerId VirtualWorkerId = Intent.VirtualWorkerId;
-						return VirtualWorkerId;
-					}
-				}
-
-				return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
-			};
-
-			check(NetDriver && SubView);
-			const VirtualWorkerId PlayerControllerVirtualWorkerId = GetActorVirtualWorkerId(*PlayerControllerActor, *NetDriver, *SubView);
-			if (PlayerControllerVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-			{
-				continue;
-			}
-
 			const VirtualWorkerId ReplicatorVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Replicator);
 			if (PlayerControllerVirtualWorkerId == ReplicatorVirtualWorkerId)
 			{
@@ -406,7 +385,7 @@ void USpatialNetDriverGameplayDebuggerContext::AddAuthority(Worker_EntityId InEn
 	}
 
 	OptionalEntityData->Component.DelegatedVirtualWorkerId = LBStrategy->GetLocalVirtualWorkerId();
-	OptionalEntityData->Component.TrackPlayer = false;	// correct value is assigned actor is resolved (on authorative server)
+	OptionalEntityData->Component.TrackPlayer = false; // correct value is assigned actor is resolved (on authorative server)
 
 	const FString* PhysicalWorkerName =
 		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(OptionalEntityData->Component.DelegatedVirtualWorkerId);
@@ -526,5 +505,36 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerTrackingRequest(AGameplay
 		ComponentsUpdated.Add(EntityId);
 	}
 }
+
+VirtualWorkerId USpatialNetDriverGameplayDebuggerContext::GetActorVirtualWorkerId(const AActor& InActor) const
+{
+	check(SubView != nullptr && NetDriver != nullptr && NetDriver->PackageMap != nullptr);
+
+	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(&InActor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	}
+
+	const SpatialGDK::EntityViewElement* EntityViewPtr = SubView->GetView().Find(EntityId);
+	if (EntityViewPtr != nullptr)
+	{
+		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	}
+
+	const SpatialGDK::ComponentData* IntentComponentData =
+		EntityViewPtr->Components.FindByPredicate([](const SpatialGDK::ComponentData& Data) {
+		return Data.GetComponentId() == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
+	});
+
+	if (IntentComponentData == nullptr)
+	{
+		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	}
+
+	SpatialGDK::AuthorityIntent Intent = SpatialGDK::AuthorityIntent(IntentComponentData->GetUnderlying());
+	const VirtualWorkerId VirtualWorkerId = Intent.VirtualWorkerId;
+	return VirtualWorkerId;
+};
 
 #endif // WITH_GAMEPLAY_DEBUGGER
