@@ -63,7 +63,8 @@ protected:
 		SpatialGDK::GameplayDebuggerComponent Component;
 		TWeakObjectPtr<AGameplayDebuggerCategoryReplicator> ReplicatorWeakObjectPtr;
 		FString CurrentWorkerId;
-		FDelegateHandle Handle;
+		FDelegateHandle ServerTrackingRequestHandle;
+		FDelegateHandle PlayerControllerAuthorityChangeHandle;
 	};
 
 	void TrackEntity(Worker_EntityId InEntityId);
@@ -75,6 +76,9 @@ protected:
 	void OnServerTrackingRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator,
 								 EGameplayDebuggerServerTrackingMode InServerTrackingMode, FString InOptionalServerWorkerId);
 	VirtualWorkerId GetActorVirtualWorkerId(const AActor& InActor) const;
+	void RegisterPlayerControllerAuthorityLostCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
+	void UnregisterPlayerControllerAuthorityLostCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
+	void OnPlayerControllerAuthorityLost(const APlayerController& InPlayerController);
 
 	USpatialNetDriver* NetDriver = nullptr;
 	const SpatialGDK::FSubView* SubView = nullptr;
