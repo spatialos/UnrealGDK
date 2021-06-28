@@ -56,4 +56,6 @@ public:
 	// When the corresponding PlayerController is successfully spawned, we will claim
 	// the PlayerController as a partition entity for the client worker.
 	Worker_EntityId ConnectionClientWorkerSystemEntityId;
+
+	double TimeWhenClientInterestLastUpdated;
 };

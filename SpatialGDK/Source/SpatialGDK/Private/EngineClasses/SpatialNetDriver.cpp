@@ -217,6 +217,18 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
+	if (!bInitAsClient && GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
+	{
+		if (UReplicationGraph* RepGraph = Cast<UReplicationGraph>(GetReplicationDriver()))
+		{
+			RepGraph->SetClientEntityInterestEnabled(true);
+		}
+		else
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Client entity interest setting was enabled BUT there was no rep graph set"));
+		}
+	}
+
 #if WITH_EDITOR
 	PlayInEditorID = GPlayInEditorID;
 
@@ -849,9 +861,17 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 	GlobalStateManager->QueryGSM(QueryDelegate);
 }
 
-void USpatialNetDriver::OnActorSpawned(AActor* Actor) const
+void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	// Assign dynamically spawned replicated Actors an entity ID on spawn.
+	if (SpatialGDKSettings->bUseClientEntityInterestQueries && Actor->GetIsReplicated() && Actor->HasAuthority()
+		&& Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) && World->GetWorldSettings()->GetGSMReadyForPlay())
+	{
+		GetOrCreateSpatialActorChannel(Actor);
+	}
+
 	if (SpatialGDKSettings->bEnableCrossLayerActorSpawning)
 	{
 		return;

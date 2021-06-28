@@ -8,6 +8,8 @@
 
 #include "SpatialReplicationGraph.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReplicationGraph, Log, All);
+
 class UActorChannel;
 class UObject;
 
@@ -22,6 +24,8 @@ public:
 
 	FGlobalActorReplicationInfoMap& GetGlobalActorReplicationInfoMap() { return GlobalActorReplicationInfoMap; }
 
+	TArray<AActor*> GatherClientInterestedActors(UNetConnection* NetConnection);
+
 protected:
 	//~ Begin UReplicationGraph Interface
 	virtual UActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject) override;
@@ -31,5 +35,16 @@ protected:
 	virtual void PostReplicateActors(UNetReplicationGraphConnection* ConnectionManager) override;
 	//~ End UReplicationGraph Interface
 
+	void SetUseNarrowPhaseNCDInterestCulling(bool bToggle) { bUseNarrowPhaseNCDInterestCulling = bToggle; }
+
 	TUniquePtr<FSpatialLoadBalancingHandler> LoadBalancingHandler;
+
+private:
+	TArray<AActor*> ExtractClientInterestActorsFromGather(UNetReplicationGraphConnection* ConnectionManager,
+														  FGatheredReplicationActorLists& GatheredReplicationListsForConnection,
+														  FNetViewerArray& Viewers);
+	void GatherDependentActors(FPerConnectionActorInfoMap& ConnectionActorInfoMap, FGlobalActorReplicationInfo& GlobalActorInfo,
+							   TArray<AActor*>& ClientInterestedActors);
+
+	bool bUseNarrowPhaseNCDInterestCulling = true;
 };

@@ -17,7 +17,9 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineStats.h"
+#include "GameFramework/GameStateBase.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/GlobalStateManager.h"
@@ -32,6 +34,7 @@
 #include "Utils/EntityFactory.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/InterestFactory.h"
+#include "Utils/MetricsExport.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaOption.h"
 #include "Utils/SpatialActorUtils.h"
@@ -669,14 +672,22 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	ReplicationBytesWritten = 0;
 
-	if (!bCreatingNewEntity && NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
+	if (!bCreatingNewEntity)
 	{
-		NetDriver->ActorSystem->UpdateInterestComponent(Actor);
-		SetNeedOwnerInterestUpdate(false);
+		if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries && Actor->IsA<APlayerController>())
+		{
+			CheckForClientEntityInterestUpdate();
+		}
+		// Classic interest flow
+		else if (NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
+		{
+			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
+			SetNeedOwnerInterestUpdate(false);
+		}
 	}
 
 	// If any properties have changed, send a component update.
-	if (bCreatingNewEntity || RepChanged.Num() > 0)
+	if (bCreatingNewEntity || RepChanged.Num() > 0 || GetInterestDirty())
 	{
 		if (bCreatingNewEntity)
 		{
@@ -703,9 +714,9 @@ int64 USpatialActorChannel::ReplicateActor()
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
 
 			NetDriver->ActorSystem->SendComponentUpdates(Actor, Info, this, &RepChangeState, ReplicationBytesWritten);
-
-			bInterestDirty = false;
 		}
+
+		bInterestDirty = false;
 
 		if (RepChanged.Num() > 0)
 		{
@@ -1281,7 +1292,69 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 	}
 }
 
-bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements()
+void USpatialActorChannel::CheckForClientEntityInterestUpdate()
+{
+	// Only do stuff if rep graph enabled, client entity interest is enabled, and we're processing a player controller
+	const double CurrentTime = NetDriver->GetElapsedTime();
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	const UReplicationGraph* RepGraph = Cast<USpatialReplicationGraph>(NetDriver->GetReplicationDriver());
+	USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection());
+	UNetReplicationGraphConnection* RepGraphConnection =
+		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
+	if (RepGraph == nullptr || !RepGraph->IsClientEntityInterestEnabled() || RepGraphConnection == nullptr || NetConnection == nullptr)
+	{
+		UE_LOG(LogSpatialActorChannel, Error,
+			   TEXT("Failed to handle client entity interest, some connection or setting was misconfigured"));
+		return;
+	}
+
+	bool bShouldMarkInterestDirty = false;
+
+	// If interest is already marked dirty (e.g. because we just gained authority over the PC and want to flush immediate),
+	// then don't bother doing any checks.
+	if (GetInterestDirty())
+	{
+		RepGraphConnection->RepGraphRequestedInterestChange = false;
+		NetConnection->TimeWhenClientInterestLastUpdated = CurrentTime;
+		return;
+	}
+
+	// If we've passed the X seconds threshold, mark interest dirty (controlled by ClientEntityIdListQueryUpdateFrequency).
+	const float TimeSinceLastClientInterestUpdate = CurrentTime - NetConnection->TimeWhenClientInterestLastUpdated;
+	const float UpdateThresholdSecs = 1 / Settings->ClientEntityIdListQueryUpdateFrequency;
+	const bool bHitInterestTimeThreshold = TimeSinceLastClientInterestUpdate >= UpdateThresholdSecs;
+	bShouldMarkInterestDirty |= bHitInterestTimeThreshold;
+
+	// If the rep graph has notified the connection that interest changed needed, mark interest dirty.
+	const bool bRepGraphNodeFlaggedDirty = RepGraphConnection->RepGraphRequestedInterestChange;
+	bShouldMarkInterestDirty |= bRepGraphNodeFlaggedDirty;
+
+	if (!bShouldMarkInterestDirty)
+	{
+		return;
+	}
+
+	if (bHitInterestTimeThreshold)
+	{
+		UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Frame %u. Hit client interest %f second threshold for %s"),
+			   RepGraph->GetReplicationGraphFrame(), UpdateThresholdSecs, *Actor->GetName());
+	}
+
+	UMetricsExport* MetricsExport =
+		Cast<UMetricsExport>(Actor->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
+	if (MetricsExport != nullptr)
+	{
+		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
+		MetricsExport->WriteMetricsToProtocolBuffer(*ClientIdentifier, TEXT("interest_update_frequency"),
+													1 / TimeSinceLastClientInterestUpdate);
+	}
+	RepGraphConnection->RepGraphRequestedInterestChange = false;
+	NetConnection->TimeWhenClientInterestLastUpdated = CurrentTime;
+
+	MarkInterestDirty();
+}
+
+bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements() const
 {
 	// Check that the Actor satisfies both lower thresholds OR either of the maximum thresholds
 	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
