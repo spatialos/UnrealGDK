@@ -292,7 +292,7 @@ private:
 
 	void UpdateVisibleComponent(AActor* Actor);
 
-	bool SatisfiesSpatialPositionUpdateRequirements();
+	bool SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition);
 
 	void ValidateChannelNotBroken();
 
