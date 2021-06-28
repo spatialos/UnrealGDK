@@ -34,7 +34,6 @@ using namespace SpatialGDK;
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-	ClaimHandler = MakeUnique<FClaimPartitionHandler>(*NetDriver->Connection);
 	ViewCoordinator = &InNetDriver->Connection->GetCoordinator();
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
@@ -451,7 +450,8 @@ Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
 
 void UGlobalStateManager::ClaimSnapshotPartition()
 {
-	ClaimHandler->ClaimPartition(NetDriver->Connection->GetWorkerSystemEntityId(), SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	CommandsHandler.ClaimPartition(*ViewCoordinator, NetDriver->Connection->GetWorkerSystemEntityId(),
+								   SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 }
 
 void UGlobalStateManager::TriggerBeginPlay()
@@ -569,7 +569,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 		}
 	};
 
-	QueryHandler.AddRequest(RequestID, GSMQueryDelegate);
+	CommandsHandler.AddRequest(RequestID, GSMQueryDelegate);
 }
 
 void UGlobalStateManager::QueryTranslation()
@@ -612,7 +612,7 @@ void UGlobalStateManager::QueryTranslation()
 		}
 		GlobalStateManager->bTranslationQueryInFlight = false;
 	};
-	QueryHandler.AddRequest(RequestID, TranslationQueryDelegate);
+	CommandsHandler.AddRequest(RequestID, TranslationQueryDelegate);
 }
 
 void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const
@@ -702,8 +702,7 @@ void UGlobalStateManager::Advance()
 {
 	const TArray<Worker_Op>& Ops = NetDriver->Connection->GetCoordinator().GetViewDelta().GetWorkerMessages();
 
-	ClaimHandler->ProcessOps(Ops);
-	QueryHandler.ProcessOps(Ops);
+	CommandsHandler.ProcessOps(Ops);
 
 #if WITH_EDITOR
 	RequestHandler.ProcessOps(Ops);

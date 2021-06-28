@@ -3,9 +3,7 @@
 #pragma once
 
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/ClaimPartitionHandler.h"
-#include "Interop/CreateEntityHandler.h"
-#include "Interop/EntityQueryHandler.h"
+#include "Interop/SpatialCommandsHandler.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
@@ -70,9 +68,7 @@ private:
 
 	bool bWorkerEntityQueryInFlight;
 
-	SpatialGDK::FCreateEntityHandler CreateEntityHandler;
-	SpatialGDK::FClaimPartitionHandler ClaimPartitionHandler;
-	SpatialGDK::FEntityQueryHandler QueryHandler;
+	SpatialGDK::FCommandsHandler CommandsHandler;
 
 	// Serialization and deserialization of the mapping.
 	void WriteMappingToSchema(Schema_Object* Object) const;

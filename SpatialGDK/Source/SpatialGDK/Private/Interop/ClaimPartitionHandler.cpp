@@ -4,46 +4,43 @@
 
 #include "Schema/StandardLibrary.h"
 
-#include "Interop/Connection/SpatialOSWorkerInterface.h"
-
 #include "SpatialView/CommandRetryHandler.h"
+#include "SpatialView/SpatialOSWorker.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogClaimPartitionHandler, Log, All);
 
 namespace SpatialGDK
 {
-FClaimPartitionHandler::FClaimPartitionHandler(SpatialOSWorkerInterface& InConnection)
-	: WorkerInterface(InConnection)
-{
-}
-
-void FClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim)
+void FClaimPartitionHandler::ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId,
+											Worker_PartitionId PartitionToClaim)
 {
 	UE_LOG(LogClaimPartitionHandler, Log,
 		   TEXT("SendClaimPartitionRequest. SystemWorkerEntityId: %lld. "
 				"PartitionId: %lld"),
 		   SystemEntityId, PartitionToClaim);
 
-	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionToClaim);
+	Worker_CommandRequest RequestData = Worker::CreateClaimPartitionRequest(PartitionToClaim);
+	CommandRequest Request(OwningCommandRequestPtr(RequestData.schema_type), RequestData.component_id, RequestData.command_index);
 	const Worker_RequestId ClaimEntityRequestId =
-		WorkerInterface.SendCommandRequest(SystemEntityId, &CommandRequest, RETRY_UNTIL_COMPLETE, {});
-	ClaimPartitionRequest Request = { PartitionToClaim, SystemEntityCommandDelegate() };
-	ClaimPartitionRequestIds.Add(ClaimEntityRequestId, MoveTemp(Request));
+		WorkerInterface.SendEntityCommandRequest(SystemEntityId, MoveTemp(Request), RETRY_UNTIL_COMPLETE, {});
+	ClaimPartitionRequest RequestEntry = { PartitionToClaim, SystemEntityCommandDelegate() };
+	ClaimPartitionRequestIds.Add(ClaimEntityRequestId, MoveTemp(RequestEntry));
 }
 
-void FClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim,
-											SystemEntityCommandDelegate Delegate)
+void FClaimPartitionHandler::ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId,
+											Worker_PartitionId PartitionToClaim, SystemEntityCommandDelegate Delegate)
 {
 	UE_LOG(LogClaimPartitionHandler, Log,
 		   TEXT("SendClaimPartitionRequest. SystemWorkerEntityId: %lld. "
 				"PartitionId: %lld"),
 		   SystemEntityId, PartitionToClaim);
 
-	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionToClaim);
+	Worker_CommandRequest RequestData = Worker::CreateClaimPartitionRequest(PartitionToClaim);
+	CommandRequest Request(OwningCommandRequestPtr(RequestData.schema_type), RequestData.component_id, RequestData.command_index);
 	const Worker_RequestId ClaimEntityRequestId =
-		WorkerInterface.SendCommandRequest(SystemEntityId, &CommandRequest, RETRY_UNTIL_COMPLETE, {});
-	ClaimPartitionRequest Request = { PartitionToClaim, MoveTemp(Delegate) };
-	ClaimPartitionRequestIds.Add(ClaimEntityRequestId, MoveTemp(Request));
+		WorkerInterface.SendEntityCommandRequest(SystemEntityId, MoveTemp(Request), RETRY_UNTIL_COMPLETE, {});
+	ClaimPartitionRequest RequestEntry = { PartitionToClaim, MoveTemp(Delegate) };
+	ClaimPartitionRequestIds.Add(ClaimEntityRequestId, MoveTemp(RequestEntry));
 }
 
 void FClaimPartitionHandler::ProcessOps(const TArray<Worker_Op>& Ops)

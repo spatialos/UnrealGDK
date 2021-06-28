@@ -70,7 +70,7 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 		}
 	};
 
-	QueryHandler.AddRequest(RequestID, WorldQueryDelegate);
+	CommandsHandler.AddRequest(RequestID, WorldQueryDelegate);
 }
 
 void SpatialSnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op, TWeakObjectPtr<USpatialWorkerConnection> Connection)
@@ -204,12 +204,11 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 	// References to entities that are stored within the snapshot need remapping once we know the new entity IDs.
 
 	// Add the spawn delegate
-	ReserveEntityIdsHandler.AddRequest(ReserveRequestID, SpawnEntitiesDelegate);
+	CommandsHandler.AddRequest(ReserveRequestID, SpawnEntitiesDelegate);
 }
 
 void SpatialSnapshotManager::Advance()
 {
 	const TArray<Worker_Op>& Ops = Connection->GetCoordinator().GetViewDelta().GetWorkerMessages();
-	ReserveEntityIdsHandler.ProcessOps(Ops);
-	QueryHandler.ProcessOps(Ops);
+	CommandsHandler.ProcessOps(Ops);
 }

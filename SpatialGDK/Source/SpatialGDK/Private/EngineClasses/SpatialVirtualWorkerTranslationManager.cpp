@@ -21,7 +21,6 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(S
 	, NetDriver(InNetDriver)
 	, Partitions({})
 	, bWorkerEntityQueryInFlight(false)
-	, ClaimPartitionHandler(*InConnection)
 {
 }
 
@@ -111,9 +110,7 @@ void SpatialVirtualWorkerTranslationManager::ReclaimPartitionEntities()
 
 void SpatialVirtualWorkerTranslationManager::Advance(const TArray<Worker_Op>& Ops)
 {
-	CreateEntityHandler.ProcessOps(Ops);
-	ClaimPartitionHandler.ProcessOps(Ops);
-	QueryHandler.ProcessOps(Ops);
+	CommandsHandler.ProcessOps(Ops);
 }
 
 // For each entry in the map, write a VirtualWorkerMapping type object to the Schema object.
@@ -256,7 +253,7 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 			   UTF8_TO_TCHAR(Op.message), Op.entity_id, VirtualWorkerId);
 	};
 
-	CreateEntityHandler.AddRequest(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
+	CommandsHandler.AddRequest(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
 }
 
 void SpatialVirtualWorkerTranslationManager::OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker)
@@ -317,7 +314,7 @@ void SpatialVirtualWorkerTranslationManager::QueryForServerWorkerEntities()
 	EntityQueryDelegate ServerWorkerEntityQueryDelegate = [this](const Worker_EntityQueryResponseOp& Op) {
 		this->ServerWorkerEntityQueryDelegate(Op);
 	};
-	QueryHandler.AddRequest(RequestID, ServerWorkerEntityQueryDelegate);
+	CommandsHandler.AddRequest(RequestID, ServerWorkerEntityQueryDelegate);
 }
 
 // This method allows the translation manager to deal with the returned list of server worker entities when they are received.
@@ -369,5 +366,5 @@ void SpatialVirtualWorkerTranslationManager::AssignPartitionToWorker(const Physi
 		   TEXT("Assigned VirtualWorker %d with partition ID %lld to simulate on worker %s"), Partition.VirtualWorker,
 		   Partition.PartitionEntityId, *WorkerName);
 
-	ClaimPartitionHandler.ClaimPartition(SystemEntityId, Partition.PartitionEntityId);
+	CommandsHandler.ClaimPartition(NetDriver->Connection->GetCoordinator(), SystemEntityId, Partition.PartitionEntityId);
 }

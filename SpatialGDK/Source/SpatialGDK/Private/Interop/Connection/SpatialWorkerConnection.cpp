@@ -36,7 +36,6 @@ namespace SpatialGDK
 ServerWorkerEntityCreator::ServerWorkerEntityCreator(USpatialNetDriver& InNetDriver, USpatialWorkerConnection& InConnection)
 	: NetDriver(InNetDriver)
 	, Connection(InConnection)
-	, ClaimPartitionHandler(InConnection)
 {
 	State = WorkerSystemEntityCreatorState::CreatingWorkerSystemEntity;
 
@@ -78,7 +77,7 @@ void ServerWorkerEntityCreator::CreateWorkerEntity()
 	const Worker_RequestId CreateEntityRequestId =
 		Connection.SendCreateEntityRequest(MoveTemp(Components), &EntityId, RETRY_UNTIL_COMPLETE);
 
-	CreateEntityHandler.AddRequest(CreateEntityRequestId, [this](const Worker_CreateEntityResponseOp& Op) {
+	CommandsHandler.AddRequest(CreateEntityRequestId, [this](const Worker_CreateEntityResponseOp& Op) {
 		ServerWorkerEntityCreator::OnEntityCreated(Op);
 	});
 }
@@ -95,13 +94,12 @@ void ServerWorkerEntityCreator::OnEntityCreated(const Worker_CreateEntityRespons
 
 	State = WorkerSystemEntityCreatorState::ClaimingWorkerPartition;
 
-	ClaimPartitionHandler.ClaimPartition(Connection.GetWorkerSystemEntityId(), PartitionId);
+	CommandsHandler.ClaimPartition(Connection.GetCoordinator(), Connection.GetWorkerSystemEntityId(), PartitionId);
 }
 
 void ServerWorkerEntityCreator::ProcessOps(const TArray<Worker_Op>& Ops)
 {
-	CreateEntityHandler.ProcessOps(Ops);
-	ClaimPartitionHandler.ProcessOps(Ops);
+	CommandsHandler.ProcessOps(Ops);
 }
 } // namespace SpatialGDK
 

@@ -4,8 +4,7 @@
 
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 
-#include "Interop/ClaimPartitionHandler.h"
-#include "Interop/CreateEntityHandler.h"
+#include "Interop/SpatialCommandsHandler.h"
 
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
@@ -40,8 +39,7 @@ private:
 	USpatialNetDriver& NetDriver;
 	USpatialWorkerConnection& Connection;
 
-	FCreateEntityHandler CreateEntityHandler;
-	FClaimPartitionHandler ClaimPartitionHandler;
+	FCommandsHandler CommandsHandler;
 };
 } // namespace SpatialGDK
 
