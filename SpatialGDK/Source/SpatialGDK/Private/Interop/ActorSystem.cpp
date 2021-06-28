@@ -1698,14 +1698,14 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 
 void ActorSystem::InvokeRepNotifies()
 {
-	for (FObjectRepNotifies ObjectRepNotifies : RepNotifiesToSend)
+	for (FObjectRepNotifies& ObjectRepNotifies : RepNotifiesToSend)
 	{
 		UObject* Object = ObjectRepNotifies.Object.Get();
 		if (!IsValid(Object))
 		{
 			continue;
 		}
-		Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Object);
+		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Object);
 		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 		{
 			continue;
@@ -1721,12 +1721,12 @@ void ActorSystem::InvokeRepNotifies()
 	RepNotifiesToSend.Empty();
 }
 
-void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, USpatialActorChannel& Channel,
+void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
 													  TArray<GDK_PROPERTY(Property) *>& RepNotifies)
 {
-	if (TSharedRef<FObjectReplicator>* ReplicatorRef = Channel.ReplicationMap.Find(&Object))
+	if (const TSharedRef<FObjectReplicator>* ReplicatorRef = Channel.ReplicationMap.Find(&Object))
 	{
-		if (FSpatialObjectRepState* ObjectRepState = Channel.ObjectReferenceMap.Find(&Object))
+		if (const FSpatialObjectRepState* ObjectRepState = Channel.ObjectReferenceMap.Find(&Object))
 		{
 			FObjectReplicator& Replicator = ReplicatorRef->Get();
 			Channel.RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator.RepLayout, ObjectRepState->ReferenceMap, &Object);

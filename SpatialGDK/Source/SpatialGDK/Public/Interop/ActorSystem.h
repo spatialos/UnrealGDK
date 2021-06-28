@@ -134,8 +134,8 @@ private:
 	void ApplyFullState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor);
 
 	void InvokeRepNotifies();
-	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, USpatialActorChannel& Channel,
-													TArray<GDK_PROPERTY(Property) *>& RepNotifies);
+	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
+	                                                TArray<GDK_PROPERTY(Property) *>& RepNotifies);
 
 	// Authority
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
