@@ -18,6 +18,7 @@ void SpatialRoutingSystem::ProcessUpdate(Worker_EntityId Entity, const Component
 		{
 		case ComponentChange::COMPLETE_UPDATE:
 		{
+			checkNoEntry();
 			Components.Sender.Emplace(CrossServerEndpoint(Change.CompleteUpdate.Data));
 			break;
 		}
@@ -38,6 +39,7 @@ void SpatialRoutingSystem::ProcessUpdate(Worker_EntityId Entity, const Component
 		{
 		case ComponentChange::COMPLETE_UPDATE:
 		{
+			checkNoEntry();
 			Components.ReceiverACK.Emplace(CrossServerEndpointACK(Change.CompleteUpdate.Data));
 			break;
 		}
@@ -381,7 +383,6 @@ void SpatialRoutingSystem::Advance(SpatialOSWorkerInterface* Connection)
 		}
 		break;
 		case EntityDelta::REMOVE:
-		case EntityDelta::TEMPORARILY_REMOVED:
 		{
 			ReceiversToInspect.Remove(Delta.EntityId);
 			PendingComponentUpdatesToSend.Remove(
@@ -421,6 +422,9 @@ void SpatialRoutingSystem::Advance(SpatialOSWorkerInterface* Connection)
 				RoutingWorkerView.Remove(Delta.EntityId);
 			}
 		}
+		break;
+		case EntityDelta::TEMPORARILY_REMOVED:
+			checkNoEntry();
 		break;
 		default:
 			break;
