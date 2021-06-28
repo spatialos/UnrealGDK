@@ -92,12 +92,7 @@ void FSpatialPositionStorage::OnComponentAdded(Worker_EntityId EntityId, Worker_
 	{
 		Schema_Object* PositionObject = Schema_GetComponentDataFields(Data);
 
-		Schema_Object* CoordsObject = Schema_GetObject(PositionObject, 1);
-		SpatialGDK::Coordinates Coords;
-		Coords.X = Schema_GetDouble(CoordsObject, 1);
-		Coords.Y = Schema_GetDouble(CoordsObject, 2);
-		Coords.Z = Schema_GetDouble(CoordsObject, 3);
-
+		SpatialGDK::Coordinates Coords = GetCoordinateFromSchema(PositionObject, 1);
 		FVector Position = SpatialGDK::Coordinates::ToFVector(Coords);
 
 		Modified.Add(EntityId);
@@ -117,11 +112,7 @@ void FSpatialPositionStorage::OnUpdate(Worker_EntityId EntityId, Worker_Componen
 	if (InComponentId == SpatialConstants::POSITION_COMPONENT_ID)
 	{
 		Schema_Object* PositionObject = Schema_GetComponentUpdateFields(Update);
-		Schema_Object* CoordsObject = Schema_GetObject(PositionObject, 1);
-		SpatialGDK::Coordinates Coords;
-		Coords.X = Schema_GetDouble(CoordsObject, 1);
-		Coords.Y = Schema_GetDouble(CoordsObject, 2);
-		Coords.Z = Schema_GetDouble(CoordsObject, 3);
+		SpatialGDK::Coordinates Coords = GetCoordinateFromSchema(PositionObject, 1);
 
 		FVector* Data = Positions.Find(EntityId);
 		if (!ensure(Data != nullptr))
@@ -132,36 +123,6 @@ void FSpatialPositionStorage::OnUpdate(Worker_EntityId EntityId, Worker_Componen
 
 		Modified.Add(EntityId);
 	}
-}
-
-FActorGroupStorage::FActorGroupStorage()
-{
-	Components.Add(SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ID);
-}
-
-void FActorGroupStorage::OnComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data)
-{
-	if (ensureAlways(SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ID == ComponentId))
-	{
-		Schema_Object* GroupObject = Schema_GetComponentDataFields(Data);
-		int32 GroupId = Schema_GetUint32(GroupObject, SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ACTOR_GROUP_ID);
-		Groups.Add(EntityId, GroupId);
-		Modified.Add(EntityId);
-	}
-}
-
-void FActorGroupStorage::OnRemoved(Worker_EntityId EntityId)
-{
-	Groups.Remove(EntityId);
-	Modified.Remove(EntityId);
-}
-
-void FActorGroupStorage::OnUpdate(Worker_EntityId EntityId, Worker_ComponentId InComponentId, Schema_ComponentUpdate* Update)
-{
-	Schema_Object* GroupObject = Schema_GetComponentUpdateFields(Update);
-	int32 GroupId = Schema_GetUint32(GroupObject, SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ACTOR_GROUP_ID);
-	Groups.Add(EntityId, GroupId);
-	Modified.Add(EntityId);
 }
 
 } // namespace SpatialGDK

@@ -10,8 +10,7 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
 
-#include "Interop/CreateEntityHandler.h"
-#include "Interop/ReserveEntityIdsHandler.h"
+#include "Algo/Find.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPartitionManager);
 
@@ -242,14 +241,13 @@ struct FPartitionManager::Impl
 			const ServerWorker& ServerWorkerData = WorkersData.GetObjects().FindChecked(UpdatedWorker);
 			if (ServerWorkerData.bReadyToBeginPlay)
 			{
-				bool bIsAlreadyConnected = false;
-				for (FLBWorkerHandle Connected : ConnectedWorkers)
+				FLBWorkerHandle* AlreadyConnectedWorker =
+					Algo::FindByPredicate(ConnectedWorkers, [&UpdatedWorker](const FLBWorkerHandle& Connected) {
+						return Connected->State->ServerWorkerId == UpdatedWorker;
+					});
+				if (AlreadyConnectedWorker == nullptr)
 				{
-					bIsAlreadyConnected |= Connected->State->ServerWorkerId == UpdatedWorker;
-				}
-				if (!bIsAlreadyConnected)
-				{
-					if (ensureAlways(SystemWorkersData.GetObjects().Contains(ServerWorkerData.SystemEntityId)))
+					if (SystemWorkersData.GetObjects().Contains(ServerWorkerData.SystemEntityId))
 					{
 						WorkerConnected(UpdatedWorker);
 					}

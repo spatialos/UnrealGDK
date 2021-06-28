@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Schema/ActorGroupMember.h"
 #include "Schema/AuthorityIntent.h"
 #include "Utils/ComponentReader.h"
 
@@ -75,21 +76,6 @@ protected:
 	TMap<Worker_EntityId_Key, FVector> Positions;
 };
 
-class FActorGroupStorage : public FLBDataStorage
-{
-public:
-	FActorGroupStorage();
-
-	virtual void OnComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data) override;
-	virtual void OnRemoved(Worker_EntityId EntityId) override;
-	virtual void OnUpdate(Worker_EntityId EntityId, Worker_ComponentId InComponentId, Schema_ComponentUpdate* Update) override;
-
-	TMap<Worker_EntityId_Key, int32> const& GetGroups() const { return Groups; }
-
-protected:
-	TMap<Worker_EntityId_Key, int32> Groups;
-};
-
 template <typename T>
 class TLBDataStorage : public FLBDataStorage
 {
@@ -126,6 +112,10 @@ public:
 
 protected:
 	TMap<Worker_EntityId_Key, T> SchemaObjects;
+};
+
+class FActorGroupStorage : public TLBDataStorage<ActorGroupMember>
+{
 };
 
 class FDirectAssignmentStorage : public TLBDataStorage<AuthorityIntent>
