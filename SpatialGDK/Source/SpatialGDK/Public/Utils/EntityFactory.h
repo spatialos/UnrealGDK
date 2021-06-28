@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Schema/UnrealMetadata.h"
 #include "SpatialCommonTypes.h"
 #include "Utils/SpatialStatics.h"
 
@@ -36,6 +37,7 @@ public:
 	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor) const;
 	void CreatePopulateSkeletonComponents(USpatialActorChannel& ActorChannel, TArray<FWorkerComponentData>& OutComponentCreates,
 										  TArray<FWorkerComponentUpdate>& OutComponentUpdates, uint32& OutBytesWritten);
+	static UnrealMetadata CreateMetadata(const AActor& InActor);
 
 	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const Worker_EntityId EntityId,
 																		const InterestFactory* InterestFactory,

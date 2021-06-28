@@ -349,6 +349,8 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 
 	EventTracer = nullptr;
 
+	bIsSkeleton = false;
+
 	return UActorChannel::CleanUp(bForDestroy, CloseReason);
 }
 

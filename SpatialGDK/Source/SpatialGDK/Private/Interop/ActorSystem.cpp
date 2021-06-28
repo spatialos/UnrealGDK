@@ -289,12 +289,12 @@ void ActorSystem::Advance()
 
 	for (const FEntitySubView& SubView : SubViews)
 	{
-		ProcessRemoves(SubView);
+		ProcessUpdates(SubView);
 	}
 
 	for (const FEntitySubView& SubView : SubViews)
 	{
-		ProcessUpdates(SubView);
+		ProcessRemoves(SubView);
 	}
 
 	for (const FEntitySubView& SubView : SubViews)
@@ -1763,6 +1763,11 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 		}
 	}
 
+	if (Actor->GetTearOff())
+	{
+		return;
+	}
+
 	// Actor is a startup actor that is a part of the level. If it's not Tombstone-d, then it
 	// has just fallen out of our view and we should only remove the entity.
 	if (Actor->IsFullNameStableForNetworking() && !ActorSubView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
@@ -2067,9 +2072,10 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 	}
 	else if (EntityType == PopulateSkeleton)
 	{
-		const EntityViewElement& Entity = NetDriver->Connection->GetCoordinator().GetView()[EntityId];
-		ComponentDatas.Emplace(
-			Entity.Components.FindByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId })->GetWorkerComponentData());
+		const UnrealMetadata StartupActorMetadata = DataFactory.CreateMetadata(*ActorChannel.Actor);
+		const ComponentData StartupActorMetadataComponent(OwningComponentDataPtr(StartupActorMetadata.CreateComponentData().schema_type),
+														  UnrealMetadata::ComponentId);
+		ComponentDatas.Emplace(StartupActorMetadataComponent.GetWorkerComponentData());
 		DataFactory.CreatePopulateSkeletonComponents(ActorChannel, ComponentDatas, ComponentUpdates, OutBytesWritten);
 		ComponentDatas.RemoveAt(0);
 	}
