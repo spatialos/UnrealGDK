@@ -690,7 +690,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			{
 				bCreatedEntity = true;
 			}
-			
+
 			SetAutonomousProxyOnAuthority(Actor->RemoteRole == ROLE_AutonomousProxy);
 
 			// We preemptively set the Actor role to SimulatedProxy if load balancing is disabled
