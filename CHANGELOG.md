@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features:
 
 ### Bug fixes:
+- Fix `A functional test is already running error` that would sometimes occur when re-running multi-server functional tests.
 - When data for both an actor and its subobjects are received in a given tick, rep notifies will now be called on updated properties after the data has been applied for both the actor and its subobjects.
-
 ### Internal:
 - Modified startup flow to only create ActorSystem, RPCService and some others after startup has otherwise finished; removed initial op reordering.
 - Unused worker types will no longer generate worker configuration files.
