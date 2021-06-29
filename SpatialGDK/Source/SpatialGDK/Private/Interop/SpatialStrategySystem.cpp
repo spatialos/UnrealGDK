@@ -20,15 +20,16 @@ FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InP
 											   TUniquePtr<FLoadBalancingStrategy> InStrategy)
 	: LBView(InLBView)
 	, PartitionsMgr(MoveTemp(InPartitionsMgr))
+	, DataStorages(InLBView)
+	, UserDataStorages(InLBView)
 	, Strategy(MoveTemp(InStrategy))
 {
-	Strategy->Init(DataStorages);
+	Strategy->Init(UserDataStorages.DataStorages);
+	DataStorages.DataStorages.Add(&AuthACKView);
+	DataStorages.DataStorages.Add(&NetOwningClientView);
 
-	for (auto Storage : DataStorages)
-	{
-		UpdatesToConsider = UpdatesToConsider.Union(Storage->GetComponentsToWatch());
-	}
-
+	UpdatesToConsider = DataStorages.GetComponentsToWatch();
+	UpdatesToConsider = UpdatesToConsider.Union(UserDataStorages.GetComponentsToWatch());
 	bStrategySystemInterestDirty = true;
 }
 
@@ -52,42 +53,13 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 		Strategy->OnWorkersConnected(ConnectedWorkers);
 	}
 
+	DataStorages.Advance();
+	UserDataStorages.Advance();
+
 	for (const EntityDelta& Delta : LBView.GetViewDelta().EntityDeltas)
 	{
 		switch (Delta.Type)
 		{
-		case EntityDelta::UPDATE:
-		{
-			for (const auto& CompleteUpdate : Delta.ComponentsRefreshed) {}
-			for (const auto& Update : Delta.ComponentUpdates)
-			{
-				for (auto& Storage : DataStorages)
-				{
-					if (Storage->GetComponentsToWatch().Contains(Update.ComponentId))
-					{
-						Storage->OnUpdate(Delta.EntityId, Update.ComponentId, Update.Update);
-					}
-				}
-				if (Update.ComponentId == SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID)
-				{
-					Schema_Object* ACKObject = Schema_GetComponentUpdateFields(Update.Update);
-					uint64 AuthEpoch = Schema_GetUint64(ACKObject, SpatialConstants::AUTHORITY_INTENT_ACK_ASSIGNMENT_COUNTER);
-					AuthorityIntentV2& AuthIntent = AuthorityIntentView.FindChecked(Delta.EntityId);
-					if (AuthEpoch == AuthIntent.AssignmentCounter)
-					{
-						EntitiesACKMigration.Add(Delta.EntityId);
-					}
-				}
-				if (Update.ComponentId == SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID)
-				{
-					Schema_Object* NetOwnerObject = Schema_GetComponentUpdateFields(Update.Update);
-					NetOwningClientWorker& NetOwner = NetOwningClientView.FindChecked(Delta.EntityId);
-					NetOwner.ApplyComponentUpdate(Update.Update);
-					EntitiesClientChanged.Add(Delta.EntityId);
-				}
-			}
-		}
-		break;
 		case EntityDelta::ADD:
 		{
 			const SpatialGDK::EntityViewElement& Element = LBView.GetView().FindChecked(Delta.EntityId);
@@ -104,47 +76,13 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 				check(DelegationData);
 				AuthorityDelegationView.Add(Delta.EntityId, AuthorityDelegation(DelegationData->GetUnderlying()));
 			}
-
-			{
-				const SpatialGDK::ComponentData* NetOwnerData = Element.Components.FindByPredicate(
-					SpatialGDK::ComponentIdEquality{ SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID });
-				if (ensureAlwaysMsgf(NetOwnerData, TEXT("Entity %llu missing net owner data"), Delta.EntityId))
-				{
-					auto& NetOwner = NetOwningClientView.Add(Delta.EntityId, NetOwningClientWorker(NetOwnerData->GetUnderlying()));
-					if (NetOwner.ClientPartitionId.IsSet())
-					{
-						EntitiesClientChanged.Add(Delta.EntityId);
-					}
-				}
-			}
-
-			for (auto& Storage : DataStorages)
-			{
-				Storage->OnAdded(Delta.EntityId, Element);
-			}
 		}
 		break;
 		case EntityDelta::REMOVE:
 		{
-			for (auto& Storage : DataStorages)
-			{
-				Storage->OnRemoved(Delta.EntityId);
-			}
 			AuthorityIntentView.Remove(Delta.EntityId);
+			AuthorityDelegationView.Remove(Delta.EntityId);
 			PendingMigrations.Remove(Delta.EntityId);
-		}
-		break;
-		case EntityDelta::TEMPORARILY_REMOVED:
-		{
-			for (auto& Storage : DataStorages)
-			{
-				Storage->OnRemoved(Delta.EntityId);
-			}
-			const SpatialGDK::EntityViewElement& Element = LBView.GetView().FindChecked(Delta.EntityId);
-			for (auto& Storage : DataStorages)
-			{
-				Storage->OnAdded(Delta.EntityId, Element);
-			}
 		}
 		break;
 		default:
@@ -169,7 +107,7 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 
 	// Iterator over the data storage to collect the entities which have been modified this frame.
 	TSet<Worker_EntityId_Key> ModifiedEntities;
-	for (auto& Storage : DataStorages)
+	for (auto& Storage : UserDataStorages.DataStorages)
 	{
 		ModifiedEntities = ModifiedEntities.Union(Storage->GetModifiedEntities());
 	}
@@ -179,7 +117,7 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	Strategy->CollectEntitiesToMigrate(Ctx);
 
 	// Clear the buffer of modified entities now that the strategy has been informed.
-	for (auto& Storage : DataStorages)
+	for (auto& Storage : UserDataStorages.DataStorages)
 	{
 		Storage->ClearModified();
 	}
@@ -224,29 +162,34 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 		MigratingEntities.Add(EntityId);
 	}
 
-	TSet<Worker_EntityId_Key> EntitiesToUpdate = EntitiesClientChanged;
-	EntitiesToUpdate.Append(EntitiesACKMigration);
+	TSet<Worker_EntityId_Key> EntitiesToUpdate = NetOwningClientView.GetModifiedEntities();
+	EntitiesToUpdate.Append(AuthACKView.GetModifiedEntities());
 
 	// Process the entities for which the migration was acked by the current authoritative worker.
-	for (auto EntityToMigrate : EntitiesACKMigration)
+	for (auto EntityToMigrate : AuthACKView.GetModifiedEntities())
 	{
+		const AuthorityIntentACK& AuthACK = AuthACKView.GetObjects().FindChecked(EntityToMigrate);
 		AuthorityIntentV2& AuthIntent = AuthorityIntentView.FindChecked(EntityToMigrate);
-		AuthorityDelegation& AuthDelegation = AuthorityDelegationView.FindChecked(EntityToMigrate);
+		if (AuthACK.AssignmentCounter == AuthIntent.AssignmentCounter)
+		{
+			AuthorityDelegation& AuthDelegation = AuthorityDelegationView.FindChecked(EntityToMigrate);
 
-		AuthDelegation.Delegations.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthIntent.PartitionId);
-		MigratingEntities.Remove(EntityToMigrate);
+			AuthDelegation.Delegations.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthIntent.PartitionId);
+			MigratingEntities.Remove(EntityToMigrate);
+		}
 	}
-	EntitiesACKMigration.Empty();
+	AuthACKView.ClearModified();
 
 	// Process the entities needing a change to client ownership
-	for (auto EntityToUpdateOwner : EntitiesClientChanged)
+	for (auto EntityToUpdateOwner : NetOwningClientView.GetModifiedEntities())
 	{
-		NetOwningClientWorker& NetOwnerData = NetOwningClientView.FindChecked(EntityToUpdateOwner);
+		const NetOwningClientWorker& NetOwnerData = NetOwningClientView.GetObjects().FindChecked(EntityToUpdateOwner);
 		AuthorityDelegation& AuthDelegation = AuthorityDelegationView.FindChecked(EntityToUpdateOwner);
-		Worker_PartitionId NewOwner = NetOwnerData.ClientPartitionId.IsSet() ? NetOwnerData.ClientPartitionId.GetValue() : 0;
+		Worker_PartitionId NewOwner =
+			NetOwnerData.ClientPartitionId.IsSet() ? NetOwnerData.ClientPartitionId.GetValue() : SpatialConstants::INVALID_PARTITION_ID;
 		AuthDelegation.Delegations.Add(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, NewOwner);
 	}
-	EntitiesClientChanged.Empty();
+	NetOwningClientView.ClearModified();
 
 	// Send the actual authority delegation updates
 	for (auto EntityToUpdate : EntitiesToUpdate)
@@ -274,11 +217,7 @@ void FSpatialStrategySystem::UpdateStrategySystemInterest(ISpatialOSWorker& Conn
 	ComponentSetInterest& InterestSet = ServerInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
 	{
 		Query ServerQuery = {};
-		ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID,
-										   SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
-										   SpatialConstants::AUTHORITY_INTENTV2_COMPONENT_ID,
-										   SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_ID,
-										   SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID };
+		ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID };
 		for (auto& Component : UpdatesToConsider)
 		{
 			ServerQuery.ResultComponentIds.Add(Component);
