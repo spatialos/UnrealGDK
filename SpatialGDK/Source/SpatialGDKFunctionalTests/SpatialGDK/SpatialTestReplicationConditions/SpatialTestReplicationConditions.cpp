@@ -558,7 +558,7 @@ void ASpatialTestReplicationConditions::ProcessCommonActorProperties(bool bWrite
 	WrappedAction(TestActor_Common->DynamicComponent->CondServerOnly_Var, 550, COND_ServerOnly, DynamicCompText);
 }
 
-void ASpatialTestReplicationConditions::ProcessCustomActorProperties(ATestReplicationConditionsActor_Custom* Actor, bool bWrite,
+void ASpatialTestReplicationConditions::ProcessCustomActorProperties(ATestReplicationConditionsActor_Custom* Actor, const bool bWrite,
 																	 const bool bCustomEnabled)
 {
 	auto WrappedAction = [&](int32& Source, const bool bEnabled, const int32 Expected, FString const AdditionalText = TEXT("")) {
