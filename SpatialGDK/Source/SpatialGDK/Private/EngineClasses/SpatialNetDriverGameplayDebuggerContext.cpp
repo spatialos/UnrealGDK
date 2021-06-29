@@ -218,9 +218,9 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 
 		// Update tracking mode, and if changed send an update
 		const bool bShouldTrackPlayer = CategoryReplicator->GetServerTrackingMode() == EGameplayDebuggerServerTrackingMode::Player;
-		if (EntityData->Component.TrackPlayer != bShouldTrackPlayer)
+		if (EntityData->Component.bTrackPlayer != bShouldTrackPlayer)
 		{
-			EntityData->Component.TrackPlayer = bShouldTrackPlayer;
+			EntityData->Component.bTrackPlayer = bShouldTrackPlayer;
 			ComponentsUpdated.Add(*It);
 		}
 
@@ -328,7 +328,7 @@ void USpatialNetDriverGameplayDebuggerContext::AddAuthority(Worker_EntityId InEn
 	}
 
 	OptionalEntityData->Component.DelegatedVirtualWorkerId = LBStrategy->GetLocalVirtualWorkerId();
-	OptionalEntityData->Component.TrackPlayer = false; // correct value is assigned actor is resolved (on authorative server)
+	OptionalEntityData->Component.bTrackPlayer = false; // correct value is assigned when actor is resolved (on authorative server)
 
 	const FString* PhysicalWorkerName =
 		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(OptionalEntityData->Component.DelegatedVirtualWorkerId);
@@ -424,9 +424,9 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerTrackingRequest(AGameplay
 	FString NewServerWorkerId = InOptionalServerWorkerId;
 
 	const bool bShouldTrackPlayer = InServerTrackingMode == EGameplayDebuggerServerTrackingMode::Player ? true : false;
-	if (bShouldTrackPlayer != EntityData->Component.TrackPlayer)
+	if (bShouldTrackPlayer != EntityData->Component.bTrackPlayer)
 	{
-		EntityData->Component.TrackPlayer = bShouldTrackPlayer;
+		EntityData->Component.bTrackPlayer = bShouldTrackPlayer;
 		bShouldUpdateComponent = true;
 	}
 
@@ -552,6 +552,7 @@ void USpatialNetDriverGameplayDebuggerContext::OnPlayerControllerAuthorityLost(c
 			{
 				EntityId = &TrackedEntity.Key;
 				EntityData = &TrackedEntity.Value;
+				break;
 			}
 		}
 	}
@@ -561,7 +562,7 @@ void USpatialNetDriverGameplayDebuggerContext::OnPlayerControllerAuthorityLost(c
 		return;
 	}
 
-	if (EntityData->Component.TrackPlayer == false)
+	if (EntityData->Component.bTrackPlayer == false)
 	{
 		// If we are not tracking the player, we do not need to track server authority changes
 		return;
@@ -569,12 +570,13 @@ void USpatialNetDriverGameplayDebuggerContext::OnPlayerControllerAuthorityLost(c
 
 	check(NetDriver->LoadBalanceStrategy);
 	const VirtualWorkerId AuthorativeWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(InPlayerController);
-
+	const VirtualWorkerId AuthorativeWorkerId2 = GetActorVirtualWorkerId(InPlayerController);
+	
 	check(NetDriver->VirtualWorkerTranslator);
 	const FString* PhysicalAuthorativeWorkerName =
 		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorativeWorkerId);
 
-	if (!PhysicalAuthorativeWorkerName)
+	if (PhysicalAuthorativeWorkerName == nullptr)
 	{
 		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Failed to convert virtual worker to physical worker name"));
 		return;

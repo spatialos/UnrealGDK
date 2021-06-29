@@ -50,19 +50,19 @@ struct GameplayDebuggerComponent
 	}
 
 	VirtualWorkerId DelegatedVirtualWorkerId = 0;
-	bool TrackPlayer = false;
+	bool bTrackPlayer = false;
 
 private:
 	void ReadFromSchema(Schema_Object* ComponentObject)
 	{
 		DelegatedVirtualWorkerId = Schema_GetInt32(ComponentObject, 1);
-		TrackPlayer = !!Schema_GetBool(ComponentObject, 2);
+		bTrackPlayer = !!Schema_GetBool(ComponentObject, 2);
 	}
 
 	void WriteToSchema(Schema_Object* ComponentObject) const
 	{
 		Schema_AddInt32(ComponentObject, 1, DelegatedVirtualWorkerId);
-		Schema_AddBool(ComponentObject, 2, TrackPlayer);
+		Schema_AddBool(ComponentObject, 2, bTrackPlayer);
 	}
 };
 
