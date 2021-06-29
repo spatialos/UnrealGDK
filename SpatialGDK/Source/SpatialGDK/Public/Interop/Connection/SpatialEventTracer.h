@@ -16,18 +16,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
 namespace SpatialGDK
 {
-struct TraceQueryDeleter
-{
-	void operator()(Trace_Query* Query) const
-	{
-		if (Query != nullptr)
-		{
-			Trace_Query_Destroy(Query);
-		}
-	}
-};
-typedef TUniquePtr<Trace_Query, TraceQueryDeleter> TraceQueryPtr;
-
 // SpatialEventTracer wraps Trace_EventTracer related functionality
 class SPATIALGDK_API SpatialEventTracer
 {
