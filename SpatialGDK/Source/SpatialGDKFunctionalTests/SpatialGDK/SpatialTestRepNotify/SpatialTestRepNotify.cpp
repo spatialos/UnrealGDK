@@ -106,10 +106,14 @@ void ASpatialTestRepNotify::PrepareTest()
 			RequireEqual_Bool(TestActor->bOnRepAlwaysRepNotifyInt1Called, true,
 							  TEXT("Test actor's AlwaysInt1 Rep Notify should have been called"));
 
-			RequireEqual_Int(TestActor->OnChangedRepNotifyInt1, 1, TEXT("Test actor's OnChangedRepNotifyInt1 property should have been updated."));
-			RequireEqual_Int(TestActor->AlwaysRepNotifyInt1, 2, TEXT("Test actor's AlwaysRepNotifyInt1 property should have been updated."));
-			RequireEqual_Int(TestActor->OnChangedRepNotifyInt2, 3, TEXT("Test actor's OnChangedRepNotifyInt2 property should have been updated."));
-			RequireEqual_Int(TestActor->AlwaysRepNotifyInt2, 4, TEXT("Test actor's AlwaysRepNotifyInt2 property should have been updated."));
+			RequireEqual_Int(TestActor->OnChangedRepNotifyInt1, 1,
+							 TEXT("Test actor's OnChangedRepNotifyInt1 property should have been updated."));
+			RequireEqual_Int(TestActor->AlwaysRepNotifyInt1, 2,
+							 TEXT("Test actor's AlwaysRepNotifyInt1 property should have been updated."));
+			RequireEqual_Int(TestActor->OnChangedRepNotifyInt2, 3,
+							 TEXT("Test actor's OnChangedRepNotifyInt2 property should have been updated."));
+			RequireEqual_Int(TestActor->AlwaysRepNotifyInt2, 4,
+							 TEXT("Test actor's AlwaysRepNotifyInt2 property should have been updated."));
 			if (RequireEqual_Int(TestActor->TestArray.Num(), 2, TEXT("Test actor's TestArray should have 2 elements")))
 			{
 				RequireEqual_Int(TestActor->TestArray[0], 1, TEXT("Test actor's TestArray should have the right value at index 0"));
@@ -166,10 +170,14 @@ void ASpatialTestRepNotify::PrepareTest()
 		TEXT("SpatialTestRepNotifyAllClientsCheckValuesAndRepNotifies"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
 			// First make sure that we have correctly received the replicated variables.
-			RequireEqual_Int(TestActor->OnChangedRepNotifyInt1, 10, TEXT("Test actor's OnChangedRepNotifyInt1 property should have been updated."));
-			RequireEqual_Int(TestActor->AlwaysRepNotifyInt1, 20, TEXT("Test actor's AlwaysRepNotifyInt1 property should have been updated."));
-			RequireEqual_Int(TestActor->OnChangedRepNotifyInt2, 30, TEXT("Test actor's OnChangedRepNotifyInt2 property should have been updated."));
-			RequireEqual_Int(TestActor->AlwaysRepNotifyInt2, 40, TEXT("Test actor's AlwaysRepNotifyInt2 property should have been updated."));
+			RequireEqual_Int(TestActor->OnChangedRepNotifyInt1, 10,
+							 TEXT("Test actor's OnChangedRepNotifyInt1 property should have been updated."));
+			RequireEqual_Int(TestActor->AlwaysRepNotifyInt1, 20,
+							 TEXT("Test actor's AlwaysRepNotifyInt1 property should have been updated."));
+			RequireEqual_Int(TestActor->OnChangedRepNotifyInt2, 30,
+							 TEXT("Test actor's OnChangedRepNotifyInt2 property should have been updated."));
+			RequireEqual_Int(TestActor->AlwaysRepNotifyInt2, 40,
+							 TEXT("Test actor's AlwaysRepNotifyInt2 property should have been updated."));
 
 			if (RequireEqual_Int(TestActor->TestArray.Num(), 3, TEXT("Test actor's TestArray should have 3 elements")))
 			{
@@ -186,7 +194,8 @@ void ASpatialTestRepNotify::PrepareTest()
 			RequireEqual_Bool(TestActor->bOnRepOnChangedRepNotifyInt1Called, false,
 							  TEXT("Test actor's OnChangedInt1 Rep Notify should not be called as the value stayed the same"));
 			RequireEqual_Bool(TestActor->bOnRepAlwaysRepNotifyInt1Called, true,
-							  TEXT("Test actor's AlwaysInt1 Rep Notify should be called, despite the value staying the same, as it is a REPNOTIFY_Always field."));
+							  TEXT("Test actor's AlwaysInt1 Rep Notify should be called, despite the value staying the same, as it is a "
+								   "REPNOTIFY_Always field."));
 
 			// From the Clients, we have not modified the value of this particular variable, so we still expect the old value to be the one
 			// initially set by the Server in the first step.
@@ -195,13 +204,12 @@ void ASpatialTestRepNotify::PrepareTest()
 
 			// Since we have modified this value from the Clients, we expect its value to be the same as set in
 			// SpatialTestRepNotifyAllClientsModifyReplicatedVariables.
-			RequireEqual_Int(TestActor->OldAlwaysRepNotifyInt2, 50,
-							 TEXT("OnRepAlwaysRepNotifyInt2 should be called with the old value."));
+			RequireEqual_Int(TestActor->OldAlwaysRepNotifyInt2, 50, TEXT("OnRepAlwaysRepNotifyInt2 should be called with the old value."));
 
-			// We consciously differ from native UE here
-			// Also, the native behaviour changed when going from 4.25 to 4.26.
-			// On older versions, we expect the old array to have 3 elements, but on Spatial and on native starting from 4.26, we expect 2
-			// elements.
+		// We consciously differ from native UE here
+		// Also, the native behaviour changed when going from 4.25 to 4.26.
+		// On older versions, we expect the old array to have 3 elements, but on Spatial and on native starting from 4.26, we expect 2
+		// elements.
 #if ENGINE_MINOR_VERSION >= 26
 			bool bOldArrayShouldHaveTwoElements = true;
 #else
@@ -249,12 +257,12 @@ void ASpatialTestRepNotify::PrepareTest()
 			// First make sure that we have correctly received the replicated variables
 			RequireEqual_Int(TestActor->TestArray.Num(), 2, TEXT("TestArray should contain 2 elements."));
 
-			// At this point, we have received the update for the TestArray, so it makes sense to check RepNotify beahviour.
+		// At this point, we have received the update for the TestArray, so it makes sense to check RepNotify beahviour.
 
-			// We consciously differ from native UE here
-			// Also, the native behaviour changed when going from 4.25 to 4.26.
-			// On older versions, we expect the old array to have 2 elements, but on Spatial and on native starting from 4.26, we expect 3
-			// elements.
+		// We consciously differ from native UE here
+		// Also, the native behaviour changed when going from 4.25 to 4.26.
+		// On older versions, we expect the old array to have 2 elements, but on Spatial and on native starting from 4.26, we expect 3
+		// elements.
 #if ENGINE_MINOR_VERSION >= 26
 			bool bOldArrayShouldHaveThreeElements = true;
 #else
