@@ -208,8 +208,8 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 					continue;
 				}
 
-				int32 Group = GroupStorage->GetGroups().FindChecked(EntityId);
-				FLegacyLBContext::Layer& Layer = LBContext.Layers[Group];
+				const ActorGroupMember& Group = GroupStorage->GetObjects().FindChecked(EntityId);
+				FLegacyLBContext::Layer& Layer = LBContext.Layers[Group.ActorGroupId];
 
 				const FVector& Position = PositionStorage->GetPositions().FindChecked(EntityId);
 				const FVector2D Actor2DLocation(Position);
@@ -243,7 +243,7 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 		}
 		else
 		{
-			const TMap<Worker_EntityId_Key, AuthorityIntent>& AssignmentMap = AssignmentStorage->GetAssignments();
+			const TMap<Worker_EntityId_Key, AuthorityIntent>& AssignmentMap = AssignmentStorage->GetObjects();
 			for (Worker_EntityId ToMigrate : Ctx.ModifiedEntities)
 			{
 				if (!ensureAlways(!Ctx.MigratingEntities.Contains(ToMigrate)))

@@ -12,7 +12,7 @@ namespace SpatialGDK
 {
 struct GameplayDebuggerComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID;
 
 	GameplayDebuggerComponent() {}
 

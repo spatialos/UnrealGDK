@@ -16,7 +16,7 @@ using FActorLoadBalancingGroupId = uint32;
 // SpatialDebugger on clients but which would not normally be available to clients.
 struct SPATIALGDK_API ActorGroupMember
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ID;
 
 	ActorGroupMember(FActorLoadBalancingGroupId InGroupId)
 		: ActorGroupId(InGroupId)
@@ -30,11 +30,15 @@ struct SPATIALGDK_API ActorGroupMember
 
 	ActorGroupMember(const ComponentData& Data) { ApplySchema(Data.GetFields()); }
 
+	ActorGroupMember(Schema_ComponentData* Data) { ApplySchema(Schema_GetComponentDataFields(Data)); }
+
 	ComponentData CreateComponentData() const { return CreateComponentDataHelper(*this); }
 
 	ComponentUpdate CreateComponentUpdate() const { return CreateComponentUpdateHelper(*this); }
 
 	void ApplyComponentUpdate(const ComponentUpdate& Update) { ApplySchema(Update.GetFields()); }
+
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update) { ApplySchema(Schema_GetComponentUpdateFields(Update)); }
 
 	void ApplySchema(Schema_Object* ComponentObject)
 	{
