@@ -108,7 +108,7 @@ public:
 		Modified.Add(EntityId);
 	}
 
-	TMap<Worker_EntityId_Key, T> const& GetObjects() const { return SchemaObjects; }
+	const TMap<Worker_EntityId_Key, T>& GetObjects() const { return SchemaObjects; }
 
 protected:
 	TMap<Worker_EntityId_Key, T> SchemaObjects;
