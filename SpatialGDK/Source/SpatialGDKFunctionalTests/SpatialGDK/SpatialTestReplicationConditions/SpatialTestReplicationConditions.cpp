@@ -561,7 +561,7 @@ void ASpatialTestReplicationConditions::ProcessCommonActorProperties(bool bWrite
 void ASpatialTestReplicationConditions::ProcessCustomActorProperties(ATestReplicationConditionsActor_Custom* Actor, const bool bWrite,
 																	 const bool bCustomEnabled)
 {
-	auto WrappedAction = [&](int32& Source, const bool bEnabled, const int32 Expected, FString const AdditionalText = TEXT("")) {
+	auto WrappedAction = [&](int32& Source, const bool bEnabled, const int32 Expected, const FString AdditionalText = TEXT("")) {
 		bool CondIgnore[COND_Max]{};
 		CondIgnore[COND_Custom] = !bEnabled;
 		Action(Source, Expected, COND_Custom, bWrite, CondIgnore, AdditionalText);
