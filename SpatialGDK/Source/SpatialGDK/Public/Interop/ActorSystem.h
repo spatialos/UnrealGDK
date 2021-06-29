@@ -133,6 +133,7 @@ private:
 	void RefreshEntity(const Worker_EntityId EntityId);
 	void ApplyFullState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor);
 
+	// Invokes RepNotifies queued inside RepNotifiesToSend
 	void InvokeRepNotifies();
 	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
 													TArray<GDK_PROPERTY(Property) *>& RepNotifies);
@@ -206,6 +207,7 @@ private:
 
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
 
+	// RepNotifies are stored here then sent after all updates we have are applied
 	TArray<FObjectRepNotifies> RepNotifiesToSend;
 
 	// Deserialized state store for Actor relevant components.
