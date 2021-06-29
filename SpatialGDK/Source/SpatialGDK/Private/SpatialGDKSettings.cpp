@@ -98,6 +98,17 @@ void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, co
 
 } // namespace
 
+FString UEventTracingSamplingSettings::DefaultFilter = "false";
+
+UEventTracingSamplingSettings::UEventTracingSamplingSettings()
+	: SamplingProbability(1.0)
+	, GDKEventPreFilter(DefaultFilter)
+	, GDKEventPostFilter(DefaultFilter)
+	, RuntimeEventPreFilter(DefaultFilter)
+	, RuntimeEventPostFilter(DefaultFilter)
+{
+}
+
 UEventTracingSamplingSettings::TraceQueryPtr UEventTracingSamplingSettings::ParseOrDefault(const FString& Str, const TCHAR* FilterForLog)
 {
 	TraceQueryPtr Ptr;
@@ -118,7 +129,12 @@ UEventTracingSamplingSettings::TraceQueryPtr UEventTracingSamplingSettings::Pars
 
 bool UEventTracingSamplingSettings::IsFilterValid(const FString& Str)
 {
-	return !Str.IsEmpty() && TraceQueryPtr(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*Str))).Get() == nullptr;
+	return !Str.IsEmpty() && TraceQueryPtr(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*Str))).Get() != nullptr;
+}
+
+const FString& UEventTracingSamplingSettings::GetFilterString(const FString& Filter)
+{
+	return IsFilterValid(Filter) ? Filter : DefaultFilter;
 }
 
 #if WITH_EDITOR

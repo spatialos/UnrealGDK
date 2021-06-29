@@ -83,30 +83,32 @@ public:
 
 	using TraceQueryPtr = TUniquePtr<Trace_Query, TraceQueryDeleter>;
 
+	UEventTracingSamplingSettings();
+
 	UPROPERTY(EditAnywhere, Category = "Event Tracing", meta = (ClampMin = 0.0f, ClampMax = 1.0f))
-	double SamplingProbability = 1.0f;
+	double SamplingProbability;
 
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
 	TMap<FName, double> EventSamplingModeOverrides;
 
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
-	FString GDKEventPreFilter = "false";
+	FString GDKEventPreFilter;
 
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
-	FString GDKEventPostFilter = "false";
+	FString GDKEventPostFilter;
 
 	/* The runtime filter which is used for local/cloud editor workflows (generated configs). */
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
-	FString RuntimeEventPreFilter = "false";
+	FString RuntimeEventPreFilter;
 
 	/* The runtime filter which is used for local/cloud editor workflows (generated configs). */
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
-	FString RuntimeEventPostFilter = "false";
+	FString RuntimeEventPostFilter;
 
-	FString GetGDKEventPreFilterString() const { return IsFilterValid(GDKEventPreFilter) ? GDKEventPreFilter : "false"; }
-	FString GetGDKEventPostFilterString() const { return IsFilterValid(GDKEventPostFilter) ? GDKEventPostFilter : "false"; }
-	FString GetRuntimeEventPreFilterString() const { return IsFilterValid(RuntimeEventPreFilter) ? RuntimeEventPreFilter : "false"; }
-	FString GetRuntimeEventPostFilterString() const { return IsFilterValid(RuntimeEventPostFilter) ? RuntimeEventPostFilter : "false"; }
+	const FString& GetGDKEventPreFilterString() const { return GetFilterString(GDKEventPreFilter); }
+	const FString& GetGDKEventPostFilterString() const { return GetFilterString(GDKEventPostFilter); }
+	const FString& GetRuntimeEventPreFilterString() const { return GetFilterString(RuntimeEventPreFilter); }
+	const FString& GetRuntimeEventPostFilterString() const { return GetFilterString(RuntimeEventPostFilter); }
 
 	TraceQueryPtr GetGDKEventPreFilter() const { return ParseOrDefault(GDKEventPreFilter, TEXT("gdk-pre-filter")); }
 	TraceQueryPtr GetGDKEventPostFilter() const { return ParseOrDefault(GDKEventPostFilter, TEXT("gdk-post-filter")); }
@@ -117,8 +119,12 @@ public:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 private:
+
+	static FString DefaultFilter;
+
 	static bool IsFilterValid(const FString& Str);
 	static TraceQueryPtr ParseOrDefault(const FString& Str, const TCHAR* FilterForLog);
+	static const FString& GetFilterString(const FString& Filter);
 };
 
 UCLASS(config = SpatialGDKSettings, defaultconfig)
