@@ -119,7 +119,6 @@ public:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 private:
-
 	static FString DefaultFilter;
 
 	static bool IsFilterValid(const FString& Str);
