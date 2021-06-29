@@ -1089,22 +1089,22 @@ void USpatialActorChannel::UpdateSpatialPosition()
 		return;
 	}
 
-	LastPositionSinceUpdate = NewSpatialActorPosition;
-	TimeWhenPositionLastUpdated = NetDriver->GetElapsedTime();
-
-	SendPositionUpdate(Actor, EntityId, LastPositionSinceUpdate);
+	SendPositionUpdate(Actor, EntityId, NewSpatialActorPosition);
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
 		if (APawn* Pawn = PlayerController->GetPawn())
 		{
-			SendPositionUpdate(Pawn, NetDriver->PackageMap->GetEntityIdFromObject(Pawn), LastPositionSinceUpdate);
+			SendPositionUpdate(Pawn, NetDriver->PackageMap->GetEntityIdFromObject(Pawn), NewSpatialActorPosition);
 		}
 	}
 }
 
 void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition)
 {
+	LastPositionSinceUpdate = NewPosition;
+	TimeWhenPositionLastUpdated = NetDriver->GetElapsedTime();
+
 	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->HasServerAuthority(InEntityId))
 	{
 		FWorkerComponentUpdate Update = SpatialGDK::Position::CreatePositionUpdate(SpatialGDK::Coordinates::FromFVector(NewPosition));
