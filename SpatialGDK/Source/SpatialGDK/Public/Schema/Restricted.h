@@ -13,7 +13,7 @@ namespace SpatialGDK
 {
 struct Partition : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::PARTITION_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::PARTITION_COMPONENT_ID;
 
 	Partition() = default;
 
