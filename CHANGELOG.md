@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Internal:
 - Modified startup flow to only create ActorSystem, RPCService and some others after startup has otherwise finished; removed initial op reordering.
 - Unused worker types will no longer generate worker configuration files.
+- Fixed an issue around actors being destroyed between entity creation and receiving a confirmation thereof.
 
 ## [`0.14.0-rc`] - Unreleased
 
