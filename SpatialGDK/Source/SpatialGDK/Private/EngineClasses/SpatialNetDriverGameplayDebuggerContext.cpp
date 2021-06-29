@@ -569,9 +569,8 @@ void USpatialNetDriverGameplayDebuggerContext::OnPlayerControllerAuthorityLost(c
 	}
 
 	check(NetDriver->LoadBalanceStrategy);
-	const VirtualWorkerId AuthorativeWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(InPlayerController);
-	const VirtualWorkerId AuthorativeWorkerId2 = GetActorVirtualWorkerId(InPlayerController);
-	
+	const VirtualWorkerId AuthorativeWorkerId = GetActorVirtualWorkerId(InPlayerController);
+
 	check(NetDriver->VirtualWorkerTranslator);
 	const FString* PhysicalAuthorativeWorkerName =
 		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorativeWorkerId);
