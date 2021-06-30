@@ -779,6 +779,8 @@ void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
 
 void ASpatialFunctionalTest::EndPlay(const EEndPlayReason::Type Reason)
 {
+	Super::EndPlay(Reason);
+
 	if (PostLoginDelegate.IsValid())
 	{
 		FGameModeEvents::GameModePostLoginEvent.Remove(PostLoginDelegate);
