@@ -177,6 +177,17 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 		{
 			const Worker_EntityId EntityId = Delta.EntityId;
 
+			if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority)
+			{
+				// Check if this entity is EntitiesToRetireOnAuthorityGain first,
+				// to avoid creating an actor that might've been deleted before.
+				if (HasEntityBeenRequestedForDelete(EntityId))
+				{
+					HandleEntityDeletedAuthority(EntityId);
+					continue;
+				}
+			}
+
 			if (!PresentEntities.Contains(Delta.EntityId))
 			{
 				// Create new actor for the entity.
@@ -385,15 +396,6 @@ void ActorSystem::AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetI
 	if (ComponentSetId != SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
 		&& ComponentSetId != SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
 	{
-		return;
-	}
-
-	if (HasEntityBeenRequestedForDelete(EntityId))
-	{
-		if (ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-		{
-			HandleEntityDeletedAuthority(EntityId);
-		}
 		return;
 	}
 
