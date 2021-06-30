@@ -84,7 +84,8 @@ void SpatialRoutingSystem::OnSenderChanged(Worker_EntityId SenderId, RoutingComp
 					if (Slots != nullptr)
 					{
 						UE_LOG(LogSpatialRoutingSystem, Verbose,
-							   TEXT("RPC %llu,%llu already acked on %llu, probably from missing receiver"), Receiver, RPCId, SenderId);
+							   TEXT("RPC already acked, probably from missing receiver, Receiver: %llu, RPCId: %llu, Sender: %llu"),
+							   Receiver, RPCId, SenderId);
 					}
 					else
 					{
@@ -134,7 +135,7 @@ void SpatialRoutingSystem::OnSenderChanged(Worker_EntityId SenderId, RoutingComp
 		if (Slots.ACKSlot < 0)
 		{
 			// This is a race we could solve with either blank entities, or timeout
-			UE_LOG(LogSpatialRoutingSystem, Error, TEXT("Receiver %llu missing from view for RPC from Sender %llu. RPC will be dropped."),
+			UE_LOG(LogSpatialRoutingSystem, Error, TEXT("Receiver missing from view. RPC will be dropped. Receiver: %llu, Sender: %llu"),
 				   RPC.Value, SenderId);
 			Slots.CounterpartEntity = RPC.Value;
 			WriteACKToSender(RPC.Key, Components, CrossServer::Result::TargetUnknown);
@@ -196,12 +197,12 @@ void SpatialRoutingSystem::TransferRPCsToReceiver(Worker_EntityId ReceiverId, Ro
 				// Sender disappeared before we could deliver the RPC.
 				// This should eventually become impossible by tombstoning actors instead of erasing their entities.
 				UE_LOG(LogSpatialRoutingSystem, Error,
-					   TEXT("Sender %llu disappeared before delivery to receiver %llu, RPC will be dropped"), SenderId, ReceiverId);
+					   TEXT("Sender disappeared before delivery, RPC will be dropped. Sender: %llu, Receiver: %llu"), SenderId, ReceiverId);
 				continue;
 			}
 
 			CrossServer::RPCSlots* ExistingSlot = SenderComps->SenderACKState.RPCSlots.Find(RPCToSend);
-			if (!ensureAlwaysMsgf(ExistingSlot == nullptr, TEXT("Sender %llu has already been sent a missing receiver ACK for %llu"),
+			if (!ensureAlwaysMsgf(ExistingSlot == nullptr, TEXT("Sender has already been sent an ACK. Sender: %llu, Receiver: %llu"),
 								  SenderId, ReceiverId))
 			{
 				// Sender was already sent ACK for this one, probably for a missing receiver
