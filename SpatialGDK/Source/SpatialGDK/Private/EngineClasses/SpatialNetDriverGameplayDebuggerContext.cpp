@@ -6,9 +6,14 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "GameplayDebuggerCategoryReplicator.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "LoadBalancing/GameplayDebuggerLBStrategy.h"
+#include "Schema/AuthorityIntent.h"
+#include "SpatialConstants.h"
+#include "SpatialView/ComponentData.h"
+#include "SpatialView/EntityView.h"
+#include "SpatialView/SubView.h"
+#include "SpatialView/ViewDelta.h"
 #include "Utils/SpatialActorUtils.h"
 #endif // WITH_GAMEPLAY_DEBUGGER
 
@@ -54,7 +59,7 @@ void USpatialNetDriverGameplayDebuggerContext::Init(const SpatialGDK::FSubView& 
 	SubView = &InSubView;
 	NetDriver = &InNetDriver;
 
-	check(NetDriver->Connection && NetDriver->Sender);
+	check(NetDriver && NetDriver->Connection && NetDriver->Sender);
 
 	if (NetDriver->LoadBalanceStrategy == nullptr)
 	{
@@ -96,6 +101,7 @@ void USpatialNetDriverGameplayDebuggerContext::Reset()
 				Cast<AGameplayDebuggerCategoryReplicator>(TrackedEntity.Value.ReplicatorWeakObjectPtr.Get()))
 		{
 			UnregisterServerRequestCallback(*Replicator, TrackedEntity.Value);
+			UnregisterPlayerControllerAuthorityLostCallback(*Replicator, TrackedEntity.Value);
 		}
 	}
 
@@ -185,19 +191,6 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 	}
 	ComponentsAdded.Reset();
 
-	for (const auto& EntityUpdated : ComponentsUpdated)
-	{
-		if (NetDriver->HasServerAuthority(EntityUpdated))
-		{
-			if (FEntityData* EntityData = TrackedEntities.Find(EntityUpdated))
-			{
-				FWorkerComponentUpdate ComponentUpdate = EntityData->Component.CreateComponentUpdate();
-				NetDriver->Connection->SendComponentUpdate(EntityUpdated, &ComponentUpdate);
-			}
-		}
-	}
-	ComponentsUpdated.Reset();
-
 	for (auto It = ActorsAdded.CreateIterator(); It; It++)
 	{
 		// If authority lost, then forget about this actor
@@ -219,8 +212,16 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 		AGameplayDebuggerCategoryReplicator* CategoryReplicator = Cast<AGameplayDebuggerCategoryReplicator>(EntityObjectWeakPtr.Get());
 		if (CategoryReplicator == nullptr)
 		{
-			// Expected - assume latency and wait for actor to activate
+			// Not unexpected - assume latency and wait for actor to appear
 			continue;
+		}
+
+		// Update tracking mode, and if changed send an update
+		const bool bShouldTrackPlayer = CategoryReplicator->GetServerTrackingMode() == EGameplayDebuggerServerTrackingMode::Player;
+		if (EntityData->Component.bTrackPlayer != bShouldTrackPlayer)
+		{
+			EntityData->Component.bTrackPlayer = bShouldTrackPlayer;
+			ComponentsUpdated.Add(*It);
 		}
 
 		EntityData->ReplicatorWeakObjectPtr = TWeakObjectPtr<AGameplayDebuggerCategoryReplicator>(CategoryReplicator);
@@ -228,7 +229,7 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 		// If we have authority over this replicator:
 		//	a. Provide a list of available servers to the replicator actor - this allows the replicator
 		//		to provide an interface where an authorative server (from available servers) can be selected
-		//	b. Register a callback with the replicator actor, to handle authorative server change requests
+		//	b. Register a callback with the replicator actor, to handle authorative server and player controller change requests
 		if (CategoryReplicator->HasAuthority())
 		{
 			// a. Build and provide available servers
@@ -236,12 +237,26 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 			PhysicalToVirtualWorkerIdMap.GetKeys(PhysicalWorkerIds);
 			CategoryReplicator->SetAvailableServers(PhysicalWorkerIds);
 
-			// b. Register callback
+			// b. Register callback(s)
 			RegisterServerRequestCallback(*CategoryReplicator, *EntityData);
+			RegisterPlayerControllerAuthorityLostCallback(*CategoryReplicator, *EntityData);
 		}
 
 		It.RemoveCurrent();
 	}
+
+	for (const auto& EntityUpdated : ComponentsUpdated)
+	{
+		if (NetDriver->HasServerAuthority(EntityUpdated))
+		{
+			if (FEntityData* EntityData = TrackedEntities.Find(EntityUpdated))
+			{
+				FWorkerComponentUpdate ComponentUpdate = EntityData->Component.CreateComponentUpdate();
+				NetDriver->Connection->SendComponentUpdate(EntityUpdated, &ComponentUpdate);
+			}
+		}
+	}
+	ComponentsUpdated.Reset();
 }
 
 void USpatialNetDriverGameplayDebuggerContext::TrackEntity(Worker_EntityId InEntityId)
@@ -295,8 +310,6 @@ void USpatialNetDriverGameplayDebuggerContext::TrackEntity(Worker_EntityId InEnt
 
 void USpatialNetDriverGameplayDebuggerContext::UntrackEntity(Worker_EntityId InEntityId)
 {
-	check(NetDriver && NetDriver->PackageMap);
-
 	RemoveAuthority(InEntityId, TrackedEntities.Find(InEntityId));
 
 	TrackedEntities.Remove(InEntityId);
@@ -315,6 +328,7 @@ void USpatialNetDriverGameplayDebuggerContext::AddAuthority(Worker_EntityId InEn
 	}
 
 	OptionalEntityData->Component.DelegatedVirtualWorkerId = LBStrategy->GetLocalVirtualWorkerId();
+	OptionalEntityData->Component.bTrackPlayer = false; // correct value is assigned when actor is resolved (on authorative server)
 
 	const FString* PhysicalWorkerName =
 		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(OptionalEntityData->Component.DelegatedVirtualWorkerId);
@@ -344,15 +358,17 @@ void USpatialNetDriverGameplayDebuggerContext::RemoveAuthority(Worker_EntityId I
 			Cast<AGameplayDebuggerCategoryReplicator>(InOptionalEntityData->ReplicatorWeakObjectPtr.Get()))
 	{
 		UnregisterServerRequestCallback(*Replicator, *InOptionalEntityData);
+		UnregisterPlayerControllerAuthorityLostCallback(*Replicator, *InOptionalEntityData);
 	}
 }
 
 void USpatialNetDriverGameplayDebuggerContext::RegisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator,
 																			 FEntityData& InEntityData)
 {
-	if (!InEntityData.Handle.IsValid())
+	if (!InEntityData.ServerTrackingRequestHandle.IsValid())
 	{
-		InEntityData.Handle = InReplicator.OnServerRequest().AddUObject(this, &USpatialNetDriverGameplayDebuggerContext::OnServerRequest);
+		InEntityData.ServerTrackingRequestHandle =
+			InReplicator.OnServerTrackingRequest().AddUObject(this, &USpatialNetDriverGameplayDebuggerContext::OnServerTrackingRequest);
 	}
 	else
 	{
@@ -363,19 +379,18 @@ void USpatialNetDriverGameplayDebuggerContext::RegisterServerRequestCallback(AGa
 void USpatialNetDriverGameplayDebuggerContext::UnregisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator,
 																			   FEntityData& InEntityData)
 {
-	check(NetDriver && NetDriver->PackageMap);
-
-	if (InEntityData.Handle.IsValid())
+	if (InEntityData.ServerTrackingRequestHandle.IsValid())
 	{
-		InReplicator.OnServerRequest().Remove(InEntityData.Handle);
-		InEntityData.Handle.Reset();
+		InReplicator.OnServerTrackingRequest().Remove(InEntityData.ServerTrackingRequestHandle);
+		InEntityData.ServerTrackingRequestHandle.Reset();
 	}
 }
 
-void USpatialNetDriverGameplayDebuggerContext::OnServerRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator,
-															   FString InServerWorkerId)
+void USpatialNetDriverGameplayDebuggerContext::OnServerTrackingRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator,
+																	   EGameplayDebuggerServerTrackingMode InServerTrackingMode,
+																	   FString InOptionalServerWorkerId)
 {
-	check(NetDriver && NetDriver->PackageMap && NetDriver->Connection);
+	check(NetDriver && NetDriver->PackageMap);
 
 	if (InCategoryReplicator == nullptr)
 	{
@@ -390,36 +405,188 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerRequest(AGameplayDebugger
 		return;
 	}
 
-	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(InCategoryReplicator);
+	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(InCategoryReplicator);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Warning, TEXT("Callback from an actor with no entity"));
 		return;
 	}
 
-	FEntityData* EntityData = TrackedEntities.Find(EntityId);
+	FEntityData* const EntityData = TrackedEntities.Find(EntityId);
 	if (EntityData == nullptr)
 	{
 		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Warning, TEXT("Callback from an entity we are not tracking"));
 		return;
 	}
 
-	if (EntityData->CurrentWorkerId != InServerWorkerId)
+	bool bShouldUpdateComponent = false;
+
+	FString NewServerWorkerId = InOptionalServerWorkerId;
+
+	const bool bShouldTrackPlayer = InServerTrackingMode == EGameplayDebuggerServerTrackingMode::Player ? true : false;
+	if (bShouldTrackPlayer != EntityData->Component.bTrackPlayer)
 	{
-		const uint32* VirtualWorkerId = PhysicalToVirtualWorkerIdMap.Find(InServerWorkerId);
+		EntityData->Component.bTrackPlayer = bShouldTrackPlayer;
+		bShouldUpdateComponent = true;
+	}
+
+	uint32 NewVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+
+	if (bShouldTrackPlayer == true)
+	{
+		if (APlayerController* PlayerController = InCategoryReplicator->GetReplicationOwner())
+		{
+			NewVirtualWorkerId = GetActorVirtualWorkerId(*PlayerController);
+		}
+	}
+	else if ((InOptionalServerWorkerId.Len() > 0) && (EntityData->CurrentWorkerId != InOptionalServerWorkerId))
+	{
+		const uint32* VirtualWorkerId = PhysicalToVirtualWorkerIdMap.Find(InOptionalServerWorkerId);
 		if (VirtualWorkerId != nullptr)
 		{
-			EntityData->Component.DelegatedVirtualWorkerId = *VirtualWorkerId;
-			EntityData->CurrentWorkerId = InServerWorkerId;
-
-			InCategoryReplicator->SetCurrentServer(InServerWorkerId);
-
-			ComponentsUpdated.Add(EntityId);
+			NewVirtualWorkerId = *VirtualWorkerId;
 		}
 		else
 		{
-			UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Callback from an actor to unknown virtual worker"));
+			UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Invalid server worker id provided ('%s')"));
 		}
+	}
+
+	if ((NewVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+		&& (NewVirtualWorkerId != EntityData->Component.DelegatedVirtualWorkerId))
+	{
+		check(NetDriver != nullptr && NetDriver->VirtualWorkerTranslator != nullptr);
+		const FString* NewPhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(NewVirtualWorkerId);
+		if (NewPhysicalWorkerName != nullptr)
+		{
+			EntityData->Component.DelegatedVirtualWorkerId = NewVirtualWorkerId;
+			EntityData->CurrentWorkerId = *NewPhysicalWorkerName;
+			InCategoryReplicator->SetCurrentServer(*NewPhysicalWorkerName);
+			bShouldUpdateComponent = true;
+		}
+	}
+
+	if (bShouldUpdateComponent)
+	{
+		ComponentsUpdated.Add(EntityId);
+	}
+}
+
+VirtualWorkerId USpatialNetDriverGameplayDebuggerContext::GetActorVirtualWorkerId(const AActor& InActor) const
+{
+	check(SubView != nullptr && NetDriver != nullptr && NetDriver->PackageMap != nullptr);
+
+	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(&InActor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	}
+
+	const SpatialGDK::EntityViewElement* EntityViewPtr = SubView->GetView().Find(EntityId);
+	if (EntityViewPtr == nullptr)
+	{
+		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	}
+
+	const SpatialGDK::ComponentData* IntentComponentData =
+		EntityViewPtr->Components.FindByPredicate([](const SpatialGDK::ComponentData& Data) {
+			return Data.GetComponentId() == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
+		});
+
+	if (IntentComponentData == nullptr)
+	{
+		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	}
+
+	SpatialGDK::AuthorityIntent Intent = SpatialGDK::AuthorityIntent(IntentComponentData->GetUnderlying());
+	const VirtualWorkerId VirtualWorkerId = Intent.VirtualWorkerId;
+	return VirtualWorkerId;
+};
+
+void USpatialNetDriverGameplayDebuggerContext::RegisterPlayerControllerAuthorityLostCallback(
+	AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData)
+{
+	if (!InEntityData.PlayerControllerAuthorityChangeHandle.IsValid())
+	{
+		if (APlayerController* PlayerControllerActor = Cast<APlayerController>(InReplicator.GetReplicationOwner()))
+		{
+			InEntityData.PlayerControllerAuthorityChangeHandle = PlayerControllerActor->OnAuthorityLostDelegate().AddUObject(
+				this, &USpatialNetDriverGameplayDebuggerContext::OnPlayerControllerAuthorityLost);
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Trying to bind change notification more than once"));
+	}
+}
+
+void USpatialNetDriverGameplayDebuggerContext::UnregisterPlayerControllerAuthorityLostCallback(
+	AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData)
+{
+	check(NetDriver && NetDriver->PackageMap);
+
+	if (InEntityData.PlayerControllerAuthorityChangeHandle.IsValid())
+	{
+		if (APlayerController* PlayerController = InReplicator.GetReplicationOwner())
+		{
+			PlayerController->OnAuthorityLostDelegate().Remove(InEntityData.PlayerControllerAuthorityChangeHandle);
+			InEntityData.PlayerControllerAuthorityChangeHandle.Reset();
+		}
+	}
+}
+
+void USpatialNetDriverGameplayDebuggerContext::OnPlayerControllerAuthorityLost(const APlayerController& InPlayerController)
+{
+	check(NetDriver && NetDriver->PackageMap);
+
+	Worker_EntityId_Key* EntityId = nullptr;
+	FEntityData* EntityData = nullptr;
+	AGameplayDebuggerCategoryReplicator* Replicator = nullptr;
+
+	for (auto& TrackedEntity : TrackedEntities)
+	{
+		Replicator = TrackedEntity.Value.ReplicatorWeakObjectPtr.Get();
+		if (Replicator != nullptr)
+		{
+			if (Replicator->GetReplicationOwner() == &InPlayerController)
+			{
+				EntityId = &TrackedEntity.Key;
+				EntityData = &TrackedEntity.Value;
+				break;
+			}
+		}
+	}
+
+	if (EntityId == nullptr || EntityData == nullptr || Replicator == nullptr)
+	{
+		return;
+	}
+
+	if (EntityData->Component.bTrackPlayer == false)
+	{
+		// If we are not tracking the player, we do not need to track server authority changes
+		return;
+	}
+
+	check(NetDriver->LoadBalanceStrategy);
+	const VirtualWorkerId AuthorativeWorkerId = GetActorVirtualWorkerId(InPlayerController);
+
+	check(NetDriver->VirtualWorkerTranslator);
+	const FString* PhysicalAuthorativeWorkerName =
+		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorativeWorkerId);
+
+	if (PhysicalAuthorativeWorkerName == nullptr)
+	{
+		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Failed to convert virtual worker to physical worker name"));
+		return;
+	}
+
+	if (EntityData->CurrentWorkerId != *PhysicalAuthorativeWorkerName)
+	{
+		EntityData->Component.DelegatedVirtualWorkerId = AuthorativeWorkerId;
+		EntityData->CurrentWorkerId = *PhysicalAuthorativeWorkerName;
+		EntityData->ReplicatorWeakObjectPtr->SetCurrentServer(*PhysicalAuthorativeWorkerName);
+		ComponentsUpdated.Add(*EntityId);
 	}
 }
 
