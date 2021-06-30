@@ -71,7 +71,9 @@ void AVisibilityTest::PrepareTest()
 	{ // Step 0 - The server spawn a TestMovementCharacter and makes Client 1 possess it.
 		AddStep(TEXT("VisibilityTestServerSetup"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			ASpatialFunctionalTestFlowController* ClientOneFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
+			ASpatialFunctionalTestFlowController* ClientTwoFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 2);
 			APlayerController* PlayerController = Cast<APlayerController>(ClientOneFlowController->GetOwner());
+			APlayerController* PlayerController2 = Cast<APlayerController>(ClientTwoFlowController->GetOwner());
 
 			AssertTrue(HasAuthority(), TEXT("We should have authority over the test actor."));
 
@@ -84,6 +86,9 @@ void AVisibilityTest::PrepareTest()
 				ClientOneDefaultPawn = PlayerController->GetPawn();
 
 				PlayerController->Possess(ClientOneSpawnedPawn);
+
+				UE_LOG(LogTemp, Display, TEXT("Character 1 is at %s."), *ClientOneSpawnedPawn->GetActorLocation().ToString());
+				UE_LOG(LogTemp, Display, TEXT("Character 2 is at %s."), *PlayerController2->GetPawn()->GetActorLocation().ToString());
 
 				FinishStep();
 			}
