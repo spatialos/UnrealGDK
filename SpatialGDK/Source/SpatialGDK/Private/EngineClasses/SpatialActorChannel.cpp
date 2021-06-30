@@ -349,8 +349,6 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 
 	EventTracer = nullptr;
 
-	bIsSkeleton = false;
-
 	return UActorChannel::CleanUp(bForDestroy, CloseReason);
 }
 
@@ -688,10 +686,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 			NetDriver->ActorSystem->SendCreateEntityRequest(*this, ReplicationBytesWritten);
 
-			if (!bIsSkeleton)
-			{
-				bCreatedEntity = true;
-			}
+			bCreatedEntity = true;
 
 			SetAutonomousProxyOnAuthority(Actor->RemoteRole == ROLE_AutonomousProxy);
 

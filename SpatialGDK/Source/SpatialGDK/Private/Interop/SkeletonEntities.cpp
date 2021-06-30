@@ -398,7 +398,8 @@ void FSkeletonEntityPopulator::ConsiderEntityPopulation(const Worker_EntityId En
 		return;
 	}
 
-	if (!ensure(Manifest->EntitiesToPopulate.Contains(EntityId)))
+	if (!ensureMsgf(Manifest->EntitiesToPopulate.Contains(EntityId),
+					TEXT("Skeleton entity %lld seen on worker, but doesn't exist in the manifest!"), EntityId))
 	{
 		return;
 	}
@@ -424,16 +425,16 @@ void FSkeletonEntityPopulator::ConsiderEntityPopulation(const Worker_EntityId En
 
 void FSkeletonEntityPopulator::PopulateEntity(Worker_EntityId SkeletonEntityId, AActor& SkeletonEntityStartupActor)
 {
-	EntityFactory Factory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
-
 	NetDriver->PackageMap->ResolveEntityActorAndSubobjects(SkeletonEntityId, &SkeletonEntityStartupActor);
 
 	USpatialActorChannel* Channel = ActorSystem::SetUpActorChannel(NetDriver, &SkeletonEntityStartupActor, SkeletonEntityId);
 
-	check(IsValid(Channel));
-
-	Channel->bCreatingNewEntity = true;
-	Channel->bIsSkeleton = true;
+	if (ensure(IsValid(Channel)))
+	{
+		// Mark this channel as creating new entity as we need to remember to populate it
+		// with all components when we decide to replicate it for the first time.
+		Channel->bCreatingNewEntity = true;
+	}
 }
 
 bool FSkeletonEntityPopulator::IsReady() const
