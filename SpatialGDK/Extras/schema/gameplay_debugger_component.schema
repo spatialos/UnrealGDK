@@ -4,4 +4,5 @@ package unreal;
 component GameplayDebuggerComponent {
      id = 9997;
      uint32 delegated_virtual_worker_id = 1;
+     bool track_player = 2;
 }
