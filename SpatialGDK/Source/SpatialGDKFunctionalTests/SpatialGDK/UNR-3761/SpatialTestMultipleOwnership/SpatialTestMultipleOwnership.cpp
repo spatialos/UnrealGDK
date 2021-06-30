@@ -63,9 +63,11 @@ void ASpatialTestMultipleOwnership::PrepareTest()
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 			{
 				AController* Controller = Cast<AController>(FlowController->GetOwner());
-				AssertIsValid(Controller, TEXT("Each flow controller should have an associated PlayerController as an owner."));
-				AssertIsValid(Controller->GetPawn(), TEXT("Each flow controller should have an associated pawn."));
-				OriginalPossessedPawns.Emplace(Controller, Controller->GetPawn());
+				if (AssertIsValid(Controller, TEXT("Each flow controller should have an associated PlayerController as an owner.")))
+				{
+					AssertIsValid(Controller->GetPawn(), TEXT("Each flow controller should have an associated pawn."));
+					OriginalPossessedPawns.Emplace(Controller, Controller->GetPawn());
+				}
 			}
 		}
 

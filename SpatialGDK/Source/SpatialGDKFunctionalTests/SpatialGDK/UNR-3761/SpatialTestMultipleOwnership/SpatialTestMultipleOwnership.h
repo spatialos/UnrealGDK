@@ -23,5 +23,6 @@ public:
 
 	// Helper map to store what the original pawns were before we started possessing different ones, so we can restore them at the end of
 	// the test.
+	UPROPERTY()
 	TMap<AController*, APawn*> OriginalPossessedPawns;
 };
