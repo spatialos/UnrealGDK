@@ -747,6 +747,11 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendOneMessageBetweenDeletedEnti
 			Worker_EntityId ToRemove = (Attempt % 2) == 0 ? Sender : Receiver;
 			Worker_EntityId ToCheck = (Attempt % 2) == 1 ? Sender : Receiver;
 
+			if (ToRemove == 100)
+			{
+				AddExpectedError(TEXT("Receiver missing from view. RPC will be dropped"));
+			}
+
 			PendingRPCPayload DummyPayload(RPCPayload(0, 0, {}, TArray<uint8>()), {});
 			RPCService.PushCrossServerRPC(Receiver, RPCSender(Sender, 0), DummyPayload, false);
 

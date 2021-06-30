@@ -16,6 +16,7 @@ enum class Result
 	Success,
 	TargetDestroyed,
 	TargetUnknown,
+	Undefined
 };
 
 inline void WritePayloadAndCounterpart(Schema_Object* EndpointObject, const RPCPayload& Payload, const CrossServerRPCInfo& Info,
@@ -148,6 +149,7 @@ struct RPCSlots
 	Worker_EntityId CounterpartEntity;
 	int32 CounterpartSlot = -1;
 	int32 ACKSlot = -1;
+	Result ACKResult = Result::Undefined;
 };
 
 using ReadRPCMap = TMap<CrossServer::RPCKey, RPCSlots>;
