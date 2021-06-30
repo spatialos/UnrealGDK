@@ -139,19 +139,6 @@ uint32 ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject
 
 		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
 
-#if TRACE_LIB_ACTIVE
-		if (LatencyTracer != nullptr && OutLatencyTraceId != nullptr)
-		{
-			// If we have already got a trace for this actor/component, we will end one of them here
-			if (*OutLatencyTraceId != InvalidTraceKey)
-			{
-				UE_LOG(LogComponentFactory, Warning, TEXT("%s handover trace being dropped because too many active on this actor (%s)"),
-					   *PropertyInfo.Property->GetName(), *Object->GetName());
-				LatencyTracer->WriteAndEndTrace(*OutLatencyTraceId, TEXT("Multiple actor component traces not supported"), true);
-			}
-			*OutLatencyTraceId = LatencyTracer->RetrievePendingTrace(Object, PropertyInfo.Property);
-		}
-#endif
 		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, ClearedIds);
 	}
 
