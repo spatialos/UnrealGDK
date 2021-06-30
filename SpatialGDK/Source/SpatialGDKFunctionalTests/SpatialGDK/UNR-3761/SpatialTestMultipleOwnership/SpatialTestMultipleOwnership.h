@@ -20,4 +20,9 @@ public:
 	// Helper array used to avoid code duplication by storing the references to the MultipleOwnershipPawns on the test itself, instead of
 	// calling GetAllActorsOfClass multiple times.
 	TArray<AMultipleOwnershipPawn*> MultipleOwnershipPawns;
+
+	// Helper map to store what the original pawns were before we started possessing different ones, so we can restore them at the end of
+	// the test.
+	UPROPERTY()
+	TMap<AController*, APawn*> OriginalPossessedPawns;
 };
