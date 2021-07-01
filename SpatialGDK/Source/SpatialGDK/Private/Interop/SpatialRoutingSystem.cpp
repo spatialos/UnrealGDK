@@ -80,13 +80,23 @@ void SpatialRoutingSystem::OnSenderChanged(Worker_EntityId SenderId, RoutingComp
 			{
 				if (ReceiverComps->ReceiverState.Mailbox.Find(RPCKey) == nullptr)
 				{
-					CrossServer::SentRPCEntry Entry;
-					Entry.Target = RPCTarget(Counterpart.GetValue());
-					Entry.SourceSlot = SlotIdx;
+					CrossServer::RPCSlots* Slots = Components.SenderACKState.RPCSlots.Find(RPCKey);
+					if (Slots != nullptr)
+					{
+						UE_LOG(LogSpatialRoutingSystem, Verbose,
+							   TEXT("RPC already acked, probably from missing receiver, Receiver: %llu, RPCId: %llu, Sender: %llu"),
+							   Receiver, RPCId, SenderId);
+					}
+					else
+					{
+						CrossServer::SentRPCEntry Entry;
+						Entry.Target = RPCTarget(Counterpart.GetValue());
+						Entry.SourceSlot = SlotIdx;
 
-					ReceiverComps->ReceiverState.Mailbox.Add(RPCKey, Entry);
-					ReceiverComps->ReceiverSchedule.Add(RPCKey);
-					ReceiversToInspect.Add(Receiver);
+						ReceiverComps->ReceiverState.Mailbox.Add(RPCKey, Entry);
+						ReceiverComps->ReceiverSchedule.Add(RPCKey);
+						ReceiversToInspect.Add(Receiver);
+					}
 				}
 			}
 			else
@@ -101,16 +111,20 @@ void SpatialRoutingSystem::OnSenderChanged(Worker_EntityId SenderId, RoutingComp
 		const CrossServer::RPCSlots& Slots = SlotToClear.Value;
 		{
 			EntityComponentId SenderPair(SenderId, SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID);
-			Components.SenderACKState.ACKAlloc.FreeSlot(Slots.ACKSlot);
+			if (ensureAlways(Slots.ACKSlot >= 0))
+			{
+				Components.SenderACKState.ACKAlloc.FreeSlot(Slots.ACKSlot);
+			}
 
 			GetOrCreateComponentUpdate(SenderPair);
 		}
-
-		if (RoutingComponents* ReceiverComps = RoutingWorkerView.Find(Slots.CounterpartEntity))
+		if (Slots.ACKResult == CrossServer::Result::Success)
 		{
-			ClearReceiverSlot(Slots.CounterpartEntity, SlotToClear.Key, *ReceiverComps);
+			if (RoutingComponents* ReceiverComps = RoutingWorkerView.Find(Slots.CounterpartEntity))
+			{
+				ClearReceiverSlot(Slots.CounterpartEntity, SlotToClear.Key, *ReceiverComps);
+			}
 		}
-
 		Components.SenderACKState.RPCSlots.Remove(SlotToClear.Key);
 	}
 
@@ -120,6 +134,9 @@ void SpatialRoutingSystem::OnSenderChanged(Worker_EntityId SenderId, RoutingComp
 		auto& Slots = Components.SenderACKState.RPCSlots.FindOrAdd(RPC.Key);
 		if (Slots.ACKSlot < 0)
 		{
+			// This is a race we could solve with either blank entities, or timeout
+			UE_LOG(LogSpatialRoutingSystem, Error, TEXT("Receiver missing from view. RPC will be dropped. Receiver: %llu, Sender: %llu"),
+				   RPC.Value, SenderId);
 			Slots.CounterpartEntity = RPC.Value;
 			WriteACKToSender(RPC.Key, Components, CrossServer::Result::TargetUnknown);
 		}
@@ -129,11 +146,17 @@ void SpatialRoutingSystem::OnSenderChanged(Worker_EntityId SenderId, RoutingComp
 void SpatialRoutingSystem::ClearReceiverSlot(Worker_EntityId Receiver, CrossServer::RPCKey RPCKey, RoutingComponents& ReceiverComponents)
 {
 	CrossServer::SentRPCEntry* SentRPC = ReceiverComponents.ReceiverState.Mailbox.Find(RPCKey);
-	check(SentRPC != nullptr);
+	if (!ensureAlways(SentRPC != nullptr))
+	{
+		return;
+	}
 
 	EntityComponentId ReceiverPair(Receiver, SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID);
 
-	check(SentRPC->DestinationSlot.IsSet());
+	if (!ensureAlways(SentRPC->DestinationSlot.IsSet()))
+	{
+		return;
+	}
 	uint32 SlotIdx = SentRPC->DestinationSlot.GetValue();
 
 	ReceiverComponents.ReceiverState.Mailbox.Remove(RPCKey);
@@ -155,6 +178,7 @@ void SpatialRoutingSystem::TransferRPCsToReceiver(Worker_EntityId ReceiverId, Ro
 			TOptional<uint32> FreeSlot = ReceiverComps->ReceiverState.Alloc.PeekFreeSlot();
 			if (!FreeSlot)
 			{
+				UE_LOG(LogSpatialRoutingSystem, Verbose, TEXT("Receiver %llu out of slots"), ReceiverId);
 				return;
 			}
 			CrossServer::RPCKey RPCToSend = ReceiverComps->ReceiverSchedule.Extract();
@@ -172,6 +196,17 @@ void SpatialRoutingSystem::TransferRPCsToReceiver(Worker_EntityId ReceiverId, Ro
 				ReceiverComps->ReceiverState.Mailbox.Remove(RPCToSend);
 				// Sender disappeared before we could deliver the RPC.
 				// This should eventually become impossible by tombstoning actors instead of erasing their entities.
+				UE_LOG(LogSpatialRoutingSystem, Error,
+					   TEXT("Sender disappeared before delivery, RPC will be dropped. Sender: %llu, Receiver: %llu"), SenderId, ReceiverId);
+				continue;
+			}
+
+			CrossServer::RPCSlots* ExistingSlot = SenderComps->SenderACKState.RPCSlots.Find(RPCToSend);
+			if (!ensureAlwaysMsgf(ExistingSlot == nullptr, TEXT("Sender has already been sent an ACK. Sender: %llu, Receiver: %llu"),
+								  SenderId, ReceiverId))
+			{
+				// Sender was already sent ACK for this one, probably for a missing receiver
+				ReceiverComps->ReceiverState.Mailbox.Remove(RPCToSend);
 				continue;
 			}
 
@@ -209,6 +244,7 @@ void SpatialRoutingSystem::WriteACKToSender(CrossServer::RPCKey RPCKey, RoutingC
 		if (TOptional<uint32_t> ReservedSlot = SenderComponents.SenderACKState.ACKAlloc.ReserveSlot())
 		{
 			Slots->ACKSlot = ReservedSlot.GetValue();
+			Slots->ACKResult = Result;
 			EntityComponentId SenderPair(RPCKey.Get<0>(), SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID);
 			Schema_ComponentUpdate* Update = GetOrCreateComponentUpdate(SenderPair);
 			Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update);
@@ -353,7 +389,10 @@ void SpatialRoutingSystem::Advance(SpatialOSWorkerInterface* Connection)
 						if (Slot.IsSet())
 						{
 							const TOptional<CrossServerRPCInfo>& SenderBackRef = TempView.ReliableRPCBuffer.Counterpart[SlotIdx];
-							check(SenderBackRef.IsSet());
+							if (!ensureAlways(SenderBackRef.IsSet()))
+							{
+								continue;
+							}
 
 							CrossServer::RPCKey RPCKey(SenderBackRef->Entity, SenderBackRef->RPCId);
 							CrossServer::SentRPCEntry NewEntry;
@@ -383,6 +422,11 @@ void SpatialRoutingSystem::Advance(SpatialOSWorkerInterface* Connection)
 		case EntityDelta::REMOVE:
 		case EntityDelta::TEMPORARILY_REMOVED:
 		{
+			if (Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
+			{
+				UE_LOG(LogSpatialRoutingSystem, Warning, TEXT("Unexpected refresh for %llu"), Delta.EntityId);
+			}
+
 			ReceiversToInspect.Remove(Delta.EntityId);
 			PendingComponentUpdatesToSend.Remove(
 				EntityComponentId(Delta.EntityId, SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID));

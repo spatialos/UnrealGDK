@@ -5,22 +5,27 @@
 #include "CoreMinimal.h"
 #include "SpatialCommonTypes.h"
 
-class SpatialOSWorkerInterface;
+using FSystemEntityCommandDelegate = TFunction<void(const Worker_CommandResponseOp&)>;
 
 namespace SpatialGDK
 {
-class ClaimPartitionHandler
+class ISpatialOSWorker;
+class FClaimPartitionHandler
 {
 public:
-	ClaimPartitionHandler(SpatialOSWorkerInterface& InWorkerInterface);
-
-	void ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim);
+	void ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim);
+	void ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim,
+						FSystemEntityCommandDelegate Delegate);
 
 	void ProcessOps(const TArray<Worker_Op>& Ops);
 
 private:
-	TMap<Worker_RequestId_Key, Worker_PartitionId> ClaimPartitionRequestIds;
+	struct FClaimPartitionRequest
+	{
+		Worker_PartitionId PartitionId;
+		FSystemEntityCommandDelegate Delegate;
+	};
 
-	SpatialOSWorkerInterface& WorkerInterface;
+	TMap<Worker_RequestId_Key, FClaimPartitionRequest> ClaimPartitionRequestIds;
 };
 } // namespace SpatialGDK
