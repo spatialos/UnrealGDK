@@ -49,20 +49,14 @@ void ASpatialFunctionalTestFlowController::OnActorReady(bool bHasAuthority)
 	{
 		// Registration of authoritative flow controllers (server and client)
 		OwningTest->RegisterFlowController(this);
-
-		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-		{
-			TrySetReadyToRunTest();
-		}
 	}
+
+	TrySetReadyToRunTest();
 }
 
 void ASpatialFunctionalTestFlowController::OnClientOwnershipGained()
 {
-	if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
-	{
-		TrySetReadyToRunTest();
-	}
+	TrySetReadyToRunTest();
 }
 
 void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
@@ -95,7 +89,8 @@ void ASpatialFunctionalTestFlowController::TrySetReadyToRunTest()
 {
 	if (IsLocalController())
 	{
-		if (IsActorReady() && OwningTest != nullptr && OwningTest->HasPreparedTest())
+		if (IsActorReady() && OwningTest != nullptr && OwningTest->HasPreparedTest()
+			&& (WorkerDefinition.Type != ESpatialFunctionalTestWorkerType::Client || IsOwnedByClient()))
 		{
 			OwningTest->SetLocalFlowController(this);
 			SetReadyToRunTest(true);

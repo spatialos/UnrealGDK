@@ -447,7 +447,8 @@ void ASpatialFunctionalTest::SetLocalFlowController(ASpatialFunctionalTestFlowCo
 {
 	if (FlowController->IsLocalController())
 	{
-		checkf(LocalFlowController == nullptr, TEXT("OwningTest already had a LocalFlowController, this shouldn't happen"));
+		checkf(LocalFlowController == nullptr || LocalFlowController == FlowController,
+			   TEXT("OwningTest already had a LocalFlowController, this shouldn't happen"));
 		LocalFlowController = FlowController;
 	}
 }
@@ -745,6 +746,11 @@ void ASpatialFunctionalTest::PrepareTestAfterBeginPlay()
 	if (!HasAuthority())
 	{
 		PrepareTest();
+	}
+
+	if (LocalFlowController != nullptr && !LocalFlowController->IsReadyToRunTest())
+	{
+		LocalFlowController->TrySetReadyToRunTest();
 	}
 }
 
