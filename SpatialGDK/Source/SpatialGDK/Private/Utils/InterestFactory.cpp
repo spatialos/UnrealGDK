@@ -313,12 +313,30 @@ void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(I
 		return;
 	}
 
+	Query ReplicatorAuthServerQuery;
+
 	// Add a query for the authoritative server to see the player controller
-	Query PlayerControllerQuery;
-	PlayerControllerQuery.Constraint.EntityIdConstraint = NetDriver->GetActorEntityId(*PlayerController);
-	PlayerControllerQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
-	PlayerControllerQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, PlayerControllerQuery);
+	QueryConstraint PlayerControllerConstraint;
+	PlayerControllerConstraint.EntityIdConstraint = NetDriver->GetActorEntityId(*PlayerController);
+	ReplicatorAuthServerQuery.Constraint.OrConstraint.Add(PlayerControllerConstraint);
+
+	// Add a query for the authoritative server to see the selected debug actor, if there is one with an entity ID
+	AActor *DebugActor = Replicator.GetDebugActor();
+	if (DebugActor != nullptr)
+	{
+		int64 DebugActorEntityId = NetDriver->GetActorEntityId(*DebugActor);
+		if (DebugActorEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			QueryConstraint DebugActorConstraint;
+			DebugActorConstraint.EntityIdConstraint = DebugActorEntityId;
+			ReplicatorAuthServerQuery.Constraint.OrConstraint.Add(DebugActorConstraint);
+		}
+	}
+
+	ReplicatorAuthServerQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
+	ReplicatorAuthServerQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
+
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, ReplicatorAuthServerQuery);
 }
 #endif
 
