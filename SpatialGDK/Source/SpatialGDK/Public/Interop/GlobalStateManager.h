@@ -10,8 +10,8 @@
 #include <WorkerSDK/improbable/c_worker.h>
 
 #include "EntityQueryHandler.h"
-#include "Interop/ClaimPartitionHandler.h"
 #include "Interop/EntityCommandHandler.h"
+#include "Interop/SpatialCommandsHandler.h"
 #include "Utils/SchemaUtils.h"
 
 #include "GlobalStateManager.generated.h"
@@ -128,8 +128,7 @@ private:
 
 	SpatialGDK::ViewCoordinator* ViewCoordinator;
 
-	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimHandler;
-	SpatialGDK::EntityQueryHandler QueryHandler;
+	SpatialGDK::FCommandsHandler CommandsHandler;
 
 #if WITH_EDITOR
 	SpatialGDK::EntityCommandRequestHandler RequestHandler;

@@ -70,8 +70,9 @@ void InitialOnlyFilter::FlushRequests()
 	InitialOnlyQuery.snapshot_result_type_component_set_ids = &SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID;
 
 	const Worker_RequestId RequestID = Connection.SendEntityQueryRequest(&InitialOnlyQuery, SpatialGDK::RETRY_UNTIL_COMPLETE);
-	EntityQueryDelegate InitialOnlyQueryDelegate;
-	InitialOnlyQueryDelegate.BindRaw(this, &InitialOnlyFilter::HandleInitialOnlyResponse);
+	FEntityQueryDelegate InitialOnlyQueryDelegate = [this](const Worker_EntityQueryResponseOp& Op) {
+		InitialOnlyFilter::HandleInitialOnlyResponse(Op);
+	};
 
 	QueryHandler.AddRequest(RequestID, InitialOnlyQueryDelegate);
 

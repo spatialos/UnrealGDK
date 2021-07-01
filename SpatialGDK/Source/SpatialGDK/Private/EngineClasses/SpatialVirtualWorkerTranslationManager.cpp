@@ -21,7 +21,6 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(S
 	, NetDriver(InNetDriver)
 	, Partitions({})
 	, bWorkerEntityQueryInFlight(false)
-	, ClaimPartitionHandler(*InConnection)
 {
 }
 
@@ -111,9 +110,7 @@ void SpatialVirtualWorkerTranslationManager::ReclaimPartitionEntities()
 
 void SpatialVirtualWorkerTranslationManager::Advance(const TArray<Worker_Op>& Ops)
 {
-	CreateEntityHandler.ProcessOps(Ops);
-	ClaimPartitionHandler.ProcessOps(Ops);
-	QueryHandler.ProcessOps(Ops);
+	CommandsHandler.ProcessOps(Ops);
 }
 
 // For each entry in the map, write a VirtualWorkerMapping type object to the Schema object.
@@ -239,8 +236,7 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 	const Worker_RequestId RequestId =
 		Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 
-	CreateEntityDelegate OnCreateWorkerEntityResponse;
-	OnCreateWorkerEntityResponse.BindLambda([this, VirtualWorkerId](const Worker_CreateEntityResponseOp& Op) {
+	FCreateEntityDelegate OnCreateWorkerEntityResponse = [this, VirtualWorkerId](const Worker_CreateEntityResponseOp& Op) {
 		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
@@ -255,9 +251,9 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 			   TEXT("Partition entity creation failed: \"%s\". "
 					"Entity: %lld. Virtual Worker: %d"),
 			   UTF8_TO_TCHAR(Op.message), Op.entity_id, VirtualWorkerId);
-	});
+	};
 
-	CreateEntityHandler.AddRequest(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
+	CommandsHandler.AddRequest(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
 }
 
 void SpatialVirtualWorkerTranslationManager::OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker)
@@ -315,9 +311,10 @@ void SpatialVirtualWorkerTranslationManager::QueryForServerWorkerEntities()
 	bWorkerEntityQueryInFlight = true;
 
 	// Register a method to handle the query response.
-	EntityQueryDelegate ServerWorkerEntityQueryDelegate;
-	ServerWorkerEntityQueryDelegate.BindRaw(this, &SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate);
-	QueryHandler.AddRequest(RequestID, ServerWorkerEntityQueryDelegate);
+	FEntityQueryDelegate ServerWorkerEntityQueryDelegate = [this](const Worker_EntityQueryResponseOp& Op) {
+		this->ServerWorkerEntityQueryDelegate(Op);
+	};
+	CommandsHandler.AddRequest(RequestID, ServerWorkerEntityQueryDelegate);
 }
 
 // This method allows the translation manager to deal with the returned list of server worker entities when they are received.
@@ -369,5 +366,5 @@ void SpatialVirtualWorkerTranslationManager::AssignPartitionToWorker(const Physi
 		   TEXT("Assigned VirtualWorker %d with partition ID %lld to simulate on worker %s"), Partition.VirtualWorker,
 		   Partition.PartitionEntityId, *WorkerName);
 
-	ClaimPartitionHandler.ClaimPartition(SystemEntityId, Partition.PartitionEntityId);
+	CommandsHandler.ClaimPartition(NetDriver->Connection->GetCoordinator(), SystemEntityId, Partition.PartitionEntityId);
 }

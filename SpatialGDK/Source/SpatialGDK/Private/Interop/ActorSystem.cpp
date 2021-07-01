@@ -247,7 +247,6 @@ ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InAutho
 	, NetDriver(InNetDriver)
 	, EventTracer(InEventTracer)
 	, ClientNetLoadActorHelper(*InNetDriver)
-	, ClaimPartitionHandler(*InNetDriver->Connection)
 {
 }
 
@@ -333,8 +332,7 @@ void ActorSystem::Advance()
 		}
 	}
 
-	CreateEntityHandler.ProcessOps(*ActorSubView->GetViewDelta().WorkerMessages);
-	ClaimPartitionHandler.ProcessOps(*ActorSubView->GetViewDelta().WorkerMessages);
+	CommandsHandler.ProcessOps(*ActorSubView->GetViewDelta().WorkerMessages);
 }
 
 UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)
@@ -2068,7 +2066,9 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 	const Worker_RequestId CreateEntityRequestId =
 		NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
 
-	CreateEntityHandler.AddRequest(CreateEntityRequestId, CreateEntityDelegate::CreateRaw(this, &ActorSystem::OnEntityCreated, SpanId));
+	CommandsHandler.AddRequest(CreateEntityRequestId, [this, SpanId](const Worker_CreateEntityResponseOp& Op) {
+		OnEntityCreated(Op, SpanId);
+	});
 
 	CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
 }
@@ -2194,7 +2194,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 		// components (such as client RPC endpoints, player controller component, etc).
 		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Cast<APlayerController>(Actor));
 		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
-		ClaimPartitionHandler.ClaimPartition(ClientSystemEntityId, Op.entity_id);
+		CommandsHandler.ClaimPartition(NetDriver->Connection->GetCoordinator(), ClientSystemEntityId, Op.entity_id);
 	}
 }
 
@@ -2299,10 +2299,8 @@ void ActorSystem::CreateEntityWithRetries(Worker_EntityId EntityId, FString Enti
 	const Worker_RequestId RequestId =
 		NetDriver->Connection->SendCreateEntityRequest(CopyEntityComponentData(EntityComponents), &EntityId, RETRY_UNTIL_COMPLETE);
 
-	CreateEntityDelegate Delegate;
-
-	Delegate.BindLambda([this, EntityId, Name = MoveTemp(EntityName),
-						 Components = MoveTemp(EntityComponents)](const Worker_CreateEntityResponseOp& Op) mutable {
+	FCreateEntityDelegate Delegate = [this, EntityId, Name = MoveTemp(EntityName),
+									  Components = MoveTemp(EntityComponents)](const Worker_CreateEntityResponseOp& Op) mutable {
 		switch (Op.status_code)
 		{
 		case WORKER_STATUS_CODE_SUCCESS:
@@ -2327,9 +2325,9 @@ void ActorSystem::CreateEntityWithRetries(Worker_EntityId EntityId, FString Enti
 			DeleteEntityComponentData(Components);
 			break;
 		}
-	});
+	};
 
-	CreateEntityHandler.AddRequest(RequestId, MoveTemp(Delegate));
+	CommandsHandler.AddRequest(RequestId, MoveTemp(Delegate));
 }
 
 TArray<FWorkerComponentData> ActorSystem::CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents)
