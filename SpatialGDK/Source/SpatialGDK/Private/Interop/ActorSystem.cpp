@@ -1694,11 +1694,17 @@ void ActorSystem::InvokeRepNotifies()
 		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Object);
 		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 		{
+			// TODO UNR-5785 - Once fixed, change log level to warning
+			UE_LOG(LogActorSystem, Verbose, TEXT("Failed to invoke rep notifies for an object as its entity id was invalid. Object: %s"),
+				   *Object->GetName());
 			continue;
 		}
 		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
 		if (!IsValid(Channel))
 		{
+			UE_LOG(LogActorSystem, Warning,
+				   TEXT("Failed to invoke rep notifies for an object as its channel was invalid. Object: %s, Entity: %lld"),
+				   *Object->GetName(), EntityId);
 			continue;
 		}
 		RemoveRepNotifiesWithUnresolvedObjs(*Object, *Channel, ObjectRepNotifies.RepNotifies);
