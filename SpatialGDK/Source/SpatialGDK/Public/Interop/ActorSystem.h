@@ -61,6 +61,7 @@ public:
 
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref);
 	void CleanupRepStateMap(FSpatialObjectRepState& RepState);
+	void ResolveAsyncPendingLoad(UObject* LoadedObject, const FUnrealObjectRef& ObjectRef);
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
 	void RemoveActor(Worker_EntityId EntityId);

@@ -960,6 +960,12 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 	}
 }
 
+void ActorSystem::ResolveAsyncPendingLoad(UObject* LoadedObject, const FUnrealObjectRef& ObjectRef)
+{
+	ResolvePendingOperations(LoadedObject, ObjectRef);
+	InvokeRepNotifies();
+}
+
 void ActorSystem::ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)
 {
 	UE_LOG(LogActorSystem, Verbose, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(),
