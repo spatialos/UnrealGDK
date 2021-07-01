@@ -2299,8 +2299,8 @@ void ActorSystem::CreateEntityWithRetries(Worker_EntityId EntityId, FString Enti
 	const Worker_RequestId RequestId =
 		NetDriver->Connection->SendCreateEntityRequest(CopyEntityComponentData(EntityComponents), &EntityId, RETRY_UNTIL_COMPLETE);
 
-	CreateEntityDelegate Delegate = [this, EntityId, Name = MoveTemp(EntityName),
-									 Components = MoveTemp(EntityComponents)](const Worker_CreateEntityResponseOp& Op) mutable {
+	FCreateEntityDelegate Delegate = [this, EntityId, Name = MoveTemp(EntityName),
+									  Components = MoveTemp(EntityComponents)](const Worker_CreateEntityResponseOp& Op) mutable {
 		switch (Op.status_code)
 		{
 		case WORKER_STATUS_CODE_SUCCESS:

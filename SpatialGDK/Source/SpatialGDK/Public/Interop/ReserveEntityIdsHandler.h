@@ -13,7 +13,7 @@
 
 DECLARE_CYCLE_STAT(TEXT("ReserveEntityHandler"), STAT_ReserveEntityHandler, STATGROUP_SpatialNet);
 
-using ReserveEntityIDsDelegate = TFunction<void(const Worker_ReserveEntityIdsResponseOp&)>;
+using FReserveEntityIDsDelegate = TFunction<void(const Worker_ReserveEntityIdsResponseOp&)>;
 
 namespace SpatialGDK
 {
@@ -31,7 +31,7 @@ public:
 				const Worker_ReserveEntityIdsResponseOp& TypedOp = Op.op.reserve_entity_ids_response;
 				const Worker_RequestId& RequestId = TypedOp.request_id;
 
-				ReserveEntityIDsDelegate CallableToCall;
+				FReserveEntityIDsDelegate CallableToCall;
 				if (Handlers.RemoveAndCopyValue(RequestId, CallableToCall))
 				{
 					if (ensure(CallableToCall))
@@ -43,9 +43,9 @@ public:
 		}
 	}
 
-	void AddRequest(Worker_RequestId RequestId, const ReserveEntityIDsDelegate& Callable) { Handlers.Add(RequestId, Callable); }
+	void AddRequest(Worker_RequestId RequestId, const FReserveEntityIDsDelegate& Callable) { Handlers.Add(RequestId, Callable); }
 
 private:
-	TMap<Worker_RequestId_Key, ReserveEntityIDsDelegate> Handlers;
+	TMap<Worker_RequestId_Key, FReserveEntityIDsDelegate> Handlers;
 };
 } // namespace SpatialGDK

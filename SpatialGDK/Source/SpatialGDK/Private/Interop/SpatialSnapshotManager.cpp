@@ -50,8 +50,8 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 	check(Connection.IsValid());
 	const Worker_RequestId RequestID = Connection->SendEntityQueryRequest(&WorldQuery, RETRY_UNTIL_COMPLETE);
 
-	EntityQueryDelegate WorldQueryDelegate = [Connection = this->Connection,
-											  PostWorldWipeDelegate](const Worker_EntityQueryResponseOp& Op) {
+	FEntityQueryDelegate WorldQueryDelegate = [Connection = this->Connection,
+											   PostWorldWipeDelegate](const Worker_EntityQueryResponseOp& Op) {
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogSnapshotManager, Error, TEXT("SnapshotManager WorldWipe - World entity query failed: %s"), UTF8_TO_TCHAR(Op.message));
@@ -163,8 +163,8 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 	Worker_SnapshotInputStream_Destroy(Snapshot);
 
 	// Set up reserve IDs delegate
-	ReserveEntityIDsDelegate SpawnEntitiesDelegate = [Connection = this->Connection, GlobalStateManager = this->GlobalStateManager,
-													  EntitiesToSpawn](const Worker_ReserveEntityIdsResponseOp& Op) {
+	FReserveEntityIDsDelegate SpawnEntitiesDelegate = [Connection = this->Connection, GlobalStateManager = this->GlobalStateManager,
+													   EntitiesToSpawn](const Worker_ReserveEntityIdsResponseOp& Op) {
 		UE_LOG(LogSnapshotManager, Log, TEXT("Creating entities in snapshot, number of entities to spawn: %i"), Op.number_of_entity_ids);
 
 		// Ensure we have the same number of reserved IDs as we have entities to spawn

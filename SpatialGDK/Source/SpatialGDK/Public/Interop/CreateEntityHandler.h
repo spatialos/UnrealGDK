@@ -12,7 +12,7 @@
 
 DECLARE_CYCLE_STAT(TEXT("CreateEntityHandler"), STAT_CreateEntityHandler, STATGROUP_SpatialNet);
 
-using CreateEntityDelegate = TFunction<void(const Worker_CreateEntityResponseOp&)>;
+using FCreateEntityDelegate = TFunction<void(const Worker_CreateEntityResponseOp&)>;
 
 namespace SpatialGDK
 {
@@ -21,7 +21,7 @@ class FCreateEntityHandler
 	DECLARE_LOG_CATEGORY_CLASS(LogCreateEntityHandler, Log, All);
 
 public:
-	void AddRequest(Worker_RequestId RequestId, CreateEntityDelegate Handler)
+	void AddRequest(Worker_RequestId RequestId, FCreateEntityDelegate Handler)
 	{
 		if (!ensureAlwaysMsgf(Handler, TEXT("Failed to add create entity requested handler. Handler delegate was unbound")))
 		{
@@ -51,7 +51,7 @@ public:
 					   EntityIdsOp.request_id, UTF8_TO_TCHAR(EntityIdsOp.message));
 
 				const Worker_RequestId RequestId = EntityIdsOp.request_id;
-				CreateEntityDelegate Handler;
+				FCreateEntityDelegate Handler;
 				const bool bHasHandler = Handlers.RemoveAndCopyValue(RequestId, Handler);
 				if (bHasHandler)
 				{
@@ -67,6 +67,6 @@ public:
 	int GetPendingRequestsCount() const { return Handlers.Num(); }
 
 private:
-	TMap<Worker_RequestId_Key, CreateEntityDelegate> Handlers;
+	TMap<Worker_RequestId_Key, FCreateEntityDelegate> Handlers;
 };
 } // namespace SpatialGDK

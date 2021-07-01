@@ -129,7 +129,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 
 	const Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&SpatialSpawnerQuery, RETRY_UNTIL_COMPLETE);
 
-	EntityQueryDelegate SpatialSpawnerQueryDelegate = [this](const Worker_EntityQueryResponseOp& Op) {
+	FEntityQueryDelegate SpatialSpawnerQueryDelegate = [this](const Worker_EntityQueryResponseOp& Op) {
 		FString Reason;
 
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)

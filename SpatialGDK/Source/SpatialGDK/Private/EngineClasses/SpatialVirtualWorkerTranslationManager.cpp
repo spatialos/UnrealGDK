@@ -236,7 +236,7 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 	const Worker_RequestId RequestId =
 		Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 
-	CreateEntityDelegate OnCreateWorkerEntityResponse = [this, VirtualWorkerId](const Worker_CreateEntityResponseOp& Op) {
+	FCreateEntityDelegate OnCreateWorkerEntityResponse = [this, VirtualWorkerId](const Worker_CreateEntityResponseOp& Op) {
 		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
@@ -311,7 +311,7 @@ void SpatialVirtualWorkerTranslationManager::QueryForServerWorkerEntities()
 	bWorkerEntityQueryInFlight = true;
 
 	// Register a method to handle the query response.
-	EntityQueryDelegate ServerWorkerEntityQueryDelegate = [this](const Worker_EntityQueryResponseOp& Op) {
+	FEntityQueryDelegate ServerWorkerEntityQueryDelegate = [this](const Worker_EntityQueryResponseOp& Op) {
 		this->ServerWorkerEntityQueryDelegate(Op);
 	};
 	CommandsHandler.AddRequest(RequestID, ServerWorkerEntityQueryDelegate);

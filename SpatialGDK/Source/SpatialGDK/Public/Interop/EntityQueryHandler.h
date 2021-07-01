@@ -13,7 +13,7 @@
 
 DECLARE_CYCLE_STAT(TEXT("EntityQueryHandler"), STAT_EntityQueryHandler, STATGROUP_SpatialNet);
 
-using EntityQueryDelegate = TFunction<void(const Worker_EntityQueryResponseOp&)>;
+using FEntityQueryDelegate = TFunction<void(const Worker_EntityQueryResponseOp&)>;
 
 namespace SpatialGDK
 {
@@ -31,7 +31,7 @@ public:
 				const Worker_EntityQueryResponseOp& TypedOp = Op.op.entity_query_response;
 				const Worker_RequestId& RequestId = TypedOp.request_id;
 
-				EntityQueryDelegate CallableToCall;
+				FEntityQueryDelegate CallableToCall;
 				if (Handlers.RemoveAndCopyValue(RequestId, CallableToCall))
 				{
 					if (ensure(CallableToCall))
@@ -43,9 +43,9 @@ public:
 		}
 	}
 
-	void AddRequest(Worker_RequestId RequestId, const EntityQueryDelegate& Callable) { Handlers.Add(RequestId, Callable); }
+	void AddRequest(Worker_RequestId RequestId, const FEntityQueryDelegate& Callable) { Handlers.Add(RequestId, Callable); }
 
 private:
-	TMap<Worker_RequestId_Key, EntityQueryDelegate> Handlers;
+	TMap<Worker_RequestId_Key, FEntityQueryDelegate> Handlers;
 };
 } // namespace SpatialGDK

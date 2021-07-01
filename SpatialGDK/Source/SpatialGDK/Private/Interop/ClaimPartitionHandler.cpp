@@ -23,12 +23,12 @@ void FClaimPartitionHandler::ClaimPartition(ISpatialOSWorker& WorkerInterface, W
 	CommandRequest Request(OwningCommandRequestPtr(RequestData.schema_type), RequestData.component_id, RequestData.command_index);
 	const Worker_RequestId ClaimEntityRequestId =
 		WorkerInterface.SendEntityCommandRequest(SystemEntityId, MoveTemp(Request), RETRY_UNTIL_COMPLETE, {});
-	ClaimPartitionRequest RequestEntry = { PartitionToClaim, SystemEntityCommandDelegate() };
+	FClaimPartitionRequest RequestEntry = { PartitionToClaim, FSystemEntityCommandDelegate() };
 	ClaimPartitionRequestIds.Add(ClaimEntityRequestId, MoveTemp(RequestEntry));
 }
 
 void FClaimPartitionHandler::ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId,
-											Worker_PartitionId PartitionToClaim, SystemEntityCommandDelegate Delegate)
+											Worker_PartitionId PartitionToClaim, FSystemEntityCommandDelegate Delegate)
 {
 	UE_LOG(LogClaimPartitionHandler, Log,
 		   TEXT("SendClaimPartitionRequest. SystemWorkerEntityId: %lld. "
@@ -39,7 +39,7 @@ void FClaimPartitionHandler::ClaimPartition(ISpatialOSWorker& WorkerInterface, W
 	CommandRequest Request(OwningCommandRequestPtr(RequestData.schema_type), RequestData.component_id, RequestData.command_index);
 	const Worker_RequestId ClaimEntityRequestId =
 		WorkerInterface.SendEntityCommandRequest(SystemEntityId, MoveTemp(Request), RETRY_UNTIL_COMPLETE, {});
-	ClaimPartitionRequest RequestEntry = { PartitionToClaim, MoveTemp(Delegate) };
+	FClaimPartitionRequest RequestEntry = { PartitionToClaim, MoveTemp(Delegate) };
 	ClaimPartitionRequestIds.Add(ClaimEntityRequestId, MoveTemp(RequestEntry));
 }
 
@@ -50,7 +50,7 @@ void FClaimPartitionHandler::ProcessOps(const TArray<Worker_Op>& Ops)
 		if (Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE)
 		{
 			const Worker_CommandResponseOp& CommandResponse = Op.op.command_response;
-			ClaimPartitionRequest Request{ SpatialConstants::INVALID_PARTITION_ID, SystemEntityCommandDelegate() };
+			FClaimPartitionRequest Request{ SpatialConstants::INVALID_PARTITION_ID, FSystemEntityCommandDelegate() };
 			const bool bIsRequestHandled = ClaimPartitionRequestIds.RemoveAndCopyValue(CommandResponse.request_id, Request);
 			if (bIsRequestHandled)
 			{

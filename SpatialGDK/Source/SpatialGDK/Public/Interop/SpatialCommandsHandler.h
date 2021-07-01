@@ -25,22 +25,22 @@ struct FCommandsHandler
 	}
 
 	void ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim,
-						SystemEntityCommandDelegate Delegate)
+						FSystemEntityCommandDelegate Delegate)
 	{
 		ClaimPartitionHandler.ClaimPartition(WorkerInterface, SystemEntityId, PartitionToClaim, MoveTemp(Delegate));
 	}
 
-	void AddRequest(Worker_RequestId RequestId, CreateEntityDelegate Handler)
+	void AddRequest(Worker_RequestId RequestId, FCreateEntityDelegate Handler)
 	{
 		CreateEntityHandler.AddRequest(RequestId, MoveTemp(Handler));
 	}
 
-	void AddRequest(Worker_RequestId RequestId, EntityQueryDelegate Handler)
+	void AddRequest(Worker_RequestId RequestId, FEntityQueryDelegate Handler)
 	{
 		EntityQueryHandler.AddRequest(RequestId, MoveTemp(Handler));
 	}
 
-	void AddRequest(Worker_RequestId RequestId, ReserveEntityIDsDelegate Handler)
+	void AddRequest(Worker_RequestId RequestId, FReserveEntityIDsDelegate Handler)
 	{
 		ReserveEntityIdsHandler.AddRequest(RequestId, MoveTemp(Handler));
 	}
