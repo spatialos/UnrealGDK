@@ -459,7 +459,8 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 
 					if (!bDormantActor)
 					{
-						UpdateShadowData(EntityId);
+						USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
+						ActorChannel->OnHandoverAuthorityGained();
 					}
 
 					// TODO - Using bActorHadAuthority should be replaced with better tracking system to Actor entity creation [UNR-3960]
@@ -766,20 +767,6 @@ void ActorSystem::HandleDeferredEntityDeletion(const DeferredRetire& Retire) con
 	{
 		RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
 	}
-}
-
-void ActorSystem::UpdateShadowData(const Worker_EntityId EntityId) const
-{
-	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
-	ActorChannel->UpdateShadowData();
-	const ComponentData* InterestBucketComponent =
-		NetDriver->Connection->GetView()[EntityId].Components.FindByPredicate([NetDriver = NetDriver](const ComponentData& Data) {
-			return Data.GetComponentId() == SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID
-				   || Data.GetComponentId() == SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID
-				   || NetDriver->ClassInfoManager->IsNetCullDistanceComponent(Data.GetComponentId());
-		});
-	ActorChannel->SavedInterestBucketComponentID =
-		InterestBucketComponent != nullptr ? InterestBucketComponent->GetComponentId() : SpatialConstants::INVALID_COMPONENT_ID;
 }
 
 void ActorSystem::RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff)

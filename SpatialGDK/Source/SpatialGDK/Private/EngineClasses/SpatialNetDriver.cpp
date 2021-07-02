@@ -3227,14 +3227,18 @@ void USpatialNetDriver::TryFinishStartup()
 
 		if (WorkerType == SpatialConstants::DefaultServerWorkerType)
 		{
-			if (!PackageMap->IsEntityPoolReady())
+			if (!Connection->GetCoordinator().HasEntity(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID))
+			{
+				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the GSM entity..."));
+			}
+			else if (!PackageMap->IsEntityPoolReady())
 			{
 				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the EntityPool to be ready."));
 			}
-			else if (IsServer() && GlobalStateManager->HasAuthority() && SkeletonEntityCreationStep.IsValid()
-					 && VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
+			else if (SkeletonEntityCreationStep.IsValid() && VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
 			{
-				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the load balancing system to be ready."));
+				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log,
+						TEXT("Waiting for the load balancing system to be ready (with skeleton entities)."));
 			}
 			else if (SkeletonEntityCreationStep.IsValid() && !SkeletonEntityCreationStep->TryFinish())
 			{
@@ -3247,7 +3251,8 @@ void USpatialNetDriver::TryFinishStartup()
 			}
 			else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
 			{
-				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the load balancing system to be ready."));
+				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log,
+						TEXT("Waiting for the load balancing system to be ready (without skeleton entities)."));
 			}
 			else if (!Connection->GetCoordinator().HasEntity(VirtualWorkerTranslator->GetClaimedPartitionId()))
 			{

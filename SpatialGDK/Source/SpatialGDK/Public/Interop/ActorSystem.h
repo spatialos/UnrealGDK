@@ -126,7 +126,6 @@ private:
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
 	void HandleEntityDeletedAuthority(Worker_EntityId EntityId) const;
 	void HandleDeferredEntityDeletion(const DeferredRetire& Retire) const;
-	void UpdateShadowData(Worker_EntityId EntityId) const;
 
 	// Component add
 	void HandleDormantComponentAdded(Worker_EntityId EntityId) const;

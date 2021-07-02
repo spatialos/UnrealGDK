@@ -285,6 +285,7 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(Schema_ComponentUpdate*
 
 bool UGlobalStateManager::HasAuthority() const
 {
+	check(ViewCoordinator->HasEntity(GlobalStateManagerEntityId));
 	return ViewCoordinator->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
 }
 

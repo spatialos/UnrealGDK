@@ -256,6 +256,8 @@ public:
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
 											 const FObjectReferencesMap& RefMap, UObject* Object);
 
+	Worker_ComponentId GetInterestComponentId() const;
+	void OnHandoverAuthorityGained();
 	void UpdateShadowData();
 	void UpdateSpatialPosition();
 
@@ -316,7 +318,6 @@ private:
 	// Used on the client to track gaining/losing ownership.
 	bool bNetOwned;
 
-public:
 	// Used on the server
 	// Tracks the interest bucket component ID for the relevant Actor.
 	Worker_ComponentId SavedInterestBucketComponentID;

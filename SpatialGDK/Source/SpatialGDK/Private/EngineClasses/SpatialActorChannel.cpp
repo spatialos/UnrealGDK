@@ -380,6 +380,14 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	return Super::Close(Reason);
 }
 
+void USpatialActorChannel::OnHandoverAuthorityGained()
+{
+	UpdateShadowData();
+
+	SavedInterestBucketComponentID =
+		NetDriver->ClassInfoManager->GetExistingInterestBucketComponentId(NetDriver->Connection->GetView()[EntityId]);
+}
+
 void USpatialActorChannel::UpdateShadowData()
 {
 	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Called UpdateShadowData but Actor was nullptr")))
@@ -683,6 +691,9 @@ int64 USpatialActorChannel::ReplicateActor()
 			// Need to try replicating all subobjects before entity creation to make sure their respective FObjectReplicator exists
 			// so we know what subobjects are relevant for replication when creating the entity.
 			Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
+
+			// Get initial interest bucket component.
+			SavedInterestBucketComponentID = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
 
 			NetDriver->ActorSystem->SendCreateEntityRequest(*this, ReplicationBytesWritten);
 
@@ -1148,6 +1159,11 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPER
 		}
 		return false;
 	});
+}
+
+Worker_ComponentId USpatialActorChannel::GetInterestComponentId() const
+{
+	return SavedInterestBucketComponentID;
 }
 
 void USpatialActorChannel::ServerProcessOwnershipChange()

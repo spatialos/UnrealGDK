@@ -251,10 +251,9 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID));
 
-	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+	if (Channel->GetInterestComponentId() != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));
-		Channel->SavedInterestBucketComponentID = ActorInterestComponentId;
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(Channel->GetInterestComponentId()));
 	}
 
 	if (Actor->NetDormancy >= DORM_DormantAll)
