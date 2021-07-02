@@ -6,7 +6,6 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Schema/ServerWorker.h"
-#include "Schema/SkeletonEntityManifest.h"
 #include "Schema/StandardLibrary.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialView/CommandRequest.h"
