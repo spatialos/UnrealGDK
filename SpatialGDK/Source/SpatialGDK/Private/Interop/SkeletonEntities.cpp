@@ -134,8 +134,6 @@ Worker_EntityId FDistributedStartupActorSkeletonEntityCreator::CreateSkeletonEnt
 	Interest SkeletonEntityInterest;
 	NetDriver->InterestFactory->AddServerSelfInterest(SkeletonEntityInterest);
 	EntityComponents.Add(SkeletonEntityInterest.CreateComponentData());
-	// EntityComponents.Add(NetDriver->InterestFactory->CreateInterestData(&Actor,
-	// NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor.GetClass()), ActorEntityId));
 
 	TArray<ComponentData> SkeletonEntityComponentDatas;
 	Algo::Transform(EntityComponents, SkeletonEntityComponentDatas, &Convert);
@@ -154,7 +152,7 @@ Worker_EntityId FDistributedStartupActorSkeletonEntityCreator::CreateSkeletonEnt
 			}
 			if (RemainingSkeletonEntities.Num() == 0)
 			{
-				Stage = EStage::DelegatingEntities;
+				Stage = EStage::WaitingForEntities;
 			}
 		});
 	CreateHandler.AddRequest(CreateEntityRequestId, MoveTemp(OnCreated));
@@ -166,6 +164,18 @@ void FDistributedStartupActorSkeletonEntityCreator::Advance()
 {
 	CreateHandler.ProcessOps(NetDriver->Connection->GetWorkerMessages());
 
+	if (Stage == EStage::WaitingForEntities)
+	{
+		if (Algo::AllOf(SkeletonEntitiesToDelegate,
+						[View = &NetDriver->Connection->GetView()](
+							const TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& SkeletonEntityToDelegate) -> bool {
+							return View->Contains(SkeletonEntityToDelegate.Key);
+						}))
+		{
+			// Proceed to the next step once all entities are in view.
+			Stage = EStage::DelegatingEntities;
+		}
+	}
 	if (Stage == EStage::DelegatingEntities)
 	{
 		for (auto Kvp : SkeletonEntitiesToDelegate)

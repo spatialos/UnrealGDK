@@ -2092,9 +2092,12 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 		{
 			check(ExistingEntity->Components.ContainsByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId }));
 		}
-		const UnrealMetadata StartupActorMetadata = DataFactory.CreateMetadata(*ActorChannel.Actor);
-		const ComponentData StartupActorMetadataComponent(OwningComponentDataPtr(StartupActorMetadata.CreateComponentData().schema_type),
-														  UnrealMetadata::ComponentId);
+		else
+		{
+			return;
+		}
+		const ComponentData& StartupActorMetadataComponent =
+			*ExistingEntity->Components.FindByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId });
 		ComponentDatas.Emplace(StartupActorMetadataComponent.GetWorkerComponentData());
 		DataFactory.CreatePopulateSkeletonComponents(ActorChannel, ComponentDatas, ComponentUpdates, OutBytesWritten);
 		ComponentDatas.RemoveAt(0);

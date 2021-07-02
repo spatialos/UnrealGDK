@@ -44,6 +44,7 @@ private:
 	{
 		Initial,
 		CreatingEntities,
+		WaitingForEntities,
 		DelegatingEntities,
 		SigningManifest,
 		WaitingForPopulation,
