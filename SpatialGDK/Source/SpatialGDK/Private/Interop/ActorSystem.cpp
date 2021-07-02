@@ -1695,7 +1695,7 @@ void ActorSystem::InvokeRepNotifies()
 		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 		{
 			// TODO UNR-5785 - Once fixed, change log level to warning
-			UE_LOG(LogActorSystem, Verbose, TEXT("Failed to invoke rep notifies for an object as its entity id was invalid. Object: %s"),
+			UE_LOG(LogActorSystem, Log, TEXT("Failed to invoke rep notifies for an object as its entity id was invalid. Object: %s"),
 				   *Object->GetName());
 			continue;
 		}
