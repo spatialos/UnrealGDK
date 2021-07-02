@@ -1,5 +1,6 @@
 #include "Interop/SkeletonEntities.h"
 
+#include "Algo/AllOf.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriverRPC.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -158,7 +159,7 @@ Worker_EntityId FDistributedStartupActorSkeletonEntityCreator::CreateSkeletonEnt
 		RemainingSkeletonEntities.Remove(ActorEntityId);
 		if (WeakActor.IsValid())
 		{
-			SkeletonEntitiesToDelegate.Emplace(MakeTuple(ActorEntityId, WeakActor));
+			SkeletonEntitiesToDelegate.Emplace(ActorEntityId, WeakActor);
 			UE_LOG(LogSpatialSkeletonEntityCreator, Log, TEXT("EntityId: %lld Created skeleton entity"), ActorEntityId);
 		}
 		if (RemainingSkeletonEntities.Num() == 0)
