@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 
 #if WITH_GAMEPLAY_DEBUGGER
+#include "GameplayDebuggerCategoryReplicator.h"
 #include "Schema/GameplayDebuggerComponent.h"
 #include "Schema/Interest.h"
 #include "SpatialCommonTypes.h"
@@ -13,7 +14,6 @@
 
 #include "SpatialNetDriverGameplayDebuggerContext.generated.h"
 
-class AGameplayDebuggerCategoryReplicator;
 class UGameplayDebuggerLBStrategy;
 class USpatialNetDriver;
 
@@ -63,7 +63,8 @@ protected:
 		SpatialGDK::GameplayDebuggerComponent Component;
 		TWeakObjectPtr<AGameplayDebuggerCategoryReplicator> ReplicatorWeakObjectPtr;
 		FString CurrentWorkerId;
-		FDelegateHandle Handle;
+		FDelegateHandle ServerTrackingRequestHandle;
+		FDelegateHandle PlayerControllerAuthorityChangeHandle;
 	};
 
 	void TrackEntity(Worker_EntityId InEntityId);
@@ -72,7 +73,12 @@ protected:
 	void RemoveAuthority(Worker_EntityId InEntityId, FEntityData* InOptionalEntityData);
 	void RegisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
 	void UnregisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
-	void OnServerRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator, FString InServerWorkerId);
+	void OnServerTrackingRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator,
+								 EGameplayDebuggerServerTrackingMode InServerTrackingMode, FString InOptionalServerWorkerId);
+	VirtualWorkerId GetActorVirtualWorkerId(const AActor& InActor) const;
+	void RegisterPlayerControllerAuthorityLostCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
+	void UnregisterPlayerControllerAuthorityLostCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
+	void OnPlayerControllerAuthorityLost(const APlayerController& InPlayerController);
 
 	USpatialNetDriver* NetDriver = nullptr;
 	const SpatialGDK::FSubView* SubView = nullptr;

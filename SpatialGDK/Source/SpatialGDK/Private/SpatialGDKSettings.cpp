@@ -161,6 +161,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, LocalWorkerLogLevel(WorkerLogLevel)
 	, CloudWorkerLogLevel(WorkerLogLevel)
 	, bEnableMultiWorker(true)
+	, bRunStrategyWorker(false)
 	, DefaultRPCRingBufferSize(32)
 	, CrossServerRPCImplementation(ECrossServerRPCImplementation::SpatialCommand)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
@@ -236,6 +237,8 @@ void USpatialGDKSettings::PostInitProperties()
 		});
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
+
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("The strategy worker is %s."), bRunStrategyWorker ? TEXT("enabled") : TEXT("disabled"));
 }
 
 #if WITH_EDITOR

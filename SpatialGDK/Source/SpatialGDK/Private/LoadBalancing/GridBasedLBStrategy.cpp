@@ -5,6 +5,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialStatics.h"
 
@@ -263,4 +264,26 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 		}
 	}
 }
+
 #endif // WITH_EDITOR
+
+bool UGridBasedLBStrategy::IsStrategyWorkerAware() const
+{
+	return true;
+}
+
+void UGridBasedLBStrategy::GetLegacyLBInformation(FLegacyLBContext& Ctx) const
+{
+	if (Ctx.Layers.Num() == 0)
+	{
+		Ctx.Layers.AddDefaulted();
+	}
+	for (int32 i = 0; i < WorkerCells.Num(); ++i)
+	{
+		FLegacyLBContext::Cell NewCell;
+		NewCell.Border = InterestBorder;
+		NewCell.Region = WorkerCells[i];
+		NewCell.WorkerId = VirtualWorkerIds[i];
+		Ctx.Layers.Last().Cells.Add(NewCell);
+	}
+}

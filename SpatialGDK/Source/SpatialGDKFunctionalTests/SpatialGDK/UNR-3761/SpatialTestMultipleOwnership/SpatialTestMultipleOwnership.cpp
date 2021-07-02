@@ -58,6 +58,19 @@ void ASpatialTestMultipleOwnership::PrepareTest()
 		RegisterAutoDestroyActor(MultipleOwnershipPawn1);
 		RegisterAutoDestroyActor(MultipleOwnershipPawn2);
 
+		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
+		{
+			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
+			{
+				AController* Controller = Cast<AController>(FlowController->GetOwner());
+				if (AssertIsValid(Controller, TEXT("Each flow controller should have an associated PlayerController as an owner.")))
+				{
+					AssertIsValid(Controller->GetPawn(), TEXT("Each flow controller should have an associated pawn."));
+					OriginalPossessedPawns.Emplace(Controller, Controller->GetPawn());
+				}
+			}
+		}
+
 		FinishStep();
 	});
 
@@ -212,4 +225,13 @@ void ASpatialTestMultipleOwnership::PrepareTest()
 			FinishStep();
 		},
 		10.0f);
+
+	// The server makes the player controllers possess the original pawns they had before the start of the test.
+	AddStep(TEXT("SpatialTestMultipleOwnershipCleanup"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		for (const auto& Pair : OriginalPossessedPawns)
+		{
+			Pair.Key->Possess(Pair.Value);
+		}
+		FinishStep();
+	});
 }

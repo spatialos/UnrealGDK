@@ -22,7 +22,7 @@ namespace SpatialGDK
 {
 struct MigrationDiagnostic : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID;
 
 	MigrationDiagnostic() = default;
 

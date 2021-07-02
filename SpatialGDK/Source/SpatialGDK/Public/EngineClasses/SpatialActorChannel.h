@@ -120,7 +120,7 @@ public:
 
 	void UpdateRefToRepStateMap(FObjectToRepStateMap& ReplicatorMap);
 	bool MoveMappedObjectToUnmapped(const FUnrealObjectRef& ObjRef);
-	bool HasUnresolved() const { return UnresolvedRefs.Num() == 0; }
+	bool HasUnresolved() const { return UnresolvedRefs.Num() != 0; }
 
 	const FChannelObjectPair& GetChannelObjectPair() const { return ThisObj; }
 
@@ -260,6 +260,7 @@ public:
 	void OnHandoverAuthorityGained();
 	void UpdateShadowData();
 	void UpdateSpatialPosition();
+	void ForcePositionReplication() { TimeWhenPositionLastUpdated = 0; }
 
 	void ServerProcessOwnershipChange();
 	void ClientProcessOwnershipChange(bool bNewNetOwned);
@@ -277,6 +278,8 @@ public:
 
 	bool NeedOwnerInterestUpdate() const { return bNeedOwnerInterestUpdate; }
 
+	const FVector& GetLastUpdatedSpatialPosition() const { return LastPositionSinceUpdate; }
+
 protected:
 	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
@@ -291,7 +294,7 @@ private:
 
 	void UpdateVisibleComponent(AActor* Actor);
 
-	bool SatisfiesSpatialPositionUpdateRequirements();
+	bool SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition);
 
 	void ValidateChannelNotBroken();
 

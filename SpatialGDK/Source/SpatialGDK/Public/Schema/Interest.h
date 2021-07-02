@@ -456,7 +456,7 @@ inline ComponentSetInterest GetComponentInterestFromSchema(Schema_Object* Object
 
 struct Interest : AbstractMutableComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::INTEREST_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::INTEREST_COMPONENT_ID;
 
 	Interest() = default;
 

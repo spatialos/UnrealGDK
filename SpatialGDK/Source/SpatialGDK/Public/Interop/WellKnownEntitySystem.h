@@ -15,8 +15,9 @@ namespace SpatialGDK
 class WellKnownEntitySystem
 {
 public:
-	WellKnownEntitySystem(const FSubView& SubView, USpatialWorkerConnection* InConnection, int InNumberOfWorkers,
-						  SpatialVirtualWorkerTranslator& InVirtualWorkerTranslator, UGlobalStateManager& InGlobalStateManager);
+	WellKnownEntitySystem(const FSubView& SubView, USpatialWorkerConnection* InConnection, USpatialNetDriver* InNetDriver,
+						  int InNumberOfWorkers, SpatialVirtualWorkerTranslator& InVirtualWorkerTranslator,
+						  UGlobalStateManager& InGlobalStateManager);
 	void Advance();
 
 	void OnMapLoaded() const;
@@ -38,6 +39,7 @@ private:
 	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 	UGlobalStateManager* GlobalStateManager;
 	USpatialWorkerConnection* Connection;
+	USpatialNetDriver* NetDriver;
 	int NumberOfWorkers;
 };
 

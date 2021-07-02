@@ -27,8 +27,7 @@ public:
 	};
 
 	SpatialVirtualWorkerTranslator() = delete;
-	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy, USpatialNetDriver* InNetDriver,
-								   PhysicalWorkerName InLocalPhysicalWorkerName);
+	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy, PhysicalWorkerName InLocalPhysicalWorkerName);
 
 	// Returns true if the Translator has received the information needed to map virtual workers to physical workers.
 	// Currently that is only the number of virtual workers desired.
@@ -49,8 +48,6 @@ public:
 
 	// On receiving a version of the translation state, apply that to the internal mapping.
 	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);
-
-	USpatialNetDriver* NetDriver;
 
 	TWeakObjectPtr<UAbstractLBStrategy> LoadBalanceStrategy;
 

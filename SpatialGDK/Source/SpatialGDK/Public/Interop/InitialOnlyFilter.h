@@ -32,7 +32,7 @@ private:
 
 	USpatialWorkerConnection& Connection;
 
-	EntityQueryHandler QueryHandler;
+	FEntityQueryHandler QueryHandler;
 	TSet<Worker_EntityId_Key> PendingInitialOnlyEntities;
 	TSet<Worker_EntityId_Key> InflightInitialOnlyEntities;
 	TMap<Worker_RequestId_Key, TSet<Worker_EntityId_Key>> InflightInitialOnlyRequests;

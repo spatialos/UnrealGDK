@@ -27,14 +27,18 @@ component RoutingWorkerEntityTag {
     id = 2009;
 }
 
-component SkeletonEntityQueryTag {
+component PartitionAuthTag {
     id = 2012;
 }
 
-component SkeletonEntityPopulationAuthTag {
+component SkeletonEntityQueryTag {
     id = 2013;
 }
 
-component SkeletonEntityPopulationFinishedTag {
+component SkeletonEntityPopulationAuthTag {
     id = 2014;
+}
+
+component SkeletonEntityPopulationFinishedTag {
+    id = 2015;
 }

@@ -8,6 +8,7 @@
 #include "Templates/SubclassOf.h"
 #include "UObject/TextProperty.h"
 
+#include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/SpatialDebugger.h"
 
@@ -59,6 +60,8 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static bool IsMultiWorkerEnabled();
+
+	static bool IsStrategyWorkerEnabled();
 
 	/**
 	 * Returns the multi worker settings class.

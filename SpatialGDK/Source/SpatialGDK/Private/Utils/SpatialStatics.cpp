@@ -125,6 +125,12 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
+bool USpatialStatics::IsStrategyWorkerEnabled()
+{
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	return SpatialGDKSettings->bRunStrategyWorker;
+}
+
 bool USpatialStatics::IsMultiWorkerEnabled()
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
