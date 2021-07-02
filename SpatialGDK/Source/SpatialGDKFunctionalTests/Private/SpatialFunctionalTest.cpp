@@ -748,6 +748,8 @@ void ASpatialFunctionalTest::PrepareTestAfterBeginPlay()
 		PrepareTest();
 	}
 
+	// This setting of ready to run test is required for tests to be able to
+	// rerun, since the flow controllers are set to be not ready on test finish.
 	if (LocalFlowController != nullptr && !LocalFlowController->IsReadyToRunTest())
 	{
 		LocalFlowController->TrySetReadyToRunTest();

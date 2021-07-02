@@ -49,9 +49,8 @@ void ASpatialFunctionalTestFlowController::OnActorReady(bool bHasAuthority)
 	{
 		// Registration of authoritative flow controllers (server and client)
 		OwningTest->RegisterFlowController(this);
+		TrySetReadyToRunTest();
 	}
-
-	TrySetReadyToRunTest();
 }
 
 void ASpatialFunctionalTestFlowController::OnClientOwnershipGained()
