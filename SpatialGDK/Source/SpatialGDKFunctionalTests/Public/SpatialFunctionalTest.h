@@ -412,9 +412,6 @@ private:
 
 	TArray<ASpatialFunctionalTestFlowController*> FlowControllersExecutingStep;
 
-	UPROPERTY(Transient)
-	bool bDidSpawnServerFlowController = false;
-
 	// Time current step has been running for, used if Step Definition has TimeLimit >= 0.
 	float TimeRunningStep = 0.0f;
 
