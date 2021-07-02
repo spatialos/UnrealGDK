@@ -4,14 +4,12 @@
 
 #include "Utils/SchemaUtils.h"
 
-#include "Interop/ReserveEntityIdsHandler.h"
+#include "Interop/SpatialCommandsHandler.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
 #include "CoreMinimal.h"
-
-#include "EntityQueryHandler.h"
 
 class UGlobalStateManager;
 class USpatialReceiver;
@@ -38,6 +36,5 @@ private:
 
 	TWeakObjectPtr<USpatialWorkerConnection> Connection;
 	TWeakObjectPtr<UGlobalStateManager> GlobalStateManager;
-	SpatialGDK::ReserveEntityIdsHandler ReserveEntityIdsHandler;
-	SpatialGDK::EntityQueryHandler QueryHandler;
+	SpatialGDK::FCommandsHandler CommandsHandler;
 };

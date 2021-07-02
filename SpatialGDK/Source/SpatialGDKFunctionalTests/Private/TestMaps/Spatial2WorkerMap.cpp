@@ -5,6 +5,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/CrossServerAndClientOrchestrationTest/CrossServerAndClientOrchestrationTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RegisterAutoDestroyActorsTest/RegisterAutoDestroyActorsTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RelevancyTest/RelevancyTest.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialActorResolutionTest/SpatialActorResolutionTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestMultiServerUnrealComponents/SpatialTestMultiServerUnrealComponents.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestPropertyReplication/SpatialTestPropertyReplicationMultiworker.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestReplicationConditions/SpatialTestReplicationConditions.h"
@@ -34,6 +35,8 @@ void USpatial2WorkerMap::CreateCustomContentForMap()
 	// Test actor is placed in Server 1 load balancing area to ensure Server 1 becomes authoritative.
 	AddActorToLevel<ASpatialTestMultiServerUnrealComponents>(CurrentLevel, Server1Pos);
 	AddActorToLevel<ASpatialTestReplicationConditions>(CurrentLevel, Server1Pos);
+
+	AddActorToLevel<ASpatialActorResolutionTest>(CurrentLevel, FTransform::Identity);
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2FullInterestWorkerSettings::StaticClass());

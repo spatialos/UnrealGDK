@@ -1,13 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
-#include "ClaimPartitionHandler.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 #include "Utils/RepDataUtils.h"
 
 #include "Interop/ClientNetLoadActorHelper.h"
-#include "Interop/CreateEntityHandler.h"
+#include "Interop/SpatialCommandsHandler.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogActorSystem, Log, All);
 
@@ -180,8 +179,7 @@ private:
 	SpatialEventTracer* EventTracer;
 	FClientNetLoadActorHelper ClientNetLoadActorHelper;
 
-	CreateEntityHandler CreateEntityHandler;
-	ClaimPartitionHandler ClaimPartitionHandler;
+	FCommandsHandler CommandsHandler;
 
 	TSet<Worker_EntityId_Key> PresentEntities;
 

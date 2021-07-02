@@ -81,7 +81,7 @@ private:
 
 	TMap<Worker_RequestId_Key, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>> OutgoingForwardPlayerSpawnRequests;
 
-	SpatialGDK::EntityQueryHandler QueryHandler;
+	SpatialGDK::FEntityQueryHandler QueryHandler;
 	SpatialGDK::EntityCommandRequestHandler RequestHandler;
 	SpatialGDK::EntityCommandResponseHandler ResponseHandler;
 

@@ -12,8 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking changes:
 
 ### Features:
+-Gameplay Debugger now supports multi-worker environments.
 
 ### Bug fixes:
+- Fix `A functional test is already running error` that would sometimes occur when re-running multi-server functional tests.
+- Fixed an issue around actors being destroyed between entity creation and receiving a confirmation thereof.
 
 ### Internal:
 - Modified startup flow to only create ActorSystem, RPCService and some others after startup has otherwise finished; removed initial op reordering.
