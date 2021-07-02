@@ -28,7 +28,7 @@ private:
 	void ReadManifestFromEntity(Worker_EntityId ManifestEntityId);
 
 	USpatialNetDriver* NetDriver;
-	CreateEntityHandler CreateHandler;
+	FCreateEntityHandler CreateHandler;
 	TSet<Worker_EntityId_Key> RemainingSkeletonEntities;
 	TArray<TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>> SkeletonEntitiesToDelegate;
 

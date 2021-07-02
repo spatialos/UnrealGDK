@@ -154,19 +154,18 @@ Worker_EntityId FDistributedStartupActorSkeletonEntityCreator::CreateSkeletonEnt
 	const Worker_RequestId CreateEntityRequestId =
 		Coordinator.SendCreateEntityRequest(MoveTemp(SkeletonEntityComponentDatas), ActorEntityId);
 
-	CreateEntityDelegate OnCreated = CreateEntityDelegate::CreateLambda(
-		[this, ActorEntityId, WeakActor = MakeWeakObjectPtr(&Actor)](const Worker_CreateEntityResponseOp&) {
-			RemainingSkeletonEntities.Remove(ActorEntityId);
-			if (WeakActor.IsValid())
-			{
-				SkeletonEntitiesToDelegate.Emplace(MakeTuple(ActorEntityId, WeakActor));
-				UE_LOG(LogSpatialSkeletonEntityCreator, Log, TEXT("EntityId: %lld Created skeleton entity"), ActorEntityId);
-			}
-			if (RemainingSkeletonEntities.Num() == 0)
-			{
-				Stage = EStage::WaitingForEntities;
-			}
-		});
+	FCreateEntityDelegate OnCreated = [this, ActorEntityId, WeakActor = MakeWeakObjectPtr(&Actor)](const Worker_CreateEntityResponseOp&) {
+		RemainingSkeletonEntities.Remove(ActorEntityId);
+		if (WeakActor.IsValid())
+		{
+			SkeletonEntitiesToDelegate.Emplace(MakeTuple(ActorEntityId, WeakActor));
+			UE_LOG(LogSpatialSkeletonEntityCreator, Log, TEXT("EntityId: %lld Created skeleton entity"), ActorEntityId);
+		}
+		if (RemainingSkeletonEntities.Num() == 0)
+		{
+			Stage = EStage::WaitingForEntities;
+		}
+	};
 	CreateHandler.AddRequest(CreateEntityRequestId, MoveTemp(OnCreated));
 
 	return ActorEntityId;
