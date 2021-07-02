@@ -52,16 +52,7 @@ void FSkeletonEntityCreationStep::Initialize()
 	{
 		UE_LOG(LogSpatialSkeletonEntityCreationStep, Log, TEXT("Starting skeleton entity population step"));
 
-		if (ServerEntityCreator)
-		{
-			EntityPopulator.Emplace(*NetDriver, [this](Worker_EntityId EntityId, const FSkeletonEntityManifest& UpdatedManifest) {
-				ServerEntityCreator->HackAddManifest(EntityId, UpdatedManifest);
-			});
-		}
-		else
-		{
-			EntityPopulator.Emplace(*NetDriver);
-		}
+		EntityPopulator.Emplace(*NetDriver);
 	}
 }
 

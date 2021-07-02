@@ -36,7 +36,7 @@ private:
 
 	int ManifestsCreatedCount = 0;
 
-	FSubView* ManifestSubView;
+	FSubView* FilledManifestsSubview;
 	bool bIsFirstTimeProcessingManifests = true;
 	TMap<Worker_EntityId_Key, FSkeletonEntityManifest> Manifests;
 
@@ -46,7 +46,7 @@ private:
 		CreatingEntities,
 		WaitingForEntities,
 		DelegatingEntities,
-		SigningManifest,
+		CreatingManifests,
 		WaitingForPopulation,
 		Finished,
 	} Stage = EStage::Initial;
@@ -56,12 +56,6 @@ class FSkeletonEntityPopulator
 {
 public:
 	explicit FSkeletonEntityPopulator(USpatialNetDriver& InNetDriver);
-	explicit FSkeletonEntityPopulator(USpatialNetDriver& InNetDriver,
-									  TFunction<void(Worker_EntityId, FSkeletonEntityManifest)> InOnManifestUpdated)
-		: FSkeletonEntityPopulator(InNetDriver)
-	{
-		OnManifestUpdated = InOnManifestUpdated;
-	}
 
 	void Advance();
 	void ConsiderEntityPopulation(Worker_EntityId EntityId, const EntityViewElement& Element);
@@ -72,9 +66,8 @@ private:
 	ViewCoordinator& GetCoordinator();
 
 	USpatialNetDriver* NetDriver;
+	FSubView* LocallyAuthSkeletonEntityManifestsSubview;
 	FSubView* SkeletonEntitiesRequiringPopulationSubview;
-
-	TFunction<void(Worker_EntityId, FSkeletonEntityManifest)> OnManifestUpdated;
 
 	TOptional<Worker_EntityId> ManifestEntityId;
 	TOptional<FSkeletonEntityManifest> Manifest;
@@ -85,9 +78,8 @@ private:
 	{
 		Initial,
 		ReceivingManifest,
-		ReceivingSkeletonEntities,
-		PopulatingEntities,
-		SigningManifest,
+		DiscoverAssignedSkeletonEntities,
+		RefreshCompleteness,
 		Finished,
 	} Stage = EStage::Initial;
 };
