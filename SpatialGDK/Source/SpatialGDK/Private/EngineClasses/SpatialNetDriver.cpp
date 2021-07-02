@@ -444,7 +444,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		Sender = NewObject<USpatialSender>();
 		Receiver = NewObject<USpatialReceiver>();
 
-		if (IsServer() && GetDefault<USpatialGDKSettings>()->bRunStrategyWorker)
+		if (IsServer() && GetDefault<USpatialGDKSettings>()->bEnableSkeletonEntityCreation)
 		{
 			SkeletonEntityCreationStep = MakeUnique<SpatialGDK::FSkeletonEntityCreationStep>(*this);
 		}
