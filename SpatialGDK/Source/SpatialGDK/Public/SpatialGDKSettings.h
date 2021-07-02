@@ -514,6 +514,6 @@ public:
 	/**	-- EXPERIMENTAL --
 		Enables skeleton entities. If enabled, skeleton entities for level actors would be created during startup.
 	*/
-	UPROPERTY(EditAnywhere, Config, Category = "Startup", meta = (DisplayName = "Enable Initial Only Replication Condition"))
+	UPROPERTY(EditAnywhere, Config, Category = "Startup")
 	bool bEnableSkeletonEntityCreation;
 };
