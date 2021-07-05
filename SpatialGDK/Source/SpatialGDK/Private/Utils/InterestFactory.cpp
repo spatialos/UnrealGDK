@@ -321,10 +321,10 @@ void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(I
 	ReplicatorAuthServerQuery.Constraint.OrConstraint.Add(PlayerControllerConstraint);
 
 	// Add a query for the authoritative server to see the selected debug actor, if there is one with an entity ID
-	AActor *DebugActor = Replicator.GetDebugActor();
+	const AActor* const DebugActor = Replicator.GetDebugActor();
 	if (DebugActor != nullptr)
 	{
-		int64 DebugActorEntityId = NetDriver->GetActorEntityId(*DebugActor);
+		const int64 DebugActorEntityId = NetDriver->GetActorEntityId(*DebugActor);
 		if (DebugActorEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			QueryConstraint DebugActorConstraint;
