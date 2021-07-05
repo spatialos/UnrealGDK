@@ -65,9 +65,6 @@ void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId Comp
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(Schema_GetComponentUpdateFields(Update));
 		break;
-	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-		GlobalStateManager->ApplyDeploymentMapUpdate(Update);
-		break;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerUpdate(Update);
 		break;
@@ -87,9 +84,6 @@ void WellKnownEntitySystem::ProcessComponentAdd(const Worker_ComponentId Compone
 	{
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(Schema_GetComponentDataFields(Data));
-		break;
-	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-		GlobalStateManager->ApplyDeploymentMapData(Data);
 		break;
 	case SpatialConstants::SNAPSHOT_VERSION_COMPONENT_ID:
 		GlobalStateManager->ApplySnapshotVersionData(Data);
@@ -144,8 +138,6 @@ void WellKnownEntitySystem::OnMapLoaded() const
 	{
 		// ServerTravel - Increment the session id, so users don't rejoin the old game.
 		GlobalStateManager->TriggerBeginPlay();
-		GlobalStateManager->SetDeploymentState();
-		GlobalStateManager->SetAcceptingPlayers(true);
 		GlobalStateManager->IncrementSessionID();
 	}
 }

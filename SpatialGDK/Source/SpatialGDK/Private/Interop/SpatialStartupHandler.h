@@ -72,4 +72,64 @@ private:
 
 	USpatialNetDriver* NetDriver;
 };
+
+class FSpatialClientStartupHandler
+{
+public:
+	struct FInitialSetup
+	{
+		int32 ExpectedServerWorkersCount;
+	};
+	explicit FSpatialClientStartupHandler(USpatialNetDriver& InNetDriver, UGameInstance& InGameInstance, const FInitialSetup& InSetup);
+	bool TryFinishStartup();
+	void QueryGSM();
+	ViewCoordinator& GetCoordinator();
+	const ViewCoordinator& GetCoordinator() const;
+	const TArray<Worker_Op>& GetOps() const;
+
+private:
+	bool bQueriedGSM = false;
+
+	EntityQueryHandler QueryHandler;
+	struct FDeploymentMapData
+	{
+		FString DeploymentMapURL;
+
+		bool bAcceptingPlayers;
+
+		int32 DeploymentSessionId;
+
+		uint32 SchemaHash;
+	};
+	TOptional<FDeploymentMapData> GSMData;
+	static bool GetFromComponentData(const Worker_ComponentData& Component, FDeploymentMapData& OutData);
+
+	struct FSnapshotData
+	{
+		uint64 SnapshotVersion;
+	};
+	TOptional<FSnapshotData> SnapshotData;
+	static bool GetFromComponentData(const Worker_ComponentData& Component, FSnapshotData& OutData);
+
+	bool bFinishedMapLoad = false;
+	FDelegateHandle PostMapLoadedDelegateHandle;
+	void OnMapLoaded(UWorld* LoadedWorld);
+
+	enum class EStage : uint8
+	{
+		QueryGSM,
+		WaitForMapLoad,
+		SendPlayerSpawnRequest,
+		Finished,
+		Initial = QueryGSM,
+	};
+
+	FInitialSetup Setup;
+
+	EStage Stage = EStage::Initial;
+
+	USpatialNetDriver* NetDriver;
+	UGameInstance* GameInstance;
+};
+
 } // namespace SpatialGDK

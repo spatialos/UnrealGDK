@@ -465,6 +465,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 				*this,
 				SpatialGDK::FSpatialStartupHandler::FInitialSetup{ static_cast<int32>(LoadBalanceStrategy->GetMinimumRequiredWorkers()) });
 		}
+		else
+		{
+			ClientStartupHandler = MakeUnique<SpatialGDK::FSpatialClientStartupHandler>(
+				*this, *GameInstance, SpatialGDK::FSpatialClientStartupHandler::FInitialSetup{});
+		}
 
 		Dispatcher->Init(SpatialWorkerFlags);
 		Sender->Init(this, &TimerManager, Connection->GetEventTracer());
@@ -711,6 +716,8 @@ void USpatialNetDriver::ClientOnGSMQuerySuccess()
 {
 	StartupClientDebugString.Empty();
 
+	// GlobalStateManager->ApplyDeploymentMapData(Connection->GetCoordinator().GetView()[SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID].Components.FindByPredicate(SpatialGDK::ComponentIdEquality{SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID})->GetUnderlying());
+
 	const uint64 SnapshotVersion = GlobalStateManager->GetSnapshotVersion();
 	if (SpatialConstants::SPATIAL_SNAPSHOT_VERSION != SnapshotVersion) // Are we running with the same snapshot version?
 	{
@@ -911,20 +918,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		if (WellKnownEntitySystem.IsValid())
 		{
 			WellKnownEntitySystem->OnMapLoaded();
-		}
-	}
-	else
-	{
-		if (ClientCanSendPlayerSpawnRequests())
-		{
-			MakePlayerSpawnRequest();
-		}
-		else
-		{
-			UE_LOG(LogSpatial, Warning,
-				   TEXT("Client map finished loading but could not send player spawn request. Will requery the GSM for the correct map to "
-						"load."));
-			QueryGSMToLoadMap();
 		}
 	}
 
@@ -3423,7 +3416,7 @@ void USpatialNetDriver::TryFinishStartup()
 	}
 	else
 	{
-		if (bMapLoaded)
+		if (ClientStartupHandler->TryFinishStartup())
 		{
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();
@@ -3506,6 +3499,11 @@ int64 USpatialNetDriver::GetActorEntityId(const AActor& Actor) const
 	}
 
 	return PackageMap->GetEntityIdFromObject(&Actor);
+}
+
+uint32 USpatialNetDriver::ClientGetSessionId() const
+{
+	return SessionId;
 }
 
 bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)

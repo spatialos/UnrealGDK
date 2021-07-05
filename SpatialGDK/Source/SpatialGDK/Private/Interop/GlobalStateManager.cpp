@@ -145,31 +145,6 @@ void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
 	NetDriver->Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &Update);
 }
 
-void UGlobalStateManager::ApplyDeploymentMapUpdate(Schema_ComponentUpdate* Update)
-{
-	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
-
-	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID) == 1)
-	{
-		SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID));
-	}
-
-	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID) == 1)
-	{
-		bAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
-	}
-
-	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID) == 1)
-	{
-		DeploymentSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
-	}
-
-	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH) == 1)
-	{
-		SchemaHash = Schema_GetUint32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH);
-	}
-}
-
 #if WITH_EDITOR
 void UGlobalStateManager::OnPrePIEEnded(bool bValue)
 {
@@ -347,12 +322,6 @@ void UGlobalStateManager::AuthorityChanged(const Worker_ComponentSetAuthorityCha
 	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		return;
-	}
-
-	if (ViewCoordinator->HasComponent(AuthOp.entity_id, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
-	{
-		GlobalStateManagerEntityId = AuthOp.entity_id;
-		SetDeploymentState();
 	}
 
 	if (ViewCoordinator->HasComponent(AuthOp.entity_id, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))

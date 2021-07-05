@@ -90,6 +90,7 @@ class CrossServerRPCSender;
 class CrossServerRPCHandler;
 class FSpatialStrategySystem;
 class FSpatialStartupHandler;
+class FSpatialClientStartupHandler;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -242,6 +243,7 @@ public:
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
 	TUniquePtr<SpatialGDK::FSpatialStartupHandler> StartupHandler;
+	TUniquePtr<SpatialGDK::FSpatialClientStartupHandler> ClientStartupHandler;
 
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
@@ -287,6 +289,8 @@ public:
 	virtual int64 GetActorEntityId(const AActor& Actor) const override;
 
 	FShutdownEvent OnShutdown;
+
+	uint32 ClientGetSessionId() const;
 
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;

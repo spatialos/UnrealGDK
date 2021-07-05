@@ -42,7 +42,6 @@ public:
 	void ApplyStartupActorManagerData(Schema_ComponentData* Data);
 	void WorkerEntityReady();
 
-	void ApplyDeploymentMapUpdate(Schema_ComponentUpdate* Update);
 	void ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update);
 
 	DECLARE_DELEGATE_OneParam(QueryDelegate, const Worker_EntityQueryResponseOp&);
