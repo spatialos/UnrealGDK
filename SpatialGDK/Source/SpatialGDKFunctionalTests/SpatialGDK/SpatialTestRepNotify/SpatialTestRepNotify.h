@@ -6,6 +6,8 @@
 #include "SpatialFunctionalTest.h"
 #include "SpatialTestRepNotify.generated.h"
 
+class ASpatialTestRepNotifyActor;
+
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestRepNotify : public ASpatialFunctionalTest
 {
@@ -16,45 +18,8 @@ public:
 
 	virtual void PrepareTest() override;
 
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	UPROPERTY(Replicated)
+	ASpatialTestRepNotifyActor* TestActor = nullptr;
 
-	bool bOnRepOnChangedRepNotifyInt1Called;
-
-	bool bOnRepAlwaysRepNotifyInt1Called;
-
-	int32 OldOnChangedRepNotifyInt2;
-
-	int32 OldAlwaysRepNotifyInt2;
-
-	TArray<int32> OldTestArray;
-
-	UPROPERTY(ReplicatedUsing = OnRep_OnChangedRepNotifyInt1)
-	int32 OnChangedRepNotifyInt1;
-
-	UPROPERTY(ReplicatedUsing = OnRep_AlwaysRepNotifyInt1)
-	int32 AlwaysRepNotifyInt1;
-
-	UPROPERTY(ReplicatedUsing = OnRep_OnChangedRepNotifyInt2)
-	int32 OnChangedRepNotifyInt2;
-
-	UPROPERTY(ReplicatedUsing = OnRep_AlwaysRepNotifyInt2)
-	int32 AlwaysRepNotifyInt2;
-
-	UPROPERTY(ReplicatedUsing = OnRep_TestArray)
-	TArray<int32> TestArray;
-
-	UFUNCTION()
-	void OnRep_OnChangedRepNotifyInt1(int32 OldOnChangedRepNotifyInt1);
-
-	UFUNCTION()
-	void OnRep_AlwaysRepNotifyInt1(int32 OldAlwaysRepNotifyInt1);
-
-	UFUNCTION()
-	void OnRep_OnChangedRepNotifyInt2(int32 OldOnChangedRepNotifyInt2);
-
-	UFUNCTION()
-	void OnRep_AlwaysRepNotifyInt2(int32 OldAlwaysRepNotifyInt2);
-
-	UFUNCTION()
-	void OnRep_TestArray(TArray<int32> OldTestArray);
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 };
