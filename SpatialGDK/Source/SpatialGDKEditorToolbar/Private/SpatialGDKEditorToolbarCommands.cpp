@@ -57,6 +57,7 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 	UI_COMMAND(GenerateTestMaps, "Generate test maps",
 			   "Generates maps with Spatial functional tests. These maps will be generated to 'Content/Intermediate/Maps'.",
 			   EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(LaunchCodegenTool, "Schema codegen", "Schema codegen", EUserInterfaceActionType::Button, FInputGesture());
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -121,7 +121,7 @@ Worker_ComponentUpdate UnrealServerInterestFactory::CreateInterestUpdate(AActor*
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy) const
+Interest InterestFactory::CreateServerWorkerInterest(TArray<Worker_ComponentId> PartitionsComponents) const
 {
 	// Build the Interest component as we go by updating the component-> query list mappings.
 	Interest ServerInterest;
@@ -155,6 +155,13 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 									   SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID,
 									   SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID };
 	ServerQuery.Constraint.bSelfConstraint = true;
+	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
+
+	// Interest in load balancing partitions
+	ServerQuery = Query();
+	ServerQuery.ResultComponentIds = MoveTemp(PartitionsComponents);
+	ServerQuery.ResultComponentIds.Add(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
+	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::PARTITION_ACK_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
 
 	return ServerInterest;

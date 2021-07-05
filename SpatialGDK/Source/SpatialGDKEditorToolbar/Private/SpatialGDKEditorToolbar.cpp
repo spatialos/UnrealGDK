@@ -38,6 +38,7 @@
 #include "SpatialCommandUtils.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKCloudDeploymentConfiguration.h"
+#include "SpatialGDKCodegenTool.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
 #include "SpatialGDKDevAuthTokenGenerator.h"
@@ -334,6 +335,9 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().GenerateTestMaps,
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::GenerateTestMaps));
+
+	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().LaunchCodegenTool,
+								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::LaunchCodegenTool));
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -372,6 +376,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchema);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().GenerateTestMaps);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LaunchCodegenTool);
 	}
 	Builder.EndSection();
 }
@@ -1686,6 +1691,11 @@ void FSpatialGDKEditorToolbarModule::GenerateTestMaps()
 	{
 		OnShowFailedNotification(TEXT("Failed to generate test maps. See output log for details."));
 	}
+}
+
+void FSpatialGDKEditorToolbarModule::LaunchCodegenTool()
+{
+	UTransientUObjectEditor::LaunchTransientUObjectEditor<USpatialGDKCodegenTool>(FText::FromString(FString(TEXT("CodeGen"))), nullptr);
 }
 
 #undef LOCTEXT_NAMESPACE
