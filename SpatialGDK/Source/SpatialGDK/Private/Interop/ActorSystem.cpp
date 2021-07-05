@@ -1722,11 +1722,12 @@ void ActorSystem::InvokeRepNotifies()
 
 void ActorSystem::TryInvokeRepNotifiesForObject(FObjectRepNotifies& ObjectRepNotifies) const
 {
+	UObject* Object = ObjectRepNotifies.Object;
 	if (!IsValid(ObjectRepNotifies.Object))
 	{
 		return;
 	}
-	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(ObjectRepNotifies.Object);
+	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Object);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		// TODO UNR-5785 - Once fixed, change log level to warning
@@ -1748,8 +1749,8 @@ void ActorSystem::TryInvokeRepNotifiesForObject(FObjectRepNotifies& ObjectRepNot
 		return A->RepIndex < B->RepIndex;
 	});
 
-	RemoveRepNotifiesWithUnresolvedObjs(*ObjectRepNotifies.Object, *Channel, ObjectRepNotifies.RepNotifies);
-	Channel->PostReceiveSpatialUpdate(ObjectRepNotifies.Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
+	RemoveRepNotifiesWithUnresolvedObjs(*Object, *Channel, ObjectRepNotifies.RepNotifies);
+	Channel->PostReceiveSpatialUpdate(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
 }
 
 void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
