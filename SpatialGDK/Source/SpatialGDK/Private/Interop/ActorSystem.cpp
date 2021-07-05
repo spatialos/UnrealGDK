@@ -1738,8 +1738,8 @@ void ActorSystem::TryInvokeRepNotifiesForObject(FObjectRepNotifies& ObjectRepNot
 	if (!IsValid(Channel))
 	{
 		UE_LOG(LogActorSystem, Warning,
-		TEXT("Failed to invoke rep notifies for an object as its channel was invalid. Object: %s, Entity: %lld"),
-		*Object->GetName(), EntityId);
+			   TEXT("Failed to invoke rep notifies for an object as its channel was invalid. Object: %s, Entity: %lld"), *Object->GetName(),
+			   EntityId);
 		return;
 	}
 
