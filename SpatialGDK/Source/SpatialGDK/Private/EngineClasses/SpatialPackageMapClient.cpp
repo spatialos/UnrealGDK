@@ -181,6 +181,24 @@ void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealOb
 	{
 		SpatialGuidCache->AssignNewSubobjectNetGUID(Object, ObjectRef);
 	}
+	else
+	{
+		// TODO UNR-5785 - Remove this once fixed, as really SpatialGuidCache and Native's GuidCache should be in sync
+		FNetworkGUID ObjectNetGUID = GetNetGUIDFromObject(Object);
+		if (!ObjectNetGUID.IsValid())
+		{
+			UE_LOG(LogSpatialPackageMap, Log, TEXT("SpatialGuidCache has a NetGUID mapping which native's GuidCache does not have for object: %s with NetGUID: %u. Removing existing mapping from SpatialGuidCache and recreating."),
+				*Object->GetName(), NetGUID.Value);
+			RemoveSubobject(ObjectRef);
+			SpatialGuidCache->AssignNewSubobjectNetGUID(Object, ObjectRef);
+		}
+		else if (ObjectNetGUID != NetGUID)
+		{
+			UE_LOG(LogSpatialPackageMap, Warning,
+				TEXT("ResolveSubobject has NetGuid mismatch between SpatialGuidCache and GuidCache for object: %s with NetGUID: %u and ObjectNetGUID: %u"),
+				*Object->GetName(), NetGUID.Value, ObjectNetGUID.Value);
+		}
+	}
 }
 
 void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
