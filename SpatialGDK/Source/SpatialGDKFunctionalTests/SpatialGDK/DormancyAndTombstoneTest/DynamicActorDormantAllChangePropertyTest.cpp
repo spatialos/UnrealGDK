@@ -4,7 +4,6 @@
 
 #include "DormancyTestActor.h"
 #include "EngineClasses/SpatialNetDriver.h"
-#include "EngineClasses/SpatialActorChannel.h"
 
 // The test checks that modifying a replicated property on an actor that has NetDormancy DORM_DormantAll will result in the property not
 // being replicated.
@@ -20,33 +19,35 @@ void ADynamicActorDormantAllChangePropertyTest::PrepareTest()
 
 	// Step 1 - Spawn dormancy actor and check NetDormancy is DORM_Initial
 	AddStep(TEXT("ServerSpawnDormancyActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		TestActor = CreateDormancyTestActor();
-		TestActor->SetNetDormancy(DORM_DormantAll);
+		AActor* Actor = CreateDormancyTestActor();
+		Actor->SetNetDormancy(DORM_DormantAll);
 		FinishStep();
 	});
 
 	// Step 2 - Wait for actor channel to be ReadyForDormancy
 	AddStep(
-		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ServerWaitForActorChannelReadyForDormancy"), FWorkerDefinition::Server(1), nullptr, nullptr,
 		[this](float DeltaTime) {
+			bool bIsReadyForDormancy = true;
 
-		bool bIsReadyForDormancy = true;
+			UWorld* World = GetWorld();
+			USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
 
-		UWorld* World = GetWorld();
-		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
-
-		if (SpatialNetDriver != nullptr)
-		{
-			for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
+			if (SpatialNetDriver != nullptr)
 			{
-				USpatialActorChannel* ActorChannel = SpatialNetDriver->GetOrCreateSpatialActorChannel(*Iter);
-				bIsReadyForDormancy = ActorChannel->ReadyForDormancy();
+				for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
+				{
+					const ADormancyTestActor* DormancyTestActor = *Iter;
+					if (DormancyTestActor != nullptr)
+					{
+						bIsReadyForDormancy = SpatialNetDriver->IsDormantEntity(SpatialNetDriver->GetActorEntityId(*DormancyTestActor));
+					}
+				}
 			}
-		}
 
-		RequireTrue(bIsReadyForDormancy, TEXT("Ready for dormancy"));
-		FinishStep();
-	},
+			RequireTrue(bIsReadyForDormancy, TEXT("Ready for dormancy"));
+			FinishStep();
+		},
 		5.0f);
 
 	// Step 3 - Client Check NetDormancy is DORM_Initial

@@ -13,7 +13,7 @@ void ADormancyTest::CheckDormancyAndRepProperty(const TEnumAsByte<enum ENetDorma
 {
 	for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 	{
-		ADormancyTestActor* DormancyTestActor = *Iter;
+		const ADormancyTestActor* DormancyTestActor = *Iter;
 		RequireEqual_Int(DormancyTestActor->NetDormancy, ExpectedNetDormancy, TEXT("Dormancy on ADormancyTestActor"));
 		RequireEqual_Int(DormancyTestActor->TestIntProp, ExpectedTestIntProp, TEXT("TestIntProp on ADormancyTestActor"));
 	}

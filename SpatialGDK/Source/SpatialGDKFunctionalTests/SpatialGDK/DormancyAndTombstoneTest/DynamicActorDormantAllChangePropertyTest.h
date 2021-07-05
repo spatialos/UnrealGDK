@@ -15,8 +15,4 @@ public:
 	ADynamicActorDormantAllChangePropertyTest();
 
 	virtual void PrepareTest() override;
-
-private:
-
-	AActor* TestActor;
 };
