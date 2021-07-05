@@ -2,7 +2,6 @@
 
 #pragma once
 
-
 #include "CoreMinimal.h"
 #include "DormancyTest.h"
 #include "DynamicActorAwakeChangePropertyTest.generated.h"

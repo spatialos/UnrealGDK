@@ -2,13 +2,11 @@
 
 #pragma once
 
-
 #include "CoreMinimal.h"
 #include "DormancyTest.h"
 #include "DynamicActorAwakeAfterDormantChangePropertyTest.generated.h"
 
 // TODO: Failing due to UNR-5790. Uncomment when this ticket is fixed.
-
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ADynamicActorAwakeAfterDormantChangePropertyTest : public ADormancyTest

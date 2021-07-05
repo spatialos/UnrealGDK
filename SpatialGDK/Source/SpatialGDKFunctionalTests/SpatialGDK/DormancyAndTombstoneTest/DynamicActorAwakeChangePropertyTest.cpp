@@ -1,11 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "DynamicActorAwakeChangePropertyTest.h"
-#include "DormancyTestActor.h"
-#include "GameFramework/PlayerController.h"
-#include "EngineUtils.h"
 
-// This test checks that changing the value of a replicated property on an actor whose NetDormancy is DORM_Awake will result in the property being replicated.
+#include "DormancyTestActor.h"
+
+// This test checks that changing the value of a replicated property on an actor whose NetDormancy is DORM_Awake will result in the property
+// being replicated.
 
 ADynamicActorAwakeChangePropertyTest::ADynamicActorAwakeChangePropertyTest()
 {
@@ -27,9 +27,9 @@ void ADynamicActorAwakeChangePropertyTest::PrepareTest()
 	AddStep(
 		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-		CheckDormancyAndRepProperty(DORM_Awake, 0);
-		FinishStep();
-	},
+			CheckDormancyAndRepProperty(DORM_Awake, 0);
+			FinishStep();
+		},
 		5.0f);
 
 	// Step 3 - Server set TestIntProp to 1
@@ -46,15 +46,14 @@ void ADynamicActorAwakeChangePropertyTest::PrepareTest()
 	AddStep(
 		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-		CheckDormancyAndRepProperty(DORM_Awake, 1);
-		FinishStep();
-	},
-	5.0f);
+			CheckDormancyAndRepProperty(DORM_Awake, 1);
+			FinishStep();
+		},
+		5.0f);
 
 	// Step 5 - Delete the test actor on the server.
 	AddStep(TEXT("ServerDeleteActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		DestroyDormancyTestActors();
 		FinishStep();
 	});
-
 }

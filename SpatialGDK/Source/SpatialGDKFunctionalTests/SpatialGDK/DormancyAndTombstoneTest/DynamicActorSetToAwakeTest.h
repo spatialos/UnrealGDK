@@ -2,11 +2,9 @@
 
 #pragma once
 
-
 #include "CoreMinimal.h"
 #include "DormancyTest.h"
 #include "DynamicActorSetToAwakeTest.generated.h"
-
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ADynamicActorSetToAwakeTest : public ADormancyTest

@@ -1,10 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "InitiallyDormantMapActorChangePropertyTest.h"
-#include "DormancyTestActor.h"
-#include "EngineUtils.h"
 
- // This test tests checks that replicated properties changed on an initially dormant actor do not get replicated.
+#include "DormancyTestActor.h"
+
+// This test tests checks that replicated properties changed on an initially dormant actor do not get replicated.
 
 AInitiallyDormantMapActorChangePropertyTest::AInitiallyDormantMapActorChangePropertyTest()
 {
@@ -26,11 +26,11 @@ void AInitiallyDormantMapActorChangePropertyTest::PrepareTest()
 	AddStep(
 		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-		CheckDormancyActorCount(1);
-		CheckDormancyAndRepProperty(DORM_Initial, 0);
-		FinishStep();
-	},
-	5.0f);
+			CheckDormancyActorCount(1);
+			CheckDormancyAndRepProperty(DORM_Initial, 0);
+			FinishStep();
+		},
+		5.0f);
 
 	// Step 3 - Modify TestIntProp on server.
 	AddStep(TEXT("ServerModifyRepPropertyValue"), FWorkerDefinition::Server(1), nullptr, [this]() {
@@ -46,8 +46,8 @@ void AInitiallyDormantMapActorChangePropertyTest::PrepareTest()
 	AddStep(
 		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-		CheckDormancyAndRepProperty(DORM_Initial, 0);
-		FinishStep();
-	},
+			CheckDormancyAndRepProperty(DORM_Initial, 0);
+			FinishStep();
+		},
 		5.0f);
 }

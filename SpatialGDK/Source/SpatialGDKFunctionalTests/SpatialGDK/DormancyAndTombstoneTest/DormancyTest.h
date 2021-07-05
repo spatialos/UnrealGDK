@@ -2,11 +2,9 @@
 
 #pragma once
 
-
 #include "CoreMinimal.h"
 #include "SpatialFunctionalTest.h"
 #include "DormancyTest.generated.h"
-
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ADormancyTest : public ASpatialFunctionalTest
@@ -14,7 +12,6 @@ class SPATIALGDKFUNCTIONALTESTS_API ADormancyTest : public ASpatialFunctionalTes
 	GENERATED_BODY()
 
 protected:
-
 	AActor* CreateDormancyTestActor();
 	void CheckDormancyAndRepProperty(const TEnumAsByte<enum ENetDormancy> ExpectedNetDormancy, const int ExpectedTestIntProp);
 	void DestroyDormancyTestActors();

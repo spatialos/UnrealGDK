@@ -1,9 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "DynamicActorAwakeAfterDormantChangePropertyTest.h"
+
 #include "DormancyTestActor.h"
-#include "GameFramework/PlayerController.h"
-#include "EngineUtils.h"
 
 // This test tests whether changes on a dormant actor are replicated when the actor becomes awake.
 
@@ -27,18 +26,18 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 	AddStep(
 		TEXT("ServerCheckDormancyAndRepProperty"), FWorkerDefinition::Server(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-		CheckDormancyAndRepProperty(DORM_DormantAll, 0);
-		FinishStep();
-	},
+			CheckDormancyAndRepProperty(DORM_DormantAll, 0);
+			FinishStep();
+		},
 		5.0f);
 
 	// Step 3 - Client Check NetDormancy is DORM_DormantAll
 	AddStep(
 		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-		CheckDormancyAndRepProperty(DORM_DormantAll, 0);
-		FinishStep();
-	},
+			CheckDormancyAndRepProperty(DORM_DormantAll, 0);
+			FinishStep();
+		},
 		5.0f);
 
 	// Step 3 - Server set TestIntProp to 1
@@ -55,10 +54,10 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 	AddStep(
 		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-		CheckDormancyAndRepProperty(DORM_DormantAll, 0);
-		FinishStep();
-	},
-	5.0f);
+			CheckDormancyAndRepProperty(DORM_DormantAll, 0);
+			FinishStep();
+		},
+		5.0f);
 
 	// Step 5 - Server set NewDormancy to DORM_Awake
 	AddStep(TEXT("ServerModifyNetDormancy"), FWorkerDefinition::Server(1), nullptr, [this]() {
@@ -74,9 +73,9 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 	AddStep(
 		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-		CheckDormancyAndRepProperty(DORM_Awake, 1);
-		FinishStep();
-	},
+			CheckDormancyAndRepProperty(DORM_Awake, 1);
+			FinishStep();
+		},
 		5.0f);
 
 	// Step 7 - Delete the test actor on the server.
@@ -84,5 +83,4 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 		DestroyDormancyTestActors();
 		FinishStep();
 	});
-
 }

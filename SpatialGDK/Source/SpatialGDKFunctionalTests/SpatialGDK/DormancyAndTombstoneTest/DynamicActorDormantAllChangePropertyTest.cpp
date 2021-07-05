@@ -1,38 +1,64 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "DynamicActorDormantAllChangeProperty.h"
+#include "DynamicActorDormantAllChangePropertyTest.h"
+
 #include "DormancyTestActor.h"
-#include "GameFramework/PlayerController.h"
-#include "EngineUtils.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialActorChannel.h"
 
-// The test checks that modifying a replicated property on an actor that has NetDormancy DORM_DormantAll will result in the property not being replicated.
+// The test checks that modifying a replicated property on an actor that has NetDormancy DORM_DormantAll will result in the property not
+// being replicated.
 
-ADynamicActorDormantAllChangeProperty::ADynamicActorDormantAllChangeProperty()
+ADynamicActorDormantAllChangePropertyTest::ADynamicActorDormantAllChangePropertyTest()
 {
 	Author = "Matthew Sandford";
 }
 
-void ADynamicActorDormantAllChangeProperty::PrepareTest()
+void ADynamicActorDormantAllChangePropertyTest::PrepareTest()
 {
 	Super::PrepareTest();
 
 	// Step 1 - Spawn dormancy actor and check NetDormancy is DORM_Initial
 	AddStep(TEXT("ServerSpawnDormancyActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		AActor* Actor = CreateDormancyTestActor();
-		Actor->SetNetDormancy(DORM_DormantAll);
+		TestActor = CreateDormancyTestActor();
+		TestActor->SetNetDormancy(DORM_DormantAll);
 		FinishStep();
 	});
 
-	// Step 2 -  Client Check NetDormancy is DORM_Initial
+	// Step 2 - Wait for actor channel to be ReadyForDormancy
 	AddStep(
 		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-		CheckDormancyAndRepProperty(DORM_DormantAll, 0);
+
+		bool bIsReadyForDormancy = true;
+
+		UWorld* World = GetWorld();
+		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+
+		if (SpatialNetDriver != nullptr)
+		{
+			for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
+			{
+				USpatialActorChannel* ActorChannel = SpatialNetDriver->GetOrCreateSpatialActorChannel(*Iter);
+				bIsReadyForDormancy = ActorChannel->ReadyForDormancy();
+			}
+		}
+
+		RequireTrue(bIsReadyForDormancy, TEXT("Ready for dormancy"));
 		FinishStep();
 	},
 		5.0f);
 
-	// Step 3 - Server set TestIntProp to 1
+	// Step 3 - Client Check NetDormancy is DORM_Initial
+	AddStep(
+		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		[this](float DeltaTime) {
+			CheckDormancyAndRepProperty(DORM_DormantAll, 0);
+			FinishStep();
+		},
+		5.0f);
+
+	// Step 4 - Server set TestIntProp to 1
 	AddStep(TEXT("ServerModifyNetDormancy"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 		{
@@ -42,19 +68,18 @@ void ADynamicActorDormantAllChangeProperty::PrepareTest()
 		FinishStep();
 	});
 
-	// Step 4 - Client Check TestIntProp is 0
+	// Step 5 - Client Check TestIntProp is 0
 	AddStep(
 		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-		CheckDormancyAndRepProperty(DORM_DormantAll, 0);
-		FinishStep();
-	},
-	5.0f);
+			CheckDormancyAndRepProperty(DORM_DormantAll, 0);
+			FinishStep();
+		},
+		5.0f);
 
-	// Step 5 - Delete the test actor on the server.
+	// Step 6 - Delete the test actor on the server.
 	AddStep(TEXT("ServerDeleteActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		DestroyDormancyTestActors();
 		FinishStep();
 	});
-
 }
