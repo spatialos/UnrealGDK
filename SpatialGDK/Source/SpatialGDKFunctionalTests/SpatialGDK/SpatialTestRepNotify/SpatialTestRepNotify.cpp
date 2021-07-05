@@ -75,7 +75,7 @@ void ASpatialTestRepNotify::PrepareTest()
 							 TEXT("The subobject's OnChangedRepNotifyInt property should have been updated."));
 			RequireEqual_Int(TestActor->OnChangedRepNotifyInt1, 350,
 							 TEXT("The actors OnChangedRepNotifyInt1 property should have been updated."));
-			RequireEqual_Int(TestActor->OnChangedRepNotifyInt1, 360,
+			RequireEqual_Int(TestActor->OnChangedRepNotifyInt2, 360,
 							 TEXT("The actors OnChangedRepNotifyInt2 property should have been updated."));
 
 			RequireEqual_Bool(
