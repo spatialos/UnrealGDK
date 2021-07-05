@@ -2,17 +2,18 @@
 
 #pragma once
 
+
 #include "CoreMinimal.h"
 #include "DormancyTest.h"
-#include "DormancyAndTombstoneTest.generated.h"
+#include "DynamicActorAwakeChangePropertyTest.generated.h"
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API ADormancyAndTombstoneTest : public ADormancyTest
+class SPATIALGDKFUNCTIONALTESTS_API ADynamicActorAwakeChangePropertyTest : public ADormancyTest
 {
 	GENERATED_BODY()
 
 public:
-	ADormancyAndTombstoneTest();
+	ADynamicActorAwakeChangePropertyTest();
 
 	virtual void PrepareTest() override;
 };

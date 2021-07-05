@@ -10,6 +10,7 @@
  * A Helper actor for the dormancy tests.
  * Has a TestIntProp to see if it replicates when it should/shouldn't.
  */
+
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ADormancyTestActor : public AReplicatedTestActorBase
 {
@@ -20,9 +21,6 @@ public:
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "DormancyTestActor")
-	void UpdateTestIntProp();
-
-	UPROPERTY(Replicated, BlueprintReadWrite, Category = "DormancyTestActor")
+	UPROPERTY(Replicated)
 	int TestIntProp;
 };

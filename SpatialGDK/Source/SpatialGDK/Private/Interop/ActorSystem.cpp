@@ -1216,6 +1216,11 @@ USpatialActorChannel* ActorSystem::GetOrRecreateChannelForDormantActor(AActor* A
 	check(!Channel->bCreatingNewEntity);
 	check(Channel->GetEntityId() == EntityID);
 
+	if (!ActorSubView->HasComponent(EntityID, SpatialConstants::DORMANT_COMPONENT_ID))
+	{
+		Actor->NetDormancy = DORM_Awake;
+	}
+
 	NetDriver->RemovePendingDormantChannel(Channel);
 	NetDriver->UnregisterDormantEntityId(EntityID);
 
@@ -1559,6 +1564,7 @@ AActor* ActorSystem::CreateActor(ActorData& ActorComponents, const Worker_Entity
 	// Don't have authority over Actor until SpatialOS delegates authority
 	NewActor->Role = ROLE_SimulatedProxy;
 	NewActor->RemoteRole = ROLE_Authority;
+	NewActor->NetDormancy = ActorSubView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID) ? DORM_DormantAll : DORM_Awake;
 
 	return NewActor;
 }
