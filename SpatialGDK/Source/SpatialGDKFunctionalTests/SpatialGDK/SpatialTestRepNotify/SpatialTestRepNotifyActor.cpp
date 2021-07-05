@@ -27,7 +27,6 @@ ASpatialTestRepNotifyActor::ASpatialTestRepNotifyActor()
 	bSubobjectIntPropertyWasExpectedProperty = false;
 }
 
-
 void ASpatialTestRepNotifyActor::OnRep_OnChangedRepNotifyInt1(int32 OldOnChangedRepNotifyInt1)
 {
 	bOnRepOnChangedRepNotifyInt1Called = true;

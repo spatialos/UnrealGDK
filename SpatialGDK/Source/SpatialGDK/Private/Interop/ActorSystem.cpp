@@ -1717,7 +1717,7 @@ void ActorSystem::InvokeRepNotifies()
 		TryInvokeRepNotifiesForObject(ObjectRepNotifies);
 	}
 
-	RepNotifiesToSend.Empty(floor(RepNotifiesToSend.Num()*0.9));
+	RepNotifiesToSend.Empty(floor(RepNotifiesToSend.Num() * 0.9));
 }
 
 void ActorSystem::TryInvokeRepNotifiesForObject(FObjectRepNotifies& ObjectRepNotifies) const
@@ -1743,8 +1743,7 @@ void ActorSystem::TryInvokeRepNotifiesForObject(FObjectRepNotifies& ObjectRepNot
 		return;
 	}
 
-	Algo::Sort(ObjectRepNotifies.RepNotifies, [](GDK_PROPERTY(Property)* A, GDK_PROPERTY(Property)* B) -> bool
-	{
+	Algo::Sort(ObjectRepNotifies.RepNotifies, [](GDK_PROPERTY(Property) * A, GDK_PROPERTY(Property) * B) -> bool {
 		// We want to call RepNotifies on properties with a lower RepIndex earlier
 		return A->RepIndex < B->RepIndex;
 	});

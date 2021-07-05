@@ -38,16 +38,12 @@ struct ActorData
 
 struct FObjectRepNotifies
 {
-
 	UObject* Object;
 	TArray<GDK_PROPERTY(Property)*> RepNotifies;
 	TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
 
 	FObjectRepNotifies() = default;
-	FObjectRepNotifies(FObjectRepNotifies&& Other) noexcept
-	{
-		*this = MoveTemp(Other);
-	}
+	FObjectRepNotifies(FObjectRepNotifies&& Other) noexcept { *this = MoveTemp(Other); }
 
 	FObjectRepNotifies& operator=(FObjectRepNotifies&& Other) noexcept
 	{
@@ -149,7 +145,7 @@ private:
 	void InvokeRepNotifies();
 	void TryInvokeRepNotifiesForObject(FObjectRepNotifies& ObjectRepNotifies) const;
 	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
-	                                                TArray<GDK_PROPERTY(Property) *>& RepNotifies);
+													TArray<GDK_PROPERTY(Property) *>& RepNotifies);
 
 	// Authority
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
