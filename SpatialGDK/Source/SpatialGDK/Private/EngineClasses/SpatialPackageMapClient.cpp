@@ -187,16 +187,19 @@ void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealOb
 		FNetworkGUID ObjectNetGUID = GetNetGUIDFromObject(Object);
 		if (!ObjectNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialPackageMap, Log, TEXT("SpatialGuidCache has a NetGUID mapping which native's GuidCache does not have for object: %s with NetGUID: %u. Removing existing mapping from SpatialGuidCache and recreating."),
-				*Object->GetName(), NetGUID.Value);
+			UE_LOG(LogSpatialPackageMap, Log,
+				   TEXT("SpatialGuidCache has a NetGUID mapping which native's GuidCache does not have for object: %s with NetGUID: %u. "
+						"Removing existing mapping from SpatialGuidCache and recreating."),
+				   *Object->GetName(), NetGUID.Value);
 			RemoveSubobject(ObjectRef);
 			SpatialGuidCache->AssignNewSubobjectNetGUID(Object, ObjectRef);
 		}
 		else if (ObjectNetGUID != NetGUID)
 		{
 			UE_LOG(LogSpatialPackageMap, Warning,
-				TEXT("ResolveSubobject has NetGuid mismatch between SpatialGuidCache and GuidCache for object: %s with NetGUID: %u and ObjectNetGUID: %u"),
-				*Object->GetName(), NetGUID.Value, ObjectNetGUID.Value);
+				   TEXT("ResolveSubobject has NetGuid mismatch between SpatialGuidCache and GuidCache for object: %s with NetGUID: %u and "
+						"ObjectNetGUID: %u"),
+				   *Object->GetName(), NetGUID.Value, ObjectNetGUID.Value);
 		}
 	}
 }
@@ -643,8 +646,7 @@ void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& Subobj
 
 	if (UnrealMetadata->NativeClass.IsStale())
 	{
-		UE_LOG(LogSpatialPackageMap, Log, TEXT("Attempting to remove stale subobject from package map - %s"),
-			   *UnrealMetadata->ClassPath);
+		UE_LOG(LogSpatialPackageMap, Log, TEXT("Attempting to remove stale subobject from package map - %s"), *UnrealMetadata->ClassPath);
 	}
 	else
 	{
