@@ -369,7 +369,6 @@ struct FPartitionManager::Impl
 														  const QueryConstraint& LBConstraint)
 	{
 		AuthorityDelegationMap DelegationMap;
-		DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
 		DelegationMap.Add(SpatialConstants::PARTITION_METADATA_AUTH_COMPONENT_SET_ID,
 						  SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
 		DelegationMap.Add(SpatialConstants::PARTITION_WORKER_AUTH_COMPONENT_SET_ID, EntityId);

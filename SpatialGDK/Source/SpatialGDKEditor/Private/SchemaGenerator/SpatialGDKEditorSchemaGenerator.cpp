@@ -1478,7 +1478,7 @@ void CreatePartitionAuthoritySet(FString SchemaOutputPath = FString())
 	Writer.PrintNewLine();
 
 	// Write all import statements.
-	Writer.Printf("import \"{0}\";", TEXT("unreal/gdk/authority_intent.schema"));
+	Writer.Printf("import \"{0}\";", TEXT("improbable/standard_library.schema"));
 	for (const auto& File : SchemaFiles)
 	{
 		FString ImportPath = FPaths::Combine(TEXT("unreal"), TEXT("generated"), PartitionDataFolderName, FPaths::GetCleanFilename(File));
@@ -1491,7 +1491,9 @@ void CreatePartitionAuthoritySet(FString SchemaOutputPath = FString())
 	Writer.Printf("components = [").Indent();
 
 	// Write all import components.
-	Writer.Printf("PartitionIntentAck,");
+	Writer.Printf("improbable.Position,");
+	Writer.Printf("improbable.Interest,");
+	Writer.Printf("improbable.AuthorityDelegation,");
 	for (const auto& MetadataComponentId : Components)
 	{
 		Writer.Printf("{0},", MetadataComponentId.Name);
