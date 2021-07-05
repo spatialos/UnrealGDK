@@ -4,7 +4,7 @@
 
 #include "DormancyTestActor.h"
 
-// This test tests whether changes on a dormant actor are replicated when the actor becomes awake.
+// This test checks whether changes on a dormant actor are replicated when the actor becomes awake.
 
 ADynamicActorAwakeAfterDormantChangePropertyTest::ADynamicActorAwakeAfterDormantChangePropertyTest()
 {
@@ -22,16 +22,7 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 		FinishStep();
 	});
 
-	// Step 2 - Server Check NetDormancy is DORM_DormantAll
-	AddStep(
-		TEXT("ServerCheckDormancyAndRepProperty"), FWorkerDefinition::Server(1), nullptr, nullptr,
-		[this](float DeltaTime) {
-			CheckDormancyAndRepProperty(DORM_DormantAll, 0);
-			FinishStep();
-		},
-		5.0f);
-
-	// Step 3 - Client Check NetDormancy is DORM_DormantAll
+	// Step 2 - Client check NetDormancy is DORM_DormantAll
 	AddStep(
 		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
@@ -50,7 +41,7 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 		FinishStep();
 	});
 
-	// Step 4 - Client Check TestIntProp is still 0
+	// Step 4 - Client check TestIntProp is still 0
 	AddStep(
 		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {

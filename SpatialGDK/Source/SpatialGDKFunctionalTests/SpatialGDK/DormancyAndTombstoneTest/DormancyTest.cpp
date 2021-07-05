@@ -1,8 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "DormancyTest.h"
+
 #include "DormancyTestActor.h"
-#include "EngineUtils.h"
 
 AActor* ADormancyTest::CreateDormancyTestActor()
 {
@@ -35,24 +35,4 @@ void ADormancyTest::CheckDormancyActorCount(const int ExpectedCount)
 		Counter++;
 	}
 	RequireEqual_Int(Counter, ExpectedCount, TEXT("Number of TestDormancyActors in client world"));
-}
-
-FString ADormancyTest::NetDormancyToString(TEnumAsByte<enum ENetDormancy> InNetDormancy)
-{
-	switch (InNetDormancy)
-	{
-	case ENetDormancy::DORM_Never:
-		return TEXT("DORM_Never");
-	case ENetDormancy::DORM_Awake:
-		return TEXT("DORM_Awake");
-	case ENetDormancy::DORM_DormantAll:
-		return TEXT("DORM_DormantAll");
-	case ENetDormancy::DORM_DormantPartial:
-		return TEXT("DORM_DormantPartial");
-	case ENetDormancy::DORM_Initial:
-		return TEXT("DORM_Initial");
-	default:
-		return TEXT("UNKOWN");
-		break;
-	}
 }
