@@ -42,7 +42,7 @@ void ASpatialTestRepNotify::PrepareTest()
 	 * Here we check core rep notify functionality and the order rep notifies are called in.
 	 * In native, data will be applied for an actor, its subobjects, and only THEN will repnotifies be called for the updated data.
 	 *
-	 * To test this, we the update a replicated property on our actor and a subobject of that actor.
+	 * To test this, we update a replicated property on our actor and a subobject of that actor.
 	 * Then in repnotifies on both the actor and the subobject, we check that the property on the other object has already been updated.
 	 * */
 	AddStep(TEXT("SpatialTestRepNotifyServerSetReplicatedVariables1"), FWorkerDefinition::Server(1), nullptr, [this]() {
