@@ -89,6 +89,7 @@ class InitialOnlyFilter;
 class CrossServerRPCSender;
 class CrossServerRPCHandler;
 class FSpatialStrategySystem;
+class FSpatialStartupHandler;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -239,6 +240,8 @@ public:
 	TUniquePtr<SpatialGDK::FSpatialHandoverManager> HandoverManager;
 	TUniquePtr<SpatialGDK::UnrealServerInterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
+
+	TUniquePtr<SpatialGDK::FSpatialStartupHandler> StartupHandler;
 
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;

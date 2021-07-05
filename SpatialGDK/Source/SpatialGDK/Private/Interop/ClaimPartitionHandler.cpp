@@ -17,7 +17,8 @@ ClaimPartitionHandler::ClaimPartitionHandler(SpatialOSWorkerInterface& InConnect
 {
 }
 
-void ClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim)
+void ClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim,
+										   FPartitionClaimCallback InCallback)
 {
 	UE_LOG(LogClaimPartitionHandler, Log,
 		   TEXT("SendClaimPartitionRequest. SystemWorkerEntityId: %lld. "
@@ -27,7 +28,7 @@ void ClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worke
 	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionToClaim);
 	const Worker_RequestId ClaimEntityRequestId =
 		WorkerInterface.SendCommandRequest(SystemEntityId, &CommandRequest, RETRY_UNTIL_COMPLETE, {});
-	ClaimPartitionRequestIds.Add(ClaimEntityRequestId, PartitionToClaim);
+	ClaimPartitionRequestIds.Add(ClaimEntityRequestId, { PartitionToClaim, InCallback });
 }
 
 void ClaimPartitionHandler::ProcessOps(const TArray<Worker_Op>& Ops)
@@ -37,14 +38,18 @@ void ClaimPartitionHandler::ProcessOps(const TArray<Worker_Op>& Ops)
 		if (Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE)
 		{
 			const Worker_CommandResponseOp& CommandResponse = Op.op.command_response;
-			Worker_PartitionId ClaimedPartitionId = SpatialConstants::INVALID_PARTITION_ID;
-			const bool bIsRequestHandled = ClaimPartitionRequestIds.RemoveAndCopyValue(CommandResponse.request_id, ClaimedPartitionId);
+			FPartitionClaimRequest ClaimedPartitionRequest;
+			const bool bIsRequestHandled = ClaimPartitionRequestIds.RemoveAndCopyValue(CommandResponse.request_id, ClaimedPartitionRequest);
 			if (bIsRequestHandled)
 			{
+				if (ClaimedPartitionRequest.Callback)
+				{
+					Invoke(ClaimedPartitionRequest.Callback);
+				}
 				ensure(CommandResponse.response.component_id == SpatialConstants::WORKER_COMPONENT_ID);
 				UE_CLOG(CommandResponse.status_code != WORKER_STATUS_CODE_SUCCESS, LogClaimPartitionHandler, Error,
-						TEXT("Claim partition request for partition %lld finished, SDK returned code %d [%s]"), ClaimedPartitionId,
-						(int)CommandResponse.status_code, UTF8_TO_TCHAR(CommandResponse.message));
+						TEXT("Claim partition request for partition %lld finished, SDK returned code %d [%s]"),
+						ClaimedPartitionRequest.PartitionId, (int)CommandResponse.status_code, UTF8_TO_TCHAR(CommandResponse.message));
 			}
 		}
 	}
