@@ -22,6 +22,8 @@ public:
 
 	void OnMapLoaded() const;
 
+	const SpatialVirtualWorkerTranslationManager* GetVirtualWorkerTranslationManager() const;
+
 private:
 	void ProcessComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
 	void ProcessComponentAdd(const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
