@@ -2047,11 +2047,44 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 	UE_LOG(LogActorSystem, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"), *Actor->GetName(),
 		   ActorChannel.GetEntityId(), Actor->HasAuthority());
 
-	SpatialGDK::EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
-	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(&ActorChannel, OutBytesWritten);
+	EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
+	TArray<FWorkerComponentData> ComponentDatas;
+	TArray<FWorkerComponentUpdate> ComponentUpdates;
+
+	enum EEntityCreationType
+	{
+		CreateNewEntity,
+		PopulateSkeleton,
+	};
+
+	const EntityViewElement* ExistingEntity = NetDriver->Connection->GetCoordinator().GetView().Find(ActorChannel.GetEntityId());
+	const bool bIsSkeletonEntity =
+		ExistingEntity != nullptr
+		&& ExistingEntity->Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID });
+	const EEntityCreationType EntityType = bIsSkeletonEntity ? PopulateSkeleton : CreateNewEntity;
+	if (EntityType == CreateNewEntity)
+	{
+		ComponentDatas = DataFactory.CreateEntityComponents(&ActorChannel, OutBytesWritten);
+	}
+	else if (EntityType == PopulateSkeleton)
+	{
+		if (ensure(ExistingEntity != nullptr))
+		{
+			check(ExistingEntity->Components.ContainsByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId }));
+		}
+		else
+		{
+			return;
+		}
+		const ComponentData& StartupActorMetadataComponent =
+			*ExistingEntity->Components.FindByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId });
+		ComponentDatas.Emplace(StartupActorMetadataComponent.GetWorkerComponentData());
+		DataFactory.CreatePopulateSkeletonComponents(ActorChannel, ComponentDatas, ComponentUpdates, OutBytesWritten);
+		ComponentDatas.RemoveAt(0);
+	}
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
-	ComponentDatas.Add(SpatialGDK::ActorSystem::CreateLevelComponentData(*Actor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
+	ComponentDatas.Add(CreateLevelComponentData(*Actor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
 
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
@@ -2063,14 +2096,38 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 										 });
 	}
 
-	const Worker_RequestId CreateEntityRequestId =
-		NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
+	ViewCoordinator& Coordinator = NetDriver->Connection->GetCoordinator();
 
-	CommandsHandler.AddRequest(CreateEntityRequestId, [this, SpanId](const Worker_CreateEntityResponseOp& Op) {
-		OnEntityCreated(Op, SpanId);
-	});
+	if (EntityType == CreateNewEntity)
+	{
+		const Worker_RequestId CreateEntityRequestId =
+			NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
 
-	CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
+		CommandsHandler.AddRequest(CreateEntityRequestId, [this, SpanId](const Worker_CreateEntityResponseOp& Op) {
+			OnEntityCreated(Op, SpanId);
+		});
+
+		CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
+	}
+	else if (EntityType == PopulateSkeleton)
+	{
+		for (const FWorkerComponentUpdate& ComponentToUpdate : ComponentUpdates)
+		{
+			ComponentUpdate GeneratedUpdate(OwningComponentUpdatePtr(ComponentToUpdate.schema_type), ComponentToUpdate.component_id);
+			Coordinator.SendComponentUpdate(EntityId, MoveTemp(GeneratedUpdate), {});
+		}
+		for (const FWorkerComponentData& ComponentToAdd : ComponentDatas)
+		{
+			ComponentData GeneratedAdd = ComponentData(OwningComponentDataPtr(ComponentToAdd.schema_type), ComponentToAdd.component_id);
+			Coordinator.SendAddComponent(EntityId, MoveTemp(GeneratedAdd), {});
+		}
+
+		// Add this last; due to AddComponent ordering, seeing the POPULATION_FINISHED tag would mean that all the previous ComponentAdds
+		// have been observed.
+		Coordinator.SendAddComponent(EntityId, ComponentData(SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID));
+
+		Coordinator.RefreshEntityCompleteness(EntityId);
+	}
 }
 
 bool ActorSystem::HasPendingOpsForChannel(const USpatialActorChannel& ActorChannel) const
