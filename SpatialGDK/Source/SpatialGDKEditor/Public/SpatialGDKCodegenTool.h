@@ -11,7 +11,7 @@ class SPATIALGDKEDITOR_API USpatialGDKCodegenTool : public UTransientUObjectEdit
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditAnywhere, Meta = (FilePathFilter = "schema", RelativeToGameDir))
+	UPROPERTY(EditAnywhere, Meta = (FilePathFilter = "schema", RelativeToGameDir), Category = "Spatial")
 	FFilePath CustomSchemaPath;
 
 	UFUNCTION(Exec)
