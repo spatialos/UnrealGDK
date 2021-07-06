@@ -194,13 +194,6 @@ void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealOb
 			RemoveSubobject(ObjectRef);
 			SpatialGuidCache->AssignNewSubobjectNetGUID(Object, ObjectRef);
 		}
-		else if (ObjectNetGUID != NetGUID)
-		{
-			UE_LOG(LogSpatialPackageMap, Warning,
-				   TEXT("ResolveSubobject has NetGuid mismatch between SpatialGuidCache and GuidCache for object: %s with NetGUID: %u and "
-						"ObjectNetGUID: %u"),
-				   *Object->GetName(), NetGUID.Value, ObjectNetGUID.Value);
-		}
 	}
 
 	SlowCheckMapsConsistency(Object, TEXT("ResolveSubobject"));
