@@ -202,7 +202,7 @@ void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealOb
 				   *Object->GetName(), NetGUID.Value, ObjectNetGUID.Value);
 		}
 	}
-	
+
 	SlowCheckMapsConsistency(Object, TEXT("ResolveSubobject"));
 }
 
@@ -878,42 +878,58 @@ void FSpatialNetGUIDCache::SlowCheckMapsConsistency(const UObject* Object, const
 #if DO_GUARD_SLOW
 	const FNetworkGUID ObjectNetGUID = GetNetGUID(Object);
 	const FUnrealObjectRef ObjectRef = GetUnrealObjectRefFromNetGUID(ObjectNetGUID);
-	const FNetworkGUID ObjRefNetGUID = UnrealObjectRefToNetGUID.FindRef(ObjectRef);;
+	const FNetworkGUID ObjRefNetGUID = UnrealObjectRefToNetGUID.FindRef(ObjectRef);
+	;
 
 	if (ObjectNetGUID != ObjRefNetGUID)
 	{
-		UE_LOG(LogSpatialPackageMap, Error, TEXT("NetGUID inconsistency between SpatialNetGuidCache and native's NetGuidCache. Object: %s, ObjectNetGUID: %u, ObjRefNetGUID: %u"),
-			*GetNameSafe(Object), ObjectNetGUID.Value, ObjRefNetGUID.Value);
+		UE_LOG(LogSpatialPackageMap, Error,
+			   TEXT("NetGUID inconsistency between SpatialNetGuidCache and native's NetGuidCache. Object: %s, ObjectNetGUID: %u, "
+					"ObjRefNetGUID: %u"),
+			   *GetNameSafe(Object), ObjectNetGUID.Value, ObjRefNetGUID.Value);
 	}
 
 	if (!IsValid(Object))
 	{
 		if (ObjectNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialPackageMap, Error, TEXT("Object is not valid but has a valid ObjectNetGUID. Object: %s, ObjectNetGUID: %u, check callsite: %s"), *GetNameSafe(Object), ObjectNetGUID.Value, *CheckCallsite);
+			UE_LOG(LogSpatialPackageMap, Error,
+				   TEXT("Object is not valid but has a valid ObjectNetGUID. Object: %s, ObjectNetGUID: %u, check callsite: %s"),
+				   *GetNameSafe(Object), ObjectNetGUID.Value, *CheckCallsite);
 		}
 		if (ObjRefNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialPackageMap, Error, TEXT("Object is not valid but has a valid ObjRefNetGUID. Object: %s, ObjectNetGUID: %u, check callsite: %s"), *GetNameSafe(Object), ObjRefNetGUID.Value, *CheckCallsite);
+			UE_LOG(LogSpatialPackageMap, Error,
+				   TEXT("Object is not valid but has a valid ObjRefNetGUID. Object: %s, ObjectNetGUID: %u, check callsite: %s"),
+				   *GetNameSafe(Object), ObjRefNetGUID.Value, *CheckCallsite);
 		}
 		if (ObjectRef.Entity != SpatialConstants::INVALID_ENTITY_ID)
 		{
-			UE_LOG(LogSpatialPackageMap, Error, TEXT("Object is not valid but has a valid ObjectRef Entity ID. Object: %s, EntityId: %lld, Offset: %u, check callsite: %s"), *GetNameSafe(Object), ObjectRef.Entity, ObjectRef.Offset, *CheckCallsite);
+			UE_LOG(
+				LogSpatialPackageMap, Error,
+				TEXT("Object is not valid but has a valid ObjectRef Entity ID. Object: %s, EntityId: %lld, Offset: %u, check callsite: %s"),
+				*GetNameSafe(Object), ObjectRef.Entity, ObjectRef.Offset, *CheckCallsite);
 		}
 	}
 	else
 	{
 		if (!ObjectNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialPackageMap, Error, TEXT("Object is valid but has an invalid ObjectNetGUID. Object: %s, ObjectNetGUID: %u, check callsite: %s"), *GetNameSafe(Object), ObjectNetGUID.Value, *CheckCallsite);
+			UE_LOG(LogSpatialPackageMap, Error,
+				   TEXT("Object is valid but has an invalid ObjectNetGUID. Object: %s, ObjectNetGUID: %u, check callsite: %s"),
+				   *GetNameSafe(Object), ObjectNetGUID.Value, *CheckCallsite);
 		}
 		if (!ObjRefNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialPackageMap, Error, TEXT("Object is valid but has an ivalid ObjRefNetGUID. Object: %s, ObjectNetGUID: %u, check callsite: %s"), *GetNameSafe(Object), ObjRefNetGUID.Value, *CheckCallsite);
+			UE_LOG(LogSpatialPackageMap, Error,
+				   TEXT("Object is valid but has an ivalid ObjRefNetGUID. Object: %s, ObjectNetGUID: %u, check callsite: %s"),
+				   *GetNameSafe(Object), ObjRefNetGUID.Value, *CheckCallsite);
 		}
 		if (ObjectRef.Entity == SpatialConstants::INVALID_ENTITY_ID && !ObjectRef.Path.IsSet())
 		{
-			UE_LOG(LogSpatialPackageMap, Error, TEXT("Object is valid but has an invalid ObjectRef Entity ID. Object: %s, check callsite: %s"), *GetNameSafe(Object), ObjectRef.Entity, ObjectRef.Offset, *CheckCallsite);
+			UE_LOG(LogSpatialPackageMap, Error,
+				   TEXT("Object is valid but has an invalid ObjectRef Entity ID. Object: %s, check callsite: %s"), *GetNameSafe(Object),
+				   ObjectRef.Entity, ObjectRef.Offset, *CheckCallsite);
 		}
 	}
 #endif
