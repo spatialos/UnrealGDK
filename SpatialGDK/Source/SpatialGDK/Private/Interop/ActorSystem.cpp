@@ -299,12 +299,12 @@ void ActorSystem::Advance()
 
 	for (const FEntitySubView& SubView : SubViews)
 	{
-		ProcessRemoves(SubView);
+		ProcessUpdates(SubView);
 	}
 
 	for (const FEntitySubView& SubView : SubViews)
 	{
-		ProcessUpdates(SubView);
+		ProcessRemoves(SubView);
 	}
 
 	for (const FEntitySubView& SubView : SubViews)
@@ -1756,6 +1756,11 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
 			return;
 		}
+	}
+
+	if (Actor->GetTearOff())
+	{
+		return;
 	}
 
 	// Actor is a startup actor that is a part of the level. If it's not Tombstone-d, then it
