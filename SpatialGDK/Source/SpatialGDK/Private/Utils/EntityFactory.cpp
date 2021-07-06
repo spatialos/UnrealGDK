@@ -268,14 +268,9 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID));
 
-	if (ShouldActorHaveVisibleComponent(Actor))
+	if (Channel->GetInterestComponentId() != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID));
-	}
-
-	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
-	{
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(Channel->GetInterestComponentId()));
 	}
 
 	if (Actor->NetDormancy >= DORM_DormantAll)
@@ -302,8 +297,6 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 	ComponentDatas.Add(Worker_ComponentData{ nullptr, ActorOwnership::ComponentId,
 											 ActorOwnership::CreateFromActor(*Actor, *PackageMap).CreateComponentData().Release(),
 											 nullptr });
-
-	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
 
 	Channel->SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor));
 
@@ -364,6 +357,14 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	TArray<FWorkerComponentData> ComponentDatas = CreateSkeletonEntityComponents(Channel->Actor);
 	WriteUnrealComponents(ComponentDatas, Channel, OutBytesWritten);
 	WriteLBComponents(ComponentDatas, Channel->Actor);
+	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(
+		Channel->Actor, NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass()), Channel->GetEntityId()));
+
+	if (ShouldActorHaveVisibleComponent(Channel->Actor))
+	{
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID));
+	}
+
 	// This block of code is just for checking purposes and should be removed in the future
 	// TODO: UNR-4783
 #if !UE_BUILD_SHIPPING

@@ -660,3 +660,35 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 	}
 	return SpatialConstants::INVALID_COMPONENT_ID;
 }
+
+bool USpatialClassInfoManager::IsInterestBucketComponentId(const Worker_ComponentId ComponentId) const
+{
+	if (ComponentId == SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID)
+	{
+		return true;
+	}
+	if (ComponentId == SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID)
+	{
+		return true;
+	}
+
+	if (IsNetCullDistanceComponent(ComponentId))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+Worker_ComponentId USpatialClassInfoManager::GetExistingInterestBucketComponentId(const SpatialGDK::EntityViewElement& Entity) const
+{
+	for (const SpatialGDK::ComponentData& Component : Entity.Components)
+	{
+		if (IsInterestBucketComponentId(Component.GetComponentId()))
+		{
+			return Component.GetComponentId();
+		}
+	}
+
+	return SpatialConstants::INVALID_COMPONENT_ID;
+}

@@ -256,6 +256,8 @@ public:
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
 											 const FObjectReferencesMap& RefMap, UObject* Object);
 
+	Worker_ComponentId GetInterestComponentId() const;
+	void OnHandoverAuthorityGained();
 	void UpdateShadowData();
 	void UpdateSpatialPosition();
 	void ForcePositionReplication() { TimeWhenPositionLastUpdated = 0; }

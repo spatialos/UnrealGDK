@@ -11,6 +11,11 @@
 
 #include "SpatialClassInfoManager.generated.h"
 
+namespace SpatialGDK
+{
+struct EntityViewElement;
+}
+
 FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(ESchemaComponentType)> Callback)
 {
 	for (int32 Type = SCHEMA_Begin; Type < SCHEMA_Count; Type++)
@@ -120,6 +125,8 @@ public:
 
 	Worker_ComponentId GetComponentIdForNetCullDistance(float NetCullDistance) const;
 	Worker_ComponentId ComputeActorInterestComponentId(const AActor* Actor) const;
+	Worker_ComponentId GetExistingInterestBucketComponentId(const SpatialGDK::EntityViewElement& Entity) const;
+	bool IsInterestBucketComponentId(const Worker_ComponentId ComponentId) const;
 
 	bool IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const;
 
