@@ -52,7 +52,7 @@ EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapC
 {
 }
 
-FUnrealObjectRef GetStablyNamedObjectRef(UObject* Object)
+FUnrealObjectRef GetStablyNamedObjectRef(const UObject* Object)
 {
 	if (Object == nullptr)
 	{
@@ -66,7 +66,7 @@ FUnrealObjectRef GetStablyNamedObjectRef(UObject* Object)
 	return FUnrealObjectRef(0, 0, TempPath, GetStablyNamedObjectRef(Object->GetOuter()), true);
 }
 
-TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
+TArray<FWorkerComponentData> EntityFactory::CreateMinimalEntityComponents(AActor* Actor)
 {
 	UClass* Class = Actor->GetClass();
 
@@ -208,6 +208,13 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	}
 }
 
+void EntityFactory::WriteRPCComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel& Channel)
+{
+	checkf(RPCService != nullptr, TEXT("Attempting to create an entity with a null RPCService."));
+	ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(Channel.GetEntityId()));
+	ComponentDatas.Append(NetDriver->RPCs->GetRPCComponentsOnEntityCreation(Channel.GetEntityId()));
+}
+
 void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel,
 										  uint32& OutBytesWritten)
 {
@@ -316,10 +323,6 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 	}
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
 
-	checkf(RPCService != nullptr, TEXT("Attempting to create an entity with a null RPCService."));
-	ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
-	ComponentDatas.Append(NetDriver->RPCs->GetRPCComponentsOnEntityCreation(EntityId));
-
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
 	{
@@ -361,8 +364,9 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
-	TArray<FWorkerComponentData> ComponentDatas = CreateSkeletonEntityComponents(Channel->Actor);
+	TArray<FWorkerComponentData> ComponentDatas = CreateMinimalEntityComponents(Channel->Actor);
 	WriteUnrealComponents(ComponentDatas, Channel, OutBytesWritten);
+	WriteRPCComponents(ComponentDatas, *Channel);
 	WriteLBComponents(ComponentDatas, Channel->Actor);
 	// This block of code is just for checking purposes and should be removed in the future
 	// TODO: UNR-4783
@@ -383,6 +387,34 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	}
 #endif // !UE_BUILD_SHIPPING
 	return ComponentDatas;
+}
+
+TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
+{
+	TArray<FWorkerComponentData> ComponentDatas = CreateMinimalEntityComponents(Actor);
+
+	// LB components also contain authority delegation, giving this worker ServerAuth.
+	WriteLBComponents(ComponentDatas, Actor);
+
+	// Empty RPC components.
+	Algo::Transform(SpatialRPCService::GetRPCComponents(), ComponentDatas, &ComponentFactory::CreateEmptyComponentData);
+	Algo::Transform(FSpatialNetDriverRPC::GetRPCComponentIds(), ComponentDatas, &ComponentFactory::CreateEmptyComponentData);
+
+	// Skeleton entity markers.
+	ComponentDatas.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID));
+	ComponentDatas.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID));
+
+	ComponentDatas.Add(NetDriver->InterestFactory->CreateSkeletonEntityInterest().CreateComponentData());
+
+	return ComponentDatas;
+}
+
+void EntityFactory::CreatePopulateSkeletonComponents(USpatialActorChannel& Channel, TArray<FWorkerComponentData>& OutComponentCreates,
+													 TArray<FWorkerComponentUpdate>& OutComponentUpdates, uint32& OutBytesWritten)
+{
+	WriteUnrealComponents(OutComponentCreates, &Channel, OutBytesWritten);
+	OutComponentUpdates = { NetDriver->InterestFactory->CreateInterestUpdate(
+		Channel.Actor, NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Channel.Actor->GetClass()), Channel.GetEntityId()) };
 }
 
 TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AActor* Actor) const
