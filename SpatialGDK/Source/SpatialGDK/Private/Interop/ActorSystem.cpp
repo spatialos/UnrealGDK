@@ -459,7 +459,8 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 
 					if (!bDormantActor)
 					{
-						UpdateShadowData(EntityId);
+						USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
+						ActorChannel->OnHandoverAuthorityGained();
 					}
 
 					// TODO - Using bActorHadAuthority should be replaced with better tracking system to Actor entity creation [UNR-3960]
@@ -766,12 +767,6 @@ void ActorSystem::HandleDeferredEntityDeletion(const DeferredRetire& Retire) con
 	{
 		RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
 	}
-}
-
-void ActorSystem::UpdateShadowData(const Worker_EntityId EntityId) const
-{
-	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
-	ActorChannel->UpdateShadowData();
 }
 
 void ActorSystem::RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff)
@@ -1626,7 +1621,7 @@ void ActorSystem::ApplyComponentDataOnActorCreation(const Worker_EntityId Entity
 	}
 }
 
-USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, const Worker_EntityId EntityId)
+USpatialActorChannel* ActorSystem::SetUpActorChannel(USpatialNetDriver* NetDriver, AActor* Actor, const Worker_EntityId EntityId)
 {
 	UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
 
@@ -1651,6 +1646,11 @@ USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, const Worker
 	}
 
 	return Channel;
+}
+
+USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, Worker_EntityId EntityId)
+{
+	return SetUpActorChannel(NetDriver, Actor, EntityId);
 }
 
 USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, const Worker_EntityId EntityId)
