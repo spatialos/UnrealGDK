@@ -780,7 +780,7 @@ void ActorSystem::UpdateShadowData(const Worker_EntityId EntityId) const
 	UE_LOG(LogActorSystem, Warning,
 		   TEXT("UpdateShadowData"
 				" (EntityId %lld, Actor Channel %s, Actor %s)"),
-		   EntityId, *ActorChannel->GetName(),  * ActorChannel->GetActor()->GetName());
+		   EntityId, *ActorChannel->GetName(), *ActorChannel->GetActor()->GetName());
 	ActorChannel->UpdateShadowData();
 }
 

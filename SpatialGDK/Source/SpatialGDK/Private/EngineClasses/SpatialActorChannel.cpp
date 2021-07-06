@@ -649,7 +649,6 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		UE_LOG(LogActorSystem, Warning, TEXT("Replicating actor with authority! %s"), *Actor->GetName());
 	}
-	
 
 #else
 	ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr, Actor,
@@ -1290,8 +1289,7 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 {
 	if (StaticBuffer.Num() == 0)
 	{
-		UE_LOG(LogSpatialActorChannel, Warning,
-			   TEXT("ResetShadowData empty buffer"));
+		UE_LOG(LogSpatialActorChannel, Warning, TEXT("ResetShadowData empty buffer"));
 		RepLayout.InitRepStateStaticBuffer(StaticBuffer, reinterpret_cast<const uint8*>(TargetObject));
 	}
 	else
