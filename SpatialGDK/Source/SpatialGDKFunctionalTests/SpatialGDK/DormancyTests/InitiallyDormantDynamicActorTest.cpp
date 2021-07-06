@@ -14,7 +14,7 @@ void AInitiallyDormantDynamicActorTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	// Step 1 - Spawn dormancy actor and set dormancy to DORM_Awake.
+	// Step 1 - Spawn dormancy actor
 	AddStep(TEXT("ServerSpawnDormancyActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		AActor* Actor = CreateDormancyTestActor();
 		FinishStep();
