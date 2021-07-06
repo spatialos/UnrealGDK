@@ -22,17 +22,17 @@ template <typename T>
 bool DoesActorTypeHavePersistentComponent()
 {
 	T* Actor = NewObject<T>();
-	const TArray<FWorkerComponentData> ComponentDatas = EntityFactory::CreateSkeletonEntityComponents(Actor);
+	const TArray<FWorkerComponentData> ComponentDatas = EntityFactory::CreateMinimalEntityComponents(Actor);
 	const bool HasPersistentComponent = ComponentDatas.ContainsByPredicate(ContainsComponent{ SpatialConstants::PERSISTENCE_COMPONENT_ID });
 	return HasPersistentComponent;
 }
 } // anonymous namespace
 
-ENTITYFACTORY_TEST(GIVEN_an_actor_WHEN_creating_skeleton_entity_components_THEN_it_contains_required_components)
+ENTITYFACTORY_TEST(GIVEN_an_actor_WHEN_creating_minimal_entity_components_THEN_it_contains_required_components)
 {
 	AActor* Actor = NewObject<AActor>();
 
-	TArray<FWorkerComponentData> ComponentDatas = EntityFactory::CreateSkeletonEntityComponents(Actor);
+	TArray<FWorkerComponentData> ComponentDatas = EntityFactory::CreateMinimalEntityComponents(Actor);
 
 	// This is here because as an end-user, I would have the expectation that the skeleton of an entity would AT LEAST contain the position
 	// component
@@ -54,49 +54,49 @@ ENTITYFACTORY_TEST(GIVEN_an_actor_WHEN_creating_skeleton_entity_components_THEN_
 }
 
 ENTITYFACTORY_TEST(
-	GIVEN_a_persistent_by_default_spatial_actor_WHEN_creating_skeleton_entity_components_THEN_it_contains_a_persistence_component)
+	GIVEN_a_persistent_by_default_spatial_actor_WHEN_creating_minimal_entity_components_THEN_it_contains_a_persistence_component)
 {
 	TestTrue("Expected a persistent component", DoesActorTypeHavePersistentComponent<APersistentByDefaultSpatialActor>());
 	return true;
 }
 
 ENTITYFACTORY_TEST(
-	GIVEN_an_explicit_persistent_spatial_actor_WHEN_creating_skeleton_entity_components_THEN_it_contains_a_persistence_component)
+	GIVEN_an_explicit_persistent_spatial_actor_WHEN_creating_minimal_entity_components_THEN_it_contains_a_persistence_component)
 {
 	TestTrue("Expected a persistent component", DoesActorTypeHavePersistentComponent<AExplicitPersistentSpatialActor>());
 	return true;
 }
 
 ENTITYFACTORY_TEST(
-	GIVEN_a_non_persistent_spatial_actor_WHEN_creating_skeleton_entity_components_THEN_it_does_not_contain_a_persistence_component)
+	GIVEN_a_non_persistent_spatial_actor_WHEN_creating_minimal_entity_components_THEN_it_does_not_contain_a_persistence_component)
 {
 	TestFalse("Expected no persistent component", DoesActorTypeHavePersistentComponent<ANonPersistentSpatialActor>());
 	return true;
 }
 
 ENTITYFACTORY_TEST(
-	GIVEN_an_actor_subclass_of_a_persistent_by_default_spatial_actor_WHEN_creating_skeleton_entity_components_THEN_it_contains_a_persistence_component)
+	GIVEN_an_actor_subclass_of_a_persistent_by_default_spatial_actor_WHEN_creating_minimal_entity_components_THEN_it_contains_a_persistence_component)
 {
 	TestTrue("Expected a persistent component", DoesActorTypeHavePersistentComponent<AActorSubclassOfPersistentByDefaultSpatialActor>());
 	return true;
 }
 
 ENTITYFACTORY_TEST(
-	GIVEN_an_actor_subclass_of_a_explicit_persistent_spatial_actor_WHEN_creating_skeleton_entity_components_THEN_it_contains_a_persistence_component)
+	GIVEN_an_actor_subclass_of_a_explicit_persistent_spatial_actor_WHEN_creating_minimal_entity_components_THEN_it_contains_a_persistence_component)
 {
 	TestTrue("Expected a persistent component", DoesActorTypeHavePersistentComponent<AActorSubclassOfExplicitPersistentSpatialActor>());
 	return true;
 }
 
 ENTITYFACTORY_TEST(
-	GIVEN_an_actor_subclass_of_a_non_persistent_spatial_actor_WHEN_creating_skeleton_entity_components_THEN_it_does_not_contain_a_persistence_component)
+	GIVEN_an_actor_subclass_of_a_non_persistent_spatial_actor_WHEN_creating_minimal_entity_components_THEN_it_does_not_contain_a_persistence_component)
 {
 	TestFalse("Expected no persistent component", DoesActorTypeHavePersistentComponent<AActorSubclassOfNonPersistentSpatialActor>());
 	return true;
 }
 
 ENTITYFACTORY_TEST(
-	GIVEN_a_non_persistent_actor_subclass_of_a_persistent_by_default_spatial_actor_WHEN_creating_skeleton_entity_components_THEN_it_does_not_contain_a_persistence_component)
+	GIVEN_a_non_persistent_actor_subclass_of_a_persistent_by_default_spatial_actor_WHEN_creating_minimal_entity_components_THEN_it_does_not_contain_a_persistence_component)
 {
 	TestFalse("Expected no persistent component",
 			  DoesActorTypeHavePersistentComponent<ANonPersistentActorSubclassOfPersistentByDefaultSpatialActor>());
@@ -104,7 +104,7 @@ ENTITYFACTORY_TEST(
 }
 
 ENTITYFACTORY_TEST(
-	GIVEN_a_non_persistent_actor_subclass_of_an_explicit_persistent_spatial_actor_WHEN_creating_skeleton_entity_components_THEN_it_does_not_contain_a_persistence_component)
+	GIVEN_a_non_persistent_actor_subclass_of_an_explicit_persistent_spatial_actor_WHEN_creating_minimal_entity_components_THEN_it_does_not_contain_a_persistence_component)
 {
 	TestFalse("Expected no persistent component",
 			  DoesActorTypeHavePersistentComponent<ANonPersistentActorSubclassOfExpicitPersistentSpatialActor>());
@@ -112,7 +112,7 @@ ENTITYFACTORY_TEST(
 }
 
 ENTITYFACTORY_TEST(
-	GIVEN_a_persistent_actor_subclass_of_a_non_persistent_spatial_actor_WHEN_creating_skeleton_entity_components_THEN_it_contains_a_persistence_component)
+	GIVEN_a_persistent_actor_subclass_of_a_non_persistent_spatial_actor_WHEN_creating_minimal_entity_components_THEN_it_contains_a_persistence_component)
 {
 	TestTrue("Expected a persistent component",
 			 DoesActorTypeHavePersistentComponent<APersistentActorSubclassOfNonPersistentSpatialActor>());
@@ -120,7 +120,7 @@ ENTITYFACTORY_TEST(
 }
 
 ENTITYFACTORY_TEST(
-	GIVEN_a_persistent_actor_subclass_of_a_subclass_of_non_persistent_spatial_actor_WHEN_creating_skeleton_entity_components_THEN_it_contains_a_persistence_component)
+	GIVEN_a_persistent_actor_subclass_of_a_subclass_of_non_persistent_spatial_actor_WHEN_creating_minimal_entity_components_THEN_it_contains_a_persistence_component)
 {
 	TestTrue("Expected a persistent component",
 			 DoesActorTypeHavePersistentComponent<APersistentActorSubclassOfActorSubclassOfNonPersistentSpatialActor>());
@@ -128,7 +128,7 @@ ENTITYFACTORY_TEST(
 }
 
 ENTITYFACTORY_TEST(
-	GIVEN_a_non_persistent_actor_subclass_of_a_subclass_of_a_persistent_by_default_spatial_actor_WHEN_creating_skeleton_entity_components_THEN_it_does_not_contain_a_persistence_component)
+	GIVEN_a_non_persistent_actor_subclass_of_a_subclass_of_a_persistent_by_default_spatial_actor_WHEN_creating_minimal_entity_components_THEN_it_does_not_contain_a_persistence_component)
 {
 	TestFalse("Expected no persistent component",
 			  DoesActorTypeHavePersistentComponent<ANonPersistentActorSubclassOfActorSubclassOfPersistentByDefaultSpatialActor>());
@@ -136,7 +136,7 @@ ENTITYFACTORY_TEST(
 }
 
 ENTITYFACTORY_TEST(
-	GIVEN_a_non_persistent_actor_subclass_of_a_subclass_of_an_explicit_persistent_spatial_actor_WHEN_creating_skeleton_entity_components_THEN_it_does_not_contain_a_persistence_component)
+	GIVEN_a_non_persistent_actor_subclass_of_a_subclass_of_an_explicit_persistent_spatial_actor_WHEN_creating_minimal_entity_components_THEN_it_does_not_contain_a_persistence_component)
 {
 	TestFalse("Expected no persistent component",
 			  DoesActorTypeHavePersistentComponent<ANonPersistentActorSubclassOfActorSubclassOfExplicitPersistentSpatialActor>());
