@@ -18,7 +18,7 @@ void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 	{ // Step 1 - Spawn Actor On Auth
 		AddStep(TEXT("SERVER_1_Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			UWorld* World = GetWorld();
-			int NumVirtualWorkers = GetNumberOfServerWorkers();
+			int NumVirtualWorkers = GetNumExpectedServers();
 
 			// spawn 1 per server worker
 			// since the information about positioning of the virtual workers is currently hidden, will assume they are all around zero
@@ -43,17 +43,16 @@ void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 			TEXT("CLIENT_ALL_CheckActorsSpawned"), FWorkerDefinition::AllClients, nullptr, nullptr,
 			[this](float DeltaTime) {
 				int NumCharactersFound = 0;
-				int NumCharactersExpected = GetNumberOfServerWorkers();
+				int NumCharactersExpected = GetNumExpectedServers();
 				UWorld* World = GetWorld();
 				for (TActorIterator<ACharacter> It(World); It; ++It)
 				{
 					++NumCharactersFound;
 				}
 
-				if (NumCharactersFound == NumCharactersExpected)
-				{
-					FinishStep();
-				}
+				RequireEqual_Int(NumCharactersFound, NumCharactersExpected,
+								 TEXT("Clients should observe the correct number of characters in their world."));
+				FinishStep();
 			},
 			5.0f);
 	}
