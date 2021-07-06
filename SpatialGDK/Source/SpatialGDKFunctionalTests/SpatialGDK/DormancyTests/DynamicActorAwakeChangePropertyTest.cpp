@@ -23,7 +23,7 @@ void ADynamicActorAwakeChangePropertyTest::PrepareTest()
 		FinishStep();
 	});
 
-	// Step 2 - Client check NetDormancy is DORM_Initial
+	// Step 2 - Client check NetDormancy is DORM_Awake
 	AddStep(
 		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {

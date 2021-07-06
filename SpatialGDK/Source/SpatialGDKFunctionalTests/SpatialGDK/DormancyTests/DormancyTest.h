@@ -12,7 +12,6 @@ class SPATIALGDKFUNCTIONALTESTS_API ADormancyTest : public ASpatialFunctionalTes
 	GENERATED_BODY()
 
 protected:
-
 	AActor* CreateDormancyTestActor();
 	void CheckDormancyAndRepProperty(const TEnumAsByte<enum ENetDormancy> ExpectedNetDormancy, const int ExpectedTestIntProp);
 	void DestroyDormancyTestActors();

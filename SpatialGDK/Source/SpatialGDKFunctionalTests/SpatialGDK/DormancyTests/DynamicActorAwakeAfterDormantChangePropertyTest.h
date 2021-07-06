@@ -6,7 +6,7 @@
 #include "DormancyTest.h"
 #include "DynamicActorAwakeAfterDormantChangePropertyTest.generated.h"
 
-// TODO: Failing due to UNR-5790. Uncomment when this ticket is fixed.
+// TODO: Failing due to UNR-5790. Add to test gyms when ticket is solved.
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ADynamicActorAwakeAfterDormantChangePropertyTest : public ADormancyTest

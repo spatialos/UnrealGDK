@@ -32,7 +32,6 @@ void ADynamicActorDormantAllChangePropertyTest::PrepareTest()
 
 			UWorld* World = GetWorld();
 			USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
-
 			if (SpatialNetDriver != nullptr)
 			{
 				for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
@@ -40,7 +39,8 @@ void ADynamicActorDormantAllChangePropertyTest::PrepareTest()
 					const ADormancyTestActor* DormancyTestActor = *Iter;
 					if (DormancyTestActor != nullptr)
 					{
-						bIsReadyForDormancy = SpatialNetDriver->IsDormantEntity(SpatialNetDriver->GetActorEntityId(*DormancyTestActor));
+						const int64 EntityId = SpatialNetDriver->GetActorEntityId(*DormancyTestActor);
+						bIsReadyForDormancy = SpatialNetDriver->IsDormantEntity(EntityId);
 					}
 				}
 			}

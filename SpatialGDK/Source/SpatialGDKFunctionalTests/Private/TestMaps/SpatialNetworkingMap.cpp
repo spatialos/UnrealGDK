@@ -4,8 +4,8 @@
 
 #include "SpatialGDK/StaticSubobjectsTest/StaticSubobjectTestActor.h"
 #include "SpatialGDK/StaticSubobjectsTest/StaticSubobjectsTest.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/DormancyAndTombstoneTest/DormancyAndTombstoneTest.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/DormancyAndTombstoneTest/DormancyTestActor.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/DormancyTests/DormancyAndTombstoneTest.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/DormancyTests/DormancyTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DynamicSubobjectsTest/DynamicSubObjectTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DynamicSubobjectsTest/DynamicSubObjectsTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RegisterAutoDestroyActorsTest/RegisterAutoDestroyActorsTest.h"

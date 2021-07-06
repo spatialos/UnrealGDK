@@ -34,5 +34,5 @@ void ADormancyTest::CheckDormancyActorCount(const int ExpectedCount)
 	{
 		Counter++;
 	}
-	RequireEqual_Int(Counter, ExpectedCount, TEXT("Number of TestDormancyActors in client world"));
+	RequireEqual_Int(Counter, ExpectedCount, TEXT("Number of TestDormancyActors in world"));
 }
