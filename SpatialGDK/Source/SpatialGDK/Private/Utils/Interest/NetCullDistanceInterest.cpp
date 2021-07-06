@@ -129,28 +129,34 @@ FrequencyConstraints NetCullDistanceInterest::CreateNetCullDistanceConstraintWit
 
 		float FullFrequencyCheckoutRadius = MaxCheckoutRadiusMeters * SpatialGDKSettings->FullFrequencyNetCullDistanceRatio;
 
-		QueryConstraint RadiusConstraint;
-		RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ FullFrequencyCheckoutRadius };
+		if (FullFrequencyCheckoutRadius > 0.f)
+		{
+			QueryConstraint RadiusConstraint;
+			RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ FullFrequencyCheckoutRadius };
 
-		QueryConstraint CheckoutRadiusConstraint;
-		CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
-		CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
+			QueryConstraint CheckoutRadiusConstraint;
+			CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
+			CheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
 
-		AddToFrequencyConstraintMap(FullFrequencyHz, CheckoutRadiusConstraint, FrequencyToConstraints);
+			AddToFrequencyConstraintMap(FullFrequencyHz, CheckoutRadiusConstraint, FrequencyToConstraints);
+		}
 
 		// Add interest query for specified distance/frequency pairs
 		for (const auto& DistanceFrequencyPair : SpatialGDKSettings->InterestRangeFrequencyPairs)
 		{
 			float CheckoutRadius = MaxCheckoutRadiusMeters * DistanceFrequencyPair.DistanceRatio;
 
-			QueryConstraint FrequencyRadiusConstraint;
-			FrequencyRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
+			if (CheckoutRadius > 0.f)
+			{
+				QueryConstraint FrequencyRadiusConstraint;
+				FrequencyRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
 
-			QueryConstraint FrequencyCheckoutRadiusConstraint;
-			FrequencyCheckoutRadiusConstraint.AndConstraint.Add(FrequencyRadiusConstraint);
-			FrequencyCheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
+				QueryConstraint FrequencyCheckoutRadiusConstraint;
+				FrequencyCheckoutRadiusConstraint.AndConstraint.Add(FrequencyRadiusConstraint);
+				FrequencyCheckoutRadiusConstraint.AndConstraint.Add(ComponentConstraint);
 
-			AddToFrequencyConstraintMap(DistanceFrequencyPair.Frequency, FrequencyCheckoutRadiusConstraint, FrequencyToConstraints);
+				AddToFrequencyConstraintMap(DistanceFrequencyPair.Frequency, FrequencyCheckoutRadiusConstraint, FrequencyToConstraints);
+			}
 		}
 	}
 
