@@ -238,6 +238,13 @@ Interest InterestFactory::CreateRoutingWorkerInterest()
 	return ServerInterest;
 }
 
+Interest InterestFactory::CreateSkeletonEntityInterest() const
+{
+	Interest SkeletonEntityInterest;
+	AddServerSelfInterest(SkeletonEntityInterest);
+	return SkeletonEntityInterest;
+}
+
 Interest UnrealServerInterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
