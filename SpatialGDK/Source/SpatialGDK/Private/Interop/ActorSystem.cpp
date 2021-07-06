@@ -1741,7 +1741,7 @@ void ActorSystem::TryInvokeRepNotifiesForObject(FObjectRepNotifies& ObjectRepNot
 		return;
 	}
 
-	ObjectRepNotifies.RepNotifies.Sort([](GDK_PROPERTY(Property)& A, GDK_PROPERTY(Property)& B) -> bool {
+	ObjectRepNotifies.RepNotifies.Sort([](GDK_PROPERTY(Property) & A, GDK_PROPERTY(Property) & B) -> bool {
 		// We want to call RepNotifies on properties with a lower RepIndex earlier
 		return A.RepIndex < B.RepIndex;
 	});
