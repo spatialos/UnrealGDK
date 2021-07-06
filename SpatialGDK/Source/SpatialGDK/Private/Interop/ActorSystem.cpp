@@ -2065,9 +2065,7 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 	const EntityViewElement* ExistingEntity = NetDriver->Connection->GetCoordinator().GetView().Find(ActorChannel.GetEntityId());
 	const bool bIsSkeletonEntity =
 		ExistingEntity != nullptr
-		&& ExistingEntity->Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID })
-		&& !ExistingEntity->Components.ContainsByPredicate(
-			ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID });
+		&& ExistingEntity->Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID });
 	const EEntityCreationType EntityType = bIsSkeletonEntity ? PopulateSkeleton : CreateNewEntity;
 	if (EntityType == CreateNewEntity)
 	{

@@ -12,6 +12,12 @@ namespace SpatialGDK
 {
 class FSubView;
 
+namespace SkeletonEntityFunctions
+{
+bool IsCompleteSkeleton(const EntityViewElement& Entity);
+TArray<FDispatcherRefreshCallback> GetSkeletonEntityRefreshCallbacks(ViewCoordinator& Coordinator);
+} // namespace SkeletonEntityFunctions
+
 class FDistributedStartupActorSkeletonEntityCreator
 {
 public:

@@ -22,6 +22,39 @@ namespace SpatialGDK
 {
 DEFINE_LOG_CATEGORY_STATIC(LogSpatialSkeletonEntityCreator, Log, All);
 
+bool SkeletonEntityFunctions::IsCompleteSkeleton(const EntityViewElement& Entity)
+{
+	bool bHasSkeletonTag = false;
+	bool bHasPopulatedTag = false;
+	for (const ComponentData& Component : Entity.Components)
+	{
+		if (Component.GetComponentId() == SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID)
+		{
+			bHasSkeletonTag = true;
+		}
+		if (Component.GetComponentId() == SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID)
+		{
+			bHasPopulatedTag = true;
+		}
+	}
+
+	if (bHasSkeletonTag)
+	{
+		// Skeletons must have a populated tag for us to consider them complete.
+		return bHasPopulatedTag;
+	}
+	// Non-skeleton entities are assumed to be complete actors by default.
+	return true;
+}
+
+TArray<FDispatcherRefreshCallback> SkeletonEntityFunctions::GetSkeletonEntityRefreshCallbacks(ViewCoordinator& Coordinator)
+{
+	return {
+		Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID),
+		Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID),
+	};
+}
+
 static ComponentData Convert(const FWorkerComponentData& WorkerComponentData)
 {
 	return ComponentData(OwningComponentDataPtr(WorkerComponentData.schema_type), WorkerComponentData.component_id);

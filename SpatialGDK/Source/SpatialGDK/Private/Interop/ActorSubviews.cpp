@@ -5,6 +5,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/InitialOnlyFilter.h"
 #include "Interop/OwnershipCompletenessHandler.h"
+#include "Interop/SkeletonEntities.h"
 #include "Schema/ActorOwnership.h"
 #include "Schema/Restricted.h"
 #include "Schema/Tombstone.h"
@@ -60,9 +61,7 @@ bool MainActorSubviewSetup::IsActorEntity(const Worker_EntityId EntityId, const 
 		return false;
 	}
 
-	if (Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID })
-		&& !Entity.Components.ContainsByPredicate(
-			ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID }))
+	if (!SkeletonEntityFunctions::IsCompleteSkeleton(Entity))
 	{
 		return false;
 	}
@@ -98,13 +97,10 @@ bool MainActorSubviewSetup::IsActorEntity(const Worker_EntityId EntityId, const 
 
 TArray<FDispatcherRefreshCallback> MainActorSubviewSetup::GetCallbacks(ViewCoordinator& Coordinator)
 {
-	return {
-		Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
-		Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
-		Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID),
-		Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID),
-		Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID),
-	};
+	return CombineCallbacks({ Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
+							  Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
+							  Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID) },
+							SkeletonEntityFunctions::GetSkeletonEntityRefreshCallbacks(Coordinator));
 }
 
 bool AuthoritySubviewSetup::IsAuthorityActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element)
