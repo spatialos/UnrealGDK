@@ -1735,7 +1735,7 @@ void ActorSystem::TryInvokeRepNotifiesForObject(FObjectRepNotifies& ObjectRepNot
 	{
 		// TODO UNR-5785 - Once fixed, change log level to warning
 		UE_LOG(LogActorSystem, Log, TEXT("Failed to invoke rep notifies for an object as its entity id was invalid. Object: %s"),
-				   *Object->GetName());
+			   *Object->GetName());
 		return;
 	}
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
