@@ -1684,18 +1684,21 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 
 void ActorSystem::InvokeRepNotifies()
 {
-	// Call repnotifies on actors before subobjects
+	// Call rep notifies on actors before subobjects
 	TArray<FObjectRepNotifies> Actors;
 	TArray<FObjectRepNotifies> Subobjects;
-	for (auto ObjectToRepNotifiesIt = RepNotifiesToSend.CreateIterator(); ObjectToRepNotifiesIt; ++ObjectToRepNotifiesIt)
+	Actors.Reserve(RepNotifiesToSend.Num());
+	Subobjects.Reserve(RepNotifiesToSend.Num());
+
+	for (auto& ObjectToObjRepNotifies : RepNotifiesToSend)
 	{
-		FObjectRepNotifies& ObjectRepNotifies = ObjectToRepNotifiesIt->Value;
+		FObjectRepNotifies& ObjectRepNotifies = ObjectToObjRepNotifies.Value;
 		if (ObjectRepNotifies.RepNotifies.Num() == 0)
 		{
 			continue;
 		}
 
-		UObject* Object = ObjectToRepNotifiesIt->Key.Get();
+		UObject* Object = ObjectToObjRepNotifies.Key.Get();
 		ObjectRepNotifies.Object = Object;
 
 		if (Cast<AActor>(Object))
@@ -1717,7 +1720,7 @@ void ActorSystem::InvokeRepNotifies()
 		TryInvokeRepNotifiesForObject(ObjectRepNotifies);
 	}
 
-	RepNotifiesToSend.Empty(floor(RepNotifiesToSend.Num() * 0.9));
+	RepNotifiesToSend.Empty();
 }
 
 void ActorSystem::TryInvokeRepNotifiesForObject(FObjectRepNotifies& ObjectRepNotifies) const
