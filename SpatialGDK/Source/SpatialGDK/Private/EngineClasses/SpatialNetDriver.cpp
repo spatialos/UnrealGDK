@@ -40,6 +40,7 @@
 #include "Interop/MigrationDiagnosticsSystem.h"
 #include "Interop/OwnershipCompletenessHandler.h"
 #include "Interop/RPCExecutor.h"
+#include "Interop/SkeletonEntities.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialNetDriverLoadBalancingHandler.h"
@@ -612,7 +613,11 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
 	const SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+		SpatialConstants::LB_TAG_COMPONENT_ID,
+		[](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
+			return SpatialGDK::SkeletonEntityFunctions::IsCompleteSkeleton(Element);
+		},
+		SpatialGDK::SkeletonEntityFunctions::GetSkeletonEntityRefreshCallbacks(Connection->GetCoordinator()));
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (!SpatialSettings->bRunStrategyWorker)
@@ -3529,8 +3534,7 @@ void USpatialNetDriver::RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebug
 
 		if (IsServer())
 		{
-			DebuggerSubViewPtr = &Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
-																			 FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
+			DebuggerSubViewPtr = &SpatialGDK::ActorSubviews::CreateActorAuthSubView(*this);
 		}
 		else
 		{
