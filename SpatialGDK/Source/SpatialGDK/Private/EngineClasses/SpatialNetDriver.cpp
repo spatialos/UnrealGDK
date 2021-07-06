@@ -620,17 +620,10 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 
 	const SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::LB_TAG_COMPONENT_ID,
-		[](const Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element) {
-			return !(Element.Components.ContainsByPredicate(
-						 SpatialGDK::ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID })
-					 && !Element.Components.ContainsByPredicate(
-						 SpatialGDK::ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID }));
+		[](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
+			return SpatialGDK::SkeletonEntityFunctions::IsCompleteSkeleton(Element);
 		},
-		{
-			Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID),
-			Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
-				SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID),
-		});
+		SpatialGDK::SkeletonEntityFunctions::GetSkeletonEntityRefreshCallbacks(Connection->GetCoordinator()));
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (!SpatialSettings->bRunStrategyWorker)

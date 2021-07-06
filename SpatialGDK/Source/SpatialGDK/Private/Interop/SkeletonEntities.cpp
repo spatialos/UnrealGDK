@@ -22,6 +22,39 @@ namespace SpatialGDK
 {
 DEFINE_LOG_CATEGORY_STATIC(LogSpatialSkeletonEntityCreator, Log, All);
 
+bool SkeletonEntityFunctions::IsCompleteSkeleton(const EntityViewElement& Entity)
+{
+	bool bHasSkeletonTag = false;
+	bool bHasPopulatedTag = false;
+	for (const ComponentData& Component : Entity.Components)
+	{
+		if (Component.GetComponentId() == SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID)
+		{
+			bHasSkeletonTag = true;
+		}
+		if (Component.GetComponentId() == SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID)
+		{
+			bHasPopulatedTag = true;
+		}
+	}
+
+	if (bHasSkeletonTag)
+	{
+		// Skeletons must have a populated tag for us to consider them complete.
+		return bHasPopulatedTag;
+	}
+	// Non-skeleton entities are assumed to be complete actors by default.
+	return true;
+}
+
+TArray<FDispatcherRefreshCallback> SkeletonEntityFunctions::GetSkeletonEntityRefreshCallbacks(ViewCoordinator& Coordinator)
+{
+	return {
+		Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID),
+		Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID),
+	};
+}
+
 static ComponentData Convert(const FWorkerComponentData& WorkerComponentData)
 {
 	return ComponentData(OwningComponentDataPtr(WorkerComponentData.schema_type), WorkerComponentData.component_id);
@@ -130,30 +163,14 @@ Worker_EntityId FDistributedStartupActorSkeletonEntityCreator::CreateSkeletonEnt
 
 	EntityFactory Factory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
 
-	TArray<FWorkerComponentData> EntityComponents = Factory.CreateSkeletonEntityComponents(&Actor);
+	const TArray<FWorkerComponentData> EntityComponents = Factory.CreateSkeletonEntityComponents(&Actor);
 
-	// LB components also contain authority delegation, giving this worker ServerAuth.
-	Factory.WriteLBComponents(EntityComponents, &Actor);
-
-	// RPC components.
-	Algo::Transform(SpatialRPCService::GetRPCComponents(), EntityComponents, &ComponentFactory::CreateEmptyComponentData);
-	Algo::Transform(FSpatialNetDriverRPC::GetRPCComponentIds(), EntityComponents, &ComponentFactory::CreateEmptyComponentData);
-
-	// Skeleton entity markers		.
-	EntityComponents.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID));
-	EntityComponents.Emplace(
-		ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID));
-
-	Interest SkeletonEntityInterest;
-	NetDriver->InterestFactory->AddServerSelfInterest(SkeletonEntityInterest);
-	EntityComponents.Add(SkeletonEntityInterest.CreateComponentData());
-
-	TArray<ComponentData> SkeletonEntityComponentDatas;
-	Algo::Transform(EntityComponents, SkeletonEntityComponentDatas, &Convert);
+	TArray<ComponentData> SkeletonEntityComponentData;
+	Algo::Transform(EntityComponents, SkeletonEntityComponentData, &Convert);
 
 	ViewCoordinator& Coordinator = NetDriver->Connection->GetCoordinator();
 	const Worker_RequestId CreateEntityRequestId =
-		Coordinator.SendCreateEntityRequest(MoveTemp(SkeletonEntityComponentDatas), ActorEntityId);
+		Coordinator.SendCreateEntityRequest(MoveTemp(SkeletonEntityComponentData), ActorEntityId);
 
 	FCreateEntityDelegate OnCreated = [this, ActorEntityId, WeakActor = MakeWeakObjectPtr(&Actor)](const Worker_CreateEntityResponseOp&) {
 		RemainingSkeletonEntities.Remove(ActorEntityId);
