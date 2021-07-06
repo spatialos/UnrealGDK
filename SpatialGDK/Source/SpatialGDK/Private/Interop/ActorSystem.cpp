@@ -1684,10 +1684,8 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 
 void ActorSystem::InvokeRepNotifies()
 {
-	// Call rep notifies on actors before subobjects
-	TArray<FObjectRepNotifies> Actors;
+	// We want to call rep notifies on actors before subobjects
 	TArray<FObjectRepNotifies> Subobjects;
-	Actors.Reserve(RepNotifiesToSend.Num());
 	Subobjects.Reserve(RepNotifiesToSend.Num());
 
 	for (auto& ObjectToObjRepNotifies : RepNotifiesToSend)
@@ -1703,7 +1701,7 @@ void ActorSystem::InvokeRepNotifies()
 
 		if (Cast<AActor>(Object))
 		{
-			Actors.Add(MoveTemp(ObjectRepNotifies));
+			TryInvokeRepNotifiesForObject(ObjectRepNotifies);
 		}
 		else
 		{
@@ -1711,10 +1709,6 @@ void ActorSystem::InvokeRepNotifies()
 		}
 	}
 
-	for (FObjectRepNotifies& ActorRepNotifies : Actors)
-	{
-		TryInvokeRepNotifiesForObject(ActorRepNotifies);
-	}
 	for (FObjectRepNotifies& ObjectRepNotifies : Subobjects)
 	{
 		TryInvokeRepNotifiesForObject(ObjectRepNotifies);
@@ -1747,9 +1741,9 @@ void ActorSystem::TryInvokeRepNotifiesForObject(FObjectRepNotifies& ObjectRepNot
 		return;
 	}
 
-	Algo::Sort(ObjectRepNotifies.RepNotifies, [](GDK_PROPERTY(Property) * A, GDK_PROPERTY(Property) * B) -> bool {
+	ObjectRepNotifies.RepNotifies.Sort([](GDK_PROPERTY(Property)& A, GDK_PROPERTY(Property)& B) -> bool {
 		// We want to call RepNotifies on properties with a lower RepIndex earlier
-		return A->RepIndex < B->RepIndex;
+		return A.RepIndex < B.RepIndex;
 	});
 
 	RemoveRepNotifiesWithUnresolvedObjs(*Object, *Channel, ObjectRepNotifies.RepNotifies);
