@@ -1028,7 +1028,6 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 													const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
-	TargetObject->PostNetReceive();
 
 	Replicator.RepState->GetReceivingRepState()->RepNotifies = RepNotifies;
 
@@ -1083,27 +1082,28 @@ void USpatialActorChannel::UpdateSpatialPosition()
 		}
 	}
 
-	if (!SatisfiesSpatialPositionUpdateRequirements())
+	FVector NewSpatialActorPosition;
+	if (!SatisfiesSpatialPositionUpdateRequirements(NewSpatialActorPosition))
 	{
 		return;
 	}
 
-	LastPositionSinceUpdate = SpatialGDK::GetActorSpatialPosition(Actor);
-	TimeWhenPositionLastUpdated = NetDriver->GetElapsedTime();
-
-	SendPositionUpdate(Actor, EntityId, LastPositionSinceUpdate);
+	SendPositionUpdate(Actor, EntityId, NewSpatialActorPosition);
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
 		if (APawn* Pawn = PlayerController->GetPawn())
 		{
-			SendPositionUpdate(Pawn, NetDriver->PackageMap->GetEntityIdFromObject(Pawn), LastPositionSinceUpdate);
+			SendPositionUpdate(Pawn, NetDriver->PackageMap->GetEntityIdFromObject(Pawn), NewSpatialActorPosition);
 		}
 	}
 }
 
 void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition)
 {
+	LastPositionSinceUpdate = NewPosition;
+	TimeWhenPositionLastUpdated = NetDriver->GetElapsedTime();
+
 	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->HasServerAuthority(InEntityId))
 	{
 		FWorkerComponentUpdate Update = SpatialGDK::Position::CreatePositionUpdate(SpatialGDK::Coordinates::FromFVector(NewPosition));
@@ -1117,7 +1117,7 @@ void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId I
 }
 
 void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
-															   const FObjectReferencesMap& RefMap, UObject* Object)
+															   const FObjectReferencesMap& RefMap, const UObject* Object) const
 {
 	// Prevent rep notify callbacks from being issued when unresolved obj references exist inside UStructs.
 	// This prevents undefined behaviour when engine rep callbacks are issued where they don't expect unresolved objects in native flow.
@@ -1281,11 +1281,11 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 	}
 }
 
-bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements()
+bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition)
 {
 	// Check that the Actor satisfies both lower thresholds OR either of the maximum thresholds
-	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
-	const float DistanceTravelledSinceLastUpdateSquared = FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate);
+	OutNewSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
+	const float DistanceTravelledSinceLastUpdateSquared = FVector::DistSquared(OutNewSpatialPosition, LastPositionSinceUpdate);
 
 	// If the Actor did not travel at all, then we consider its position to be up to date and we early out.
 	if (FMath::IsNearlyZero(DistanceTravelledSinceLastUpdateSquared))
