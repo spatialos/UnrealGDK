@@ -1752,10 +1752,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 						continue;
 					}
 
-					if (!ensureAlwaysMsgf(Actor->HasAuthority(), TEXT("Trying to replicate Actor without authority")))
-					{
-						continue;
-					}
+					// TODO: could not check here otherwise change history will not get updated
 
 					Channel = GetOrCreateSpatialActorChannel(Actor);
 					if ((Channel == nullptr) && (Actor->NetUpdateFrequency < 1.0f))

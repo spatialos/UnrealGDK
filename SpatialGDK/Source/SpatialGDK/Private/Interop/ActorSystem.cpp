@@ -165,6 +165,8 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 			{
 				ComponentRemoved(Delta.EntityId, Change.ComponentId);
 			}
+
+			UpdateShadowData(Delta.EntityId);
 		}
 	}
 }
@@ -208,6 +210,8 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 
 				AuthorityGained(EntityId, AuthorityComponentSet);
 			}
+
+			UpdateShadowData(Delta.EntityId);
 		}
 	}
 }
@@ -226,6 +230,8 @@ void ActorSystem::ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate)
 			const Worker_EntityId EntityId = Delta.EntityId;
 			if (PresentEntities.Contains(EntityId))
 			{
+				UpdateShadowData(EntityId);
+
 				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
 																		? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
 																		: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
@@ -771,6 +777,10 @@ void ActorSystem::HandleDeferredEntityDeletion(const DeferredRetire& Retire) con
 void ActorSystem::UpdateShadowData(const Worker_EntityId EntityId) const
 {
 	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
+	UE_LOG(LogActorSystem, Warning,
+		   TEXT("UpdateShadowData"
+				" (EntityId %lld, Actor Channel %s, Actor %s)"),
+		   EntityId, *ActorChannel->GetName(),  * ActorChannel->GetActor()->GetName());
 	ActorChannel->UpdateShadowData();
 }
 

@@ -384,6 +384,7 @@ void USpatialActorChannel::UpdateShadowData()
 {
 	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Called UpdateShadowData but Actor was nullptr")))
 	{
+		UE_LOG(LogNetTraffic, Warning, TEXT("Called UpdateShadowData but Actor was nullptr"));
 		return;
 	}
 
@@ -393,6 +394,7 @@ void USpatialActorChannel::UpdateShadowData()
 	// TODO: UNR-1029 - log when the shadow data differs from the current state of the Actor.
 	if (bCreatedEntity)
 	{
+		UE_LOG(LogNetTraffic, Warning, TEXT("Called UpdateShadowData for created actor"));
 		return;
 	}
 
@@ -476,11 +478,6 @@ void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 int64 USpatialActorChannel::ReplicateActor()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateActor);
-
-	if (!IsReadyForReplication())
-	{
-		return 0;
-	}
 
 	check(Actor);
 	check(!Closing);
@@ -599,7 +596,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 	// Update SpatialOS position.
-	if (!bCreatingNewEntity)
+	if (!bCreatingNewEntity && IsReadyForReplication())
 	{
 		if (SpatialGDKSettings->bBatchSpatialPositionUpdates)
 		{
@@ -611,7 +608,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 	}
 
-	if (Actor->GetIsHiddenDirty())
+	if (Actor->GetIsHiddenDirty() && IsReadyForReplication())
 	{
 		UpdateVisibleComponent(Actor);
 		Actor->SetIsHiddenDirty(false);
@@ -635,6 +632,25 @@ int64 USpatialActorChannel::ReplicateActor()
 		// Connection->SetPendingCloseDueToReplicationFailure();
 		return 0;
 	}
+
+	if (!IsReadyForReplication())
+	{
+		if (UpdateResult == ERepLayoutResult::Success && EntityId != SpatialConstants::INVALID_ENTITY_ID && !bCreatingNewEntity
+			&& !NetDriver->HasServerAuthority(EntityId))
+		{
+			UE_LOG(LogActorSystem, Error, TEXT("Changed actor without authority! %s"), *Actor->GetName());
+		}
+
+		// Do not want to replicate on non-auth server
+		bIsReplicatingActor = false;
+		return 0;
+	}
+	else
+	{
+		UE_LOG(LogActorSystem, Warning, TEXT("Replicating actor with authority! %s"), *Actor->GetName());
+	}
+	
+
 #else
 	ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr, Actor,
 													Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
@@ -1274,10 +1290,13 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 {
 	if (StaticBuffer.Num() == 0)
 	{
+		UE_LOG(LogSpatialActorChannel, Warning,
+			   TEXT("ResetShadowData empty buffer"));
 		RepLayout.InitRepStateStaticBuffer(StaticBuffer, reinterpret_cast<const uint8*>(TargetObject));
 	}
 	else
 	{
+		UE_LOG(LogSpatialActorChannel, Warning, TEXT("ResetShadowData buffer size %i"), StaticBuffer.Num());
 		RepLayout.CopyProperties(StaticBuffer, reinterpret_cast<uint8*>(TargetObject));
 	}
 }
