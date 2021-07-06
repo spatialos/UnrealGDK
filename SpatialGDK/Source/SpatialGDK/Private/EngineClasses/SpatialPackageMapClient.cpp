@@ -184,7 +184,7 @@ void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealOb
 	else
 	{
 		// TODO UNR-5785 - Remove this once fixed, as really SpatialGuidCache and Native's GuidCache should be in sync
-		FNetworkGUID ObjectNetGUID = GetNetGUIDFromObject(Object);
+		const FNetworkGUID ObjectNetGUID = GetNetGUIDFromObject(Object);
 		if (!ObjectNetGUID.IsValid())
 		{
 			UE_LOG(LogSpatialPackageMap, Log,
