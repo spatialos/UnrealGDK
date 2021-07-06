@@ -27,6 +27,7 @@ void ADynamicActorAwakeChangePropertyTest::PrepareTest()
 	AddStep(
 		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
+			CheckDormancyActorCount(1);
 			CheckDormancyAndRepProperty(DORM_Awake, 0);
 			FinishStep();
 		},

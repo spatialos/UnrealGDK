@@ -2,7 +2,7 @@
 
 #include "InitiallyDormantDynamicActorTest.h"
 
-// This test checks that a spawned actor that set's it's NetDormancy to DORM_Initial in it's constructor will be DORM_Initial on the server
+// This test checks that a spawned actor that sets its NetDormancy to DORM_Initial in its constructor will be DORM_Initial on the server
 // but DORM_DormantAll on clients.
 
 AInitiallyDormantDynamicActorTest::AInitiallyDormantDynamicActorTest()
@@ -24,6 +24,7 @@ void AInitiallyDormantDynamicActorTest::PrepareTest()
 	AddStep(
 		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::Server(1), nullptr, nullptr,
 		[this](float DeltaTime) {
+			CheckDormancyActorCount(1);
 			CheckDormancyAndRepProperty(DORM_Initial, 0);
 			FinishStep();
 		},

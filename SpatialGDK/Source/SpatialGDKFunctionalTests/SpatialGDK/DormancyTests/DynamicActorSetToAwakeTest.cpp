@@ -25,6 +25,7 @@ void ADynamicActorSetToAwakeTest::PrepareTest()
 	AddStep(
 		TEXT("ServerCheckDormancyAndRepProperty"), FWorkerDefinition::Server(1), nullptr, nullptr,
 		[this](float DeltaTime) {
+			CheckDormancyActorCount(1);
 			CheckDormancyAndRepProperty(DORM_Awake, 0);
 			FinishStep();
 		},

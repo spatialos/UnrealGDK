@@ -24,7 +24,7 @@
  */
 ADormancyAndTombstoneTest::ADormancyAndTombstoneTest()
 {
-	Author = "Miron";
+	Author = "Matt Sandford";
 	Description = TEXT("Test Actor Dormancy and Tombstones");
 }
 
