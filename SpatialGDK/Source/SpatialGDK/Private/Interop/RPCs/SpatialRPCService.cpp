@@ -254,14 +254,19 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 	return UpdatesToSend;
 }
 
-TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId)
+TArray<Worker_ComponentId> SpatialRPCService::GetRPCComponents()
 {
 	static TArray<Worker_ComponentId> EndpointComponentIds = { SpatialConstants::MULTICAST_RPCS_COMPONENT_ID,
 															   SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID };
 
+	return EndpointComponentIds;
+}
+
+TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId)
+{
 	TArray<FWorkerComponentData> Components;
 
-	for (Worker_ComponentId EndpointComponentId : EndpointComponentIds)
+	for (Worker_ComponentId EndpointComponentId : GetRPCComponents())
 	{
 		const EntityComponentId EntityComponent = { EntityId, EndpointComponentId };
 
