@@ -51,6 +51,7 @@ public:
 	Interest CreatePartitionInterest(const QueryConstraint& LoadBalancingConstraint, bool bDebug) const;
 	void AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, Interest& OutInterest) const;
 	static Interest CreateRoutingWorkerInterest();
+	Interest CreateSkeletonEntityInterest() const;
 
 protected:
 	// Shared constraints and result types are created at initialization and reused throughout the lifetime of the factory.
