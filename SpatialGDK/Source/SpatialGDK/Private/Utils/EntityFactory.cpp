@@ -80,21 +80,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateMinimalEntityComponents(AActor
 		ComponentDatas.Add(Persistence().CreateComponentData());
 	}
 
-	// We want to have a stably named ref if this is an Actor placed in the world.
-	// We use this to indicate if a new Actor should be created, or to link a pre-existing Actor when receiving an AddEntityOp.
-	// We presume that all actors not in game worlds are in editor worlds, therefore the actors are stably named.
-	// Previously, IsFullNameStableForNetworking was used but this was only true if bNetLoadOnClient=true.
-	// Actors with bNetLoadOnClient=false also need a StablyNamedObjectRef for linking in the case of loading from a snapshot or the server
-	// crashes and restarts.
-	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
-	TSchemaOption<bool> bNetStartup;
-	if ((Actor->GetWorld() != nullptr && !Actor->GetWorld()->IsGameWorld()) || Actor->HasAnyFlags(RF_WasLoaded)
-		|| Actor->IsNetStartupActor())
-	{
-		StablyNamedObjectRef = GetStablyNamedObjectRef(Actor);
-		bNetStartup = Actor->IsNetStartupActor();
-	}
-	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateComponentData());
+	ComponentDatas.Add(CreateMetadata(*Actor).CreateComponentData());
 
 	// Add Actor completeness tags.
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
@@ -113,6 +99,27 @@ TArray<FWorkerComponentData> EntityFactory::CreateMinimalEntityComponents(AActor
 #endif // WITH_GAMEPLAY_DEBUGGER
 
 	return ComponentDatas;
+}
+
+UnrealMetadata EntityFactory::CreateMetadata(const AActor& InActor)
+{
+	UClass* Class = InActor.GetClass();
+
+	// We want to have a stably named ref if this is an Actor placed in the world.
+	// We use this to indicate if a new Actor should be created, or to link a pre-existing Actor when receiving an AddEntityOp.
+	// We presume that all actors not in game worlds are in editor worlds, therefore the actors are stably named.
+	// Previously, IsFullNameStableForNetworking was used but this was only true if bNetLoadOnClient=true.
+	// Actors with bNetLoadOnClient=false also need a StablyNamedObjectRef for linking in the case of loading from a snapshot or the server
+	// crashes and restarts.
+	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
+	TSchemaOption<bool> bNetStartup;
+	if ((InActor.GetWorld() != nullptr && !InActor.GetWorld()->IsGameWorld()) || InActor.HasAnyFlags(RF_WasLoaded)
+		|| InActor.IsNetStartupActor())
+	{
+		StablyNamedObjectRef = GetStablyNamedObjectRef(&InActor);
+		bNetStartup = InActor.IsNetStartupActor();
+	}
+	return UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup);
 }
 
 void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDatas, AActor* Actor)
