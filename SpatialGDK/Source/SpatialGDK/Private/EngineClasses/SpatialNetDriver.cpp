@@ -1191,15 +1191,6 @@ void USpatialNetDriver::Shutdown()
 
 	if (Connection != nullptr)
 	{
-		// Delete all load-balancing partition entities if we're translator authoritative.
-		if (VirtualWorkerTranslationManager != nullptr)
-		{
-			for (const auto& Partition : VirtualWorkerTranslationManager->GetAllPartitions())
-			{
-				Connection->SendDeleteEntityRequest(Partition.PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
-			}
-		}
-
 		if (RoutingSystem)
 		{
 			RoutingSystem->Destroy(Connection);
