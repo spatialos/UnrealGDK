@@ -38,7 +38,7 @@ struct ActorData
 
 struct FObjectRepNotifies
 {
-	UObject* Object;
+	TWeakObjectPtr<UObject> Object;
 	TArray<GDK_PROPERTY(Property)*> RepNotifies;
 	TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
 

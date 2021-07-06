@@ -1725,8 +1725,8 @@ void ActorSystem::InvokeRepNotifies()
 
 void ActorSystem::TryInvokeRepNotifiesForObject(FObjectRepNotifies& ObjectRepNotifies) const
 {
-	UObject* Object = ObjectRepNotifies.Object;
-	if (!IsValid(ObjectRepNotifies.Object))
+	UObject* Object = ObjectRepNotifies.Object.Get();
+	if (!Object)
 	{
 		return;
 	}
