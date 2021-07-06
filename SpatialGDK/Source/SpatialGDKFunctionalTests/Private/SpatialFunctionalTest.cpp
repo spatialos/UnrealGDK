@@ -447,7 +447,8 @@ void ASpatialFunctionalTest::SetLocalFlowController(ASpatialFunctionalTestFlowCo
 {
 	if (FlowController->IsLocalController())
 	{
-		checkf(LocalFlowController == nullptr, TEXT("OwningTest already had a LocalFlowController, this shouldn't happen"));
+		checkf(LocalFlowController == nullptr || LocalFlowController == FlowController,
+			   TEXT("OwningTest already had a LocalFlowController, this shouldn't happen"));
 		LocalFlowController = FlowController;
 	}
 }
@@ -745,6 +746,13 @@ void ASpatialFunctionalTest::PrepareTestAfterBeginPlay()
 	if (!HasAuthority())
 	{
 		PrepareTest();
+	}
+
+	// This setting of ready to run test is required for tests to be able to
+	// rerun, since the flow controllers are set to be not ready on test finish.
+	if (LocalFlowController != nullptr && !LocalFlowController->IsReadyToRunTest())
+	{
+		LocalFlowController->TrySetReadyToRunTest();
 	}
 }
 
