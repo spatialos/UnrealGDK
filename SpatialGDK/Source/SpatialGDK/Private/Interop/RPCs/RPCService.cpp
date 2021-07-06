@@ -181,13 +181,16 @@ void RPCService::AdvanceReceivers()
 		case EntityDelta::UPDATE:
 		{
 			const EntityViewElement& ViewElement = RemoteSubView->GetView().FindChecked(Delta.EntityId);
+
+			HandleReceiverAuthorityGained(Delta.EntityId, ViewElement, Delta.AuthorityGained);
+
+			HandleReceiverAuthorityLost(Delta.EntityId, Delta.AuthorityLostTemporarily);
+			HandleReceiverAuthorityGained(Delta.EntityId, ViewElement, Delta.AuthorityLostTemporarily);
+
 			ProcessUpdatesToReceivers(Delta.EntityId, ViewElement, Delta.ComponentUpdates);
 			ProcessUpdatesToReceivers(Delta.EntityId, ViewElement, Delta.ComponentsRefreshed);
 
 			HandleReceiverAuthorityLost(Delta.EntityId, Delta.AuthorityLost);
-			HandleReceiverAuthorityLost(Delta.EntityId, Delta.AuthorityLostTemporarily);
-			HandleReceiverAuthorityGained(Delta.EntityId, ViewElement, Delta.AuthorityGained);
-			HandleReceiverAuthorityGained(Delta.EntityId, ViewElement, Delta.AuthorityLostTemporarily);
 
 			break;
 		}
