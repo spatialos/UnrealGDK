@@ -163,30 +163,14 @@ Worker_EntityId FDistributedStartupActorSkeletonEntityCreator::CreateSkeletonEnt
 
 	EntityFactory Factory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
 
-	TArray<FWorkerComponentData> EntityComponents = Factory.CreateSkeletonEntityComponents(&Actor);
+	const TArray<FWorkerComponentData> EntityComponents = Factory.CreateSkeletonEntityComponents(&Actor);
 
-	// LB components also contain authority delegation, giving this worker ServerAuth.
-	Factory.WriteLBComponents(EntityComponents, &Actor);
-
-	// RPC components.
-	Algo::Transform(SpatialRPCService::GetRPCComponents(), EntityComponents, &ComponentFactory::CreateEmptyComponentData);
-	Algo::Transform(FSpatialNetDriverRPC::GetRPCComponentIds(), EntityComponents, &ComponentFactory::CreateEmptyComponentData);
-
-	// Skeleton entity markers		.
-	EntityComponents.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID));
-	EntityComponents.Emplace(
-		ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID));
-
-	Interest SkeletonEntityInterest;
-	NetDriver->InterestFactory->AddServerSelfInterest(SkeletonEntityInterest);
-	EntityComponents.Add(SkeletonEntityInterest.CreateComponentData());
-
-	TArray<ComponentData> SkeletonEntityComponentDatas;
-	Algo::Transform(EntityComponents, SkeletonEntityComponentDatas, &Convert);
+	TArray<ComponentData> SkeletonEntityComponentData;
+	Algo::Transform(EntityComponents, SkeletonEntityComponentData, &Convert);
 
 	ViewCoordinator& Coordinator = NetDriver->Connection->GetCoordinator();
 	const Worker_RequestId CreateEntityRequestId =
-		Coordinator.SendCreateEntityRequest(MoveTemp(SkeletonEntityComponentDatas), ActorEntityId);
+		Coordinator.SendCreateEntityRequest(MoveTemp(SkeletonEntityComponentData), ActorEntityId);
 
 	FCreateEntityDelegate OnCreated = [this, ActorEntityId, WeakActor = MakeWeakObjectPtr(&Actor)](const Worker_CreateEntityResponseOp&) {
 		RemainingSkeletonEntities.Remove(ActorEntityId);

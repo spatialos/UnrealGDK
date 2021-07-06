@@ -66,7 +66,7 @@ FUnrealObjectRef GetStablyNamedObjectRef(const UObject* Object)
 	return FUnrealObjectRef(0, 0, TempPath, GetStablyNamedObjectRef(Object->GetOuter()), true);
 }
 
-TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
+TArray<FWorkerComponentData> EntityFactory::CreateMinimalEntityComponents(AActor* Actor)
 {
 	UClass* Class = Actor->GetClass();
 
@@ -364,7 +364,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
-	TArray<FWorkerComponentData> ComponentDatas = CreateSkeletonEntityComponents(Channel->Actor);
+	TArray<FWorkerComponentData> ComponentDatas = CreateMinimalEntityComponents(Channel->Actor);
 	WriteUnrealComponents(ComponentDatas, Channel, OutBytesWritten);
 	WriteRPCComponents(ComponentDatas, *Channel);
 	WriteLBComponents(ComponentDatas, Channel->Actor);
@@ -394,6 +394,28 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentIds.Add(ComponentData.component_id);
 	}
 #endif // !UE_BUILD_SHIPPING
+	return ComponentDatas;
+}
+
+TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
+{
+	TArray<FWorkerComponentData> ComponentDatas = CreateMinimalEntityComponents(Actor);
+
+	// LB components also contain authority delegation, giving this worker ServerAuth.
+	WriteLBComponents(ComponentDatas, Actor);
+
+	// Empty RPC components.
+	Algo::Transform(SpatialRPCService::GetRPCComponents(), ComponentDatas, &ComponentFactory::CreateEmptyComponentData);
+	Algo::Transform(FSpatialNetDriverRPC::GetRPCComponentIds(), ComponentDatas, &ComponentFactory::CreateEmptyComponentData);
+
+	// Skeleton entity markers.
+	ComponentDatas.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID));
+	ComponentDatas.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID));
+
+	Interest SkeletonEntityInterest;
+	NetDriver->InterestFactory->AddServerSelfInterest(SkeletonEntityInterest);
+	ComponentDatas.Add(SkeletonEntityInterest.CreateComponentData());
+
 	return ComponentDatas;
 }
 
