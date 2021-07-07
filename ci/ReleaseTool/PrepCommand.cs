@@ -5,7 +5,7 @@ namespace ReleaseTool
 {
     /// <summary>
     ///     Runs the steps required to cut release candidate branches in all repos:
-    ///     UnrealGDK, UnrealGDKExampleProject, UnrealEngine, UnrealGDKEngineNetTest, UnrealGDKTestGyms and TestGymBuildKite.
+    ///     UnrealGDK, UnrealGDKExampleProject, UnrealEngine, UnrealGDKEngineNetTest, UnrealGDKTestGyms, TestGymBuildKite and UnrealGDKBuild.
     ///
     ///     * Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
     ///     * IF the release branch does not already exits, creates it from the source branch.
@@ -181,22 +181,11 @@ namespace ReleaseTool
 - [ ] **Release Sheriff** - When the above tasks are complete, unblock the [pipeline](https://buildkite.com/improbable/unrealgdk-release). This action will merge all release candidates into their respective release branches and create draft GitHub releases that you must then publish.
 ";
                 case "UnrealGDKExampleProject":
-                    return $@"#### Description
-- This PR merges `{candidateBranch}` into `{releaseBranch}`.
-- It corresponds to {unrealGdkPrUrl}, where you can find more information about this release.";
                 case "UnrealGDKTestGyms":
-                    return $@"#### Description
-- This PR merges `{candidateBranch}` into `{releaseBranch}`.
-- It corresponds to {unrealGdkPrUrl}, where you can find more information about this release.";
                 case "UnrealGDKEngineNetTest":
-                    return $@"#### Description
-- This PR merges `{candidateBranch}` into `{releaseBranch}`.
-- It corresponds to {unrealGdkPrUrl}, where you can find more information about this release.";
                 case "TestGymBuildKite":
-                    return $@"#### Description
-- This PR merges `{candidateBranch}` into `{releaseBranch}`.
-- It corresponds to {unrealGdkPrUrl}, where you can find more information about this release.";
                 case "UnrealEngine":
+                case "UnrealGDKBuild":
                     return $@"#### Description
 - This PR merges `{candidateBranch}` into `{releaseBranch}`.
 - It corresponds to {unrealGdkPrUrl}, where you can find more information about this release.";
