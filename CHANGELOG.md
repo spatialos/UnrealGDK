@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug fixes:
 - Fix `A functional test is already running error` that would sometimes occur when re-running multi-server functional tests.
+- When data for both an actor and its subobjects are received in a given tick, rep notifies will now be called on updated properties after the data has been applied for both the actor and its subobjects.
 - Fixed an issue around actors being destroyed between entity creation and receiving a confirmation thereof.
 
 ### Internal:

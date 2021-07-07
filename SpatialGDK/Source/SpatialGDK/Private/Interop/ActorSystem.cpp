@@ -318,6 +318,8 @@ void ActorSystem::Advance()
 		ProcessAdds(SubView);
 	}
 
+	InvokeRepNotifies();
+
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
 	{
 		if (Delta.Type == EntityDelta::ADD || Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
@@ -955,7 +957,9 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 
 		ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 		bool bOutReferencesChanged = false;
-		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, bOutReferencesChanged);
+
+		FObjectRepNotifies& ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(&TargetObject));
+		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
 
 		RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 	}
@@ -964,6 +968,12 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 		UE_LOG(LogActorSystem, Verbose, TEXT("Entity: %d Component: %d - Skipping because RPC components don't have actual data."),
 			   Channel.GetEntityId(), ComponentId);
 	}
+}
+
+void ActorSystem::ResolveAsyncPendingLoad(UObject* LoadedObject, const FUnrealObjectRef& ObjectRef)
+{
+	ResolvePendingOperations(LoadedObject, ObjectRef);
+	InvokeRepNotifies();
 }
 
 void ActorSystem::ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)
@@ -1055,7 +1065,6 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 		}
 
 		bool bSomeObjectsWereMapped = false;
-		TArray<GDK_PROPERTY(Property)*> RepNotifies;
 
 		FRepLayout& RepLayout = DependentChannel->GetObjectRepLayout(ReplicatingObject);
 		FRepStateStaticBuffer& ShadowData = DependentChannel->GetObjectStaticBuffer(ReplicatingObject);
@@ -1064,16 +1073,15 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 			DependentChannel->ResetShadowData(RepLayout, ShadowData, ReplicatingObject);
 		}
 
+		FObjectRepNotifies& ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(ReplicatingObject));
 		ResolveObjectReferences(RepLayout, ReplicatingObject, *RepState, RepState->ReferenceMap, ShadowData.GetData(),
-								(uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(), RepNotifies,
+								(uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(), ObjectRepNotifiesOut,
 								bSomeObjectsWereMapped);
 
 		if (bSomeObjectsWereMapped)
 		{
-			DependentChannel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, RepLayout, RepState->ReferenceMap, ReplicatingObject);
-
 			UE_LOG(LogActorSystem, Verbose, TEXT("Resolved for target object %s"), *ReplicatingObject->GetName());
-			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies, {});
+			ReplicatingObject->PostNetReceive();
 		}
 
 		RepState->UnresolvedRefs.Remove(ObjectRef);
@@ -1082,8 +1090,7 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 
 void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState,
 										  FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data,
-										  int32 MaxAbsOffset, TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-										  bool& bOutSomeObjectsWereMapped)
+										  int32 MaxAbsOffset, FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutSomeObjectsWereMapped)
 {
 	for (auto It = ObjectReferencesMap.CreateIterator(); It; ++It)
 	{
@@ -1119,7 +1126,7 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 			int32 NewMaxOffset = Array->Num() * ArrayProperty->Inner->ElementSize;
 
 			ResolveObjectReferences(RepLayout, ReplicatedObject, RepState, *ObjectReferences.Array, (uint8*)StoredArray->GetData(),
-									(uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped);
+									(uint8*)Array->GetData(), NewMaxOffset, ObjectRepNotifiesOut, bOutSomeObjectsWereMapped);
 			continue;
 		}
 
@@ -1208,7 +1215,7 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 			{
 				if (Parent.RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + StoredDataOffset, Data + AbsOffset))
 				{
-					RepNotifies.AddUnique(Parent.Property);
+					ObjectRepNotifiesOut.RepNotifies.AddUnique(Parent.Property);
 				}
 			}
 		}
@@ -1239,7 +1246,8 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 	bool bOutReferencesChanged = false;
-	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, bOutReferencesChanged);
+	FObjectRepNotifies& ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(&TargetObject));
+	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
 	RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 
 	// This is a temporary workaround, see UNR-841:
@@ -1682,6 +1690,50 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 	}
 
 	return Channel;
+}
+
+void ActorSystem::InvokeRepNotifies()
+{
+	for (FObjectRepNotifies& ObjectRepNotifies : RepNotifiesToSend)
+	{
+		UObject* Object = ObjectRepNotifies.Object.Get();
+		if (!IsValid(Object))
+		{
+			continue;
+		}
+		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Object);
+		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+		{
+			// TODO UNR-5785 - Once fixed, change log level to warning
+			UE_LOG(LogActorSystem, Log, TEXT("Failed to invoke rep notifies for an object as its entity id was invalid. Object: %s"),
+				   *Object->GetName());
+			continue;
+		}
+		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+		if (!IsValid(Channel))
+		{
+			UE_LOG(LogActorSystem, Warning,
+				   TEXT("Failed to invoke rep notifies for an object as its channel was invalid. Object: %s, Entity: %lld"),
+				   *Object->GetName(), EntityId);
+			continue;
+		}
+		RemoveRepNotifiesWithUnresolvedObjs(*Object, *Channel, ObjectRepNotifies.RepNotifies);
+		Channel->PostReceiveSpatialUpdate(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
+	}
+	RepNotifiesToSend.Empty();
+}
+
+void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
+													  TArray<GDK_PROPERTY(Property) *>& RepNotifies)
+{
+	if (const TSharedRef<FObjectReplicator>* ReplicatorRef = Channel.ReplicationMap.Find(&Object))
+	{
+		if (const FSpatialObjectRepState* ObjectRepState = Channel.ObjectReferenceMap.Find(&Object))
+		{
+			FObjectReplicator& Replicator = ReplicatorRef->Get();
+			Channel.RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator.RepLayout, ObjectRepState->ReferenceMap, &Object);
+		}
+	}
 }
 
 void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
