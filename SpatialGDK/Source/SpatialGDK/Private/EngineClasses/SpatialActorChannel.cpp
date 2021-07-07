@@ -848,7 +848,6 @@ void USpatialActorChannel::CheckUnauthorisedDataChanges()
 														Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 	MemMark.Pop();
 
-
 	if (UpdateResult == ERepLayoutResult::Success)
 	{
 		UE_LOG(LogActorSystem, Error, TEXT("Changed actor without authority! %s"), *Actor->GetName());
