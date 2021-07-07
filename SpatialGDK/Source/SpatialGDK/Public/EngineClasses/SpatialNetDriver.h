@@ -292,6 +292,13 @@ public:
 
 	uint32 ClientGetSessionId() const;
 
+	struct FPendingNetworkFailure
+	{
+		ENetworkFailure::Type FailureType;
+		FString Message;
+	};
+	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
+
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
@@ -314,13 +321,6 @@ private:
 	bool bWaitingToSpawn;
 	bool bIsReadyToStart;
 	bool bMapLoaded;
-
-	struct FPendingNetworkFailure
-	{
-		ENetworkFailure::Type FailureType;
-		FString Message;
-	};
-	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
 	FString SnapshotToLoad;
 
 	// Client variable which stores the SessionId given to us by the server in the URL options.

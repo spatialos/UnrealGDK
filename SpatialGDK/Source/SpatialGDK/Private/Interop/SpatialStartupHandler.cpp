@@ -298,9 +298,9 @@ UGlobalStateManager& FSpatialStartupHandler::GetGSM()
 
 FSpatialClientStartupHandler::FSpatialClientStartupHandler(USpatialNetDriver& InNetDriver, UGameInstance& InGameInstance,
 														   const FInitialSetup& InSetup)
-	: NetDriver(&InNetDriver)
+	: Setup(InSetup)
+	, NetDriver(&InNetDriver)
 	, GameInstance(&InGameInstance)
-	, Setup(InSetup)
 {
 }
 
@@ -311,6 +311,8 @@ bool FSpatialClientStartupHandler::TryFinishStartup()
 		bQueriedGSM = true;
 		QueryGSM();
 	}
+
+	TOptional<USpatialNetDriver::FPendingNetworkFailure> PendingNetworkFailure;
 
 	QueryHandler.ProcessOps(GetOps());
 
@@ -338,10 +340,10 @@ bool FSpatialClientStartupHandler::TryFinishStartup()
 							"version = '%llu'"),
 					   ServerSnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
 
-				// PendingNetworkFailure = {
-				// 	ENetworkFailure::OutdatedClient,
-				// 	TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot.")
-				// };
+				PendingNetworkFailure = {
+					ENetworkFailure::OutdatedClient,
+					TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot.")
+				};
 			}
 			else if (LocalSchemaHash != ServerSchemaHash) // Are we running with the same schema hash as the server?
 			{
@@ -349,10 +351,10 @@ bool FSpatialClientStartupHandler::TryFinishStartup()
 					   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
 					   LocalSchemaHash, ServerSchemaHash);
 
-				// PendingNetworkFailure = {
-				// ENetworkFailure::OutdatedClient,
-				// TEXT("Your version of the game does not match that of the server. Please try updating your game version.")
-				// };
+				PendingNetworkFailure = {
+					ENetworkFailure::OutdatedClient,
+					TEXT("Your version of the game does not match that of the server. Please try updating your game version.")
+				};
 			}
 			else
 			{
@@ -411,6 +413,8 @@ bool FSpatialClientStartupHandler::TryFinishStartup()
 		NetDriver->PlayerSpawner->SendPlayerSpawnRequest();
 		Stage = EStage::Finished;
 	}
+
+	NetDriver->PendingNetworkFailure = PendingNetworkFailure;
 
 	return Stage == EStage::Finished;
 }
