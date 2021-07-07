@@ -177,15 +177,35 @@ bool FSpatialStartupHandler::TryFinishStartup()
 
 	if (Stage == EStage::WaitForAssignedPartition)
 	{
-		const EntityViewElement* AssignedPartitionEntity = GetCoordinator().GetView().Find(LocalPartitionId);
-		if (AssignedPartitionEntity != nullptr)
 		{
 			// NOTE: Consider if waiting for partition should be a separate step from sending ReadyToBeginPlay.
 			ComponentUpdate MarkAsReady(SpatialConstants::SERVER_WORKER_COMPONENT_ID);
 			Schema_AddBool(MarkAsReady.GetFields(), SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, true);
 			GetCoordinator().SendComponentUpdate(WorkerEntityId, MoveTemp(MarkAsReady));
 
-			Stage = bHasGSMAuth ? EStage::DispatchGSMStartPlay : EStage::WaitForGSMStartPlay;
+			Stage = EStage::WaitForAssignedPartition2;
+		}
+	}
+
+	if (Stage == EStage::WaitForAssignedPartition2)
+	{
+		const EntityViewElement* AssignedPartitionEntity = GetCoordinator().GetView().Find(LocalPartitionId);
+		if (AssignedPartitionEntity != nullptr)
+		{
+			const EntityViewElement* VirtualWorkerTranslatorEntity =
+				GetCoordinator().GetView().Find(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID);
+			if (VirtualWorkerTranslatorEntity != nullptr)
+			{
+				const ComponentData* WorkerTranslatorComponentData = VirtualWorkerTranslatorEntity->Components.FindByPredicate(
+					ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID });
+				if (WorkerTranslatorComponentData != nullptr)
+				{
+					// We've received worker translation data.
+					NetDriver->VirtualWorkerTranslator->ApplyMappingFromSchema(WorkerTranslatorComponentData->GetFields());
+
+					Stage = bHasGSMAuth ? EStage::DispatchGSMStartPlay : EStage::WaitForGSMStartPlay;
+				}
+			}
 		}
 	}
 

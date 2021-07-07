@@ -60,6 +60,7 @@ private:
 		DispatchGSMStartPlay,
 
 		WaitForAssignedPartition,
+		WaitForAssignedPartition2,
 		WaitForGSMStartPlay,
 
 		Finished,

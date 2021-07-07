@@ -54,6 +54,9 @@ public:
 	static void ApplyMappingFromSchema(TMap<VirtualWorkerId, WorkerInformation>& VirtualToPhysicalWorkerMapping,
 									   const Schema_Object& Schema);
 
+	// Serialization and deserialization of the mapping.
+	void ApplyMappingFromSchema(Schema_Object* Object);
+
 private:
 	TMap<VirtualWorkerId, WorkerInformation> VirtualToPhysicalWorkerMapping;
 
@@ -63,7 +66,4 @@ private:
 	PhysicalWorkerName LocalPhysicalWorkerName;
 	VirtualWorkerId LocalVirtualWorkerId;
 	Worker_PartitionId LocalPartitionId;
-
-	// Serialization and deserialization of the mapping.
-	void ApplyMappingFromSchema(Schema_Object* Object);
 };

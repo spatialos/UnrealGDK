@@ -2,6 +2,7 @@
 
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialConstants.h"
@@ -89,7 +90,12 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 		const PhysicalWorkerName& WorkerName = Worker.Value.WorkerName;
 		const VirtualWorkerId Id = Worker.Key;
 		const Worker_PartitionId PartitionEntityId = Worker.Value.PartitionEntityId;
-		if (WorkerName == LocalPhysicalWorkerName)
+		const Worker_EntityId WorkerEntityId = Worker.Value.ServerWorkerEntityId;
+
+		const Worker_EntityId CurrentWorkerEntityId =
+			Cast<USpatialNetDriver>(this->LoadBalanceStrategy->GetWorld()->GetNetDriver())->WorkerEntityId;
+
+		if (WorkerEntityId == CurrentWorkerEntityId)
 		{
 			LocalVirtualWorkerId = Id;
 			LocalPartitionId = PartitionEntityId;
