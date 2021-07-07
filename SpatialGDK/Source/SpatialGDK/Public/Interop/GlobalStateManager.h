@@ -44,12 +44,7 @@ public:
 
 	void ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update);
 
-	DECLARE_DELEGATE_OneParam(QueryDelegate, const Worker_EntityQueryResponseOp&);
-	void QueryGSM(const QueryDelegate& Callback);
-	static bool GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers,
-																 int32& OutSessionId);
 	void ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const;
-	void ApplyDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
 	void QueryTranslation();
 

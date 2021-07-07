@@ -503,45 +503,6 @@ void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-// Queries for the GlobalStateManager in the deployment.
-// bRetryUntilRecievedExpectedValues will continue querying until the state of AcceptingPlayers and SessionId are the same as the given
-// arguments This is so clients know when to connect to the deployment.
-void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
-{
-	// Build a constraint for the GSM.
-	Worker_ComponentConstraint GSMComponentConstraint{};
-	GSMComponentConstraint.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
-
-	Worker_Constraint GSMConstraint{};
-	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
-	GSMConstraint.constraint.component_constraint = GSMComponentConstraint;
-
-	Worker_EntityQuery GSMQuery{};
-	GSMQuery.constraint = GSMConstraint;
-
-	Worker_RequestId RequestID;
-	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery, RETRY_UNTIL_COMPLETE);
-
-	EntityQueryDelegate GSMQueryDelegate;
-	GSMQueryDelegate.BindLambda([this, Callback](const Worker_EntityQueryResponseOp& Op) {
-		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-		{
-			UE_LOG(LogGlobalStateManager, Warning, TEXT("Could not find GSM via entity query: %s"), UTF8_TO_TCHAR(Op.message));
-		}
-		else if (Op.result_count == 0)
-		{
-			UE_LOG(LogGlobalStateManager, Log, TEXT("GSM entity query shows the GSM does not yet exist in the world."));
-		}
-		else
-		{
-			ApplyDataFromQueryResponse(Op);
-			Callback.ExecuteIfBound(Op);
-		}
-	});
-
-	QueryHandler.AddRequest(RequestID, GSMQueryDelegate);
-}
-
 void UGlobalStateManager::QueryTranslation()
 {
 	if (bTranslationQueryInFlight)
@@ -598,63 +559,6 @@ void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worke
 			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
 		}
 	}
-}
-
-void UGlobalStateManager::ApplyDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
-{
-	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
-	{
-		Worker_ComponentData Data = Op.results[0].components[i];
-		if (Data.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
-		{
-			ApplyDeploymentMapData(Data.schema_type);
-		}
-		else if (Data.component_id == SpatialConstants::SNAPSHOT_VERSION_COMPONENT_ID)
-		{
-			ApplySnapshotVersionData(Data.schema_type);
-		}
-	}
-}
-
-bool UGlobalStateManager::GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op,
-																		   bool& OutAcceptingPlayers, int32& OutSessionId)
-{
-	checkf(Op.result_count == 1, TEXT("There should never be more than one GSM"));
-
-	bool AcceptingPlayersFound = false;
-	bool SessionIdFound = false;
-
-	// Iterate over each component on the GSM until we get the DeploymentMap component.
-	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
-	{
-		Worker_ComponentData Data = Op.results[0].components[i];
-		if (Data.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
-		{
-			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-			if (Schema_GetBoolCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID) == 1)
-			{
-				OutAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
-				AcceptingPlayersFound = true;
-			}
-
-			if (Schema_GetUint32Count(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID) == 1)
-			{
-				OutSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
-				SessionIdFound = true;
-			}
-
-			if (AcceptingPlayersFound && SessionIdFound)
-			{
-				return true;
-			}
-		}
-	}
-
-	UE_LOG(LogGlobalStateManager, Warning,
-		   TEXT("Entity query response for the GSM did not contain both AcceptingPlayers and SessionId states."));
-
-	return false;
 }
 
 void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
