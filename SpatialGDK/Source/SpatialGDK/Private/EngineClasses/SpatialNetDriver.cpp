@@ -1778,6 +1778,8 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 							LastRelevantActors.Add(Actor);
 						}
 
+						Channel->CheckUnauthorisedDataChanges();
+
 						if (Channel->ReplicateActor())
 						{
 							ActorUpdatesThisConnectionSent++;

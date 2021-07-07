@@ -479,6 +479,11 @@ int64 USpatialActorChannel::ReplicateActor()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateActor);
 
+	if (!IsReadyForReplication())
+	{
+		return 0;
+	}
+
 	check(Actor);
 	check(!Closing);
 	check(Connection);
@@ -596,7 +601,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 	// Update SpatialOS position.
-	if (!bCreatingNewEntity && IsReadyForReplication())
+	if (!bCreatingNewEntity)
 	{
 		if (SpatialGDKSettings->bBatchSpatialPositionUpdates)
 		{
@@ -608,7 +613,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 	}
 
-	if (Actor->GetIsHiddenDirty() && IsReadyForReplication())
+	if (Actor->GetIsHiddenDirty())
 	{
 		UpdateVisibleComponent(Actor);
 		Actor->SetIsHiddenDirty(false);
@@ -632,24 +637,6 @@ int64 USpatialActorChannel::ReplicateActor()
 		// Connection->SetPendingCloseDueToReplicationFailure();
 		return 0;
 	}
-
-	if (!IsReadyForReplication())
-	{
-		if (UpdateResult == ERepLayoutResult::Success && EntityId != SpatialConstants::INVALID_ENTITY_ID && !bCreatingNewEntity
-			&& !NetDriver->HasServerAuthority(EntityId))
-		{
-			UE_LOG(LogActorSystem, Error, TEXT("Changed actor without authority! %s"), *Actor->GetName());
-		}
-
-		// Do not want to replicate on non-auth server
-		bIsReplicatingActor = false;
-		return 0;
-	}
-	else
-	{
-		UE_LOG(LogActorSystem, Warning, TEXT("Replicating actor with authority! %s"), *Actor->GetName());
-	}
-
 #else
 	ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr, Actor,
 													Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
@@ -802,6 +789,107 @@ int64 USpatialActorChannel::ReplicateActor()
 	INC_DWORD_STAT_BY(STAT_NumReplicatedActorBytes, ReplicationBytesWritten);
 
 	return ReplicationBytesWritten * 8;
+}
+
+void USpatialActorChannel::CheckUnauthorisedDataChanges()
+{
+	check(Actor);
+	check(!Closing);
+	check(Connection);
+	check(Connection->PackageMap);
+
+	const UWorld* const ActorWorld = Actor->GetWorld();
+
+	if (bActorIsPendingKill || Actor->IsPendingKillOrUnreachable())
+	{
+		// Don't need to do anything, because it should have already been logged.
+		return;
+	}
+
+	// Create an outgoing bunch (to satisfy some of the functions below).
+	FOutBunch Bunch(this, 0);
+	if (Bunch.IsError())
+	{
+		return;
+	}
+	FReplicationFlags RepFlags;
+
+	// Send initial stuff.
+	if (bCreatingNewEntity)
+	{
+		RepFlags.bNetInitial = true;
+		// Include changes to Bunch (duplicating existing logic in DataChannel), despite us not using it,
+		// since these are passed to the virtual OnSerializeNewActor, whose implementations could use them.
+		Bunch.bClose = Actor->bNetTemporary;
+		Bunch.bReliable = true; // Net temporary sends need to be reliable as well to force them to retry
+	}
+
+	// Here, Unreal would have determined if this connection belongs to this actor's Outer.
+	// We don't have this concept when it comes to connections, our ownership-based logic is in the interop layer.
+	// Setting this to true, but should not matter in the end.
+	RepFlags.bNetOwner = true;
+	RepFlags.bNetSimulated = (Actor->GetRemoteRole() == ROLE_SimulatedProxy);
+#if ENGINE_MINOR_VERSION <= 23
+	RepFlags.bRepPhysics = Actor->ReplicatedMovement.bRepPhysics;
+#else
+	RepFlags.bRepPhysics = Actor->GetReplicatedMovement().bRepPhysics;
+#endif
+#if ENGINE_MINOR_VERSION >= 26
+	const bool bReplay = ActorWorld && ActorWorld->GetDemoNetDriver() == Connection->GetDriver();
+#else
+	const bool bReplay = ActorWorld && ActorWorld->DemoNetDriver == Connection->GetDriver();
+#endif
+	RepFlags.bReplay = bReplay;
+
+	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial,
+		   RepFlags.bNetOwner);
+
+	// Always replicate initial only properties and rely on QBI to filter where necessary.
+	RepFlags.bNetInitial = true;
+
+	FMemMark MemMark(FMemStack::Get()); // The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in
+										// ::PostSendBunch. we free it below
+
+	// ----------------------------------------------------------
+	// Replicate Actor and Component properties and RPCs
+	// ----------------------------------------------------------
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	// Update the replicated property change list.
+	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
+
+	const ERepLayoutResult UpdateResult =
+		ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr,
+														Actor,
+													Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
+	MemMark.Pop();
+
+
+	if (UNLIKELY(ERepLayoutResult::FatalError == UpdateResult))
+	{
+		// This happens when a replicated array is over the maximum size (UINT16_MAX).
+		// Native Unreal just closes the connection at this point, but we can't do that as
+		// it may lead to unexpected consequences for the deployment. Instead, we just early out.
+		// TODO: UNR-4667 - Investigate this behavior in more detail.
+
+		// Connection->SetPendingCloseDueToReplicationFailure();
+		return;
+	}
+
+
+	if (!IsReadyForReplication())
+	{
+		if (UpdateResult == ERepLayoutResult::Success && EntityId != SpatialConstants::INVALID_ENTITY_ID && !bCreatingNewEntity
+			&& !NetDriver->HasServerAuthority(EntityId))
+		{
+			UE_LOG(LogActorSystem, Error, TEXT("Changed actor without authority! %s"), *Actor->GetName());
+		}
+		return;
+	}
+	
+	UE_LOG(LogActorSystem, Warning, TEXT("Changed actor with authority! %s"), *Actor->GetName());
+	return;
 }
 
 void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
