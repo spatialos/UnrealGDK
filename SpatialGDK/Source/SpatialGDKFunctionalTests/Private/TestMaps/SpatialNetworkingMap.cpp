@@ -47,17 +47,14 @@ void USpatialNetworkingMap::CreateCustomContentForMap()
 	AddActorToLevel<ADynamicSubobjectsTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<AStaticSubobjectsTest>(CurrentLevel, FTransform::Identity);
 
-	// AInitiallyDormantMapActorTest test should be run before all other dormancy tests.
-	AddActorToLevel<AInitiallyDormantMapActorTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<AInitiallyDormantDynamicActorTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicActorSetToAwakeTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicActorDormantAllChangePropertyTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicActorAwakeChangePropertyTest>(CurrentLevel, FTransform::Identity);
-	AddActorToLevel<ADynamicActorAwakeAfterDormantChangePropertyTest>(CurrentLevel, FTransform::Identity);
+	//AddActorToLevel<ADynamicActorAwakeAfterDormantChangePropertyTest>(CurrentLevel, FTransform::Identity);
 
 	// Add test helpers
 	// Unfortunately, the nature of some tests requires them to have actors placed in the level, to trigger some Unreal behavior
-	AddActorToLevel<ADormancyTestActor>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<AReplicatedVisibilityTestActor>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicSubObjectTestActor>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<AStaticSubobjectTestActor>(CurrentLevel, FTransform(FVector(-20000.0f, -20000.0f, 40.0f)));
