@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 
+#include "LoadBalancing/ActorSetSystem.h"
 #include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/LoadBalancingTypes.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/CrossServerEndpoint.h"
 #include "Schema/NetOwningClientWorker.h"
@@ -44,6 +46,8 @@ private:
 	// +++ Components watched to implement the strategy +++
 	TLBDataStorage<AuthorityIntentACK> AuthACKView;
 	TLBDataStorage<NetOwningClientWorker> NetOwningClientView;
+	TLBDataStorage<ActorSetMember> SetMemberView;
+	FActorSetSystem ActorSetSystem;
 	FLBDataCollection DataStorages;
 	FLBDataCollection UserDataStorages;
 	FLBDataCollection ServerWorkerDataStorages;

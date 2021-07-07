@@ -28,6 +28,7 @@ FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InP
 	Strategy->Init(UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
 	DataStorages.DataStorages.Add(&AuthACKView);
 	DataStorages.DataStorages.Add(&NetOwningClientView);
+	DataStorages.DataStorages.Add(&SetMemberView);
 
 	UpdatesToConsider = DataStorages.GetComponentsToWatch();
 	UpdatesToConsider = UpdatesToConsider.Union(UserDataStorages.GetComponentsToWatch());
@@ -57,6 +58,7 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 	DataStorages.Advance();
 	UserDataStorages.Advance();
 
+	TSet<Worker_EntityId_Key> RemovedEntities;
 	for (const EntityDelta& Delta : LBView.GetViewDelta().EntityDeltas)
 	{
 		switch (Delta.Type)
@@ -84,12 +86,16 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 			AuthorityIntentView.Remove(Delta.EntityId);
 			AuthorityDelegationView.Remove(Delta.EntityId);
 			PendingMigrations.Remove(Delta.EntityId);
+			RemovedEntities.Add(Delta.EntityId);
 		}
 		break;
 		default:
 			break;
 		}
 	}
+
+	ActorSetSystem.Update(SetMemberView, RemovedEntities);
+	SetMemberView.ClearModified();
 
 	Strategy->Advance(Connection);
 }
@@ -107,10 +113,19 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	PartitionsMgr->Flush(Connection);
 
 	// Iterator over the data storage to collect the entities which have been modified this frame.
-	TSet<Worker_EntityId_Key> ModifiedEntities;
+	TSet<Worker_EntityId_Key> ModifiedEntities = ActorSetSystem.GetEntitiesToEvaluate();
 	for (auto& Storage : UserDataStorages.DataStorages)
 	{
 		ModifiedEntities = ModifiedEntities.Union(Storage->GetModifiedEntities());
+	}
+
+	// Test code to only consider updates to the set leader
+	for (auto Iterator = ModifiedEntities.CreateIterator(); Iterator; ++Iterator)
+	{
+		if (ActorSetSystem.GetSetLeader(*Iterator) != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			Iterator.RemoveCurrent();
+		}
 	}
 
 	// Ask the Strategy about the entities that need migration.
@@ -127,6 +142,8 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	UserDataStorages.EntitiesAdded.Empty();
 	UserDataStorages.EntitiesRemoved.Empty();
 
+	ActorSetSystem.ClearEntitiesToEvaluate();
+
 	// If there were pending migrations, meld them with the migration requests
 	for (auto PendingMigration : PendingMigrations)
 	{
@@ -136,6 +153,32 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 		}
 	}
 	PendingMigrations.Empty();
+
+	// Filter the set considering set membership
+	for (auto Iterator = Ctx.EntitiesToMigrate.CreateIterator(); Iterator; ++Iterator)
+	{
+		Worker_EntityId EntityId = Iterator->Key;
+		if (ActorSetSystem.GetSetLeader(EntityId) != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			Iterator.RemoveCurrent();
+		}
+	}
+
+	{
+		// Augment the migrations with the set information.
+		auto MinimalMigrations = Ctx.EntitiesToMigrate;
+		for (const auto& Migration : MinimalMigrations)
+		{
+			Worker_EntityId EntityId = Migration.Key;
+			if (auto Set = ActorSetSystem.GetSet(EntityId))
+			{
+				for (auto ActorInSet : *Set)
+				{
+					Ctx.EntitiesToMigrate.Add(ActorInSet, Migration.Value);
+				}
+			}
+		}
+	}
 
 	for (const auto& Migration : Ctx.EntitiesToMigrate)
 	{
