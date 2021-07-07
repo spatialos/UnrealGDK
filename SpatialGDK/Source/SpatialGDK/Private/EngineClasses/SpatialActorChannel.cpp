@@ -798,7 +798,11 @@ void USpatialActorChannel::CheckUnauthorisedDataChanges()
 	check(Connection);
 	check(Connection->PackageMap);
 
-	const UWorld* const ActorWorld = Actor->GetWorld();
+	if (bCreatingNewEntity || EntityId == SpatialConstants::INVALID_ENTITY_ID || NetDriver->HasServerAuthority(EntityId))
+	{
+		// if we are not ready yet or have authority we do not need to check changes
+		return;
+	}
 
 	if (bActorIsPendingKill || Actor->IsPendingKillOrUnreachable())
 	{
@@ -806,28 +810,11 @@ void USpatialActorChannel::CheckUnauthorisedDataChanges()
 		return;
 	}
 
-	// Create an outgoing bunch (to satisfy some of the functions below).
-	FOutBunch Bunch(this, 0);
-	if (Bunch.IsError())
-	{
-		return;
-	}
-	FReplicationFlags RepFlags;
-
-	// Send initial stuff.
-	if (bCreatingNewEntity)
-	{
-		RepFlags.bNetInitial = true;
-		// Include changes to Bunch (duplicating existing logic in DataChannel), despite us not using it,
-		// since these are passed to the virtual OnSerializeNewActor, whose implementations could use them.
-		Bunch.bClose = Actor->bNetTemporary;
-		Bunch.bReliable = true; // Net temporary sends need to be reliable as well to force them to retry
-	}
-
 	// Here, Unreal would have determined if this connection belongs to this actor's Outer.
 	// We don't have this concept when it comes to connections, our ownership-based logic is in the interop layer.
 	// Setting this to true, but should not matter in the end.
-	RepFlags.bNetOwner = true;
+	FReplicationFlags RepFlags;
+	RepFlags.bNetOwner = false;
 	RepFlags.bNetSimulated = (Actor->GetRemoteRole() == ROLE_SimulatedProxy);
 #if ENGINE_MINOR_VERSION <= 23
 	RepFlags.bRepPhysics = Actor->ReplicatedMovement.bRepPhysics;
@@ -835,23 +822,20 @@ void USpatialActorChannel::CheckUnauthorisedDataChanges()
 	RepFlags.bRepPhysics = Actor->GetReplicatedMovement().bRepPhysics;
 #endif
 #if ENGINE_MINOR_VERSION >= 26
+	const UWorld* const ActorWorld = Actor->GetWorld();
 	const bool bReplay = ActorWorld && ActorWorld->GetDemoNetDriver() == Connection->GetDriver();
 #else
 	const bool bReplay = ActorWorld && ActorWorld->DemoNetDriver == Connection->GetDriver();
 #endif
 	RepFlags.bReplay = bReplay;
-
-	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial,
-		   RepFlags.bNetOwner);
-
-	// Always replicate initial only properties and rely on QBI to filter where necessary.
-	RepFlags.bNetInitial = true;
+	RepFlags.bNetInitial = false;
+	RepFlags.bIgnoreRPCs = true;
 
 	FMemMark MemMark(FMemStack::Get()); // The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in
 										// ::PostSendBunch. we free it below
 
 	// ----------------------------------------------------------
-	// Replicate Actor and Component properties and RPCs
+	// Check Actor and Component properties and RPCs
 	// ----------------------------------------------------------
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
@@ -864,28 +848,12 @@ void USpatialActorChannel::CheckUnauthorisedDataChanges()
 														Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 	MemMark.Pop();
 
-	if (UNLIKELY(ERepLayoutResult::FatalError == UpdateResult))
-	{
-		// This happens when a replicated array is over the maximum size (UINT16_MAX).
-		// Native Unreal just closes the connection at this point, but we can't do that as
-		// it may lead to unexpected consequences for the deployment. Instead, we just early out.
-		// TODO: UNR-4667 - Investigate this behavior in more detail.
 
-		// Connection->SetPendingCloseDueToReplicationFailure();
-		return;
+	if (UpdateResult == ERepLayoutResult::Success)
+	{
+		UE_LOG(LogActorSystem, Error, TEXT("Changed actor without authority! %s"), *Actor->GetName());
 	}
 
-	if (!IsReadyForReplication())
-	{
-		if (UpdateResult == ERepLayoutResult::Success && EntityId != SpatialConstants::INVALID_ENTITY_ID && !bCreatingNewEntity
-			&& !NetDriver->HasServerAuthority(EntityId))
-		{
-			UE_LOG(LogActorSystem, Error, TEXT("Changed actor without authority! %s"), *Actor->GetName());
-		}
-		return;
-	}
-
-	UE_LOG(LogActorSystem, Warning, TEXT("Changed actor with authority! %s"), *Actor->GetName());
 	return;
 }
 
