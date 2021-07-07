@@ -861,10 +861,8 @@ void USpatialActorChannel::CheckUnauthorisedDataChanges()
 
 	const ERepLayoutResult UpdateResult =
 		ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr,
-														Actor,
-													Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
+														Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
 	MemMark.Pop();
-
 
 	if (UNLIKELY(ERepLayoutResult::FatalError == UpdateResult))
 	{
@@ -877,7 +875,6 @@ void USpatialActorChannel::CheckUnauthorisedDataChanges()
 		return;
 	}
 
-
 	if (!IsReadyForReplication())
 	{
 		if (UpdateResult == ERepLayoutResult::Success && EntityId != SpatialConstants::INVALID_ENTITY_ID && !bCreatingNewEntity
@@ -887,7 +884,7 @@ void USpatialActorChannel::CheckUnauthorisedDataChanges()
 		}
 		return;
 	}
-	
+
 	UE_LOG(LogActorSystem, Warning, TEXT("Changed actor with authority! %s"), *Actor->GetName());
 	return;
 }
