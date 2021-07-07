@@ -53,7 +53,6 @@ public:
 	FORCEINLINE bool GetAcceptingPlayers() const { return bAcceptingPlayers; }
 	FORCEINLINE int32 GetSessionId() const { return DeploymentSessionId; }
 	FORCEINLINE uint32 GetSchemaHash() const { return SchemaHash; }
-	FORCEINLINE uint64 GetSnapshotVersion() const { return SnapshotVersion; }
 
 	void AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthChangeOp);
 
@@ -77,7 +76,6 @@ private:
 	bool bAcceptingPlayers;
 	int32 DeploymentSessionId = 0;
 	uint32 SchemaHash;
-	uint64 SnapshotVersion = 0;
 
 	// Startup Actor Manager Component
 	bool bHasSentReadyForVirtualWorkerAssignment;

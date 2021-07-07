@@ -79,9 +79,6 @@ void WellKnownEntitySystem::ProcessComponentAdd(const Worker_ComponentId Compone
 {
 	switch (ComponentId)
 	{
-	case SpatialConstants::SNAPSHOT_VERSION_COMPONENT_ID:
-		GlobalStateManager->ApplySnapshotVersionData(Data);
-		break;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Data);
 		break;
@@ -101,7 +98,6 @@ void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId,
 			SpatialGDK::ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID }))
 	{
 		InitializeVirtualWorkerTranslationManager();
-		VirtualWorkerTranslationManager->AuthorityChanged({ EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });
 	}
 }
 

@@ -48,11 +48,6 @@ public:
 
 	void SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers);
 
-	// The translation manager only cares about changes to the authority of the translation mapping.
-	void AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthChangeOp);
-
-	void SpawnPartitionEntitiesForVirtualWorkerIds();
-	void ReclaimPartitionEntities();
 	const TArray<PartitionInfo>& GetAllPartitions() const { return Partitions; };
 
 	void Advance(const TArray<Worker_Op>& Ops);
@@ -73,21 +68,4 @@ private:
 	SpatialGDK::CreateEntityHandler CreateEntityHandler;
 	SpatialGDK::ClaimPartitionHandler ClaimPartitionHandler;
 	SpatialGDK::EntityQueryHandler QueryHandler;
-
-	// Serialization and deserialization of the mapping.
-	void WriteMappingToSchema(Schema_Object* Object) const;
-
-	// The following methods are used to query the Runtime for all worker entities and update the mapping
-	// based on the response.
-	void QueryForServerWorkerEntities();
-	void ServerWorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op);
-	bool AllServerWorkersAreReady(const Worker_EntityQueryResponseOp& Op, uint32& ServerWorkersNotReady);
-	void AssignPartitionsToEachServerWorkerFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
-	void SendVirtualWorkerMappingUpdate() const;
-
-	void AssignPartitionToWorker(const PhysicalWorkerName& WorkerName, const Worker_EntityId& ServerWorkerEntityId,
-								 const Worker_EntityId& SystemEntityId, const PartitionInfo& Partition);
-
-	void SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker);
-	void OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker);
 };

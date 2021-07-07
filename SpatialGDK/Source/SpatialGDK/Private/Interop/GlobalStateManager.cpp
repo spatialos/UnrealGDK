@@ -78,32 +78,6 @@ void UGlobalStateManager::ApplyDeploymentMapData(Schema_ComponentData* Data)
 	SchemaHash = Schema_GetUint32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH);
 }
 
-void UGlobalStateManager::ApplySnapshotVersionData(Schema_ComponentData* Data)
-{
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
-
-	SnapshotVersion = Schema_GetUint64(ComponentObject, SpatialConstants::SNAPSHOT_VERSION_NUMBER_ID);
-
-	if (NetDriver != nullptr && NetDriver->IsServer())
-	{
-		if (SpatialConstants::SPATIAL_SNAPSHOT_VERSION != SnapshotVersion) // Are we running with the same snapshot version?
-		{
-			UE_LOG(LogSpatialOSNetDriver, Error,
-				   TEXT("Your servers's snapshot version does not match expected. Server version: = '%llu', Expected "
-						"version = '%llu'"),
-				   SnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
-
-			if (UWorld* CurrentWorld = NetDriver->GetWorld())
-			{
-				GEngine->BroadcastNetworkFailure(CurrentWorld, NetDriver, ENetworkFailure::OutdatedServer,
-												 TEXT("Your snapshot version does not match expected. Please try "
-													  "updating your game snapshot."));
-				return;
-			}
-		}
-	}
-}
-
 void UGlobalStateManager::ApplyStartupActorManagerData(Schema_ComponentData* Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
