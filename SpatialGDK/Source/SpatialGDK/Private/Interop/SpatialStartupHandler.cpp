@@ -100,53 +100,90 @@ bool FSpatialStartupHandler::TryFinishStartup()
 
 	if (Stage == EStage::FillWorkerTranslationState)
 	{
-		if (!bHasCalledPartitionEntityCreate)
-		{
-			bHasCalledPartitionEntityCreate = true;
+		TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation> VirtualWorkerMapping;
 
-			UE_LOG(LogSpatialStartupHandler, Log, TEXT("Spawning partition entities for %d virtual workers"),
-				   Setup.ExpectedServerWorkersCount);
-			for (VirtualWorkerId GeneratedVirtualWorkerId = 1;
-				 GeneratedVirtualWorkerId <= static_cast<VirtualWorkerId>(Setup.ExpectedServerWorkersCount); ++GeneratedVirtualWorkerId)
+		bool bFoundTranslator = false;
+		bool bNeedToCreatePartitions = false;
+		const EntityViewElement* VirtualWorkerTranslatorEntity =
+			GetCoordinator().GetView().Find(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID);
+		if (VirtualWorkerTranslatorEntity != nullptr)
+		{
+			const ComponentData* VirtualWorkerTranslatorComponent = VirtualWorkerTranslatorEntity->Components.FindByPredicate(
+				ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID });
+			if (ensure(VirtualWorkerTranslatorComponent != nullptr))
 			{
-				const Worker_EntityId PartitionEntityId = NetDriver->PackageMap->AllocateNewEntityId();
-				UE_LOG(LogSpatialStartupHandler, Log, TEXT("- Virtual Worker: %d. Entity: %lld. "), GeneratedVirtualWorkerId,
-					   PartitionEntityId);
-				SpawnPartitionEntity(PartitionEntityId, GeneratedVirtualWorkerId);
-				WorkersToPartitions.Emplace(GeneratedVirtualWorkerId,
-											SpatialVirtualWorkerTranslator::WorkerInformation{
-												TEXT("DUMMY"), WorkerEntityIds[GeneratedVirtualWorkerId - 1], PartitionEntityId });
+				bFoundTranslator = true;
+				SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(VirtualWorkerMapping,
+																	   *VirtualWorkerTranslatorComponent->GetFields());
+				Algo::Transform(VirtualWorkerMapping, WorkerPartitions,
+								[](const TPair<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation>& Pair) {
+									return Pair.Value.PartitionEntityId;
+								});
+				bNeedToCreatePartitions = WorkerPartitions.Num() != Setup.ExpectedServerWorkersCount;
 			}
 		}
 
-		EntityHandler.ProcessOps(GetOps());
-
-		if (PartitionsToCreate.Num() == 0)
+		if (bFoundTranslator)
 		{
-			TMap<Worker_EntityId_Key, const ComponentData*> WorkerComponents;
-			Algo::Transform(WorkerEntityIds, WorkerComponents, [this](const Worker_EntityId WorkerEntityId) {
-				return TPair<Worker_EntityId_Key, const ComponentData*>{
-					WorkerEntityId, GetCoordinator().GetView()[WorkerEntityId].Components.FindByPredicate(
-										ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID })
-				};
-			});
-
-			// All partitions created.
-			ComponentUpdate Update(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
-			for (const auto& Entry : WorkersToPartitions)
+			if (bNeedToCreatePartitions)
 			{
-				Schema_Object* EntryObject = Schema_AddObject(Update.GetFields(), SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
-				Schema_AddUint32(EntryObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID, Entry.Key);
-				AddStringToSchema(EntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID, Entry.Value.WorkerName);
-				Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID, Entry.Value.ServerWorkerEntityId);
-				Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_PARTITION_ID, Entry.Value.PartitionEntityId);
+				if (!bHasCalledPartitionEntityCreate)
+				{
+					bHasCalledPartitionEntityCreate = true;
 
-				const ComponentData* ServerWorkerComponentData = WorkerComponents.FindChecked(Entry.Value.ServerWorkerEntityId);
-				const ServerWorker ServerWorkerData(ServerWorkerComponentData->GetUnderlying());
-				ClaimHandler.ClaimPartition(ServerWorkerData.SystemEntityId, Entry.Value.PartitionEntityId);
+					UE_LOG(LogSpatialStartupHandler, Log, TEXT("Spawning partition entities for %d virtual workers"),
+						   Setup.ExpectedServerWorkersCount);
+					for (VirtualWorkerId GeneratedVirtualWorkerId = 1;
+						 GeneratedVirtualWorkerId <= static_cast<VirtualWorkerId>(Setup.ExpectedServerWorkersCount);
+						 ++GeneratedVirtualWorkerId)
+					{
+						if (VirtualWorkerMapping.Contains(GeneratedVirtualWorkerId))
+						{
+							// This virtual worker mapping already exists, no need to create a partition.
+							continue;
+						}
+
+						const Worker_EntityId PartitionEntityId = NetDriver->PackageMap->AllocateNewEntityId();
+						UE_LOG(LogSpatialStartupHandler, Log, TEXT("- Virtual Worker: %d. Entity: %lld. "), GeneratedVirtualWorkerId,
+							   PartitionEntityId);
+						SpawnPartitionEntity(PartitionEntityId, GeneratedVirtualWorkerId);
+						WorkersToPartitions.Emplace(GeneratedVirtualWorkerId,
+													SpatialVirtualWorkerTranslator::WorkerInformation{
+														TEXT("DUMMY"), WorkerEntityIds[GeneratedVirtualWorkerId - 1], PartitionEntityId });
+					}
+				}
 			}
-			GetCoordinator().SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, MoveTemp(Update));
-			Stage = EStage::GetVirtualWorkerTranslationState;
+
+			EntityHandler.ProcessOps(GetOps());
+
+			if (PartitionsToCreate.Num() == 0)
+			{
+				TMap<Worker_EntityId_Key, const ComponentData*> WorkerComponents;
+				Algo::Transform(WorkerEntityIds, WorkerComponents, [this](const Worker_EntityId WorkerEntityId) {
+					return TPair<Worker_EntityId_Key, const ComponentData*>{
+						WorkerEntityId, GetCoordinator().GetView()[WorkerEntityId].Components.FindByPredicate(
+											ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID })
+					};
+				});
+
+				// All partitions created.
+				ComponentUpdate Update(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
+				for (const auto& Entry : WorkersToPartitions)
+				{
+					Schema_Object* EntryObject =
+						Schema_AddObject(Update.GetFields(), SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
+					Schema_AddUint32(EntryObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID, Entry.Key);
+					AddStringToSchema(EntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID, Entry.Value.WorkerName);
+					Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID, Entry.Value.ServerWorkerEntityId);
+					Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_PARTITION_ID, Entry.Value.PartitionEntityId);
+
+					const ComponentData* ServerWorkerComponentData = WorkerComponents.FindChecked(Entry.Value.ServerWorkerEntityId);
+					const ServerWorker ServerWorkerData(ServerWorkerComponentData->GetUnderlying());
+					ClaimHandler.ClaimPartition(ServerWorkerData.SystemEntityId, Entry.Value.PartitionEntityId);
+				}
+				GetCoordinator().SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, MoveTemp(Update));
+				Stage = EStage::GetVirtualWorkerTranslationState;
+			}
 		}
 	}
 
