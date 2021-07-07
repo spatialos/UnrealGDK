@@ -4,15 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "DormancyTest.h"
-#include "DormancyAndTombstoneTest.generated.h"
+#include "InitiallyDormantMapActorTest.generated.h"
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API ADormancyAndTombstoneTest : public ADormancyTest
+class SPATIALGDKFUNCTIONALTESTS_API AInitiallyDormantMapActorTest : public ADormancyTest
 {
 	GENERATED_BODY()
 
 public:
-	ADormancyAndTombstoneTest();
+	AInitiallyDormantMapActorTest();
 
 	virtual void PrepareTest() override;
 };
