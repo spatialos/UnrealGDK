@@ -791,7 +791,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	return ReplicationBytesWritten * 8;
 }
 
-void USpatialActorChannel::CheckUnauthorisedDataChanges()
+void USpatialActorChannel::CheckUnauthorisedDataChanges(const bool bChannelCreated)
 {
 	check(Actor);
 	check(!Closing);

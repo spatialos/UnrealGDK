@@ -238,7 +238,7 @@ public:
 
 	// Begin UActorChannel interface
 	virtual int64 ReplicateActor() override;
-	void CheckUnauthorisedDataChanges();
+	void CheckUnauthorisedDataChanges(const bool bChannelCreated);
 	virtual void SetChannelActor(AActor* InActor, ESetChannelActorFlags Flags) override;
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 	virtual bool ReadyForDormancy(bool suppressLogs = false) override;
