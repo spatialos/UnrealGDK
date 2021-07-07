@@ -873,21 +873,33 @@ void FSpatialNetGUIDCache::SlowCheckMapsConsistency(const UObject* Object, const
 	const FUnrealObjectRef ObjectRef = GetUnrealObjectRefFromNetGUID(ObjectNetGUID);
 	const FNetworkGUID ObjectRefNetGUID = UnrealObjectRefToNetGUID.FindRef(ObjectRef);
 
-	ensureAlwaysMsgf(ObjectNetGUID == ObjectRefNetGUID, TEXT("NetGUID inconsistency between SpatialNetGuidCache and native's NetGuidCache. Object: %s, ObjectNetGUID: %u, "
-					"ObjectRefNetGUID: %u"), *GetNameSafe(Object), ObjectNetGUID.Value, ObjectRefNetGUID.Value);
+	ensureAlwaysMsgf(ObjectNetGUID == ObjectRefNetGUID,
+					 TEXT("NetGUID inconsistency between SpatialNetGuidCache and native's NetGuidCache. Object: %s, ObjectNetGUID: %u, "
+						  "ObjectRefNetGUID: %u"),
+					 *GetNameSafe(Object), ObjectNetGUID.Value, ObjectRefNetGUID.Value);
 
 	if (!IsValid(Object))
 	{
-		ensureAlwaysMsgf(!ObjectNetGUID.IsValid(), TEXT("Object is not valid but has a valid ObjectNetGUID. Object: %s, ObjectNetGUID: %u"), *GetNameSafe(Object), ObjectNetGUID.Value);
-		ensureAlwaysMsgf(!ObjectRefNetGUID.IsValid(), TEXT("Object is not valid but has a valid ObjectRefNetGUID. Object: %s, ObjectRefNetGUID: %u"), *GetNameSafe(Object), ObjectRefNetGUID.Value);
-		ensureAlwaysMsgf(ObjectRef.Entity == SpatialConstants::INVALID_ENTITY_ID, TEXT("Object is not valid but has a valid ObjectRef Entity ID. Object: %s, EntityId: %lld, Offset: %u"), *GetNameSafe(Object), ObjectRef.Entity, ObjectRef.Offset);
+		ensureAlwaysMsgf(!ObjectNetGUID.IsValid(), TEXT("Object is not valid but has a valid ObjectNetGUID. Object: %s, ObjectNetGUID: %u"),
+						 *GetNameSafe(Object), ObjectNetGUID.Value);
+		ensureAlwaysMsgf(!ObjectRefNetGUID.IsValid(),
+						 TEXT("Object is not valid but has a valid ObjectRefNetGUID. Object: %s, ObjectRefNetGUID: %u"),
+						 *GetNameSafe(Object), ObjectRefNetGUID.Value);
+		ensureAlwaysMsgf(ObjectRef.Entity == SpatialConstants::INVALID_ENTITY_ID,
+						 TEXT("Object is not valid but has a valid ObjectRef Entity ID. Object: %s, EntityId: %lld, Offset: %u"),
+						 *GetNameSafe(Object), ObjectRef.Entity, ObjectRef.Offset);
 	}
 	else
 	{
-		ensureAlwaysMsgf(ObjectNetGUID.IsValid(), TEXT("Object is valid but has an invalid ObjectNetGUID. Object: %s, ObjectNetGUID: %u"), *Object->GetName(), ObjectNetGUID.Value);
-		ensureAlwaysMsgf(ObjectRefNetGUID.IsValid(), TEXT("Object is valid but has an ivalid ObjRefNetGUID. Object: %s, ObjectRefNetGUID: %u"), *Object->GetName(), ObjectRefNetGUID.Value);
-		ensureAlwaysMsgf(ObjectRef.Entity != SpatialConstants::INVALID_ENTITY_ID || ObjectRef.Path.IsSet(), TEXT("Object is valid but has an ObjectRef with an invalid Entity ID and no set Path. Object: %s, EntityId: %lld, offset: %u"), *Object->GetName(),
-				ObjectRef.Entity, ObjectRef.Offset);
+		ensureAlwaysMsgf(ObjectNetGUID.IsValid(), TEXT("Object is valid but has an invalid ObjectNetGUID. Object: %s, ObjectNetGUID: %u"),
+						 *Object->GetName(), ObjectNetGUID.Value);
+		ensureAlwaysMsgf(ObjectRefNetGUID.IsValid(),
+						 TEXT("Object is valid but has an ivalid ObjRefNetGUID. Object: %s, ObjectRefNetGUID: %u"), *Object->GetName(),
+						 ObjectRefNetGUID.Value);
+		ensureAlwaysMsgf(
+			ObjectRef.Entity != SpatialConstants::INVALID_ENTITY_ID || ObjectRef.Path.IsSet(),
+			TEXT("Object is valid but has an ObjectRef with an invalid Entity ID and no set Path. Object: %s, EntityId: %lld, offset: %u"),
+			*Object->GetName(), ObjectRef.Entity, ObjectRef.Offset);
 	}
 #endif
 }
