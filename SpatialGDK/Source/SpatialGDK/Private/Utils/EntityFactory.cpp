@@ -191,7 +191,8 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 
 	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents)
+	if (/*GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents*/
+		USpatialStatics::IsStrategyWorkerEnabled())
 	{
 		const auto AddComponentData = [&ComponentDatas](ComponentData Data) {
 			Worker_ComponentData ComponentData;
@@ -204,7 +205,7 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 		};
 
 		AddComponentData(GetActorSetData(*NetDriver->PackageMap, *Actor).CreateComponentData());
-		AddComponentData(GetActorGroupData(*NetDriver->LoadBalanceStrategy, *Actor).CreateComponentData());
+		// AddComponentData(GetActorGroupData(*NetDriver->LoadBalanceStrategy, *Actor).CreateComponentData());
 	}
 }
 
