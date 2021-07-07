@@ -20,8 +20,6 @@ public:
 						  UGlobalStateManager& InGlobalStateManager);
 	void Advance();
 
-	void OnMapLoaded() const;
-
 private:
 	void ProcessComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
 	void ProcessComponentAdd(const Worker_ComponentId ComponentId, Schema_ComponentData* Data);

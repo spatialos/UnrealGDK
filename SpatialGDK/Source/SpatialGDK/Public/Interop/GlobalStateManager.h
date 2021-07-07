@@ -40,7 +40,6 @@ public:
 	void ApplyDeploymentMapData(Schema_ComponentData* Data);
 	void ApplySnapshotVersionData(Schema_ComponentData* Data);
 	void ApplyStartupActorManagerData(Schema_ComponentData* Data);
-	void WorkerEntityReady();
 
 	void ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update);
 
@@ -62,11 +61,8 @@ public:
 
 	void BeginDestroy() override;
 
-	void TrySendWorkerReadyToBeginPlay();
 	void TriggerBeginPlay();
 	bool GetCanBeginPlay() const;
-
-	bool IsReady() const;
 
 	void HandleActorBasedOnLoadBalancer(AActor* ActorIterator) const;
 
@@ -84,8 +80,6 @@ private:
 	uint64 SnapshotVersion = 0;
 
 	// Startup Actor Manager Component
-	bool bHasReceivedStartupActorData;
-	bool bWorkerEntityReady;
 	bool bHasSentReadyForVirtualWorkerAssignment;
 	bool bCanBeginPlay;
 	bool bCanSpawnWithAuthority;

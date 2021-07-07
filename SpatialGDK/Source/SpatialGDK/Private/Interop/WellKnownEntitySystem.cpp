@@ -98,13 +98,6 @@ void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId,
 	GlobalStateManager->AuthorityChanged({ EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });
 
 	if (SubView->GetView()[EntityId].Components.ContainsByPredicate(
-			SpatialGDK::ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID }))
-	{
-		GlobalStateManager->WorkerEntityReady();
-		GlobalStateManager->TrySendWorkerReadyToBeginPlay();
-	}
-
-	if (SubView->GetView()[EntityId].Components.ContainsByPredicate(
 			SpatialGDK::ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID }))
 	{
 		InitializeVirtualWorkerTranslationManager();
@@ -122,17 +115,6 @@ void WellKnownEntitySystem::ProcessEntityAdd(const Worker_EntityId EntityId)
 	for (const Worker_ComponentSetId ComponentId : Element.Authority)
 	{
 		ProcessAuthorityGain(EntityId, ComponentId);
-	}
-}
-
-void WellKnownEntitySystem::OnMapLoaded() const
-{
-	if (GlobalStateManager != nullptr && !GlobalStateManager->GetCanBeginPlay()
-		&& SubView->HasAuthority(GlobalStateManager->GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
-	{
-		// ServerTravel - Increment the session id, so users don't rejoin the old game.
-		GlobalStateManager->TriggerBeginPlay();
-		GlobalStateManager->IncrementSessionID();
 	}
 }
 

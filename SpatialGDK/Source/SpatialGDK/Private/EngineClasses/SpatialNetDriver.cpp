@@ -759,14 +759,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	if (IsServer())
-	{
-		if (WellKnownEntitySystem.IsValid())
-		{
-			WellKnownEntitySystem->OnMapLoaded();
-		}
-	}
-
 	bMapLoaded = true;
 }
 

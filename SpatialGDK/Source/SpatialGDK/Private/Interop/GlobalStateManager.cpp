@@ -59,8 +59,6 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 #endif // WITH_EDITOR
 
 	bAcceptingPlayers = false;
-	bHasReceivedStartupActorData = false;
-	bWorkerEntityReady = false;
 	bHasSentReadyForVirtualWorkerAssignment = false;
 	bCanBeginPlay = false;
 	bCanSpawnWithAuthority = false;
@@ -111,40 +109,6 @@ void UGlobalStateManager::ApplyStartupActorManagerData(Schema_ComponentData* Dat
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
-
-	bHasReceivedStartupActorData = true;
-
-	TrySendWorkerReadyToBeginPlay();
-}
-
-void UGlobalStateManager::WorkerEntityReady()
-{
-	bWorkerEntityReady = true;
-}
-
-void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
-{
-	return;
-
-	// Once a worker has received the StartupActorManager AddComponent op, we say that a
-	// worker is ready to begin play. This means if the GSM-authoritative worker then sets
-	// canBeginPlay=true it will be received as a ComponentUpdate and so we can differentiate
-	// from when canBeginPlay=true was loaded from the snapshot and was received as an
-	// AddComponent. This is important for handling startup Actors correctly in a zoned
-	// environment.
-	if (bHasSentReadyForVirtualWorkerAssignment || !bHasReceivedStartupActorData || !bWorkerEntityReady)
-	{
-		return;
-	}
-
-	FWorkerComponentUpdate Update = {};
-	Update.component_id = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
-	Update.schema_type = Schema_CreateComponentUpdate();
-	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
-	Schema_AddBool(UpdateObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, true);
-
-	bHasSentReadyForVirtualWorkerAssignment = true;
-	NetDriver->Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &Update);
 }
 
 #if WITH_EDITOR
@@ -481,12 +445,6 @@ void UGlobalStateManager::TriggerBeginPlay()
 bool UGlobalStateManager::GetCanBeginPlay() const
 {
 	return bCanBeginPlay;
-}
-
-bool UGlobalStateManager::IsReady() const
-{
-	return GetCanBeginPlay()
-		   || ViewCoordinator->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
 }
 
 void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)
