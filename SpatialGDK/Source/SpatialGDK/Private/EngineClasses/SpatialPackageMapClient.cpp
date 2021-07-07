@@ -894,7 +894,7 @@ void FSpatialNetGUIDCache::SlowCheckMapsConsistency(const UObject* Object) const
 		ensureAlwaysMsgf(ObjectNetGUID.IsValid(), TEXT("Object is valid but has an invalid ObjectNetGUID. Object: %s, ObjectNetGUID: %u"),
 						 *Object->GetName(), ObjectNetGUID.Value);
 		ensureAlwaysMsgf(ObjectRefNetGUID.IsValid(),
-						 TEXT("Object is valid but has an ivalid ObjRefNetGUID. Object: %s, ObjectRefNetGUID: %u"), *Object->GetName(),
+						 TEXT("Object is valid but has an invalid ObjRefNetGUID. Object: %s, ObjectRefNetGUID: %u"), *Object->GetName(),
 						 ObjectRefNetGUID.Value);
 		ensureAlwaysMsgf(
 			ObjectRef.Entity != SpatialConstants::INVALID_ENTITY_ID || ObjectRef.Path.IsSet(),
