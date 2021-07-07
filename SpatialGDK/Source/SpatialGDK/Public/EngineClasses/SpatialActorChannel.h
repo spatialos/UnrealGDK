@@ -288,9 +288,9 @@ private:
 
 	void RetireEntityIfAuthoritative();
 
-	void SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition);
+	void SendPositionUpdate(const FVector& NewPosition);
 
-	void UpdateVisibleComponent(AActor* Actor);
+	void UpdateVisibleComponent();
 
 	bool SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition);
 

@@ -450,10 +450,10 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 	return { InitialRepChanged, *Replicator.RepLayout };
 }
 
-void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
+void USpatialActorChannel::UpdateVisibleComponent()
 {
-	// Make sure that the InActor is not a PlayerController, GameplayDebuggerCategoryReplicator or GameMode.
-	if (SpatialGDK::DoesActorClassIgnoreVisibilityCheck(InActor))
+	// Make sure that the Actor is not a PlayerController, GameplayDebuggerCategoryReplicator or GameMode.
+	if (SpatialGDK::DoesActorClassIgnoreVisibilityCheck(Actor))
 	{
 		return;
 	}
@@ -462,14 +462,14 @@ void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 	// If the Actor is hidden (bHidden == true) and the root component does not collide then the Actor is not relevant.
 	// We apply the same rules to add/remove the Visible component to an actor that determines if clients will checkout the actor or
 	// not. Make sure that the Actor is also not always relevant.
-	if (InActor->IsHidden() && (!InActor->GetRootComponent() || !InActor->GetRootComponent()->IsCollisionEnabled())
-		&& !InActor->bAlwaysRelevant)
+	if (Actor->IsHidden() && (!Actor->GetRootComponent() || !Actor->GetRootComponent()->IsCollisionEnabled())
+		&& !Actor->bAlwaysRelevant)
 	{
-		NetDriver->RefreshActorVisibility(InActor, false);
+		NetDriver->RefreshActorVisibility(Actor, false);
 	}
 	else
 	{
-		NetDriver->RefreshActorVisibility(InActor, true);
+		NetDriver->RefreshActorVisibility(Actor, true);
 	}
 }
 
@@ -613,7 +613,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	if (Actor->GetIsHiddenDirty())
 	{
-		UpdateVisibleComponent(Actor);
+		UpdateVisibleComponent();
 		Actor->SetIsHiddenDirty(false);
 	}
 
@@ -1090,31 +1090,37 @@ void USpatialActorChannel::UpdateSpatialPosition()
 		return;
 	}
 
-	SendPositionUpdate(Actor, EntityId, NewSpatialActorPosition);
+	SendPositionUpdate(NewSpatialActorPosition);
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
 		if (APawn* Pawn = PlayerController->GetPawn())
 		{
-			SendPositionUpdate(Pawn, NetDriver->PackageMap->GetEntityIdFromObject(Pawn), NewSpatialActorPosition);
+			if (USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->FindActorChannelRef(Pawn)))
+			{
+				Channel->SendPositionUpdate(NewSpatialActorPosition);
+			}
 		}
 	}
 }
 
-void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition)
+void USpatialActorChannel::SendPositionUpdate(const FVector& NewPosition)
 {
 	LastPositionSinceUpdate = NewPosition;
 	TimeWhenPositionLastUpdated = NetDriver->GetElapsedTime();
 
-	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->HasServerAuthority(InEntityId))
+	if (EntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->HasServerAuthority(EntityId))
 	{
 		FWorkerComponentUpdate Update = SpatialGDK::Position::CreatePositionUpdate(SpatialGDK::Coordinates::FromFVector(NewPosition));
-		NetDriver->Connection->SendComponentUpdate(InEntityId, &Update);
+		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 	}
 
-	for (const auto& Child : InActor->Children)
+	for (const auto& Child : Actor->Children)
 	{
-		SendPositionUpdate(Child, NetDriver->PackageMap->GetEntityIdFromObject(Child), NewPosition);
+		if (USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->FindActorChannelRef(Child)))
+		{
+			Channel->SendPositionUpdate(NewPosition);
+		}
 	}
 }
 
