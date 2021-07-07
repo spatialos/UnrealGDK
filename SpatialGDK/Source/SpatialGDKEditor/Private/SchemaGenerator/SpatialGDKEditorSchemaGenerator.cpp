@@ -1393,6 +1393,124 @@ bool RunSchemaCompiler(FString& SchemaBundleJsonOutput, FString SchemaInputDir, 
 	}
 }
 
+bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPath)
+{
+	if (SchemaOutputPath == "")
+	{
+		SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
+	}
+
+	FString IntermediateDir = GenerateIntermediateDirectory();
+	const FString PartitionDataFolderName(TEXT("PartitionMetadata"));
+
+	if (SchemaInputPath == "")
+	{
+		FString ContentDir = FPaths::ProjectContentDir();
+		SchemaInputPath = FPaths::Combine(ContentDir, TEXT("Spatial"), PartitionDataFolderName);
+	}
+
+	IPlatformFile& Filesystem = IPlatformFile::GetPlatformPhysical();
+
+	if (!Filesystem.DirectoryExists(*SchemaInputPath))
+	{
+		return true;
+	}
+
+	TSet<FString> SchemaFiles;
+	const FString SchemaExtension("schema");
+
+	Filesystem.IterateDirectory(*SchemaInputPath, [&SchemaFiles, &SchemaExtension](const TCHAR* Entry, bool bIsDirectory) {
+		FString EntryStr(Entry);
+		if (!bIsDirectory && FPaths::GetExtension(EntryStr) == SchemaExtension)
+		{
+			SchemaFiles.Add(MoveTemp(EntryStr));
+		}
+
+		return true;
+	});
+
+	FString SchemaJsonPath;
+	if (!RunSchemaCompiler(SchemaJsonPath, SchemaInputPath))
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to parse partition meta data schema files"));
+		return false;
+	}
+
+	TSet<FString> SchemaFileNames;
+	for (const FString& FilePath : SchemaFiles)
+	{
+		SchemaFileNames.Add(FPaths::GetCleanFilename(FilePath));
+	}
+
+	TArray<SpatialGDK::SchemaComponentIdentifiers> Components;
+	SpatialGDK::ExtractComponentsFromSchemaJson(SchemaJsonPath, Components, SchemaFileNames);
+
+	FString DestinationSchemaDir = FPaths::Combine(SchemaOutputPath, PartitionDataFolderName);
+	if (FPaths::DirectoryExists(DestinationSchemaDir))
+	{
+		if (!Filesystem.DeleteDirectoryRecursively(*DestinationSchemaDir))
+		{
+			// clang-format off
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not delete pre-existing partition metadata schema directory '%s'! Please make sure the directory is writeable."), *DestinationSchemaDir);
+			// clang-format on
+			return false;
+		}
+	}
+
+	// schema_compiler cannot create folders, so we need to set them up beforehand.
+	if (!Filesystem.CreateDirectoryTree(*DestinationSchemaDir))
+	{
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create partition metadata schema directory '%s'! Please make sure the parent directory is writeable."), *DestinationSchemaDir);
+		// clang-format on
+		return false;
+	}
+
+	for (const auto& File : SchemaFiles)
+	{
+		FString DestinationFile = FPaths::Combine(DestinationSchemaDir, FPaths::GetCleanFilename(File));
+		Filesystem.CopyFile(*DestinationFile, *File);
+	}
+
+	FCodeWriter Writer;
+	Writer.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.generated;)""");
+	Writer.PrintNewLine();
+
+	// Write all import statements.
+	Writer.Printf("import \"{0}\";", TEXT("improbable/standard_library.schema"));
+	for (const auto& File : SchemaFiles)
+	{
+		FString ImportPath = FPaths::Combine(TEXT("unreal"), TEXT("generated"), PartitionDataFolderName, FPaths::GetCleanFilename(File));
+		Writer.Printf("import \"{0}\";", *ImportPath);
+	}
+
+	Writer.PrintNewLine();
+	Writer.Printf("component_set {0} {", TEXT("PartitionMetadataAuth")).Indent();
+	Writer.Printf("id = {0};", SpatialConstants::PARTITION_METADATA_AUTH_COMPONENT_SET_ID);
+	Writer.Printf("components = [").Indent();
+
+	// Write all import components.
+	Writer.Printf("improbable.Position,");
+	Writer.Printf("improbable.Interest,");
+	Writer.Printf("improbable.AuthorityDelegation,");
+	for (const auto& MetadataComponentId : Components)
+	{
+		Writer.Printf("{0},", MetadataComponentId.Name);
+	}
+
+	Writer.RemoveTrailingComma();
+
+	Writer.Outdent().Print("];");
+	Writer.Outdent().Print("}");
+
+	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("ComponentSets/PartitionAuthoritativeComponentSet.schema")));
+
+	return true;
+}
+
 bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,
 									  TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex, TArray<FFieldIDs>& OutFieldIdsArray)
 {
@@ -1403,6 +1521,11 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 bool SpatialGDKGenerateSchema()
 {
 	SchemaGeneratedClasses.Empty();
+
+	if (!CreatePartitionAuthoritySet())
+	{
+		return false;
+	}
 
 	// Generate Schema for classes loaded in memory.
 
