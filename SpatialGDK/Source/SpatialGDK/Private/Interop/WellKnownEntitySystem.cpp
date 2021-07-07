@@ -62,9 +62,6 @@ void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId Comp
 {
 	switch (ComponentId)
 	{
-	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(Schema_GetComponentUpdateFields(Update));
-		break;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerUpdate(Update);
 		break;
@@ -82,9 +79,6 @@ void WellKnownEntitySystem::ProcessComponentAdd(const Worker_ComponentId Compone
 {
 	switch (ComponentId)
 	{
-	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(Schema_GetComponentDataFields(Data));
-		break;
 	case SpatialConstants::SNAPSHOT_VERSION_COMPONENT_ID:
 		GlobalStateManager->ApplySnapshotVersionData(Data);
 		break;

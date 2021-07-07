@@ -211,11 +211,6 @@ void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate() co
 
 	WriteMappingToSchema(UpdateObject);
 
-	// The Translator on the worker which hosts the manager won't get the component update notification,
-	// so send it across directly.
-	check(Translator != nullptr);
-	Translator->ApplyVirtualWorkerManagerData(UpdateObject);
-
 	check(Connection != nullptr);
 	Connection->SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, &Update);
 }

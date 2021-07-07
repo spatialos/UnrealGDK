@@ -44,10 +44,6 @@ public:
 
 	void ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update);
 
-	void ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const;
-
-	void QueryTranslation();
-
 	void SetDeploymentState();
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void IncrementSessionID();
@@ -123,7 +119,6 @@ private:
 	SpatialGDK::ViewCoordinator* ViewCoordinator;
 
 	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimHandler;
-	SpatialGDK::EntityQueryHandler QueryHandler;
 
 #if WITH_EDITOR
 	SpatialGDK::EntityCommandRequestHandler RequestHandler;

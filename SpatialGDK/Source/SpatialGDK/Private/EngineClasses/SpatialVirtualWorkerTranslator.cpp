@@ -50,27 +50,6 @@ Worker_EntityId SpatialVirtualWorkerTranslator::GetServerWorkerEntityForVirtualW
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
-void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject)
-{
-	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("ApplyVirtualWorkerManagerData for %s:"), *LocalPhysicalWorkerName);
-
-	// The translation schema is a list of mappings, where each entry has a virtual and physical worker ID.
-	ApplyMappingFromSchema(ComponentObject);
-
-#if !NO_LOGGING
-	if (LoadBalanceStrategy.IsValid() && LoadBalanceStrategy->IsReady())
-	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("\t-> Strategy: %s"), *LoadBalanceStrategy->ToString());
-
-		for (const auto& Entry : VirtualToPhysicalWorkerMapping)
-		{
-			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("\t-> Assignment: Virtual Worker %d to %s with server worker entity: %lld"),
-				   Entry.Key, *(Entry.Value.WorkerName), Entry.Value.ServerWorkerEntityId);
-		}
-	}
-#endif //! NO_LOGGING
-}
-
 // The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID.
 // This method should only be called on workers who are not authoritative over the mapping and also when
 // a worker first becomes authoritative for the mapping.

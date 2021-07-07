@@ -124,6 +124,8 @@ void UGlobalStateManager::WorkerEntityReady()
 
 void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
 {
+	return;
+
 	// Once a worker has received the StartupActorManager AddComponent op, we say that a
 	// worker is ready to begin play. This means if the GSM-authoritative worker then sets
 	// canBeginPlay=true it will be received as a ComponentUpdate and so we can differentiate
@@ -503,64 +505,6 @@ void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-void UGlobalStateManager::QueryTranslation()
-{
-	if (bTranslationQueryInFlight)
-	{
-		// Only allow one in flight query. Retries will be handled by the SpatialNetDriver.
-		return;
-	}
-
-	// Build a constraint for the Virtual Worker Translation.
-	Worker_ComponentConstraint TranslationComponentConstraint;
-	TranslationComponentConstraint.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
-
-	Worker_Constraint TranslationConstraint;
-	TranslationConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
-	TranslationConstraint.constraint.component_constraint = TranslationComponentConstraint;
-
-	Worker_EntityQuery TranslationQuery{};
-	TranslationQuery.constraint = TranslationConstraint;
-
-	Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery, RETRY_UNTIL_COMPLETE);
-	bTranslationQueryInFlight = true;
-
-	TWeakObjectPtr<UGlobalStateManager> WeakGlobalStateManager(this);
-	EntityQueryDelegate TranslationQueryDelegate;
-	TranslationQueryDelegate.BindLambda([WeakGlobalStateManager](const Worker_EntityQueryResponseOp& Op) {
-		if (!WeakGlobalStateManager.IsValid())
-		{
-			// The GSM was destroyed before receiving the response.
-			return;
-		}
-
-		UGlobalStateManager* GlobalStateManager = WeakGlobalStateManager.Get();
-		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
-		{
-			if (GlobalStateManager->NetDriver->VirtualWorkerTranslator.IsValid())
-			{
-				GlobalStateManager->ApplyVirtualWorkerMappingFromQueryResponse(Op);
-			}
-		}
-		GlobalStateManager->bTranslationQueryInFlight = false;
-	});
-	QueryHandler.AddRequest(RequestID, TranslationQueryDelegate);
-}
-
-void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const
-{
-	check(NetDriver->VirtualWorkerTranslator.IsValid());
-	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
-	{
-		Worker_ComponentData Data = Op.results[0].components[i];
-		if (Data.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
-		{
-			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
-		}
-	}
-}
-
 void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 {
 	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
@@ -578,7 +522,6 @@ void UGlobalStateManager::Advance()
 	const TArray<Worker_Op>& Ops = NetDriver->Connection->GetCoordinator().GetViewDelta().GetWorkerMessages();
 
 	ClaimHandler->ProcessOps(Ops);
-	QueryHandler.ProcessOps(Ops);
 
 #if WITH_EDITOR
 	RequestHandler.ProcessOps(Ops);
