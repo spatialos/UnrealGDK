@@ -22,19 +22,19 @@ void AInitiallyDormantDynamicActorTest::PrepareTest()
 
 	// Step 2 - Server check NetDormancy is DORM_Initial
 	AddStep(
-		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::Server(1), nullptr, nullptr,
+		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::Server(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-			CheckDormancyActorCount(1);
-			CheckDormancyAndRepProperty(DORM_Initial, 0);
+			RequireDormancyActorCount(1);
+			RequireDormancyAndRepProperty(DORM_Initial, 0);
 			FinishStep();
 		},
 		5.0f);
 
 	// Step 3 - Client check NetDormancy is DORM_DormantAll
 	AddStep(
-		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			CheckDormancyAndRepProperty(DORM_DormantAll, 0);
+			RequireDormancyAndRepProperty(DORM_DormantAll, 0);
 			FinishStep();
 		},
 		5.0f);

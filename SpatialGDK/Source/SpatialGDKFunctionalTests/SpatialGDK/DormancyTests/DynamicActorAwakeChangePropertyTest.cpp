@@ -16,7 +16,7 @@ void ADynamicActorAwakeChangePropertyTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	// Step 1 - Spawn dormancy actor and check NetDormancy is DORM_Initial
+	// Step 1 - Spawn dormancy actor and set NetDormancy to DORM_Awake
 	AddStep(TEXT("ServerSpawnDormancyActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		AActor* Actor = CreateDormancyTestActor();
 		Actor->SetNetDormancy(DORM_Awake);
@@ -25,10 +25,10 @@ void ADynamicActorAwakeChangePropertyTest::PrepareTest()
 
 	// Step 2 - Client check NetDormancy is DORM_Awake
 	AddStep(
-		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			CheckDormancyActorCount(1);
-			CheckDormancyAndRepProperty(DORM_Awake, 0);
+			RequireDormancyActorCount(1);
+			RequireDormancyAndRepProperty(DORM_Awake, 0);
 			FinishStep();
 		},
 		5.0f);
@@ -45,9 +45,9 @@ void ADynamicActorAwakeChangePropertyTest::PrepareTest()
 
 	// Step 4 - Client check TestIntProp is 1
 	AddStep(
-		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			CheckDormancyAndRepProperty(DORM_Awake, 1);
+			RequireDormancyAndRepProperty(DORM_Awake, 1);
 			FinishStep();
 		},
 		5.0f);

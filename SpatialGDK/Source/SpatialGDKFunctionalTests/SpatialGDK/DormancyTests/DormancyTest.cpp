@@ -9,7 +9,7 @@ AActor* ADormancyTest::CreateDormancyTestActor()
 	return GetWorld()->SpawnActor<ADormancyTestActor>({ 0.0f, 0.0f, 0.0f }, FRotator::ZeroRotator);
 }
 
-void ADormancyTest::CheckDormancyAndRepProperty(const TEnumAsByte<enum ENetDormancy> ExpectedNetDormancy, const int ExpectedTestIntProp)
+void ADormancyTest::RequireDormancyAndRepProperty(const TEnumAsByte<enum ENetDormancy> ExpectedNetDormancy, const int ExpectedTestIntProp)
 {
 	for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 	{
@@ -23,11 +23,14 @@ void ADormancyTest::DestroyDormancyTestActors()
 {
 	for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 	{
-		Iter->Destroy();
+		if (Iter->HasAuthority())
+		{
+			Iter->Destroy();
+		}
 	}
 }
 
-void ADormancyTest::CheckDormancyActorCount(const int ExpectedCount)
+void ADormancyTest::RequireDormancyActorCount(const int ExpectedCount)
 {
 	int Counter = 0;
 	for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)

@@ -52,10 +52,10 @@ void ADynamicActorDormantAllChangePropertyTest::PrepareTest()
 
 	// Step 3 - Client check NetDormancy is DORM_DormantAll
 	AddStep(
-		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			CheckDormancyActorCount(1);
-			CheckDormancyAndRepProperty(DORM_DormantAll, 0);
+			RequireDormancyActorCount(1);
+			RequireDormancyAndRepProperty(DORM_DormantAll, 0);
 			FinishStep();
 		},
 		5.0f);
@@ -70,16 +70,31 @@ void ADynamicActorDormantAllChangePropertyTest::PrepareTest()
 		FinishStep();
 	});
 
-	// Step 5 - Client check TestIntProp is 0
+	// Step 5 - Give chance for property to be replicated to clients
 	AddStep(
-		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientWaitForReplication"), FWorkerDefinition::AllClients, nullptr,
+		[this]() {
+		FTimerManager& TimerManager = GetWorld()->GetTimerManager();
+		TimerManager.SetTimer(DelayTimerHandle, []() {}, 0.5f, false);
+	},
 		[this](float DeltaTime) {
-			CheckDormancyAndRepProperty(DORM_DormantAll, 0);
+		FTimerManager& TimerManager = GetWorld()->GetTimerManager();
+		bool bTimerActive = TimerManager.IsTimerActive(DelayTimerHandle);
+		RequireEqual_Bool(bTimerActive, false, TEXT("Wait for replication"));
+		FinishStep();
+	},
+		5.0f);
+
+	// Step 6 - Client check TestIntProp is 0
+	AddStep(
+		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireDormancyAndRepProperty(DORM_DormantAll, 0);
 			FinishStep();
 		},
 		5.0f);
 
-	// Step 6 - Delete the test actor on the server.
+	// Step 7 - Delete the test actor on the server.
 	AddStep(TEXT("ServerDeleteActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		DestroyDormancyTestActors();
 		FinishStep();

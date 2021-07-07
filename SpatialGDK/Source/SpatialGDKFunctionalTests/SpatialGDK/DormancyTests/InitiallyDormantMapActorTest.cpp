@@ -3,6 +3,7 @@
 #include "InitiallyDormantMapActorTest.h"
 
 #include "DormancyTestActor.h"
+#include "TimerManager.h"
 
 // This test tests checks that replicated properties changed on an initially dormant actor do not get replicated.
 
@@ -17,17 +18,17 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 
 	// Step 1 - Check actor exists and that it's NetDormancy and TestIntProp are correct on the server.
 	AddStep(TEXT("ServerCheckkDormancyAndRepProperty"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		CheckDormancyActorCount(1);
-		CheckDormancyAndRepProperty(DORM_Initial, 0);
+		RequireDormancyActorCount(1);
+		RequireDormancyAndRepProperty(DORM_Initial, 0);
 		FinishStep();
 	});
 
 	// Step 2 - Check dormancy and TestIntProp on client.
 	AddStep(
-		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			CheckDormancyActorCount(1);
-			CheckDormancyAndRepProperty(DORM_Initial, 0);
+			RequireDormancyActorCount(1);
+			RequireDormancyAndRepProperty(DORM_Initial, 0);
 			FinishStep();
 		},
 		5.0f);
@@ -42,16 +43,31 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 		FinishStep();
 	});
 
-	// Step 4 - Check dormancy and TestIntProp on client.
+	// Step 4 - Give chance for property to be replicated to clients
 	AddStep(
-		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientWaitForReplication"), FWorkerDefinition::AllClients, nullptr,
+		[this]() {
+			FTimerManager& TimerManager = GetWorld()->GetTimerManager();
+			TimerManager.SetTimer(DelayTimerHandle, [](){}, 0.5f, false);
+		},
 		[this](float DeltaTime) {
-			CheckDormancyAndRepProperty(DORM_Initial, 0);
+			FTimerManager& TimerManager = GetWorld()->GetTimerManager();
+			bool bTimerActive = TimerManager.IsTimerActive(DelayTimerHandle);
+			RequireEqual_Bool(bTimerActive, false, TEXT("Wait for replication"));
 			FinishStep();
 		},
 		5.0f);
 
-	// Step 5 - Modify call FlushNetDormancy.
+	// Step 5 - Check dormancy and TestIntProp on client.
+	AddStep(
+		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireDormancyAndRepProperty(DORM_Initial, 0);
+			FinishStep();
+		},
+		5.0f);
+
+	// Step 6 - Modify call FlushNetDormancy.
 	AddStep(TEXT("ServerModifyRepPropertyValueAndFlush"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
 		{
@@ -62,26 +78,26 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 		FinishStep();
 	});
 
-	// Step 6 - Check dormancy and TestIntProp on client.
+	// Step 7 - Check dormancy and TestIntProp on client.
 	AddStep(
-		TEXT("ClientCheckDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-		CheckDormancyAndRepProperty(DORM_DormantAll, 1);
+		RequireDormancyAndRepProperty(DORM_DormantAll, 1);
 		FinishStep();
 	},
 		5.0f);
 
-	// Step 7 - Delete the test actor on the server.
+	// Step 8 - Delete the test actor on the server.
 	AddStep(TEXT("ServerDeleteActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		DestroyDormancyTestActors();
 		FinishStep();
 	});
 
-	// Step 8 - Observe the test actor has been deleted on the client.
+	// Step 9 - Observe the test actor has been deleted on the client.
 	AddStep(
 		TEXT("ClientCheckActorDestroyed"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-		CheckDormancyActorCount(0);
+		RequireDormancyActorCount(0);
 		FinishStep();
 	},
 		5.0f);
