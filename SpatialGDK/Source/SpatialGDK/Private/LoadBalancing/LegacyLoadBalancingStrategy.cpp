@@ -9,6 +9,7 @@
 #include "LoadBalancing/LegacyLoadBalancingCommon.h"
 #include "LoadBalancing/LegacyLoadbalancingComponents.h"
 #include "LoadBalancing/PartitionManager.h"
+#include "Schema/DebugComponent.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLegacyLoadBalancing)
 
@@ -27,8 +28,8 @@ FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, S
 	}
 	else
 	{
-		PositionStorage = MakeUnique<SpatialGDK::FSpatialPositionStorage>();
-		GroupStorage = MakeUnique<SpatialGDK::FActorGroupStorage>();
+		PositionStorage = MakeUnique<FSpatialPositionStorage>();
+		GroupStorage = MakeUnique<FActorGroupStorage>();
 		LegacyLBStrat.GetLegacyLBInformation(LBContext);
 	}
 }
