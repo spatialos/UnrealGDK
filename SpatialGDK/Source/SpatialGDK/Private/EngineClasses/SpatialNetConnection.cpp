@@ -125,3 +125,10 @@ Worker_EntityId USpatialNetConnection::GetPlayerControllerEntityId() const
 	}
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
+
+void USpatialNetConnection::BeginDestroy()
+{
+	UE_LOG(LogSpatialNetConnection, Log, TEXT("SpatialNetConnection begin destory: Name=%s"), *GetName());
+
+	Super::BeginDestroy();
+}
