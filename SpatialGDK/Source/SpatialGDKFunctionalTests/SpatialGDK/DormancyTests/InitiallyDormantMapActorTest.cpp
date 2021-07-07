@@ -48,7 +48,8 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 		TEXT("ClientWaitForReplication"), FWorkerDefinition::AllClients, nullptr,
 		[this]() {
 			FTimerManager& TimerManager = GetWorld()->GetTimerManager();
-			TimerManager.SetTimer(DelayTimerHandle, [](){}, 0.5f, false);
+			TimerManager.SetTimer(
+				DelayTimerHandle, []() {}, 0.5f, false);
 		},
 		[this](float DeltaTime) {
 			FTimerManager& TimerManager = GetWorld()->GetTimerManager();
@@ -82,9 +83,9 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 	AddStep(
 		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-		RequireDormancyAndRepProperty(DORM_DormantAll, 1);
-		FinishStep();
-	},
+			RequireDormancyAndRepProperty(DORM_DormantAll, 1);
+			FinishStep();
+		},
 		5.0f);
 
 	// Step 8 - Delete the test actor on the server.
@@ -97,8 +98,8 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 	AddStep(
 		TEXT("ClientCheckActorDestroyed"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-		RequireDormancyActorCount(0);
-		FinishStep();
-	},
+			RequireDormancyActorCount(0);
+			FinishStep();
+		},
 		5.0f);
 }

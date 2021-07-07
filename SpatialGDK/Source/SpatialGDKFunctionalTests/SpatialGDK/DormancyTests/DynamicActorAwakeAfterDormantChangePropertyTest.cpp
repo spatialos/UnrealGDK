@@ -46,15 +46,16 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 	AddStep(
 		TEXT("ClientWaitForReplication"), FWorkerDefinition::AllClients, nullptr,
 		[this]() {
-		FTimerManager& TimerManager = GetWorld()->GetTimerManager();
-		TimerManager.SetTimer(DelayTimerHandle, []() {}, 0.5f, false);
-	},
+			FTimerManager& TimerManager = GetWorld()->GetTimerManager();
+			TimerManager.SetTimer(
+				DelayTimerHandle, []() {}, 0.5f, false);
+		},
 		[this](float DeltaTime) {
-		FTimerManager& TimerManager = GetWorld()->GetTimerManager();
-		bool bTimerActive = TimerManager.IsTimerActive(DelayTimerHandle);
-		RequireEqual_Bool(bTimerActive, false, TEXT("Wait for replication"));
-		FinishStep();
-	},
+			FTimerManager& TimerManager = GetWorld()->GetTimerManager();
+			bool bTimerActive = TimerManager.IsTimerActive(DelayTimerHandle);
+			RequireEqual_Bool(bTimerActive, false, TEXT("Wait for replication"));
+			FinishStep();
+		},
 		5.0f);
 
 	// Step 5 - Client check TestIntProp is still 0
