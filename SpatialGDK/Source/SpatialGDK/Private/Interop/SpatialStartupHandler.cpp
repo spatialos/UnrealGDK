@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/SpatialPlayerSpawner.h"
+#include "Schema/ServerWorker.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "Utils/EntityFactory.h"
 #include "Utils/InterestFactory.h"
@@ -15,8 +16,10 @@ DEFINE_LOG_CATEGORY_STATIC(LogSpatialStartupHandler, Log, All);
 namespace SpatialGDK
 {
 FSpatialStartupHandler::FSpatialStartupHandler(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup)
-	: Setup(InSetup)
+	: ClaimHandler(*InNetDriver.Connection)
+	, Setup(InSetup)
 	, NetDriver(&InNetDriver)
+
 {
 }
 
@@ -100,13 +103,6 @@ bool FSpatialStartupHandler::TryFinishStartup()
 		if (!bHasCalledPartitionEntityCreate)
 		{
 			bHasCalledPartitionEntityCreate = true;
-			TMap<Worker_EntityId_Key, const ComponentData*> WorkerComponents;
-			Algo::Transform(WorkerEntityIds, WorkerComponents, [this](const Worker_EntityId WorkerEntityId) {
-				return TPair<Worker_EntityId_Key, const ComponentData*>{
-					WorkerEntityId, GetCoordinator().GetView()[WorkerEntityId].Components.FindByPredicate(
-										ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID })
-				};
-			});
 
 			UE_LOG(LogSpatialStartupHandler, Log, TEXT("Spawning partition entities for %d virtual workers"),
 				   Setup.ExpectedServerWorkersCount);
@@ -127,6 +123,14 @@ bool FSpatialStartupHandler::TryFinishStartup()
 
 		if (PartitionsToCreate.Num() == 0)
 		{
+			TMap<Worker_EntityId_Key, const ComponentData*> WorkerComponents;
+			Algo::Transform(WorkerEntityIds, WorkerComponents, [this](const Worker_EntityId WorkerEntityId) {
+				return TPair<Worker_EntityId_Key, const ComponentData*>{
+					WorkerEntityId, GetCoordinator().GetView()[WorkerEntityId].Components.FindByPredicate(
+										ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID })
+				};
+			});
+
 			// All partitions created.
 			ComponentUpdate Update(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
 			for (const auto& Entry : WorkersToPartitions)
@@ -136,6 +140,10 @@ bool FSpatialStartupHandler::TryFinishStartup()
 				AddStringToSchema(EntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID, Entry.Value.WorkerName);
 				Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID, Entry.Value.ServerWorkerEntityId);
 				Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_PARTITION_ID, Entry.Value.PartitionEntityId);
+
+				const ComponentData* ServerWorkerComponentData = WorkerComponents.FindChecked(Entry.Value.ServerWorkerEntityId);
+				const ServerWorker ServerWorkerData(ServerWorkerComponentData->GetUnderlying());
+				ClaimHandler.ClaimPartition(ServerWorkerData.SystemEntityId, Entry.Value.PartitionEntityId);
 			}
 			GetCoordinator().SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, MoveTemp(Update));
 			Stage = EStage::GetVirtualWorkerTranslationState;
@@ -177,14 +185,8 @@ bool FSpatialStartupHandler::TryFinishStartup()
 
 	if (Stage == EStage::WaitForAssignedPartition)
 	{
-		{
-			// NOTE: Consider if waiting for partition should be a separate step from sending ReadyToBeginPlay.
-			ComponentUpdate MarkAsReady(SpatialConstants::SERVER_WORKER_COMPONENT_ID);
-			Schema_AddBool(MarkAsReady.GetFields(), SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, true);
-			GetCoordinator().SendComponentUpdate(WorkerEntityId, MoveTemp(MarkAsReady));
-
-			Stage = EStage::WaitForAssignedPartition2;
-		}
+		// ClaimHandler.ClaimPartition(NetDriver->Connection->GetWorkerSystemEntityId(), LocalPartitionId);
+		Stage = EStage::WaitForAssignedPartition2;
 	}
 
 	if (Stage == EStage::WaitForAssignedPartition2)
@@ -202,6 +204,11 @@ bool FSpatialStartupHandler::TryFinishStartup()
 				{
 					// We've received worker translation data.
 					NetDriver->VirtualWorkerTranslator->ApplyMappingFromSchema(WorkerTranslatorComponentData->GetFields());
+
+					// NOTE: Consider if waiting for partition should be a separate step from sending ReadyToBeginPlay.
+					ComponentUpdate MarkAsReady(SpatialConstants::SERVER_WORKER_COMPONENT_ID);
+					Schema_AddBool(MarkAsReady.GetFields(), SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, true);
+					GetCoordinator().SendComponentUpdate(WorkerEntityId, MoveTemp(MarkAsReady));
 
 					Stage = bHasGSMAuth ? EStage::DispatchGSMStartPlay : EStage::WaitForGSMStartPlay;
 				}

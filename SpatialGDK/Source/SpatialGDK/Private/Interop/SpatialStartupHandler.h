@@ -41,6 +41,8 @@ private:
 	VirtualWorkerId LocalVirtualWorkerId;
 	Worker_PartitionId LocalPartitionId;
 
+	ClaimPartitionHandler ClaimHandler;
+
 	ViewCoordinator& GetCoordinator();
 	const ViewCoordinator& GetCoordinator() const;
 	const TArray<Worker_Op>& GetOps() const;
