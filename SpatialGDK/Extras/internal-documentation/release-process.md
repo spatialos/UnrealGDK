@@ -9,7 +9,7 @@ This document outlines the process for releasing a version of the GDK for Unreal
 ## IMPORTANT NOTE:
 After creating the release candidate branches, each repository needs updating with the correct default rc branches (e.g. `0.14.0-rc`) for building in their respective `steps.yaml` files. 
 This is a *required* manual step until we fix-up the release tool to work nicely with new CI.
-Additionally, you will need to update the default branches for building in `UnrealGDKBuild` `prepare_steps.py`. This is to ensure the created rc / tag branches in new CI build the correct repo versions.
+Additionally, you will need to update the default branches for building in `UnrealGDKBuild` `ci.steps.yaml` and `engine.py`. This is to ensure the created rc / tag branches in new CI build the correct repo versions.
 Finally, you will need to update these `steps.yaml` files for each repositiory before finalising the release, this should be the final tagged versions of these releases (e.g. `0.14.0`)
 
 ## Release
@@ -34,7 +34,7 @@ Finally, you will need to update these `steps.yaml` files for each repositiory b
 3. The "Build & upload all UnrealEngine release candidates" step will now commence.<br> While those builds run, take a look at the top of the build page, where you'll notice a new [annotation](https://buildkite.com/docs/agent/v3/cli-annotate): "your human labour is now required to complete the tasks listed in the PR descriptions and unblock the pipeline to resume the release."<br>Click through to the PRs using the links in the annotations and follow the steps. Come back when you're done.
 4. As soon as the "Build & upload all UnrealEngine release candidates" step has passed, select "Run all tests".
 5. Once all test have passed, all PRs are approved and all tasks listed in the PR descriptions are complete, select "Unblock the release". This will trigger "Release `ci/release.sh`".
-6. **IMPORTANT TEMP STEP** You must now update all the `rc` branches in all repositories. You must manually update the `yaml.steps` files to use the correct release tag for a given release (e.g. `0.14.0`). This is to get builds working post release. Additionally, you will need to update the default branches for building in `UnrealGDKBuild` `prepare_steps.py`. This is to ensure the created tag branches in new CI build the correct repo versions.
+6. **IMPORTANT TEMP STEP** You must now update all the `rc` branches in all repositories. You must manually update the `yaml.steps` files to use the correct release tag for a given release (e.g. `0.14.0`). This is to get builds working post release. Additionally, you will need to update the default branches for building in `UnrealGDKBuild` `ci.steps.yaml` and `engine.py`. This is to ensure the created tag branches in new CI build the correct repo versions.
 7. When "Release `ci/release.sh`" is complete, the unrealgdk-release pipeline will pass.<br>
 Take a look at the top of the build page, where you'll notice a new [annotation](https://buildkite.com/docs/agent/v3/cli-annotate):<br>
 "Release Successful!"<br>
