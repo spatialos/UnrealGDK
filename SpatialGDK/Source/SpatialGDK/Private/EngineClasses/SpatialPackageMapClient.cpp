@@ -196,7 +196,7 @@ void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealOb
 		}
 	}
 
-	SlowCheckMapsConsistency(Object, TEXT("ResolveSubobject"));
+	SlowCheckMapsConsistency(Object);
 }
 
 void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
@@ -402,11 +402,11 @@ Worker_EntityId USpatialPackageMapClient::AllocateNewEntityId() const
 	return EntityPool->GetNextEntityId();
 }
 
-void USpatialPackageMapClient::SlowCheckMapsConsistency(const UObject* Object, const FString& CallSite) const
+void USpatialPackageMapClient::SlowCheckMapsConsistency(const UObject* Object) const
 {
 #if DO_GUARD_SLOW
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	SpatialGuidCache->SlowCheckMapsConsistency(Object, CallSite);
+	SpatialGuidCache->SlowCheckMapsConsistency(Object);
 #endif
 }
 
@@ -446,14 +446,14 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 		StablyNamedRef = NetGUIDToUnrealObjectRef[NetGUID];
 		NetGUIDToUnrealObjectRef.Emplace(NetGUID, EntityObjectRef);
 
-		SlowCheckMapsConsistency(Actor, TEXT("AssignNewEntityActorNetGUID_StablyNamedActor"));
+		SlowCheckMapsConsistency(Actor);
 	}
 	else
 	{
 		NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
 		RegisterObjectRef(NetGUID, EntityObjectRef);
 
-		SlowCheckMapsConsistency(Actor, TEXT("AssignNewEntityActorNetGUID_NonStablyNamedActor"));
+		SlowCheckMapsConsistency(Actor);
 	}
 
 	UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"), *Actor->GetName(),
@@ -501,7 +501,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 			   TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"), *Subobject->GetName(),
 			   *Actor->GetName(), *SubobjectNetGUID.ToString(), *EntityIdSubobjectRef.ToString());
 
-		SlowCheckMapsConsistency(Subobject, TEXT("AssignNewEntityActorNetGUID_Subobject"));
+		SlowCheckMapsConsistency(Subobject);
 	}
 
 	return NetGUID;
@@ -512,7 +512,7 @@ void FSpatialNetGUIDCache::AssignNewSubobjectNetGUID(UObject* Subobject, const F
 	FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
 	RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
 
-	SlowCheckMapsConsistency(Subobject, TEXT("AssignNewSubobjectNetGUID"));
+	SlowCheckMapsConsistency(Subobject);
 }
 
 // Recursively assign netguids to the outer chain of a UObject. Then associate them with their Spatial representation (FUnrealObjectRef)
@@ -551,7 +551,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(UObject* Ob
 		(OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : FUnrealObjectRef(), bNoLoadOnClient);
 	RegisterObjectRef(NetGUID, StablyNamedObjRef);
 
-	SlowCheckMapsConsistency(Object, TEXT("AssignNewStablyNamedObjectNetGUID"));
+	SlowCheckMapsConsistency(Object);
 
 	return NetGUID;
 }
@@ -866,7 +866,7 @@ void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const FUnreal
 	UnrealObjectRefToNetGUID.Emplace(RemappedObjectRef, NetGUID);
 }
 
-void FSpatialNetGUIDCache::SlowCheckMapsConsistency(const UObject* Object, const FString& CheckCallsite) const
+void FSpatialNetGUIDCache::SlowCheckMapsConsistency(const UObject* Object) const
 {
 #if DO_GUARD_SLOW
 	const FNetworkGUID ObjectNetGUID = GetNetGUID(Object);
