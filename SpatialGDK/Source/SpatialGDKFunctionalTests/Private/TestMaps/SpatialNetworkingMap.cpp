@@ -51,7 +51,7 @@ void USpatialNetworkingMap::CreateCustomContentForMap()
 	AddActorToLevel<ADynamicActorSetToAwakeTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicActorDormantAllChangePropertyTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicActorAwakeChangePropertyTest>(CurrentLevel, FTransform::Identity);
-	//AddActorToLevel<ADynamicActorAwakeAfterDormantChangePropertyTest>(CurrentLevel, FTransform::Identity);
+	// AddActorToLevel<ADynamicActorAwakeAfterDormantChangePropertyTest>(CurrentLevel, FTransform::Identity);
 
 	// Add test helpers
 	// Unfortunately, the nature of some tests requires them to have actors placed in the level, to trigger some Unreal behavior
