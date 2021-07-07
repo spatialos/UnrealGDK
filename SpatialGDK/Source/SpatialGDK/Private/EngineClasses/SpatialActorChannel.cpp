@@ -1009,6 +1009,8 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 {
 	// If there is no NetGUID for this object, we will crash in FObjectReplicator::StartReplicating, so we verify this here.
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
+	NetDriver->PackageMap->SlowCheckMapsConsistency(TargetObject);
+
 	if (ObjectNetGUID.IsDefault() || !ObjectNetGUID.IsValid())
 	{
 		// SpatialReceiver tried to resolve this object in the PackageMap, but it didn't propagate to GuidCache.
