@@ -74,7 +74,7 @@ mono WorkerCoordinator.exe $@ 2> /improbable/logs/CoordinatorErrors.log";
         public const string StopSimulatedPlayerWorkerShellScript =
 @"#!/bin/bash
 PLAYER_ID=$1
-ps -ef | grep $PLAYER_ID | grep -v grep | grep -v .sh | awk '{print $2'} | xargs kill -9";
+ps -ef | grep $PLAYER_ID | grep -v grep | grep -v .sh | awk '{print $2}' | xargs kill -9";
 
         // Returns a version of UnrealWorkerShellScript with baseGameName templated into the right places.
         // baseGameName should be the base name of your Unreal game.
