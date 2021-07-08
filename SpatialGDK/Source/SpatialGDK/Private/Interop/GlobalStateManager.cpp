@@ -59,7 +59,6 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 #endif // WITH_EDITOR
 
 	bAcceptingPlayers = false;
-	bCanBeginPlay = false;
 	bCanSpawnWithAuthority = false;
 	bTranslationQueryInFlight = false;
 }
@@ -73,13 +72,6 @@ void UGlobalStateManager::ApplyDeploymentMapData(Schema_ComponentData* Data)
 	bAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
 
 	DeploymentSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
-}
-
-void UGlobalStateManager::ApplyStartupActorManagerData(Schema_ComponentData* Data)
-{
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
-
-	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 }
 
 #if WITH_EDITOR
@@ -181,18 +173,6 @@ void UGlobalStateManager::SendShutdownAdditionalServersEvent()
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &ComponentUpdate);
 }
 #endif // WITH_EDITOR
-
-void UGlobalStateManager::ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update)
-{
-	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
-
-	// The update can only happen after having read the initial GSM state.
-	// It is gated on the leader getting its VirtualWorkerId, gated in the Translation manager getting all the workers it need
-	// gated on all workers sending ReadyToBeginPlay, which happens in ApplyStartupActorManagerData.
-	// We are in the same situation as the leader when it is running AuthorityChanged on STARTUP_ACTOR_MANAGER_COMPONENT_ID.
-	// So we apply the same logic on setting bCanSpawnWithAuthority before reading the new value of bCanBeginPlay.
-	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
-}
 
 void UGlobalStateManager::SetDeploymentState()
 {
@@ -385,23 +365,16 @@ void UGlobalStateManager::TriggerBeginPlay()
 	SetAcceptingPlayers(true);
 }
 
-bool UGlobalStateManager::GetCanBeginPlay() const
-{
-	return bCanBeginPlay;
-}
-
 void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)
 {
 	check(ViewCoordinator->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID));
-
-	bCanBeginPlay = bInCanBeginPlay;
 
 	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate();
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bCanBeginPlay));
+	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bInCanBeginPlay));
 
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }

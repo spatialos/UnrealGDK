@@ -39,9 +39,6 @@ public:
 
 	void ApplyDeploymentMapData(Schema_ComponentData* Data);
 	void ApplySnapshotVersionData(Schema_ComponentData* Data);
-	void ApplyStartupActorManagerData(Schema_ComponentData* Data);
-
-	void ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update);
 
 	void SetDeploymentState();
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
@@ -58,7 +55,6 @@ public:
 	void BeginDestroy() override;
 
 	void TriggerBeginPlay();
-	bool GetCanBeginPlay() const;
 
 	void HandleActorBasedOnLoadBalancer(AActor* ActorIterator) const;
 
@@ -67,6 +63,7 @@ public:
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
+	// Startup Actor Manager Component
 	bool bCanSpawnWithAuthority;
 
 private:
@@ -74,9 +71,6 @@ private:
 	FString DeploymentMapURL;
 	bool bAcceptingPlayers;
 	int32 DeploymentSessionId = 0;
-
-	// Startup Actor Manager Component
-	bool bCanBeginPlay;
 
 public:
 #if WITH_EDITOR

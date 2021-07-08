@@ -62,9 +62,6 @@ void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId Comp
 {
 	switch (ComponentId)
 	{
-	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplyStartupActorManagerUpdate(Update);
-		break;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 #if WITH_EDITOR
 		GlobalStateManager->OnShutdownComponentUpdate(Update);
@@ -79,9 +76,6 @@ void WellKnownEntitySystem::ProcessComponentAdd(const Worker_ComponentId Compone
 {
 	switch (ComponentId)
 	{
-	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplyStartupActorManagerData(Data);
-		break;
 	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
 		MaybeClaimSnapshotPartition();
 		break;
