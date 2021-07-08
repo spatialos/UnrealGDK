@@ -5,7 +5,7 @@ namespace ReleaseTool
 {
     /// <summary>
     ///     Runs the steps required to cut release candidate branches in all repos:
-    ///     UnrealGDK, UnrealGDKExampleProject, UnrealEngine, UnrealGDKEngineNetTest, UnrealGDKTestGyms, TestGymBuildKite and UnrealGDKBuild.
+    ///     UnrealGDK, UnrealGDKExampleProject, UnrealEngine, UnrealGDKEngineNetTest, UnrealGDKTestGyms, TestGymBuildKite, and UnrealGDKBuild.
     ///
     ///     * Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
     ///     * IF the release branch does not already exits, creates it from the source branch.
