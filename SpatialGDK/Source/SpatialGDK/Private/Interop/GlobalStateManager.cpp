@@ -59,7 +59,6 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 #endif // WITH_EDITOR
 
 	bAcceptingPlayers = false;
-	bHasSentReadyForVirtualWorkerAssignment = false;
 	bCanBeginPlay = false;
 	bCanSpawnWithAuthority = false;
 	bTranslationQueryInFlight = false;

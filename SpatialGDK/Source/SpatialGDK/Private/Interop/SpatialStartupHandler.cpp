@@ -182,10 +182,10 @@ bool FSpatialStartupHandler::TryFinishStartup()
 			if (PartitionsToCreate.Num() == 0)
 			{
 				TMap<Worker_EntityId_Key, const ComponentData*> WorkerComponents;
-				Algo::Transform(WorkerEntityIds, WorkerComponents, [this](const Worker_EntityId WorkerEntityId) {
+				Algo::Transform(WorkerEntityIds, WorkerComponents, [this](const Worker_EntityId EntityId) {
 					return TPair<Worker_EntityId_Key, const ComponentData*>{
-						WorkerEntityId, GetCoordinator().GetView()[WorkerEntityId].Components.FindByPredicate(
-											ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID })
+						EntityId, GetCoordinator().GetView()[EntityId].Components.FindByPredicate(
+									  ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID })
 					};
 				});
 

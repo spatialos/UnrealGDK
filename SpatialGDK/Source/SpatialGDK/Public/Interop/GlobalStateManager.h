@@ -76,7 +76,6 @@ private:
 	int32 DeploymentSessionId = 0;
 
 	// Startup Actor Manager Component
-	bool bHasSentReadyForVirtualWorkerAssignment;
 	bool bCanBeginPlay;
 
 public:
