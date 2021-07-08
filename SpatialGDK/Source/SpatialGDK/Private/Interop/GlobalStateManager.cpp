@@ -74,8 +74,6 @@ void UGlobalStateManager::ApplyDeploymentMapData(Schema_ComponentData* Data)
 	bAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
 
 	DeploymentSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
-
-	SchemaHash = Schema_GetUint32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH);
 }
 
 void UGlobalStateManager::ApplyStartupActorManagerData(Schema_ComponentData* Data)
