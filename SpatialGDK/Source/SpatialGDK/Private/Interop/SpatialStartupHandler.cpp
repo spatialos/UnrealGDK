@@ -166,13 +166,22 @@ bool FSpatialStartupHandler::TryFinishStartup()
 							continue;
 						}
 
+						PhysicalWorkerName WorkerName = TEXT("DUMMY");
+
+						const ComponentData* ServerWorkerData = GetCoordinator().GetComponent(WorkerEntityIds[GeneratedVirtualWorkerId - 1],
+																							  SpatialConstants::SERVER_WORKER_COMPONENT_ID);
+						if (ensure(ServerWorkerData != nullptr))
+						{
+							WorkerName = GetStringFromSchema(ServerWorkerData->GetFields(), SpatialConstants::SERVER_WORKER_NAME_ID);
+						}
+
 						const Worker_EntityId PartitionEntityId = NetDriver->PackageMap->AllocateNewEntityId();
 						UE_LOG(LogSpatialStartupHandler, Log, TEXT("- Virtual Worker: %d. Entity: %lld. "), GeneratedVirtualWorkerId,
 							   PartitionEntityId);
 						SpawnPartitionEntity(PartitionEntityId, GeneratedVirtualWorkerId);
 						WorkersToPartitions.Emplace(GeneratedVirtualWorkerId,
 													SpatialVirtualWorkerTranslator::WorkerInformation{
-														TEXT("DUMMY"), WorkerEntityIds[GeneratedVirtualWorkerId - 1], PartitionEntityId });
+														WorkerName, WorkerEntityIds[GeneratedVirtualWorkerId - 1], PartitionEntityId });
 					}
 				}
 			}

@@ -69,12 +69,8 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 		const PhysicalWorkerName& WorkerName = Worker.Value.WorkerName;
 		const VirtualWorkerId Id = Worker.Key;
 		const Worker_PartitionId PartitionEntityId = Worker.Value.PartitionEntityId;
-		const Worker_EntityId WorkerEntityId = Worker.Value.ServerWorkerEntityId;
 
-		const Worker_EntityId CurrentWorkerEntityId =
-			Cast<USpatialNetDriver>(this->LoadBalanceStrategy->GetWorld()->GetNetDriver())->WorkerEntityId;
-
-		if (WorkerEntityId == CurrentWorkerEntityId)
+		if (WorkerName == LocalPhysicalWorkerName)
 		{
 			LocalVirtualWorkerId = Id;
 			LocalPartitionId = PartitionEntityId;
