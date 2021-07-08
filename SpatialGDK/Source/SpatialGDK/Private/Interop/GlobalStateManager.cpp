@@ -314,13 +314,6 @@ void UGlobalStateManager::ClaimSnapshotPartition()
 
 void UGlobalStateManager::TriggerBeginPlay()
 {
-	const bool bHasStartupActorAuthority =
-		ViewCoordinator->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
-	if (bHasStartupActorAuthority)
-	{
-		SendCanBeginPlayUpdate(true);
-	}
-
 #if !UE_BUILD_SHIPPING
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (NetDriver->IsServer())
@@ -353,16 +346,6 @@ void UGlobalStateManager::TriggerBeginPlay()
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
-
-	// Hmm - this seems necessary because unless we call this after NotifyBeginPlay has been triggered, it won't actually
-	// do anything, because internally it checks that BeginPlay has actually been called. I'm not sure why we called
-	// SetAcceptingPlayers above though unless it was only to catch the non-auth server instances. In which case the auth
-	// server is failing to call SetAcceptingPlayers again at some later point.
-	//
-	// I've now removed it from the other places it used to be called, because I believe they were both neither no longer
-	// valid. Above because the world tick won't have begun, and during the deployment man auth gained, for the same reason.
-	// Leaving this comment block in for review reasons but will remove before merging.
-	SetAcceptingPlayers(true);
 }
 
 void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)

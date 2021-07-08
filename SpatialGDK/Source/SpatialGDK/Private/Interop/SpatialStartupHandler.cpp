@@ -298,6 +298,22 @@ bool FSpatialStartupHandler::TryFinishStartup()
 
 		if (bAreAllWorkerEntitiesReady)
 		{
+			GetGSM().SendCanBeginPlayUpdate(true);
+
+			NetDriver->CreateAndInitializeCoreClassesAfterStartup();
+
+			GetGSM().TriggerBeginPlay();
+
+			// Hmm - this seems necessary because unless we call this after NotifyBeginPlay has been triggered, it won't actually
+			// do anything, because internally it checks that BeginPlay has actually been called. I'm not sure why we called
+			// SetAcceptingPlayers above though unless it was only to catch the non-auth server instances. In which case the auth
+			// server is failing to call SetAcceptingPlayers again at some later point.
+			//
+			// I've now removed it from the other places it used to be called, because I believe they were both neither no longer
+			// valid. Above because the world tick won't have begun, and during the deployment man auth gained, for the same reason.
+			// Leaving this comment block in for review reasons but will remove before merging.
+			GetGSM().SetAcceptingPlayers(true);
+
 			Stage = EStage::Finished;
 		}
 	}
@@ -310,6 +326,10 @@ bool FSpatialStartupHandler::TryFinishStartup()
 		if (ensure(StartupActorManagerData != nullptr)
 			&& Schema_GetBool(StartupActorManagerData->GetFields(), SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID))
 		{
+			NetDriver->CreateAndInitializeCoreClassesAfterStartup();
+
+			GetGSM().TriggerBeginPlay();
+
 			Stage = EStage::Finished;
 		}
 	}

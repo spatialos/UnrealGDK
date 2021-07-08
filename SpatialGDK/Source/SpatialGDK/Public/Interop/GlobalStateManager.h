@@ -38,7 +38,6 @@ public:
 	void Init(USpatialNetDriver* InNetDriver);
 
 	void ApplyDeploymentMapData(Schema_ComponentData* Data);
-	void ApplySnapshotVersionData(Schema_ComponentData* Data);
 
 	void SetDeploymentState();
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
@@ -87,8 +86,10 @@ private:
 	void SetDeploymentMapURL(const FString& MapURL);
 	void SendSessionIdUpdate();
 
+public:
 	void SendCanBeginPlayUpdate(const bool bInCanBeginPlay);
 
+private:
 #if WITH_EDITOR
 	void SendShutdownMultiProcessRequest();
 	void SendShutdownAdditionalServersEvent();

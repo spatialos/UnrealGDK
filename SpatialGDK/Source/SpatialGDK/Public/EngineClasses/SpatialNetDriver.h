@@ -328,8 +328,11 @@ private:
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
+
+public:
 	void CreateAndInitializeCoreClassesAfterStartup();
 
+private:
 	void CreateAndInitializeLoadBalancingClasses();
 
 	void CreateServerSpatialOSNetConnection();
