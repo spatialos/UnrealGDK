@@ -34,10 +34,6 @@ void WellKnownEntitySystem::Advance()
 			{
 				ProcessComponentUpdate(Change.ComponentId, Change.Update);
 			}
-			for (const ComponentChange& Change : Delta.ComponentsAdded)
-			{
-				ProcessComponentAdd(Change.ComponentId, Change.Data);
-			}
 			for (const AuthorityChange& Change : Delta.AuthorityGained)
 			{
 				ProcessAuthorityGain(Delta.EntityId, Change.ComponentSetId);
@@ -72,18 +68,6 @@ void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId Comp
 	}
 }
 
-void WellKnownEntitySystem::ProcessComponentAdd(const Worker_ComponentId ComponentId, Schema_ComponentData* Data)
-{
-	switch (ComponentId)
-	{
-	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
-		MaybeClaimSnapshotPartition();
-		break;
-	default:
-		break;
-	}
-}
-
 void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
 	if (SubView->GetView()[EntityId].Components.ContainsByPredicate(
@@ -96,10 +80,6 @@ void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId,
 void WellKnownEntitySystem::ProcessEntityAdd(const Worker_EntityId EntityId)
 {
 	const EntityViewElement& Element = SubView->GetView()[EntityId];
-	for (const ComponentData& ComponentData : Element.Components)
-	{
-		ProcessComponentAdd(ComponentData.GetComponentId(), ComponentData.GetUnderlying());
-	}
 	for (const Worker_ComponentSetId ComponentId : Element.Authority)
 	{
 		ProcessAuthorityGain(EntityId, ComponentId);
@@ -112,52 +92,6 @@ void WellKnownEntitySystem::InitializeVirtualWorkerTranslationManager()
 {
 	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Connection, NetDriver, VirtualWorkerTranslator);
 	VirtualWorkerTranslationManager->SetNumberOfVirtualWorkers(NumberOfWorkers);
-}
-
-void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
-{
-	// Perform a naive leader election where we wait for the correct number of server workers to be present in the deployment, and then
-	// whichever server has the lowest server worker entity ID becomes the leader and claims the snapshot partition.
-	const Worker_EntityId LocalServerWorkerEntityId = GlobalStateManager->GetLocalServerWorkerEntityId();
-
-	if (LocalServerWorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		UE_LOG(LogWellKnownEntitySystem, Warning, TEXT("MaybeClaimSnapshotPartition aborted due to lack of local server worker entity"));
-		return;
-	}
-
-	Worker_EntityId LowestEntityId = LocalServerWorkerEntityId;
-
-	int ServerCount = 0;
-	for (const auto& Iter : SubView->GetView())
-	{
-		const Worker_EntityId EntityId = Iter.Key;
-		const SpatialGDK::EntityViewElement& Element = Iter.Value;
-		if (Element.Components.ContainsByPredicate([](const SpatialGDK::ComponentData& CompData) {
-				return CompData.GetComponentId() == SpatialConstants::SERVER_WORKER_COMPONENT_ID;
-			}))
-		{
-			ServerCount++;
-
-			if (EntityId < LowestEntityId)
-			{
-				LowestEntityId = EntityId;
-			}
-		}
-	}
-
-	if (LocalServerWorkerEntityId == LowestEntityId && ServerCount >= NumberOfWorkers)
-	{
-		UE_LOG(LogWellKnownEntitySystem, Log, TEXT("MaybeClaimSnapshotPartition claiming snapshot partition"));
-		GlobalStateManager->ClaimSnapshotPartition();
-	}
-
-	if (ServerCount > NumberOfWorkers)
-	{
-		UE_LOG(LogWellKnownEntitySystem, Warning,
-			   TEXT("MaybeClaimSnapshotPartition found too many server worker entities, expected %d got %d."), NumberOfWorkers,
-			   ServerCount);
-	}
 }
 
 } // Namespace SpatialGDK
