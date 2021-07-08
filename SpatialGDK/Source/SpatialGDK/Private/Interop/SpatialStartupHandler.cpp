@@ -1,7 +1,9 @@
 ﻿#include "SpatialStartupHandler.h"
 
+#include "Algo/AllOf.h"
 #include "Algo/Copy.h"
 #include "Algo/MinElement.h"
+#include "Algo/Transform.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
