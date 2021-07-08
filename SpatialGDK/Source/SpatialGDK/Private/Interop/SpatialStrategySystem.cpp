@@ -119,7 +119,6 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 		ModifiedEntities = ModifiedEntities.Union(Storage->GetModifiedEntities());
 	}
 
-	// Test code to only consider updates to the set leader
 	for (auto Iterator = ModifiedEntities.CreateIterator(); Iterator; ++Iterator)
 	{
 		if (ActorSetSystem.GetSetLeader(*Iterator) != SpatialConstants::INVALID_ENTITY_ID)
