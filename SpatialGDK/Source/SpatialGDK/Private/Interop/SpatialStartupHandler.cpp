@@ -68,7 +68,30 @@ bool FSpatialStartupHandler::TryFinishStartup()
 		const EntityViewElement* GlobalStateManagerEntity = GetCoordinator().GetView().Find(GetGSM().GlobalStateManagerEntityId);
 		if (GlobalStateManagerEntity != nullptr)
 		{
-			Stage = EStage::TryClaimingGSMEntityAuthority;
+			Stage = EStage::DeriveDeploymentRecoveryState;
+		}
+	}
+
+	if (Stage == EStage::DeriveDeploymentRecoveryState)
+	{
+		const EntityViewElement& GlobalStateManagerEntity = GetCoordinator().GetView().FindChecked(GetGSM().GlobalStateManagerEntityId);
+		const ComponentData* StartupActorManagerData = GlobalStateManagerEntity.Components.FindByPredicate(
+			ComponentIdEquality{ SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID });
+		if (StartupActorManagerData != nullptr)
+		{
+			if (Schema_GetBoolCount(StartupActorManagerData->GetFields(), SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID) != 0)
+			{
+				// StartupActorManager's CAN_BEGIN_PLAY is raised after startup is finished, and is false in the initial snapshot.
+				// If it's true at this point, then this worker is either recovering or loading from a non-initial snapshot.
+				bIsRecoveringOrSnapshot =
+					GetBoolFromSchema(StartupActorManagerData->GetFields(), SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
+
+				// We should only call BeginPlay on actors if this is a fresh deployment; otherwise, we assume that
+				// BeginPlay has already been called on them before.
+				NetDriver->GlobalStateManager->bCanSpawnWithAuthority = !bIsRecoveringOrSnapshot;
+
+				Stage = EStage::TryClaimingGSMEntityAuthority;
+			}
 		}
 	}
 

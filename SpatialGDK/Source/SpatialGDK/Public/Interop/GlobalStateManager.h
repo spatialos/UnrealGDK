@@ -69,6 +69,8 @@ public:
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
+	bool bCanSpawnWithAuthority;
+
 private:
 	// Deployment Map Component
 	FString DeploymentMapURL;
@@ -78,7 +80,6 @@ private:
 	// Startup Actor Manager Component
 	bool bHasSentReadyForVirtualWorkerAssignment;
 	bool bCanBeginPlay;
-	bool bCanSpawnWithAuthority;
 
 public:
 #if WITH_EDITOR

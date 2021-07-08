@@ -31,6 +31,8 @@ private:
 
 	bool bHasGSMAuth = false;
 
+	bool bIsRecoveringOrSnapshot = false;
+
 	bool bHasCalledPartitionEntityCreate = false;
 	CreateEntityHandler EntityHandler;
 	TArray<Worker_PartitionId> WorkerPartitions;
@@ -53,6 +55,7 @@ private:
 		CreateWorkerEntity,
 		WaitForWorkerEntities,
 		WaitForGSMEntity,
+		DeriveDeploymentRecoveryState,
 		TryClaimingGSMEntityAuthority,
 		WaitForGSMEntityAuthority,
 		GetVirtualWorkerTranslationState,
