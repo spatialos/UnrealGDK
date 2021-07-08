@@ -153,7 +153,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 		if (GameInstance != nullptr)
 		{
-			if (GameInstance->GetSpatialWorkerType() == SpatialConstants::RoutingWorkerType)
+			if (GameInstance->GetSpatialWorkerType() == SpatialConstants::RoutingWorkerType
+				|| GameInstance->GetSpatialWorkerType() == SpatialConstants::StrategyWorkerType)
 			{
 				NetServerMaxTickRate = 120;
 			}
@@ -2119,7 +2120,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 					{
 						TFunction<void(AActor*)> ForceReplicateChildren;
 						ForceReplicateChildren = [&](AActor* HierarchyActor) {
-							if (HierarchyActor != Actor)
+							if (HierarchyActor != Actor && HierarchyActor->GetIsReplicated())
 							{
 								if (FNetworkObjectInfo const* ActorInfo = FindNetworkObjectInfo(HierarchyActor))
 								{
