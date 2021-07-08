@@ -128,7 +128,7 @@ Worker_EntityId USpatialNetConnection::GetPlayerControllerEntityId() const
 
 void USpatialNetConnection::BeginDestroy()
 {
-	UE_LOG(LogSpatialNetConnection, Log, TEXT("SpatialNetConnection begin destory: Name=%s"), *GetName());
+	UE_LOG(LogSpatialNetConnection, Log, TEXT("SpatialNetConnection begin destroy: Name=%s"), *GetName());
 
 	Super::BeginDestroy();
 }

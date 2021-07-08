@@ -691,6 +691,8 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 			{
 				SpatialConnection->CleanUp();
 			}
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("TrackNetConnectionGC CleanUpServerConnectionForPC PC=%s, Conn=%s"), *PC->GetFName().ToString(),
+				   *SpatialConnection->GetFName().ToString());
 			return;
 		}
 	}
