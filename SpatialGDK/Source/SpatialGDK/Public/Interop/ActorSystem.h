@@ -38,22 +38,10 @@ struct ActorData
 
 struct FObjectRepNotifies
 {
-	TWeakObjectPtr<UObject> Object;
 	TArray<GDK_PROPERTY(Property)*> RepNotifies;
 	TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
-
-	FObjectRepNotifies() = default;
-	FObjectRepNotifies(FObjectRepNotifies&& Other) noexcept { *this = MoveTemp(Other); }
-
-	FObjectRepNotifies& operator=(FObjectRepNotifies&& Other) noexcept
-	{
-		Object = Other.Object;
-		RepNotifies = MoveTemp(Other.RepNotifies);
-		PropertySpanIds = MoveTemp(Other.PropertySpanIds);
-		return *this;
-	}
 };
-using FObjectToRepNotifies = TMap<TWeakObjectPtr<UObject>, FObjectRepNotifies>;
+using FObjectToRepNotifies = TMap<FWeakObjectPtr, FObjectRepNotifies>;
 
 class ActorSystem
 {
@@ -141,9 +129,9 @@ private:
 	void RefreshEntity(const Worker_EntityId EntityId);
 	void ApplyFullState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor);
 
-	// Invokes RepNotifies queued inside RepNotifiesToSend
+	// Invokes RepNotifies queued inside ActorRepNotifiesToSend/SubobjectRepNotifiesToSend
 	void InvokeRepNotifies();
-	void TryInvokeRepNotifiesForObject(FObjectRepNotifies& ObjectRepNotifies) const;
+	void TryInvokeRepNotifiesForObject(FWeakObjectPtr& Object, FObjectRepNotifies& ObjectRepNotifies) const;
 	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
 													TArray<GDK_PROPERTY(Property) *>& RepNotifies);
 
@@ -216,7 +204,8 @@ private:
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
 
 	// RepNotifies are stored here then sent after all updates we have are applied
-	FObjectToRepNotifies RepNotifiesToSend;
+	FObjectToRepNotifies ActorRepNotifiesToSend;
+	FObjectToRepNotifies SubobjectRepNotifiesToSend;
 
 	// Deserialized state store for Actor relevant components.
 	TMap<Worker_EntityId_Key, ActorData> ActorDataStore;
