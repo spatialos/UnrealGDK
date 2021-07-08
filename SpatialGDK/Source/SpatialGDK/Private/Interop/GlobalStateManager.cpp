@@ -192,7 +192,6 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(Schema_ComponentUpdate*
 	// gated on all workers sending ReadyToBeginPlay, which happens in ApplyStartupActorManagerData.
 	// We are in the same situation as the leader when it is running AuthorityChanged on STARTUP_ACTOR_MANAGER_COMPONENT_ID.
 	// So we apply the same logic on setting bCanSpawnWithAuthority before reading the new value of bCanBeginPlay.
-	bCanSpawnWithAuthority = !bCanBeginPlay;
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 }
 
@@ -250,33 +249,6 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	// Component updates are short circuited so we set the updated state here and then send the component update.
 	bAcceptingPlayers = bInAcceptingPlayers;
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
-}
-
-void UGlobalStateManager::AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthOp)
-{
-	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."),
-		   AuthOp.component_set_id, AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT("does not have"));
-
-	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
-	{
-		return;
-	}
-
-	if (ViewCoordinator->HasComponent(AuthOp.entity_id, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
-	{
-		// The bCanSpawnWithAuthority member determines whether a server-side worker
-		// should consider calling BeginPlay on startup Actors if the load-balancing
-		// strategy dictates that the worker should have authority over the Actor
-		// (providing Unreal load balancing is enabled). This should only happen for
-		// workers launching for fresh deployments, since for restarted workers and
-		// when deployments are launched from a snapshot, the entities representing
-		// startup Actors should already exist. If bCanBeginPlay is set to false, this
-		// means it's a fresh deployment, so bCanSpawnWithAuthority should be true.
-		// Conversely, if bCanBeginPlay is set to true, this worker is either a restarted
-		// crashed worker or in a deployment loaded from snapshot, so bCanSpawnWithAuthority
-		// should be false.
-		bCanSpawnWithAuthority = !bCanBeginPlay;
-	}
 }
 
 void UGlobalStateManager::ResetGSM()

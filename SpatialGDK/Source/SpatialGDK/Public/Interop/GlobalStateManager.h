@@ -53,8 +53,6 @@ public:
 	FORCEINLINE bool GetAcceptingPlayers() const { return bAcceptingPlayers; }
 	FORCEINLINE int32 GetSessionId() const { return DeploymentSessionId; }
 
-	void AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthChangeOp);
-
 	void ResetGSM();
 
 	void BeginDestroy() override;

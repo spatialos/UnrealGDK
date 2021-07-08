@@ -92,8 +92,6 @@ void WellKnownEntitySystem::ProcessComponentAdd(const Worker_ComponentId Compone
 
 void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
-	GlobalStateManager->AuthorityChanged({ EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });
-
 	if (SubView->GetView()[EntityId].Components.ContainsByPredicate(
 			SpatialGDK::ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID }))
 	{
