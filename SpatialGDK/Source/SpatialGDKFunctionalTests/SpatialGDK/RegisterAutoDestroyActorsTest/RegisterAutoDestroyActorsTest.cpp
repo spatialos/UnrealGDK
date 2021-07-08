@@ -18,7 +18,7 @@ void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 	{ // Step 1 - Spawn Actor On Auth
 		AddStep(TEXT("SERVER_1_Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			UWorld* World = GetWorld();
-			int NumVirtualWorkers = GetNumExpectedServers();
+			int NumVirtualWorkers = GetNumberOfServerWorkers();
 
 			// spawn 1 per server worker
 			// since the information about positioning of the virtual workers is currently hidden, will assume they are all around zero
@@ -43,7 +43,7 @@ void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 			TEXT("CLIENT_ALL_CheckActorsSpawned"), FWorkerDefinition::AllClients, nullptr, nullptr,
 			[this](float DeltaTime) {
 				int NumCharactersFound = 0;
-				int NumCharactersExpected = GetNumExpectedServers();
+				int NumCharactersExpected = GetNumberOfServerWorkers();
 				UWorld* World = GetWorld();
 				for (TActorIterator<ACharacter> It(World); It; ++It)
 				{
@@ -59,34 +59,31 @@ void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 
 	{ // Step 3 - Destroy by all servers that have authority
 		AddStep(
-			TEXT("SERVER_ALL_RegisterAutoDestroyActors"), FWorkerDefinition::AllServers,
-			[this]() -> bool {
+			TEXT("SERVER_ALL_RegisterAutoDestroyActors"), FWorkerDefinition::AllServers, nullptr, nullptr,
+			[this](float DeltaTime) {
 				int NumCharactersFound = 0;
-				int NumCharactersExpected = 1;
-				UWorld* World = GetWorld();
-				for (TActorIterator<ACharacter> It(World, ACharacter::StaticClass()); It; ++It)
-				{
-					if (It->HasAuthority())
-					{
-						++NumCharactersFound;
-					}
-				}
-
-				return NumCharactersFound == NumCharactersExpected;
-			},
-			[this]() {
+				int NumCharactersExpected = 1; // 1, because we filter by authority
+				ACharacter* FoundAuthoritativeCharacter = nullptr;
 				UWorld* World = GetWorld();
 				for (TActorIterator<ACharacter> It(World); It; ++It)
 				{
 					if (It->HasAuthority())
 					{
-						AssertTrue(IsValid(*It), FString::Printf(TEXT("Registering ACharacter for destruction: %s"), *GetNameSafe(*It)));
-						RegisterAutoDestroyActor(*It);
+						++NumCharactersFound;
+						FoundAuthoritativeCharacter = *It;
 					}
 				}
+				if (RequireEqual_Int(NumCharactersFound, NumCharactersExpected,
+									 TEXT("Servers should observe the correct number of characters in their world.")))
+				{
+					AssertTrue(IsValid(FoundAuthoritativeCharacter), FString::Printf(TEXT("Registering ACharacter for destruction: %s"),
+																					 *GetNameSafe(FoundAuthoritativeCharacter)));
+					RegisterAutoDestroyActor(FoundAuthoritativeCharacter);
+				}
+
 				FinishStep();
 			},
-			nullptr, 5.0f);
+			5.0f);
 	}
 }
 
