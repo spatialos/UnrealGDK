@@ -66,8 +66,6 @@ void UGlobalStateManager::ApplyDeploymentMapData(Schema_ComponentData* Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
-	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID));
-
 	DeploymentSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
 }
 
@@ -354,12 +352,6 @@ void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)
 	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bInCanBeginPlay));
 
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
-}
-
-void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
-{
-	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
-	DeploymentMapURL = MapURL;
 }
 
 void UGlobalStateManager::IncrementSessionID()
