@@ -58,7 +58,6 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 	}
 #endif // WITH_EDITOR
 
-	bAcceptingPlayers = false;
 	bCanSpawnWithAuthority = false;
 	bTranslationQueryInFlight = false;
 }
@@ -68,8 +67,6 @@ void UGlobalStateManager::ApplyDeploymentMapData(Schema_ComponentData* Data)
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID));
-
-	bAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
 
 	DeploymentSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
 }
@@ -205,12 +202,10 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	// We should only be able to change whether we're accepting players if:
 	// - we're authoritative over the DeploymentMap which has the acceptingPlayers property,
 	// - we've called BeginPlay (so startup Actors can do initialization before any spawn requests are received),
-	// - we aren't duplicating the current state.
 	const bool bHasDeploymentMapAuthority =
 		ViewCoordinator->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
 	const bool bHasBegunPlay = NetDriver->GetWorld()->HasBegunPlay();
-	const bool bIsDuplicatingCurrentState = bAcceptingPlayers == bInAcceptingPlayers;
-	if (!bHasDeploymentMapAuthority || !bHasBegunPlay || bIsDuplicatingCurrentState)
+	if (!ensure(bHasDeploymentMapAuthority) || !ensure(bHasBegunPlay))
 	{
 		return;
 	}
@@ -226,7 +221,6 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	Schema_AddBool(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID, static_cast<uint8_t>(bInAcceptingPlayers));
 
 	// Component updates are short circuited so we set the updated state here and then send the component update.
-	bAcceptingPlayers = bInAcceptingPlayers;
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 

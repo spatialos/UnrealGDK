@@ -746,11 +746,6 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 		   TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
 }
 
-bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests() const
-{
-	return GlobalStateManager->GetAcceptingPlayers() && SessionId == GlobalStateManager->GetSessionId();
-}
-
 void USpatialNetDriver::OnActorSpawned(AActor* Actor) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();

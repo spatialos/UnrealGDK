@@ -46,7 +46,6 @@ public:
 	void Advance();
 
 	FORCEINLINE FString GetDeploymentMapURL() const { return DeploymentMapURL; }
-	FORCEINLINE bool GetAcceptingPlayers() const { return bAcceptingPlayers; }
 	FORCEINLINE int32 GetSessionId() const { return DeploymentSessionId; }
 
 	void ResetGSM();
@@ -68,7 +67,6 @@ public:
 private:
 	// Deployment Map Component
 	FString DeploymentMapURL;
-	bool bAcceptingPlayers;
 	int32 DeploymentSessionId = 0;
 
 public:
