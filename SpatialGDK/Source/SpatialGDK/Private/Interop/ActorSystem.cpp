@@ -948,16 +948,8 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 		ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 		bool bOutReferencesChanged = false;
 
-		FObjectRepNotifies* ObjectRepNotifiesOut;
-		if (Cast<AActor>(&TargetObject))
-		{
-			ObjectRepNotifiesOut = &ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&TargetObject));
-		}
-		else
-		{
-			ObjectRepNotifiesOut = &SubobjectRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&TargetObject));
-		}
-		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, *ObjectRepNotifiesOut, bOutReferencesChanged);
+		FObjectRepNotifies& ObjectRepNotifiesOut = TargetObject.IsA<AActor>() ? ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&TargetObject)) : SubobjectRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&TargetObject));
+		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
 
 		RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 	}
@@ -1071,17 +1063,9 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 			DependentChannel->ResetShadowData(RepLayout, ShadowData, ReplicatingObject);
 		}
 
-		FObjectRepNotifies* ObjectRepNotifiesOut;
-		if (Cast<AActor>(ReplicatingObject))
-		{
-			ObjectRepNotifiesOut = &ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(ReplicatingObject));
-		}
-		else
-		{
-			ObjectRepNotifiesOut = &SubobjectRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(ReplicatingObject));
-		}
+		FObjectRepNotifies& ObjectRepNotifiesOut = ReplicatingObject->IsA<AActor>() ? ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(ReplicatingObject)) : SubobjectRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(ReplicatingObject));
 		ResolveObjectReferences(RepLayout, ReplicatingObject, *RepState, RepState->ReferenceMap, ShadowData.GetData(),
-								(uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(), *ObjectRepNotifiesOut,
+								(uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(), ObjectRepNotifiesOut,
 								bSomeObjectsWereMapped);
 
 		if (bSomeObjectsWereMapped)
@@ -1252,16 +1236,8 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 	bool bOutReferencesChanged = false;
-	FObjectRepNotifies* ObjectRepNotifiesOut;
-	if (Cast<AActor>(&TargetObject))
-	{
-		ObjectRepNotifiesOut = &ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&TargetObject));
-	}
-	else
-	{
-		ObjectRepNotifiesOut = &SubobjectRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&TargetObject));
-	}
-	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, *ObjectRepNotifiesOut, bOutReferencesChanged);
+	FObjectRepNotifies& ObjectRepNotifiesOut = TargetObject.IsA<AActor>() ? ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&TargetObject)) : SubobjectRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&TargetObject));
+	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
 	RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 
 	// This is a temporary workaround, see UNR-841:
@@ -1708,6 +1684,10 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 
 void ActorSystem::InvokeRepNotifies()
 {
+	// We have two lists of ObjectRepNotifies, one for Actors and one for Subobjects
+	// The reason for this is native always calls Rep Notifies on an actor and then on its subobjects
+	// However, we call Rep Notifies after data on all actors and subobjects has been applied
+	// So, to match native functionality, we simply need to call all Subobject Rep Notifies after all Actor Rep Notifies
 	for (auto& RepNotifiesPair : ActorRepNotifiesToSend)
 	{
 		TryInvokeRepNotifiesForObject(RepNotifiesPair.Key, RepNotifiesPair.Value);
