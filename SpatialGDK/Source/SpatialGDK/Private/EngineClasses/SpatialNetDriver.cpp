@@ -2635,7 +2635,7 @@ void USpatialNetDriver::PollPendingLoads()
 		UObject* ResolvedObject = FUnrealObjectRef::ToObjectPtr(ObjectReference, PackageMap, bOutUnresolved);
 		if (ResolvedObject)
 		{
-			ActorSystem->ResolvePendingOperations(ResolvedObject, ObjectReference);
+			ActorSystem->ResolveAsyncPendingLoad(ResolvedObject, ObjectReference);
 		}
 		else
 		{

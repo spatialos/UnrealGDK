@@ -19,8 +19,6 @@
 #include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
 #include "Runtime/Launch/Resources/Version.h"
-#include "Serialization/JsonReader.h"
-#include "Serialization/JsonSerializer.h"
 #include "Templates/SharedPointer.h"
 #include "UObject/UObjectIterator.h"
 
@@ -40,6 +38,7 @@
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SchemaBundleParser.h"
 #include "Utils/SchemaDatabase.h"
 
 #if ENGINE_MINOR_VERSION >= 26
@@ -47,35 +46,6 @@
 #else
 #define GDK_CREATE_PACKAGE(PackagePath) CreatePackage(nullptr, (PackagePath));
 #endif
-
-// clang-format off
-#define SAFE_TRYGET(Value, Type, OutParam)                                                                                                 \
-	do                                                                                                                                     \
-	{                                                                                                                                      \
-		if (!Value->TryGet##Type(OutParam))                                                                                                \
-		{                                                                                                                                  \
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to get %s as type %s"), TEXT(#Value), TEXT(#Type));                   \
-			return false;                                                                                                                  \
-		}                                                                                                                                  \
-	} while (false)
-
-#define SAFE_TRYGETFIELD(Value, Type, FieldName, OutParam)                                                                                 \
-	do                                                                                                                                     \
-	{                                                                                                                                      \
-		if (!Value->TryGet##Type##Field(TEXT(FieldName), OutParam))                                                                        \
-		{                                                                                                                                  \
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to get field %s of type %s from %s"), TEXT(FieldName), TEXT(#Type), TEXT(#Value)); \
-			return false;                                                                                                                  \
-		}                                                                                                                                  \
-	} while (false)
-
-#define COND_SCHEMA_GEN_ERROR_AND_RETURN(Condition, Format, ...)                                                                                           \
-	if (UNLIKELY(Condition))                                                                                                               \
-	{                                                                                                                                      \
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, Format, ##__VA_ARGS__);                                                                \
-		return false;                                                                                                                      \
-	}
-// clang-format on
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKSchemaGenerator"
@@ -1423,201 +1393,138 @@ bool RunSchemaCompiler(FString& SchemaBundleJsonOutput, FString SchemaInputDir, 
 	}
 }
 
+bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPath)
+{
+	if (SchemaOutputPath.IsEmpty())
+	{
+		SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
+	}
+
+	FString IntermediateDir = GenerateIntermediateDirectory();
+	const FString PartitionDataFolderName(TEXT("PartitionMetadata"));
+
+	if (SchemaInputPath.IsEmpty())
+	{
+		FString ContentDir = FPaths::ProjectContentDir();
+		SchemaInputPath = FPaths::Combine(ContentDir, TEXT("Spatial"), PartitionDataFolderName);
+	}
+
+	IPlatformFile& Filesystem = IPlatformFile::GetPlatformPhysical();
+
+	FString DestinationSchemaDir = FPaths::Combine(SchemaOutputPath, PartitionDataFolderName);
+	if (FPaths::DirectoryExists(DestinationSchemaDir))
+	{
+		if (!Filesystem.DeleteDirectoryRecursively(*DestinationSchemaDir))
+		{
+			// clang-format off
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not delete pre-existing partition metadata schema directory '%s'! Please make sure the directory is writeable."), *DestinationSchemaDir);
+			// clang-format on
+			return false;
+		}
+	}
+
+	TSet<FString> SchemaFiles;
+	TArray<SpatialGDK::SchemaComponentIdentifiers> Components;
+
+	if (Filesystem.DirectoryExists(*SchemaInputPath))
+	{
+		const FString SchemaExtension("schema");
+
+		Filesystem.IterateDirectory(*SchemaInputPath, [&SchemaFiles, &SchemaExtension](const TCHAR* Entry, bool bIsDirectory) {
+			FString EntryStr(Entry);
+			if (!bIsDirectory && FPaths::GetExtension(EntryStr) == SchemaExtension)
+			{
+				SchemaFiles.Add(MoveTemp(EntryStr));
+			}
+
+			return true;
+		});
+
+		FString SchemaJsonPath;
+		if (!RunSchemaCompiler(SchemaJsonPath, SchemaInputPath))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to parse partition meta data schema files"));
+			return false;
+		}
+
+		TSet<FString> SchemaFileNames;
+		for (const FString& FilePath : SchemaFiles)
+		{
+			SchemaFileNames.Add(FPaths::GetCleanFilename(FilePath));
+		}
+
+		SpatialGDK::ExtractComponentsFromSchemaJson(SchemaJsonPath, Components, SchemaFileNames);
+
+		// schema_compiler cannot create folders, so we need to set them up beforehand.
+		if (!Filesystem.CreateDirectoryTree(*DestinationSchemaDir))
+		{
+			// clang-format off
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create partition metadata schema directory '%s'! Please make sure the parent directory is writeable."), *DestinationSchemaDir);
+			// clang-format on
+			return false;
+		}
+
+		for (const auto& File : SchemaFiles)
+		{
+			FString DestinationFile = FPaths::Combine(DestinationSchemaDir, FPaths::GetCleanFilename(File));
+			Filesystem.CopyFile(*DestinationFile, *File);
+		}
+	}
+
+	FCodeWriter Writer;
+	Writer.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.generated;)""");
+	Writer.PrintNewLine();
+
+	// Write all import statements.
+	Writer.Printf("import \"{0}\";", TEXT("improbable/standard_library.schema"));
+	for (const auto& File : SchemaFiles)
+	{
+		FString ImportPath = FPaths::Combine(TEXT("unreal"), TEXT("generated"), PartitionDataFolderName, FPaths::GetCleanFilename(File));
+		Writer.Printf("import \"{0}\";", *ImportPath);
+	}
+
+	Writer.PrintNewLine();
+	Writer.Printf("component_set {0} {", TEXT("PartitionMetadataAuth")).Indent();
+	Writer.Printf("id = {0};", SpatialConstants::PARTITION_METADATA_AUTH_COMPONENT_SET_ID);
+	Writer.Printf("components = [").Indent();
+
+	// Write all import components.
+	Writer.Printf("improbable.Position,");
+	Writer.Printf("improbable.Interest,");
+	Writer.Printf("improbable.AuthorityDelegation,");
+	for (const auto& MetadataComponentId : Components)
+	{
+		Writer.Printf("{0},", MetadataComponentId.Name);
+	}
+
+	Writer.RemoveTrailingComma();
+
+	Writer.Outdent().Print("];");
+	Writer.Outdent().Print("}");
+
+	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("ComponentSets/PartitionAuthoritativeComponentSet.schema")));
+
+	return true;
+}
+
 bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,
 									  TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex, TArray<FFieldIDs>& OutFieldIdsArray)
 {
-	TUniquePtr<FArchive> SchemaFile(IFileManager::Get().CreateFileReader(*SchemaJsonPath));
-	if (!SchemaFile)
-	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not open schema bundle file %s"), *SchemaJsonPath);
-		return false;
-	}
-
-	TSharedPtr<FJsonValue> SchemaBundleJson;
-	{
-		TSharedRef<TJsonReader<char>> JsonReader = TJsonReader<char>::Create(SchemaFile.Get());
-		FJsonSerializer::Deserialize(*JsonReader, SchemaBundleJson);
-	}
-
-	const TSharedPtr<FJsonObject>* RootObject;
-	if (!SchemaBundleJson || !SchemaBundleJson->TryGetObject(RootObject))
-	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("%s is not a valid Json file"), *SchemaJsonPath);
-		return false;
-	}
-
-	const TArray<TSharedPtr<FJsonValue>>* SchemaFiles;
-	SAFE_TRYGETFIELD((*RootObject), Array, "schemaFiles", SchemaFiles);
-
-	TMap<FString, uint32> ComponentMap;
-	TMap<uint32, TSet<FString>> ComponentRefSetMap;
-
-	TMap<FString, uint32> DataDefinitionNameToFieldIdsIndex;
-	TMap<uint32, FString> ComponentIdToDataDefinitionName;
-
-	for (const auto& FileValue : *SchemaFiles)
-	{
-		const TSharedPtr<FJsonObject>* FileObject;
-		SAFE_TRYGET(FileValue, Object, FileObject);
-
-		const TArray<TSharedPtr<FJsonValue>>* TypesDecl;
-		SAFE_TRYGETFIELD((*FileObject), Array, "types", TypesDecl);
-
-		for (const auto& TypeValue : *TypesDecl)
-		{
-			const TSharedPtr<FJsonObject>* TypeObject;
-			SAFE_TRYGET(TypeValue, Object, TypeObject);
-
-			FString ComponentName;
-			SAFE_TRYGETFIELD((*TypeObject), String, "qualifiedName", ComponentName);
-
-			COND_SCHEMA_GEN_ERROR_AND_RETURN(DataDefinitionNameToFieldIdsIndex.Contains(ComponentName),
-											 TEXT("The schema bundle contains duplicate data definitions for %s."), *ComponentName);
-			DataDefinitionNameToFieldIdsIndex.Add(ComponentName, OutFieldIdsArray.Num());
-			TArray<uint32>& FieldIDs = OutFieldIdsArray.AddDefaulted_GetRef().FieldIds;
-
-			const TArray<TSharedPtr<FJsonValue>>* FieldArray;
-			SAFE_TRYGETFIELD((*TypeObject), Array, "fields", FieldArray);
-
-			for (const auto& ArrayValue : *FieldArray)
-			{
-				const TSharedPtr<FJsonObject>* ArrayObject;
-				SAFE_TRYGET(ArrayValue, Object, ArrayObject);
-
-				int32 FieldId;
-				SAFE_TRYGETFIELD((*ArrayObject), Number, "fieldId", FieldId);
-
-				COND_SCHEMA_GEN_ERROR_AND_RETURN(FieldIDs.Contains(FieldId),
-												 TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId,
-												 *ComponentName);
-				FieldIDs.Add(FieldId);
-			}
-		}
-
-		const TArray<TSharedPtr<FJsonValue>>* ComponentsDecl;
-		SAFE_TRYGETFIELD((*FileObject), Array, "components", ComponentsDecl);
-
-		for (const auto& CompValue : *ComponentsDecl)
-		{
-			const TSharedPtr<FJsonObject>* CompObject;
-			SAFE_TRYGET(CompValue, Object, CompObject);
-
-			FString ComponentName;
-			SAFE_TRYGETFIELD((*CompObject), String, "qualifiedName", ComponentName);
-
-			int32 ComponentId;
-			SAFE_TRYGETFIELD((*CompObject), Number, "componentId", ComponentId);
-
-			ComponentMap.Add(ComponentName, ComponentId);
-
-			const TArray<TSharedPtr<FJsonValue>>* FieldArray;
-			SAFE_TRYGETFIELD((*CompObject), Array, "fields", FieldArray);
-
-			if (FieldArray->Num() > 0)
-			{
-				COND_SCHEMA_GEN_ERROR_AND_RETURN(OutComponentIdToFieldIdsIndex.Contains(ComponentId),
-												 TEXT("The schema bundle contains duplicate component IDs with component %s."),
-												 *ComponentName);
-				OutComponentIdToFieldIdsIndex.Add(ComponentId, OutFieldIdsArray.Num());
-				TArray<uint32>& FieldIDs = OutFieldIdsArray.AddDefaulted_GetRef().FieldIds;
-
-				for (const auto& ArrayValue : *FieldArray)
-				{
-					const TSharedPtr<FJsonObject>* ArrayObject;
-					SAFE_TRYGET(ArrayValue, Object, ArrayObject);
-
-					int32 FieldId;
-					SAFE_TRYGETFIELD((*ArrayObject), Number, "fieldId", FieldId);
-
-					COND_SCHEMA_GEN_ERROR_AND_RETURN(FieldIDs.Contains(FieldId),
-													 TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId,
-													 *ComponentName);
-					FieldIDs.Add(FieldId);
-				}
-			}
-
-			FString DataDefinition;
-			SAFE_TRYGETFIELD((*CompObject), String, "dataDefinition", DataDefinition);
-
-			if (!DataDefinition.IsEmpty())
-			{
-				COND_SCHEMA_GEN_ERROR_AND_RETURN(
-					FieldArray->Num() != 0,
-					TEXT("The schema bundle supplied both a data definition and field IDs - this is unexpected, component name: %s."),
-					*ComponentName);
-				ComponentIdToDataDefinitionName.Add(ComponentId, DataDefinition);
-			}
-		}
-
-		const TArray<TSharedPtr<FJsonValue>>* ComponentSets;
-		SAFE_TRYGETFIELD((*FileObject), Array, "componentSets", ComponentSets);
-
-		for (const auto& CompSetValue : *ComponentSets)
-		{
-			const TSharedPtr<FJsonObject>* CompSetObject;
-			SAFE_TRYGET(CompSetValue, Object, CompSetObject);
-
-			int32 ComponentSetId;
-			SAFE_TRYGETFIELD((*CompSetObject), Number, "componentSetId", ComponentSetId);
-
-			const TSharedPtr<FJsonObject>* CompListObject;
-			SAFE_TRYGETFIELD((*CompSetObject), Object, "componentList", CompListObject);
-
-			const TArray<TSharedPtr<FJsonValue>>* RefComponents;
-			SAFE_TRYGETFIELD((*CompListObject), Array, "components", RefComponents);
-
-			TSet<FString> Components;
-
-			for (const auto& CompRefValue : *RefComponents)
-			{
-				const TSharedPtr<FJsonObject>* CompRefObject;
-				SAFE_TRYGET(CompRefValue, Object, CompRefObject);
-
-				FString ComponentName;
-				SAFE_TRYGETFIELD((*CompRefObject), String, "component", ComponentName);
-
-				Components.Add(ComponentName);
-			}
-
-			ComponentRefSetMap.Add(ComponentSetId, MoveTemp(Components));
-		}
-	}
-
-	TMap<uint32, FComponentIDs> FinalMap;
-
-	for (const auto& SetEntry : ComponentRefSetMap)
-	{
-		const TSet<FString>& ComponentRefs = SetEntry.Value;
-
-		FComponentIDs SetIds;
-		for (const auto& CompRef : ComponentRefs)
-		{
-			uint32* FoundId = ComponentMap.Find(CompRef);
-			COND_SCHEMA_GEN_ERROR_AND_RETURN(FoundId == nullptr, TEXT("Schema file %s is missing a component entry for %s"),
-											 *SchemaJsonPath, *CompRef);
-			SetIds.ComponentIDs.Add(*FoundId);
-		}
-
-		FinalMap.Add(SetEntry.Key, MoveTemp(SetIds));
-	}
-
-	for (const auto& Pair : ComponentIdToDataDefinitionName)
-	{
-		COND_SCHEMA_GEN_ERROR_AND_RETURN(
-			!DataDefinitionNameToFieldIdsIndex.Contains(Pair.Value),
-			TEXT("The schema bundle did not contain a data definition for component ID %d, data definition name: %s."), Pair.Key,
-			*Pair.Value);
-		OutComponentIdToFieldIdsIndex.Add(Pair.Key, DataDefinitionNameToFieldIdsIndex[Pair.Value]);
-	}
-
-	OutComponentSetMap = MoveTemp(FinalMap);
-
-	return true;
+	return SpatialGDK::ExtractInformationFromSchemaJson(SchemaJsonPath, OutComponentSetMap, OutComponentIdToFieldIdsIndex,
+														OutFieldIdsArray);
 }
 
 bool SpatialGDKGenerateSchema()
 {
 	SchemaGeneratedClasses.Empty();
+
+	if (!CreatePartitionAuthoritySet())
+	{
+		return false;
+	}
 
 	// Generate Schema for classes loaded in memory.
 

@@ -8,7 +8,7 @@ component SkeletonEntityManifest {
 }
 
 component_set SkeletonEntityAuthComponentSet {
-  id = 9912;
+  id = 9913;
   components = [
 	unreal.SkeletonEntityManifest,
   ];
