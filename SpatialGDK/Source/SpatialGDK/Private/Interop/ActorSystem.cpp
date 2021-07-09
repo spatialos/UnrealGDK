@@ -199,15 +199,33 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 			{
 				RefreshEntity(Delta.EntityId);
 			}
+		}
+	}
+}
 
-			if (SubViewUpdate.SubViewType != ENetRole::ROLE_SimulatedProxy)
+void ActorSystem::ProcessAuthorityGains(const FEntitySubViewUpdate& SubViewUpdate)
+{
+	for (const EntityDelta& Delta : SubViewUpdate.EntityDeltas)
+	{
+		if ((Delta.Type == EntityDelta::ADD || Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
+			&& SubViewUpdate.SubViewType != ENetRole::ROLE_SimulatedProxy)
+		{
+			const Worker_EntityId EntityId = Delta.EntityId;
+			if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority)
 			{
-				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
-																		? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
-																		: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
-
-				AuthorityGained(EntityId, AuthorityComponentSet);
+				// Check if this entity is EntitiesToRetireOnAuthorityGain first,
+				// to avoid authority gain an actor that might've been deleted before.
+				if (HasEntityBeenRequestedForDelete(EntityId))
+				{
+					HandleEntityDeletedAuthority(EntityId);
+					continue;
+				}
 			}
+
+			const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
+																	? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
+																	: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
+			AuthorityGained(EntityId, AuthorityComponentSet);
 		}
 	}
 }
@@ -312,7 +330,13 @@ void ActorSystem::Advance()
 		ProcessAdds(SubView);
 	}
 
+	// Order here matters: Rep Notifies should be called before authority gains
 	InvokeRepNotifies();
+
+	for (const FEntitySubView& SubView : SubViews)
+	{
+		ProcessAuthorityGains(SubView);
+	}
 
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
 	{
