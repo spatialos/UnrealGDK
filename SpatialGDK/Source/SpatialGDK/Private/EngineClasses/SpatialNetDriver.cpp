@@ -1739,6 +1739,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 
 			if (bIsRecentlyRelevant)
 			{
+				bool bChannelCreated = false;
 				// Find or create the channel for this actor.
 				// we can't create the channel if the client is in a different world than we are
 				// or the package map doesn't support the actor's class/archetype (or the actor itself in the case of serializable actors)
@@ -1752,12 +1753,28 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 						continue;
 					}
 
-					if (!ensureAlwaysMsgf(Actor->HasAuthority(), TEXT("Trying to replicate Actor without authority")))
+					Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+
+					if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 					{
-						continue;
+						// Gets existing channel if there is one for this entity ID
+						Channel = GetActorChannelByEntityId(EntityId);
 					}
 
-					Channel = GetOrCreateSpatialActorChannel(Actor);
+					if (Channel == nullptr)
+					{
+						// Need to create the channel
+						bChannelCreated = true;
+						Channel = GetOrCreateSpatialActorChannel(Actor);
+						if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+						{
+							if (!Channel->TryResolveActor())
+							{
+								continue;
+							}
+						}
+					}
+
 					if ((Channel == nullptr) && (Actor->NetUpdateFrequency < 1.0f))
 					{
 						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
@@ -1780,6 +1797,16 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 						{
 							LastRelevantActors.Add(Actor);
 						}
+
+						Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+						if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+						{
+							if (!Channel->TryResolveActor())
+							{
+								continue;
+							}
+						}
+						Channel->CheckUnauthorisedDataChanges(bChannelCreated);
 
 						if (Channel->ReplicateActor())
 						{
