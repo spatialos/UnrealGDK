@@ -214,7 +214,7 @@ void ActorSystem::ProcessAuthorityGains(const FEntitySubViewUpdate& SubViewUpdat
 			if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority)
 			{
 				// Check if this entity is EntitiesToRetireOnAuthorityGain first,
-				// to avoid authority gain an actor that might've been deleted before.
+				// to avoid authority gain on an actor that might've been deleted during a RepNotify.
 				if (HasEntityBeenRequestedForDelete(EntityId))
 				{
 					HandleEntityDeletedAuthority(EntityId);
