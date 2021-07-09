@@ -73,6 +73,20 @@ void ASpatialTestCharacterMigration::PrepareTest()
 		FinishStep();
 	});
 
+	// Wait for actor to be still
+	FSpatialFunctionalTestStepDefinition WaitForStationaryActorStepDefinition(/*bIsNativeDefinition*/ true);
+	WaitForStationaryActorStepDefinition.StepName = TEXT("WaitForStationaryActorStepDefinition");
+	WaitForStationaryActorStepDefinition.TimeLimit = 2.0f;
+	WaitForStationaryActorStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
+		AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
+		ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
+
+		float AverageSpeed = PlayerCharacter->GetAverageSpeedOverWindow();
+
+		RequireEqual_Float(AverageSpeed, 0.0f, TEXT("Actor has become stationary"));
+		FinishStep();
+	});
+
 	// Move character forward
 	FSpatialFunctionalTestStepDefinition MoveForwardStepDefinition(/*bIsNativeDefinition*/ true);
 	MoveForwardStepDefinition.StepName = TEXT("Client1MoveForward");
@@ -82,6 +96,9 @@ void ASpatialTestCharacterMigration::PrepareTest()
 		ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
 		PlayerCharacter->AddMovementInput(FVector(1, 0, 0), 10.0f, true);
+
+		float PeakSpeed = PlayerCharacter->GetPeakSpeedInWindow();
+		AssertTrue(PeakSpeed < 60.0f, TEXT("Check actor peak speed"));
 
 		bCharacterReachedDestination =
 			GetTargetDistanceOnLine(Origin, Destination, PlayerCharacter->GetActorLocation()) > -20.0f; // 20cm overlap
@@ -103,8 +120,11 @@ void ASpatialTestCharacterMigration::PrepareTest()
 
 		PlayerCharacter->AddMovementInput(FVector(-1, 0, 0), 10.0f, true);
 
+		float PeakSpeed = PlayerCharacter->GetPeakSpeedInWindow();
+		AssertTrue(PeakSpeed < 60.0f, TEXT("Check actor peak speed"));
+
 		bCharacterReachedOrigin = GetTargetDistanceOnLine(Destination, Origin, PlayerCharacter->GetActorLocation()) > -20.0f;
-		; // 20cm overlap
+		// 20cm overlap
 
 		if (bCharacterReachedOrigin)
 		{
@@ -130,6 +150,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 		if (i < 1)
 		{
 			AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
+			AddStepFromDefinition(WaitForStationaryActorStepDefinition, FWorkerDefinition::Client(1));
 		}
 
 		AddStepFromDefinition(MoveForwardStepDefinition, FWorkerDefinition::Client(1));
@@ -143,22 +164,4 @@ void ASpatialTestCharacterMigration::PrepareTest()
 
 		AddStepFromDefinition(ResetStepDefinition, FWorkerDefinition::AllWorkers);
 	}
-}
-
-USpatialTestCharacterMigrationMap::USpatialTestCharacterMigrationMap()
-	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("SpatialTestCharacterMigrationMap"))
-{
-	SetNumberOfClients(1);
-}
-
-void USpatialTestCharacterMigrationMap::CreateCustomContentForMap()
-{
-	ULevel* CurrentLevel = World->GetCurrentLevel();
-
-	// Add the test
-	AddActorToLevel<ASpatialTestCharacterMigration>(CurrentLevel, FTransform::Identity);
-
-	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
-	WorldSettings->SetMultiWorkerSettingsClass(UTest2x1FullInterestWorkerSettings::StaticClass());
-	WorldSettings->DefaultGameMode = ACharacterMovementTestGameMode::StaticClass();
 }

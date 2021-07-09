@@ -24,15 +24,3 @@ public:
 	bool bCharacterReachedDestination;
 	bool bCharacterReachedOrigin;
 };
-
-UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API USpatialTestCharacterMigrationMap : public UGeneratedTestMap
-{
-	GENERATED_BODY()
-
-public:
-	USpatialTestCharacterMigrationMap();
-
-protected:
-	virtual void CreateCustomContentForMap() override;
-};

@@ -21,6 +21,17 @@ private:
 public:
 	ATestMovementCharacter();
 
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+
+	FVector PreviousLocation;
+	int32 SpeedWindowIndex = 0;
+	int32 SpeedWindowSize = 10;
+	TArray<float> SpeedWindow;
+
+	float GetPeakSpeedInWindow() const;
+	float GetAverageSpeedOverWindow() const;
+
 	UFUNCTION(Client, Reliable)
 	void UpdateCameraLocationAndRotation(FVector Location, FRotator NewRotation);
 };
