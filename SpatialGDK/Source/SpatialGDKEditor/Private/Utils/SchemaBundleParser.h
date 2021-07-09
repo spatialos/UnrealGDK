@@ -19,5 +19,5 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 									  TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex, TArray<FFieldIDs>& OutFieldIdsArray);
 
 bool ExtractComponentsFromSchemaJson(const FString& SchemaJsonPath, TArray<SchemaComponentIdentifiers>& OutComponents,
-									 TSet<FString> const& Files);
+									 const TSet<FString>& Files);
 } // namespace SpatialGDK

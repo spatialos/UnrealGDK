@@ -241,7 +241,7 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 }
 
 bool ExtractComponentsFromSchemaJson(const FString& SchemaJsonPath, TArray<SchemaComponentIdentifiers>& OutComponents,
-									 TSet<FString> const& Files)
+									 const TSet<FString>& Files)
 {
 	TSharedPtr<FJsonObject> RootObject = OpenJsonFile(SchemaJsonPath);
 

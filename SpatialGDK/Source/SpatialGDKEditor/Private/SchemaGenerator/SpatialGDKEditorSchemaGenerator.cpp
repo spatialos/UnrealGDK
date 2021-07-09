@@ -1395,7 +1395,7 @@ bool RunSchemaCompiler(FString& SchemaBundleJsonOutput, FString SchemaInputDir, 
 
 bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPath)
 {
-	if (SchemaOutputPath == "")
+	if (SchemaOutputPath.IsEmpty())
 	{
 		SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
 	}
@@ -1403,47 +1403,13 @@ bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPa
 	FString IntermediateDir = GenerateIntermediateDirectory();
 	const FString PartitionDataFolderName(TEXT("PartitionMetadata"));
 
-	if (SchemaInputPath == "")
+	if (SchemaInputPath.IsEmpty())
 	{
 		FString ContentDir = FPaths::ProjectContentDir();
 		SchemaInputPath = FPaths::Combine(ContentDir, TEXT("Spatial"), PartitionDataFolderName);
 	}
 
 	IPlatformFile& Filesystem = IPlatformFile::GetPlatformPhysical();
-
-	if (!Filesystem.DirectoryExists(*SchemaInputPath))
-	{
-		return true;
-	}
-
-	TSet<FString> SchemaFiles;
-	const FString SchemaExtension("schema");
-
-	Filesystem.IterateDirectory(*SchemaInputPath, [&SchemaFiles, &SchemaExtension](const TCHAR* Entry, bool bIsDirectory) {
-		FString EntryStr(Entry);
-		if (!bIsDirectory && FPaths::GetExtension(EntryStr) == SchemaExtension)
-		{
-			SchemaFiles.Add(MoveTemp(EntryStr));
-		}
-
-		return true;
-	});
-
-	FString SchemaJsonPath;
-	if (!RunSchemaCompiler(SchemaJsonPath, SchemaInputPath))
-	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to parse partition meta data schema files"));
-		return false;
-	}
-
-	TSet<FString> SchemaFileNames;
-	for (const FString& FilePath : SchemaFiles)
-	{
-		SchemaFileNames.Add(FPaths::GetCleanFilename(FilePath));
-	}
-
-	TArray<SpatialGDK::SchemaComponentIdentifiers> Components;
-	SpatialGDK::ExtractComponentsFromSchemaJson(SchemaJsonPath, Components, SchemaFileNames);
 
 	FString DestinationSchemaDir = FPaths::Combine(SchemaOutputPath, PartitionDataFolderName);
 	if (FPaths::DirectoryExists(DestinationSchemaDir))
@@ -1457,19 +1423,52 @@ bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPa
 		}
 	}
 
-	// schema_compiler cannot create folders, so we need to set them up beforehand.
-	if (!Filesystem.CreateDirectoryTree(*DestinationSchemaDir))
-	{
-		// clang-format off
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create partition metadata schema directory '%s'! Please make sure the parent directory is writeable."), *DestinationSchemaDir);
-		// clang-format on
-		return false;
-	}
+	TSet<FString> SchemaFiles;
+	TArray<SpatialGDK::SchemaComponentIdentifiers> Components;
 
-	for (const auto& File : SchemaFiles)
+	if (Filesystem.DirectoryExists(*SchemaInputPath))
 	{
-		FString DestinationFile = FPaths::Combine(DestinationSchemaDir, FPaths::GetCleanFilename(File));
-		Filesystem.CopyFile(*DestinationFile, *File);
+		const FString SchemaExtension("schema");
+
+		Filesystem.IterateDirectory(*SchemaInputPath, [&SchemaFiles, &SchemaExtension](const TCHAR* Entry, bool bIsDirectory) {
+			FString EntryStr(Entry);
+			if (!bIsDirectory && FPaths::GetExtension(EntryStr) == SchemaExtension)
+			{
+				SchemaFiles.Add(MoveTemp(EntryStr));
+			}
+
+			return true;
+		});
+
+		FString SchemaJsonPath;
+		if (!RunSchemaCompiler(SchemaJsonPath, SchemaInputPath))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to parse partition meta data schema files"));
+			return false;
+		}
+
+		TSet<FString> SchemaFileNames;
+		for (const FString& FilePath : SchemaFiles)
+		{
+			SchemaFileNames.Add(FPaths::GetCleanFilename(FilePath));
+		}
+
+		SpatialGDK::ExtractComponentsFromSchemaJson(SchemaJsonPath, Components, SchemaFileNames);
+
+		// schema_compiler cannot create folders, so we need to set them up beforehand.
+		if (!Filesystem.CreateDirectoryTree(*DestinationSchemaDir))
+		{
+			// clang-format off
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create partition metadata schema directory '%s'! Please make sure the parent directory is writeable."), *DestinationSchemaDir);
+			// clang-format on
+			return false;
+		}
+
+		for (const auto& File : SchemaFiles)
+		{
+			FString DestinationFile = FPaths::Combine(DestinationSchemaDir, FPaths::GetCleanFilename(File));
+			Filesystem.CopyFile(*DestinationFile, *File);
+		}
 	}
 
 	FCodeWriter Writer;
