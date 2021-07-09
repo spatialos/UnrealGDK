@@ -102,11 +102,16 @@ void ARegisterAutoDestroyActorsTestPart2::PrepareTest()
 		StepDefinition.StepName = TEXT("Check No Worker Has Characters");
 		StepDefinition.TimeLimit = 0.0f;
 		StepDefinition.NativeStartEvent.BindLambda([this]() {
+			int NumCharactersFound = 0;
+			int NumCharactersExpected = 0;
 			UWorld* World = GetWorld();
-			TActorIterator<ACharacter> It(World);
-			bool bHasCharacter = static_cast<bool>(It);
-			AssertFalse(bHasCharacter, FString::Printf(TEXT("Cleanup of ACharacter successful, no ACharacter found by %s"),
-													   *GetLocalFlowController()->GetDisplayName()));
+			for (TActorIterator<ACharacter> It(World); It; ++It)
+			{
+				++NumCharactersFound;
+			}
+			AssertEqual_Int(NumCharactersFound, NumCharactersExpected,
+							FString::Printf(TEXT("Cleanup of ACharacter successful, no ACharacter found by %s"),
+											*GetLocalFlowController()->GetDisplayName()));
 			FinishStep();
 		});
 
