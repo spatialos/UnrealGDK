@@ -116,6 +116,11 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		ResetSchemaGeneratorStateAndCleanupFolders();
 	}
 
+	if (!CreatePartitionAuthoritySet())
+	{
+		return 0;
+	}
+
 	// Sort classes here so that batching does not have an effect on ordering.
 	ReferencedClasses.Sort([](const FSoftClassPath& A, const FSoftClassPath& B) {
 		return FNameLexicalLess()(A.GetAssetPathName(), B.GetAssetPathName());
