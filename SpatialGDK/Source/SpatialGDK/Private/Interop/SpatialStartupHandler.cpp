@@ -223,12 +223,16 @@ bool FSpatialStartupHandler::TryFinishStartup()
 
 	if (Stage == EStage::GetVirtualWorkerTranslationState)
 	{
-		// HACK
-		GetGSM().ApplyDeploymentMapData(
-			GetCoordinator()
-				.GetView()[SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID]
-				.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID })
-				->GetUnderlying());
+		const ComponentData* DeploymentMapComponent =
+			GetCoordinator().GetView()[SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID].Components.FindByPredicate(
+				ComponentIdEquality{ SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID });
+		if (ensure(DeploymentMapComponent != nullptr))
+		{
+			const int32 ExistingSessionId =
+				Schema_GetInt32(DeploymentMapComponent->GetFields(), SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
+
+			GetGSM().ApplySessionId(ExistingSessionId);
+		}
 
 		const EntityViewElement* VirtualWorkerTranslatorEntity =
 			GetCoordinator().GetView().Find(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID);

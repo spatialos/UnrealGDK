@@ -37,7 +37,7 @@ class SPATIALGDK_API UGlobalStateManager : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver);
 
-	void ApplyDeploymentMapData(Schema_ComponentData* Data);
+	void ApplySessionId(int32 InSessionId);
 
 	void SetDeploymentState();
 	void SetAcceptingPlayers(bool bAcceptingPlayers);

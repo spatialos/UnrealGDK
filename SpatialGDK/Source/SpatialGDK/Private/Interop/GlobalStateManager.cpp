@@ -62,11 +62,9 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 	bTranslationQueryInFlight = false;
 }
 
-void UGlobalStateManager::ApplyDeploymentMapData(Schema_ComponentData* Data)
+void UGlobalStateManager::ApplySessionId(int32 InSessionId)
 {
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
-
-	DeploymentSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
+	DeploymentSessionId = InSessionId;
 }
 
 #if WITH_EDITOR
