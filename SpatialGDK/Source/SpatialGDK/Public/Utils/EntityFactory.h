@@ -53,6 +53,8 @@ public:
 	}
 
 private:
+	void CheckStablyNamedActorPath(const TArray<FWorkerComponentData>& ComponentDatas, const AActor* Actor, Worker_EntityId EntityId) const;
+
 	USpatialNetDriver* NetDriver;
 	USpatialPackageMapClient* PackageMap;
 	USpatialClassInfoManager* ClassInfoManager;

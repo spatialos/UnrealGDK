@@ -89,7 +89,7 @@ class InitialOnlyFilter;
 class CrossServerRPCSender;
 class CrossServerRPCHandler;
 class FSpatialStrategySystem;
-class FSkeletonEntityCreationStep;
+class FSkeletonEntityCreationStartupStep;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -241,7 +241,7 @@ public:
 	TUniquePtr<SpatialGDK::UnrealServerInterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
-	TUniquePtr<SpatialGDK::FSkeletonEntityCreationStep> SkeletonEntityCreationStep;
+	TUniquePtr<SpatialGDK::FSkeletonEntityCreationStartupStep> SkeletonEntityCreationStep;
 
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;

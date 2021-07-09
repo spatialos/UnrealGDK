@@ -8,10 +8,12 @@ class USpatialNetDriver;
 
 namespace SpatialGDK
 {
-class FSkeletonEntityCreationStep
+// This class controls skeleton entity creation and population, intended to be called from
+// USpatialNetDriver::TryFinishStartup after the GSM authority has been established.
+class FSkeletonEntityCreationStartupStep
 {
 public:
-	explicit FSkeletonEntityCreationStep(USpatialNetDriver& InNetDriver)
+	explicit FSkeletonEntityCreationStartupStep(USpatialNetDriver& InNetDriver)
 		: NetDriver(&InNetDriver)
 	{
 	}

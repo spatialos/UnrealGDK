@@ -2056,36 +2056,22 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 	TArray<FWorkerComponentData> ComponentDatas;
 	TArray<FWorkerComponentUpdate> ComponentUpdates;
 
-	enum EEntityCreationType
-	{
-		CreateNewEntity,
-		PopulateSkeleton,
-	};
+	const EntityViewElement* ExistingEntity = ActorSubView->GetView().Find(ActorChannel.GetEntityId());
 
-	const EntityViewElement* ExistingEntity = NetDriver->Connection->GetCoordinator().GetView().Find(ActorChannel.GetEntityId());
 	const bool bIsSkeletonEntity =
 		ExistingEntity != nullptr
 		&& ExistingEntity->Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID });
-	const EEntityCreationType EntityType = bIsSkeletonEntity ? PopulateSkeleton : CreateNewEntity;
-	if (EntityType == CreateNewEntity)
+
+	// If we're not populating a skeleton entity, we're creating a new one.
+	const bool bIsCreatingNewEntity = !bIsSkeletonEntity;
+
+	if (bIsCreatingNewEntity)
 	{
 		ComponentDatas = DataFactory.CreateEntityComponents(&ActorChannel, OutBytesWritten);
 	}
-	else if (EntityType == PopulateSkeleton)
+	else
 	{
-		if (ensure(ExistingEntity != nullptr))
-		{
-			check(ExistingEntity->Components.ContainsByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId }));
-		}
-		else
-		{
-			return;
-		}
-		const ComponentData& StartupActorMetadataComponent =
-			*ExistingEntity->Components.FindByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId });
-		ComponentDatas.Emplace(StartupActorMetadataComponent.GetWorkerComponentData());
 		DataFactory.CreatePopulateSkeletonComponents(ActorChannel, ComponentDatas, ComponentUpdates, OutBytesWritten);
-		ComponentDatas.RemoveAt(0);
 	}
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
@@ -2103,7 +2089,7 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 
 	ViewCoordinator& Coordinator = NetDriver->Connection->GetCoordinator();
 
-	if (EntityType == CreateNewEntity)
+	if (bIsCreatingNewEntity)
 	{
 		const Worker_RequestId CreateEntityRequestId =
 			NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
@@ -2114,7 +2100,7 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 
 		CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
 	}
-	else if (EntityType == PopulateSkeleton)
+	else
 	{
 		for (const FWorkerComponentUpdate& ComponentToUpdate : ComponentUpdates)
 		{

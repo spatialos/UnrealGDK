@@ -450,7 +450,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		if (IsServer() && GetDefault<USpatialGDKSettings>()->bEnableSkeletonEntityCreation)
 		{
-			SkeletonEntityCreationStep = MakeUnique<SpatialGDK::FSkeletonEntityCreationStep>(*this);
+			SkeletonEntityCreationStep = MakeUnique<SpatialGDK::FSkeletonEntityCreationStartupStep>(*this);
 		}
 
 		// TODO: UNR-2452

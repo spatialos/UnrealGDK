@@ -9,7 +9,7 @@ namespace SpatialGDK
 {
 DEFINE_LOG_CATEGORY_STATIC(LogSpatialSkeletonEntityCreationStep, Log, All);
 
-bool FSkeletonEntityCreationStep::TryFinish()
+bool FSkeletonEntityCreationStartupStep::TryFinish()
 {
 	if (!bWasInitialized)
 	{
@@ -31,15 +31,10 @@ bool FSkeletonEntityCreationStep::TryFinish()
 		bDidFinish = bDidFinish && EntityPopulator->IsReady();
 	}
 
-	if (bDidFinish)
-	{
-		UE_LOG(LogSpatialSkeletonEntityCreationStep, Log, TEXT("Finished skeleton entity creation"));
-	}
-
 	return bDidFinish;
 }
 
-void FSkeletonEntityCreationStep::Initialize()
+void FSkeletonEntityCreationStartupStep::Initialize()
 {
 	if (NetDriver->GlobalStateManager->HasAuthority())
 	{

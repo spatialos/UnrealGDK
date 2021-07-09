@@ -222,18 +222,9 @@ void EntityFactory::WriteRPCComponents(TArray<FWorkerComponentData>& ComponentDa
 	ComponentDatas.Append(NetDriver->RPCs->GetRPCComponentsOnEntityCreation(Channel.GetEntityId()));
 }
 
-void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel,
-										  uint32& OutBytesWritten)
+void EntityFactory::CheckStablyNamedActorPath(const TArray<FWorkerComponentData>& ComponentDatas, const AActor* Actor,
+											  Worker_EntityId EntityId) const
 {
-	AActor* Actor = Channel->Actor;
-	UClass* Class = Actor->GetClass();
-	Worker_EntityId EntityId = Channel->GetEntityId();
-
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
-
-	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
-	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
-
 	// Leaving this code block here to guarantee the resolution of outers of stably named actors
 	if (Actor->HasAnyFlags(RF_WasLoaded) || Actor->bNetStartup)
 	{
@@ -249,7 +240,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 		// This block of code is just for checking purposes and should be removed in the future
 		// TODO: UNR-4783
 #if !UE_BUILD_SHIPPING
-		FWorkerComponentData* UnrealMetadataPtr = ComponentDatas.FindByPredicate([](const FWorkerComponentData& Data) {
+		const FWorkerComponentData* UnrealMetadataPtr = ComponentDatas.FindByPredicate([](const FWorkerComponentData& Data) {
 			return Data.component_id == SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 		});
 		checkf(UnrealMetadataPtr,
@@ -279,6 +270,19 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 		}
 #endif
 	}
+}
+
+void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel,
+										  uint32& OutBytesWritten)
+{
+	AActor* Actor = Channel->Actor;
+	UClass* Class = Actor->GetClass();
+	Worker_EntityId EntityId = Channel->GetEntityId();
+
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
+
+	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID));
 
@@ -376,6 +380,8 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID));
 	}
 
+	CheckStablyNamedActorPath(ComponentDatas, Channel->Actor, Channel->GetEntityId());
+
 	// This block of code is just for checking purposes and should be removed in the future
 	// TODO: UNR-4783
 #if !UE_BUILD_SHIPPING
@@ -420,6 +426,9 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 void EntityFactory::CreatePopulateSkeletonComponents(USpatialActorChannel& Channel, TArray<FWorkerComponentData>& OutComponentCreates,
 													 TArray<FWorkerComponentUpdate>& OutComponentUpdates, uint32& OutBytesWritten)
 {
+	const ComponentData* StartupActorMetadataComponent =
+		NetDriver->Connection->GetCoordinator().GetComponent(Channel.GetEntityId(), UnrealMetadata::ComponentId);
+	// HACK: WriteUnrealComponents needs to see
 	WriteUnrealComponents(OutComponentCreates, &Channel, OutBytesWritten);
 	OutComponentUpdates = { NetDriver->InterestFactory->CreateInterestUpdate(
 		Channel.Actor, NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Channel.Actor->GetClass()), Channel.GetEntityId()) };
