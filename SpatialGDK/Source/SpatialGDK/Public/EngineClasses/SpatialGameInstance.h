@@ -81,6 +81,8 @@ public:
 
 	void TryInjectSpatialLocatorIntoCommandLine();
 
+	TSharedPtr<SpatialGDK::SpatialEventTracer> CreateEventTracer(const FString& WorkerId);
+	TSharedPtr<SpatialGDK::SpatialEventTracer> GetEventTracer() const { return SpatialEventTracer;  }
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
 	// Can be used to decide whether to use Unreal networking or SpatialOS networking.
@@ -119,4 +121,7 @@ private:
 
 	// Whether shutdown preparation has been triggered.
 	bool bPreparingForShutdown;
+
+	// Event tracer, connected to worker events on connection success.
+	TSharedPtr<SpatialGDK::SpatialEventTracer> SpatialEventTracer = nullptr;
 };

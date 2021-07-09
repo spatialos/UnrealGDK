@@ -2,6 +2,7 @@
 
 #include "Interop/Connection/SpatialConnectionManager.h"
 
+#include "EngineClasses/SpatialGameInstance.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -412,7 +413,11 @@ void USpatialConnectionManager::ConnectToReceptionist(uint32 PlayInEditorID)
 
 	ConfigureConnection ConnectionConfig(ReceptionistConfig, bConnectAsClient);
 
-	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer = CreateEventTracer(ReceptionistConfig.WorkerId);
+	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer = nullptr;
+	if (USpatialGameInstance* GameInstance = GetTypedOuter<USpatialGameInstance>())
+	{
+		EventTracer = GameInstance->CreateEventTracer(ReceptionistConfig.WorkerId);
+	}
 	ConnectionConfig.Params.event_tracer = EventTracer != nullptr ? EventTracer->GetWorkerEventTracer() : nullptr;
 
 	Worker_ConnectionFuture* ConnectionFuture =
@@ -437,7 +442,11 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 
 	ConfigureConnection ConnectionConfig(*InLocatorConfig, bConnectAsClient);
 
-	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer = CreateEventTracer(InLocatorConfig->WorkerId);
+	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer = nullptr;
+	if (USpatialGameInstance* GameInstance = GetTypedOuter<USpatialGameInstance>())
+	{
+		EventTracer = GameInstance->CreateEventTracer(ReceptionistConfig.WorkerId);
+	}
 	ConnectionConfig.Params.event_tracer = EventTracer != nullptr ? EventTracer->GetWorkerEventTracer() : nullptr;
 
 	FTCHARToUTF8 PlayerIdentityTokenCStr(*InLocatorConfig->PlayerIdentityToken);
@@ -618,13 +627,3 @@ void USpatialConnectionManager::OnConnectionFailure(uint8_t ConnectionStatusCode
 	OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 }
 
-TSharedPtr<SpatialGDK::SpatialEventTracer> USpatialConnectionManager::CreateEventTracer(const FString& WorkerId)
-{
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	if (Settings == nullptr || !Settings->bEventTracingEnabled)
-	{
-		return nullptr;
-	}
-
-	return MakeShared<SpatialGDK::SpatialEventTracer>(WorkerId);
-};

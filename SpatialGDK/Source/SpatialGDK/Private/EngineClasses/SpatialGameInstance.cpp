@@ -13,6 +13,7 @@
 #endif
 
 #include "Kismet/GameplayStatics.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
@@ -131,15 +132,19 @@ void USpatialGameInstance::StartSpatialConnection()
 		TryInjectSpatialLocatorIntoCommandLine();
 		CreateNewSpatialConnectionManager();
 	}
-#if TRACE_LIB_ACTIVE
-	else
+	else 
 	{
 		// In native, setup worker name here as we don't get a HandleOnConnected() callback
 		FString WorkerName =
-			FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+			FString::Printf(TEXT("%s%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+#if TRACE_LIB_ACTIVE
 		SpatialLatencyTracer->SetWorkerId(WorkerName);
-	}
 #endif
+		if (GetDefault<USpatialGDKSettings>()->bEventTracingEnabled)
+		{
+			CreateEventTracer(WorkerName);
+		}
+	}
 }
 
 void USpatialGameInstance::TryInjectSpatialLocatorIntoCommandLine()
@@ -305,3 +310,20 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 		GlobalStateManager->HandleActorBasedOnLoadBalancer(Actor);
 	}
 }
+
+TSharedPtr<SpatialGDK::SpatialEventTracer> USpatialGameInstance::CreateEventTracer(const FString& WorkerId) 
+{
+	if (SpatialEventTracer != nullptr)
+	{
+		return SpatialEventTracer;
+	}
+
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	if (Settings == nullptr || !Settings->bEventTracingEnabled)
+	{
+		return nullptr;
+	}
+
+	SpatialEventTracer = MakeShared<SpatialGDK::SpatialEventTracer>(WorkerId);
+	return SpatialEventTracer;
+};
