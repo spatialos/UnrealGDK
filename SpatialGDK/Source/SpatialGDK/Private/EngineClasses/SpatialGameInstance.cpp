@@ -14,10 +14,10 @@
 
 #include "Kismet/GameplayStatics.h"
 
-#include "Interop/Connection/SpatialEventTracer.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialWorkerFlags.h"
