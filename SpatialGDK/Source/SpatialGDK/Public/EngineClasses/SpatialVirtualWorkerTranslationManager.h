@@ -57,13 +57,17 @@ public:
 
 	SpatialVirtualWorkerTranslator* Translator;
 
+	using FVirtualToPhysicalWorkerMapping = TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation>;
+
+	const FVirtualToPhysicalWorkerMapping& GetVirtualWorkerMapping() const;
+
 private:
 	SpatialOSWorkerInterface* Connection;
 	USpatialNetDriver* NetDriver;
 
 	TArray<VirtualWorkerId> VirtualWorkersToAssign;
 	TArray<PartitionInfo> Partitions;
-	TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation> VirtualToPhysicalWorkerMapping;
+	FVirtualToPhysicalWorkerMapping VirtualToPhysicalWorkerMapping;
 	uint32 NumVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;

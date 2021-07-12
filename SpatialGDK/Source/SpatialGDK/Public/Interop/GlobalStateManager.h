@@ -44,6 +44,7 @@ public:
 
 	void ApplyDeploymentMapUpdate(Schema_ComponentUpdate* Update);
 	void ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update);
+	bool HasAuthority() const;
 
 	DECLARE_DELEGATE_OneParam(QueryDelegate, const Worker_EntityQueryResponseOp&);
 	void QueryGSM(const QueryDelegate& Callback);
