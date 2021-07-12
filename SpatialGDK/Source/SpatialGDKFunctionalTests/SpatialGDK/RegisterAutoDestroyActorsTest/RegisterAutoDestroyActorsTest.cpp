@@ -18,14 +18,14 @@ void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 	{ // Step 1 - Spawn Actor On Auth
 		AddStep(TEXT("SERVER_1_Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			UWorld* World = GetWorld();
-			int NumVirtualWorkers = GetNumberOfServerWorkers();
+			int32 NumVirtualWorkers = GetNumberOfServerWorkers();
 
 			// spawn 1 per server worker
 			// since the information about positioning of the virtual workers is currently hidden, will assume they are all around zero
 			// and spawn them in that radius
 			FVector SpawnPosition = FVector(200.0f, -200.0f, 0.0f);
 			FRotator SpawnPositionRotator = FRotator(0.0f, 360.0f / NumVirtualWorkers, 0.0f);
-			for (int i = 0; i != NumVirtualWorkers; ++i)
+			for (int32 i = 0; i != NumVirtualWorkers; ++i)
 			{
 				ACharacter* Character = World->SpawnActor<ACharacter>(SpawnPosition, FRotator::ZeroRotator);
 				AssertTrue(IsValid(Character),
@@ -42,10 +42,10 @@ void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 		AddStep(
 			TEXT("CLIENT_ALL_CheckActorsSpawned"), FWorkerDefinition::AllClients, nullptr, nullptr,
 			[this](float DeltaTime) {
-				int NumCharactersFound = 0;
-				int NumCharactersExpected = GetNumberOfServerWorkers();
+				int32 NumCharactersFound = 0;
+				int32 NumCharactersExpected = GetNumberOfServerWorkers();
 				UWorld* World = GetWorld();
-				for (TActorIterator<ACharacter> It(World); It; ++It)
+				for (ACharacter* Character : TActorRange<ACharacter>(World))
 				{
 					++NumCharactersFound;
 				}
@@ -61,16 +61,16 @@ void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 		AddStep(
 			TEXT("SERVER_ALL_RegisterAutoDestroyActors"), FWorkerDefinition::AllServers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				int NumCharactersFound = 0;
-				int NumCharactersExpected = 1; // 1, because we filter by authority
+				int32 NumCharactersFound = 0;
+				int32 NumCharactersExpected = 1; // 1, because we filter by authority
 				ACharacter* FoundAuthoritativeCharacter = nullptr;
 				UWorld* World = GetWorld();
-				for (TActorIterator<ACharacter> It(World); It; ++It)
+				for (ACharacter* Character : TActorRange<ACharacter>(World))
 				{
-					if (It->HasAuthority())
+					if (Character->HasAuthority())
 					{
 						++NumCharactersFound;
-						FoundAuthoritativeCharacter = *It;
+						FoundAuthoritativeCharacter = Character;
 					}
 				}
 				if (RequireEqual_Int(NumCharactersFound, NumCharactersExpected,
@@ -102,10 +102,10 @@ void ARegisterAutoDestroyActorsTestPart2::PrepareTest()
 		StepDefinition.StepName = TEXT("Check No Worker Has Characters");
 		StepDefinition.TimeLimit = 0.0f;
 		StepDefinition.NativeStartEvent.BindLambda([this]() {
-			int NumCharactersFound = 0;
-			int NumCharactersExpected = 0;
+			int32 NumCharactersFound = 0;
+			int32 NumCharactersExpected = 0;
 			UWorld* World = GetWorld();
-			for (TActorIterator<ACharacter> It(World); It; ++It)
+			for (ACharacter* Character : TActorRange<ACharacter>(World))
 			{
 				++NumCharactersFound;
 			}
