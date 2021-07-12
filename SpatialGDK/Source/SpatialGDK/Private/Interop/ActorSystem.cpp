@@ -297,6 +297,8 @@ void ActorSystem::Advance()
 		{ SimulatedSubView, ENetRole::ROLE_SimulatedProxy },
 	};
 
+	// First, we process updates; when receiving tear off updates, we want to
+	// process them before a REMOVE if we receive it in the same ViewDelta.
 	for (const FEntitySubView& SubView : SubViews)
 	{
 		ProcessUpdates(SubView);
@@ -1810,6 +1812,7 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 		}
 	}
 
+	// If the actor was torn off and we don't have a channel, don't destroy the actor. 
 	if (Actor->GetTearOff())
 	{
 		return;
