@@ -47,6 +47,7 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 	AddStep(
 		TEXT("ClientWaitForReplication"), FWorkerDefinition::AllClients, nullptr,
 		[this]() {
+			FTimerHandle DelayTimerHandle;
 			FTimerManager& TimerManager = GetWorld()->GetTimerManager();
 			TimerManager.SetTimer(
 				DelayTimerHandle,

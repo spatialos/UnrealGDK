@@ -15,6 +15,4 @@ public:
 	AInitiallyDormantMapActorTest();
 
 	virtual void PrepareTest() override;
-
-	FTimerHandle DelayTimerHandle;
 };

@@ -15,6 +15,4 @@ public:
 	ADynamicActorDormantAllChangePropertyTest();
 
 	virtual void PrepareTest() override;
-
-	FTimerHandle DelayTimerHandle;
 };
