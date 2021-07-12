@@ -3,6 +3,7 @@
 #include "TestMovementCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/Classes/Camera/CameraComponent.h"
 #include "Materials/Material.h"
 #include "Net/UnrealNetwork.h"
@@ -43,6 +44,9 @@ ATestMovementCharacter::ATestMovementCharacter()
 	CameraComponent->SetRelativeRotation(CameraRotation);
 #endif
 	CameraComponent->SetupAttachment(GetCapsuleComponent());
+
+	UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement();
+	CharacterMovementComponent->MaxSimulationIterations = 14;
 
 	SpeedWindow.SetNum(SpeedWindowSize);
 }

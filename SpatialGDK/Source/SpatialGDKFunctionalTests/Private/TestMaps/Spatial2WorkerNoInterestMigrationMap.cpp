@@ -22,10 +22,10 @@ void USpatial2WorkerNoInterestMigrationMap::CreateCustomContentForMap()
 
 	FTransform PlayerTransform;
 
-	PlayerTransform.SetTranslation(FVector(-500, -500, 200));
+	PlayerTransform.SetTranslation(FVector(-500.0f, -500.0f, 50.0f));
 	AddActorToLevel<APlayerStart>(CurrentLevel, PlayerTransform);
 
-	PlayerTransform.SetTranslation(FVector(-500, 500, 200));
+	PlayerTransform.SetTranslation(FVector(-500.0f, 500.0f, 50.0f));
 	AddActorToLevel<APlayerStart>(CurrentLevel, PlayerTransform);
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
