@@ -39,8 +39,8 @@ ASpatialTestCharacterMigration::ASpatialTestCharacterMigration()
 	Description = TEXT("Test Character Migration");
 	TimeLimit = 300;
 
-	Destination = FVector(132.0f, 0.0f, 40.0f);
-	Origin = FVector(-132.0f, 0.0f, 40.0f);
+	Destination = FVector(150.0f, 0.0f, 40.0f);
+	Origin = FVector(-150.0f, 0.0f, 40.0f);
 }
 
 void ASpatialTestCharacterMigration::PrepareTest()
@@ -99,10 +99,10 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			{
 				Character->AddMovementInput(FVector(1.0f, 0.0f, 0.0f), 10.0f, true);
 				float PeakSpeed = Character->GetPeakSpeedInWindow();
-				AssertValue_Float(PeakSpeed, EComparisonMethod::Less_Than, 60.0f, TEXT("Actor not speeding"));
+				AssertValue_Float(PeakSpeed, EComparisonMethod::Less_Than, 650.0f, TEXT("Actor not speeding"));
 			}
 
-			bool bReachDestination = GetTargetDistanceOnLine(Origin, Destination, Character->GetActorLocation()) > -20.0f; // 20cm overlap
+			bool bReachDestination = GetTargetDistanceOnLine(Origin, Destination, Character->GetActorLocation()) > -40.0f; // 20cm overlap
 			RequireEqual_Bool(bReachDestination, true,
 							  FString::Printf(TEXT("%s on %s reached destination"), *Character->GetName(), *WorkerId));
 			bAllCharactersReachedDestination &= bReachDestination;
@@ -132,10 +132,10 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			{
 				Character->AddMovementInput(FVector(-1.0f, 0.0f, 0.0f), 10.0f, true);
 				float PeakSpeed = Character->GetPeakSpeedInWindow();
-				AssertValue_Float(PeakSpeed, EComparisonMethod::Less_Than, 60.0f, TEXT("Actor not speeding"));
+				AssertValue_Float(PeakSpeed, EComparisonMethod::Less_Than, 650.0f, TEXT("Actor not speeding"));
 			}
 
-			bool bReachDestination = GetTargetDistanceOnLine(Destination, Origin, Character->GetActorLocation()) > -20.0f; // 20cm overlap
+			bool bReachDestination = GetTargetDistanceOnLine(Destination, Origin, Character->GetActorLocation()) > -40.0f; // 20cm overlap
 			RequireEqual_Bool(bReachDestination, true,
 							  FString::Printf(TEXT("%s on %s reached destination"), *Character->GetName(), *WorkerId));
 			bAllCharactersReachedDestination &= bReachDestination;
@@ -150,9 +150,18 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	AddStepFromDefinition(WaitForStationaryActorStepDefinition, FWorkerDefinition::AllClients);
 	for (int i = 0; i < 5; i++)
 	{
-		AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
+		if (i == 0)
+		{
+			AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
+		}
+
 		AddStepFromDefinition(MoveForwardStepDefinition, FWorkerDefinition::AllWorkers);
-		AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
+
+		if (i == 0)
+		{
+			AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
+		}
+
 		AddStepFromDefinition(MoveBackwardStepDefinition, FWorkerDefinition::AllWorkers);
 	}
 }

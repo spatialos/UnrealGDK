@@ -3,8 +3,8 @@
 #include "TestMovementCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/Classes/Camera/CameraComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Materials/Material.h"
 #include "Net/UnrealNetwork.h"
 
@@ -59,7 +59,7 @@ void ATestMovementCharacter::BeginPlay()
 
 void ATestMovementCharacter::Tick(float DeltaTime)
 {
-	float Speed = FVector(GetActorLocation() - PreviousLocation).Size();
+	float Speed = FVector(GetActorLocation() - PreviousLocation).Size() / DeltaTime;
 
 	if (SpeedWindowIndex > SpeedWindowSize - 1)
 	{
