@@ -29,7 +29,7 @@ public:
 	TArray<int32> OldTestArray;
 
 	// OnChangedRepNotifyInt1 should remain defined before OnChangedRepNotifyInt2 to ensure the repindex of Int2 is higher than the repindex
-	// of Int1
+	// of Int1.
 	UPROPERTY(ReplicatedUsing = OnRep_OnChangedRepNotifyInt1)
 	int32 OnChangedRepNotifyInt1;
 

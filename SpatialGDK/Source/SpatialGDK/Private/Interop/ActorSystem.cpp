@@ -1690,10 +1690,10 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 
 void ActorSystem::InvokeRepNotifies()
 {
-	// We have two lists of ObjectRepNotifies, one for Actors and one for Subobjects
-	// The reason for this is native always calls Rep Notifies on an actor and then on its subobjects
-	// However, we call Rep Notifies after data on all actors and subobjects has been applied
-	// So, to match native functionality, we simply need to call all Subobject Rep Notifies after all Actor Rep Notifies
+	// We have two lists of ObjectRepNotifies, one for Actors and one for Subobjects.
+	// The reason for this is native always calls Rep Notifies on an actor and then on its subobjects.
+	// However, we call Rep Notifies after data on all actors and subobjects has been applied.
+	// So, to match native functionality, we simply need to call all Subobject Rep Notifies after all Actor Rep Notifies.
 	for (auto& RepNotifiesPair : ActorRepNotifiesToSend)
 	{
 		TryInvokeRepNotifiesForObject(RepNotifiesPair.Key, RepNotifiesPair.Value);
@@ -1737,7 +1737,7 @@ void ActorSystem::TryInvokeRepNotifiesForObject(FWeakObjectPtr& WeakObjectPtr, F
 	}
 
 	ObjectRepNotifies.RepNotifies.Sort([](GDK_PROPERTY(Property) & A, GDK_PROPERTY(Property) & B) -> bool {
-		// We want to call RepNotifies on properties with a lower RepIndex earlier
+		// We want to call RepNotifies on properties with a lower RepIndex earlier.
 		return A.RepIndex < B.RepIndex;
 	});
 
