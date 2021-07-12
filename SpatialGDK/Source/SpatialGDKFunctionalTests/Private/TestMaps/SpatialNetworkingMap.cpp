@@ -48,6 +48,7 @@ void USpatialNetworkingMap::CreateCustomContentForMap()
 	AddActorToLevel<AStaticSubobjectsTest>(CurrentLevel, FTransform::Identity);
 
 	AddActorToLevel<AInitiallyDormantDynamicActorTest>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<AInitiallyDormantMapActorTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicActorSetToAwakeTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicActorDormantAllChangePropertyTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicActorAwakeChangePropertyTest>(CurrentLevel, FTransform::Identity);
