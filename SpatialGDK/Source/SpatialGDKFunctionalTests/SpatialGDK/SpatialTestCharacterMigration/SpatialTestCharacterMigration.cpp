@@ -25,11 +25,10 @@ float GetTargetDistanceOnLine(const FVector& From, const FVector& Target, const 
 } // namespace
 
 /**
- * This test moves a character backward and forward repeatedly between two workers, adding actors. Based on the SpatialTestCharacterMovement
- * test. This test requires the CharacterMovementTestGameMode, trying to run this test on a different game mode will fail.
- *
+ * This test moves a character backward and forward repeatedly between two workers ensuring migration occurs.
+ * PlayerController owned actors are spawned after each successful migration. This tests that owned actors do not hinder migration.
+ * Based on the SpatialTestCharacterMovement test. This test requires the CharacterMovementTestGameMode, trying to run this test on a different game mode will fail.
  * The test includes two servers and one client worker. The client worker begins with a PlayerController and a TestCharacterMovement
- *
  */
 
 ASpatialTestCharacterMigration::ASpatialTestCharacterMigration()
@@ -56,9 +55,28 @@ void ASpatialTestCharacterMigration::PrepareTest()
 		{
 			ATestMovementCharacter* Character = *Iter;
 			float AverageSpeed = Character->GetAverageSpeedOverWindow();
-			RequireEqual_Float(AverageSpeed, 0.0f, TEXT("Actor has become stationary"));
+			RequireEqual_Float(AverageSpeed, 0.0f, FString::Printf(TEXT("%s is stationary"), *Character->GetName()));
 		}
 
+		FinishStep();
+	});
+
+	// Add actor to controller
+	FSpatialFunctionalTestStepDefinition AddActorStepDefinition(/*bIsNativeDefinition*/ true);
+	AddActorStepDefinition.StepName = TEXT("Add actor to player controller");
+	AddActorStepDefinition.TimeLimit = 0.0f;
+	AddActorStepDefinition.NativeStartEvent.BindLambda([this]() {
+		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
+		{
+			AController* PlayerController = Cast<AController>(FlowController->GetOwner());
+
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = PlayerController;
+			AActor* TestActor = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), FTransform(), SpawnParams);
+			TestActor->SetReplicates(
+				true); // NOTE: this currently causes parent not to migrate after a delay and outputs a warning in the test
+			RegisterAutoDestroyActor(TestActor);
+		}
 		FinishStep();
 	});
 
@@ -75,10 +93,10 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			Character->AddMovementInput(FVector(1.0f, 0.0f, 0.0f), 10.0f, true);
 
 			float PeakSpeed = Character->GetPeakSpeedInWindow();
-			RequireEqual_Bool(PeakSpeed < 60.0f, true, TEXT("Check actor peak speed"));
+			RequireEqual_Bool(PeakSpeed < 60.0f, true, FString::Printf(TEXT("%s not speeding"), *Character->GetName()));
 
 			bool bReachDestination = GetTargetDistanceOnLine(Origin, Destination, Character->GetActorLocation()) > -20.0f; // 20cm overlap
-			RequireEqual_Bool(bReachDestination, true, TEXT("Check reached destination"));
+			RequireEqual_Bool(bReachDestination, true, FString::Printf(TEXT("%s reached destination"), *Character->GetName()));
 			bAllCharactersReachedDestination &= bReachDestination;
 
 			Count++;
@@ -101,10 +119,10 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			Character->AddMovementInput(FVector(-1.0f, 0.0f, 0.0f), 10.0f, true);
 
 			float PeakSpeed = Character->GetPeakSpeedInWindow();
-			RequireEqual_Bool(PeakSpeed < 60.0f, true, TEXT("Check actor peak speed"));
+			RequireEqual_Bool(PeakSpeed < 60.0f, true, FString::Printf(TEXT("%s not speeding"), *Character->GetName()));
 
 			bool bReachDestination = GetTargetDistanceOnLine(Destination, Origin, Character->GetActorLocation()) > -20.0f; // 20cm overlap
-			RequireEqual_Bool(bReachDestination, true, TEXT("Check reached destination"));
+			RequireEqual_Bool(bReachDestination, true, FString::Printf(TEXT("%s reached destination"), *Character->GetName()));
 			bAllCharactersReachedDestination &= bReachDestination;
 
 			Count++;
@@ -117,7 +135,9 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	AddStepFromDefinition(WaitForStationaryActorStepDefinition, FWorkerDefinition::AllClients);
 	for (int i = 0; i < 5; i++)
 	{
+		AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
 		AddStepFromDefinition(MoveForwardStepDefinition, FWorkerDefinition::AllClients);
+		AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
 		AddStepFromDefinition(MoveBackwardStepDefinition, FWorkerDefinition::AllClients);
 	}
 }

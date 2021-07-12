@@ -20,7 +20,4 @@ public:
 
 	FVector Origin;
 	FVector Destination;
-
-	bool bCharacterReachedDestination;
-	bool bCharacterReachedOrigin;
 };
