@@ -39,8 +39,8 @@ ASpatialTestCharacterMigration::ASpatialTestCharacterMigration()
 	Description = TEXT("Test Character Migration");
 	TimeLimit = 300;
 
-	Destination = FVector(150.0f, 0.0f, 40.0f);
-	Origin = FVector(-150.0f, 0.0f, 40.0f);
+	Destination = FVector(200.0f, 0.0f, 40.0f);
+	Origin = FVector(-200.0f, 0.0f, 40.0f);
 }
 
 void ASpatialTestCharacterMigration::PrepareTest()
