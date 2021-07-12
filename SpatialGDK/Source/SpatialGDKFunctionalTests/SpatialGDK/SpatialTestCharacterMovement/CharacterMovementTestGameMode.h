@@ -18,7 +18,6 @@ class ACharacterMovementTestGameMode : public AGameModeBase
 	AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName) override;
 
 private:
-
 	int32 SpawnRequests = 0;
 	TArray<APlayerStart*> PlayerStarts;
 };
