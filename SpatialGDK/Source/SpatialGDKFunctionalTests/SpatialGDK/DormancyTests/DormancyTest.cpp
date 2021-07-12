@@ -10,7 +10,7 @@ AActor* ADormancyTest::CreateDormancyTestActor()
 }
 
 void ADormancyTest::RequireDormancyTestState(const TEnumAsByte<enum ENetDormancy> ExpectedNetDormancy, const int ExpectedTestIntProp,
-												  const int ExpectedCount)
+											 const int ExpectedCount)
 {
 	int Counter = 0;
 	for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
