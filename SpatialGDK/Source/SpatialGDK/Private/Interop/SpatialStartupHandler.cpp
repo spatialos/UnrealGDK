@@ -125,10 +125,6 @@ bool FSpatialStartupHandler::TryFinishStartup()
 
 	if (Stage == EStage::FillWorkerTranslationState)
 	{
-		TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation> VirtualWorkerMapping;
-
-		bool bFoundTranslator = false;
-		bool bNeedToCreatePartitions = false;
 		const EntityViewElement* VirtualWorkerTranslatorEntity =
 			GetCoordinator().GetView().Find(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID);
 		if (VirtualWorkerTranslatorEntity != nullptr)
@@ -137,88 +133,107 @@ bool FSpatialStartupHandler::TryFinishStartup()
 				ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID });
 			if (ensure(VirtualWorkerTranslatorComponent != nullptr))
 			{
-				bFoundTranslator = true;
-				SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(VirtualWorkerMapping,
-																	   *VirtualWorkerTranslatorComponent->GetFields());
-				Algo::Transform(VirtualWorkerMapping, WorkerPartitions,
+				SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(WorkersToPartitions, *VirtualWorkerTranslatorComponent->GetFields());
+				Algo::Transform(WorkersToPartitions, WorkerPartitions,
 								[](const TPair<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation>& Pair) {
 									return Pair.Value.PartitionEntityId;
 								});
-				bNeedToCreatePartitions = WorkerPartitions.Num() != Setup.ExpectedServerWorkersCount;
+				const bool bNeedToCreatePartitions = WorkerPartitions.Num() < Setup.ExpectedServerWorkersCount;
+
+				Stage = bNeedToCreatePartitions ? EStage::AuthCreatePartitions : EStage::WaitForAuthPartitionsVisibility;
 			}
 		}
+	}
 
-		if (bFoundTranslator)
+	if (Stage == EStage::AuthCreatePartitions)
+	{
+		UE_LOG(LogSpatialStartupHandler, Log, TEXT("Spawning partition entities for %d virtual workers"), Setup.ExpectedServerWorkersCount);
+		for (VirtualWorkerId GeneratedVirtualWorkerId = 1;
+			 GeneratedVirtualWorkerId <= static_cast<VirtualWorkerId>(Setup.ExpectedServerWorkersCount); ++GeneratedVirtualWorkerId)
 		{
-			if (bNeedToCreatePartitions)
+			if (WorkersToPartitions.Contains(GeneratedVirtualWorkerId))
 			{
-				if (!bHasCalledPartitionEntityCreate)
-				{
-					bHasCalledPartitionEntityCreate = true;
-
-					UE_LOG(LogSpatialStartupHandler, Log, TEXT("Spawning partition entities for %d virtual workers"),
-						   Setup.ExpectedServerWorkersCount);
-					for (VirtualWorkerId GeneratedVirtualWorkerId = 1;
-						 GeneratedVirtualWorkerId <= static_cast<VirtualWorkerId>(Setup.ExpectedServerWorkersCount);
-						 ++GeneratedVirtualWorkerId)
-					{
-						if (VirtualWorkerMapping.Contains(GeneratedVirtualWorkerId))
-						{
-							// This virtual worker mapping already exists, no need to create a partition.
-							continue;
-						}
-
-						PhysicalWorkerName WorkerName = TEXT("DUMMY");
-
-						const ComponentData* ServerWorkerData = GetCoordinator().GetComponent(WorkerEntityIds[GeneratedVirtualWorkerId - 1],
-																							  SpatialConstants::SERVER_WORKER_COMPONENT_ID);
-						if (ensure(ServerWorkerData != nullptr))
-						{
-							WorkerName = GetStringFromSchema(ServerWorkerData->GetFields(), SpatialConstants::SERVER_WORKER_NAME_ID);
-						}
-
-						const Worker_EntityId PartitionEntityId = NetDriver->PackageMap->AllocateNewEntityId();
-						UE_LOG(LogSpatialStartupHandler, Log, TEXT("- Virtual Worker: %d. Entity: %lld. "), GeneratedVirtualWorkerId,
-							   PartitionEntityId);
-						SpawnPartitionEntity(PartitionEntityId, GeneratedVirtualWorkerId);
-						WorkersToPartitions.Emplace(GeneratedVirtualWorkerId,
-													SpatialVirtualWorkerTranslator::WorkerInformation{
-														WorkerName, WorkerEntityIds[GeneratedVirtualWorkerId - 1], PartitionEntityId });
-					}
-				}
+				// This virtual worker mapping already exists, no need to create a partition.
+				continue;
 			}
 
-			EntityHandler.ProcessOps(GetOps());
+			PhysicalWorkerName WorkerName = TEXT("DUMMY");
 
-			if (PartitionsToCreate.Num() == 0)
+			const ComponentData* ServerWorkerData =
+				GetCoordinator().GetComponent(WorkerEntityIds[GeneratedVirtualWorkerId - 1], SpatialConstants::SERVER_WORKER_COMPONENT_ID);
+			if (ensure(ServerWorkerData != nullptr))
 			{
-				TMap<Worker_EntityId_Key, const ComponentData*> WorkerComponents;
-				Algo::Transform(WorkerEntityIds, WorkerComponents, [this](const Worker_EntityId EntityId) {
-					return TPair<Worker_EntityId_Key, const ComponentData*>{
-						EntityId, GetCoordinator().GetView()[EntityId].Components.FindByPredicate(
-									  ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID })
-					};
-				});
-
-				// All partitions created.
-				ComponentUpdate Update(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
-				for (const auto& Entry : WorkersToPartitions)
-				{
-					Schema_Object* EntryObject =
-						Schema_AddObject(Update.GetFields(), SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
-					Schema_AddUint32(EntryObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID, Entry.Key);
-					AddStringToSchema(EntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID, Entry.Value.WorkerName);
-					Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID, Entry.Value.ServerWorkerEntityId);
-					Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_PARTITION_ID, Entry.Value.PartitionEntityId);
-
-					const ComponentData* ServerWorkerComponentData = WorkerComponents.FindChecked(Entry.Value.ServerWorkerEntityId);
-					const ServerWorker ServerWorkerData(ServerWorkerComponentData->GetUnderlying());
-					ClaimHandler.ClaimPartition(ServerWorkerData.SystemEntityId, Entry.Value.PartitionEntityId);
-				}
-				GetCoordinator().SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, MoveTemp(Update));
-				Stage = EStage::GetVirtualWorkerTranslationState;
+				WorkerName = GetStringFromSchema(ServerWorkerData->GetFields(), SpatialConstants::SERVER_WORKER_NAME_ID);
 			}
+
+			const Worker_EntityId PartitionEntityId = NetDriver->PackageMap->AllocateNewEntityId();
+			UE_LOG(LogSpatialStartupHandler, Log, TEXT("- Virtual Worker: %d. Entity: %lld. "), GeneratedVirtualWorkerId,
+				   PartitionEntityId);
+			SpawnPartitionEntity(PartitionEntityId, GeneratedVirtualWorkerId);
+			WorkersToPartitions.Emplace(GeneratedVirtualWorkerId,
+										SpatialVirtualWorkerTranslator::WorkerInformation{
+											WorkerName, WorkerEntityIds[GeneratedVirtualWorkerId - 1], PartitionEntityId });
 		}
+
+		Stage = EStage::WaitForAuthPartitionsCreated;
+	}
+
+	if (Stage == EStage::WaitForAuthPartitionsCreated)
+	{
+		EntityHandler.ProcessOps(GetOps());
+
+		// This checks for whether all create requests finished, NOT whether the partitions are in view.
+		const bool bWereAllPartitionsCreated = PartitionsToCreate.Num() == 0;
+
+		if (bWereAllPartitionsCreated)
+		{
+			Stage = EStage::AssignPartitionsToVirtualWorkers;
+		}
+	}
+
+	if (Stage == EStage::WaitForAuthPartitionsVisibility)
+	{
+		const bool bAreAllPartitionsInView = Algo::AllOf(
+			WorkersToPartitions,
+			[View = &GetCoordinator().GetView()](const TPair<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation>& Worker) {
+				return View->Contains(Worker.Value.PartitionEntityId);
+			});
+
+		if (bAreAllPartitionsInView)
+		{
+			Stage = EStage::AssignPartitionsToVirtualWorkers;
+		}
+	}
+
+	if (Stage == EStage::AssignPartitionsToVirtualWorkers)
+	{
+		TMap<Worker_EntityId_Key, const ComponentData*> WorkerComponents;
+		Algo::Transform(WorkerEntityIds, WorkerComponents, [this](const Worker_EntityId EntityId) {
+			return TPair<Worker_EntityId_Key, const ComponentData*>{
+				EntityId, GetCoordinator().GetView()[EntityId].Components.FindByPredicate(
+							  ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID })
+			};
+		});
+
+		ComponentUpdate Update(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
+		for (const auto& Entry : WorkersToPartitions)
+		{
+			// Assign the worker's partition to its system entity.
+			const ComponentData* ServerWorkerComponentData = WorkerComponents.FindChecked(Entry.Value.ServerWorkerEntityId);
+			const ServerWorker ServerWorkerData(ServerWorkerComponentData->GetUnderlying());
+			ClaimHandler.ClaimPartition(ServerWorkerData.SystemEntityId, Entry.Value.PartitionEntityId);
+
+			// Reflect the partition assignment in the translator object.
+			Schema_Object* EntryObject = Schema_AddObject(Update.GetFields(), SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
+			Schema_AddUint32(EntryObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID, Entry.Key);
+			AddStringToSchema(EntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID, Entry.Value.WorkerName);
+			Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID, Entry.Value.ServerWorkerEntityId);
+			Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_PARTITION_ID, Entry.Value.PartitionEntityId);
+		}
+
+		GetCoordinator().SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, MoveTemp(Update));
+
+		Stage = EStage::GetVirtualWorkerTranslationState;
 	}
 
 	if (Stage == EStage::GetVirtualWorkerTranslationState)
@@ -259,12 +274,6 @@ bool FSpatialStartupHandler::TryFinishStartup()
 	}
 
 	if (Stage == EStage::WaitForAssignedPartition)
-	{
-		// ClaimHandler.ClaimPartition(NetDriver->Connection->GetWorkerSystemEntityId(), LocalPartitionId);
-		Stage = EStage::WaitForAssignedPartition2;
-	}
-
-	if (Stage == EStage::WaitForAssignedPartition2)
 	{
 		const EntityViewElement* AssignedPartitionEntity = GetCoordinator().GetView().Find(LocalPartitionId);
 		if (AssignedPartitionEntity != nullptr)
@@ -308,14 +317,6 @@ bool FSpatialStartupHandler::TryFinishStartup()
 
 			GetGSM().TriggerBeginPlay();
 
-			// Hmm - this seems necessary because unless we call this after NotifyBeginPlay has been triggered, it won't actually
-			// do anything, because internally it checks that BeginPlay has actually been called. I'm not sure why we called
-			// SetAcceptingPlayers above though unless it was only to catch the non-auth server instances. In which case the auth
-			// server is failing to call SetAcceptingPlayers again at some later point.
-			//
-			// I've now removed it from the other places it used to be called, because I believe they were both neither no longer
-			// valid. Above because the world tick won't have begun, and during the deployment man auth gained, for the same reason.
-			// Leaving this comment block in for review reasons but will remove before merging.
 			GetGSM().SetAcceptingPlayers(true);
 
 			Stage = EStage::Finished;
@@ -536,7 +537,10 @@ bool FSpatialClientStartupHandler::TryFinishStartup()
 		Stage = EStage::Finished;
 	}
 
-	NetDriver->PendingNetworkFailure = PendingNetworkFailure;
+	if (PendingNetworkFailure)
+	{
+		NetDriver->PendingNetworkFailure = PendingNetworkFailure;
+	}
 
 	return Stage == EStage::Finished;
 }

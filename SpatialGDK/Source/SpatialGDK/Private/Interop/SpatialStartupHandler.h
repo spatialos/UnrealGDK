@@ -58,14 +58,17 @@ private:
 		DeriveDeploymentRecoveryState,
 		TryClaimingGSMEntityAuthority,
 		WaitForGSMEntityAuthority,
-		GetVirtualWorkerTranslationState,
 
 		FillWorkerTranslationState,
+		AuthCreatePartitions,
+		WaitForAuthPartitionsCreated,
+		WaitForAuthPartitionsVisibility,
+		AssignPartitionsToVirtualWorkers,
+
+		GetVirtualWorkerTranslationState,
+		WaitForAssignedPartition,
 
 		DispatchGSMStartPlay,
-
-		WaitForAssignedPartition,
-		WaitForAssignedPartition2,
 		WaitForGSMStartPlay,
 
 		Finished,
