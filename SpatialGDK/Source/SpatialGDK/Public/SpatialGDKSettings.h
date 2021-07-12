@@ -456,9 +456,18 @@ public:
 
 	/*
 	 * -- EXPERIMENTAL --
+	 * Same as bEventTracingEnabled, but used if WITH_EDITOR is defined.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
+	bool bEventTracingEnabledWithEditor;
+
+	bool GetEventTracingEnabled() const;
+
+	/*
+	 * -- EXPERIMENTAL --
 	 * Class containing various settings used to configure event trace sampling
 	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing", meta = (EditCondition = "bEventTracingEnabled"))
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing", meta = (EditCondition = "bEventTracingEnabled || bEventTracingEnabledWithEditor"))
 	TSubclassOf<UEventTracingSamplingSettings> EventTracingSamplingSettingsClass;
 
 	UEventTracingSamplingSettings* GetEventTracingSamplingSettings() const;

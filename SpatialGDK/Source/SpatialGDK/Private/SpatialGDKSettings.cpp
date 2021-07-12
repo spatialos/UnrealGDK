@@ -186,6 +186,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, StartupLogRate(5.0f)
 	, ActorMigrationLogRate(5.0f)
 	, bEventTracingEnabled(false)
+	, bEventTracingEnabledWithEditor(false)
 	, EventTracingSamplingSettingsClass(UEventTracingSamplingSettings::StaticClass())
 	, EventTracingSingleLogMaxFileSizeBytes(DefaultEventTracingFileSize)
 	, bEnableEventTracingRotatingLogs(false)
@@ -218,7 +219,11 @@ void USpatialGDKSettings::PostInitProperties()
 							 TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"),
 							 TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
+#if WITH_EDITOR
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideEventTracingEnabled"), TEXT("Event tracing in-editor enabled"), bEventTracingEnabledWithEditor);
+#else
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideEventTracingEnabled"), TEXT("Event tracing enabled"), bEventTracingEnabled);
+#endif
 	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"),
 									   OverrideMultiWorkerSettingsClass);
 	CheckCmdLineOverrideOptionalStringWithCallback(
@@ -358,4 +363,12 @@ void USpatialGDKSettings::SetMultiWorkerEditorEnabled(bool bIsEnabled)
 }
 #endif // WITH_EDITOR
 
+bool USpatialGDKSettings::GetEventTracingEnabled() const
+{
+#if WITH_EDITOR
+	return bEventTracingEnabledWithEditor;
+#else
+	return bEventTracingEnabled;
+#endif
+}
 #undef LOCTEXT_NAMESPACE
