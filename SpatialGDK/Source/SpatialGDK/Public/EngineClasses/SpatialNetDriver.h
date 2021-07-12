@@ -89,6 +89,7 @@ class InitialOnlyFilter;
 class CrossServerRPCSender;
 class CrossServerRPCHandler;
 class FSpatialStrategySystem;
+class FSkeletonEntityCreationStartupStep;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -240,14 +241,13 @@ public:
 	TUniquePtr<SpatialGDK::UnrealServerInterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
+	TUniquePtr<SpatialGDK::FSkeletonEntityCreationStartupStep> SkeletonEntityCreationStep;
+
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
 	TUniquePtr<SpatialGDK::InitialOnlyFilter> InitialOnlyFilter;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
-
-	// If this worker is authoritative over the translation, the manager will be instantiated.
-	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
 
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }

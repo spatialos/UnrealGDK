@@ -142,6 +142,9 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 	ACTOR_TAG_COMPONENT_ID,
 
 	ACTOR_OWNERSHIP_COMPONENT_ID,
+
+	// Skeleton entity tags.
+	SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID, SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID,
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>{
@@ -192,7 +195,10 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 
 	ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID,
 
-	ACTOR_OWNERSHIP_COMPONENT_ID,
+    ACTOR_OWNERSHIP_COMPONENT_ID,
+
+    // Skeleton entity tags.
+    SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID, SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID,
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
@@ -208,31 +214,33 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
 								// Actor tags
 								ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
 
-                            	AUTHORITY_INTENTV2_COMPONENT_ID,
-                            	PARTITION_COMPONENT_ID
-};
+								// Skeleton entity tags.
+								SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID, SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID, SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID,
 
+								AUTHORITY_INTENTV2_COMPONENT_ID,
+};
 const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
-	"improbable/standard_library.schema",
-	"unreal/gdk/authority_intent.schema",
-	"unreal/gdk/debug_component.schema",
-	"unreal/gdk/gameplay_debugger_component.schema",
-	"unreal/gdk/debug_metrics.schema",
-	"unreal/gdk/net_owning_client_worker.schema",
-	"unreal/gdk/not_streamed.schema",
-	"unreal/gdk/query_tags.schema",
-	"unreal/gdk/relevant.schema",
-	"unreal/gdk/rpc_components.schema",
-	"unreal/gdk/spatial_debugging.schema",
-	"unreal/gdk/spawndata.schema",
-	"unreal/gdk/tombstone.schema",
-	"unreal/gdk/unreal_metadata.schema",
-	"unreal/gdk/actor_group_member.schema",
-	"unreal/gdk/actor_set_member.schema",
+    "improbable/standard_library.schema",
+    "unreal/gdk/authority_intent.schema",
+    "unreal/gdk/debug_component.schema",
+    "unreal/gdk/debug_metrics.schema",
+    "unreal/gdk/gameplay_debugger_component.schema",
+    "unreal/gdk/net_owning_client_worker.schema",
+    "unreal/gdk/not_streamed.schema",
+    "unreal/gdk/query_tags.schema",
+    "unreal/gdk/relevant.schema",
+    "unreal/gdk/rpc_components.schema",
+    "unreal/gdk/spatial_debugging.schema",
+    "unreal/gdk/spawndata.schema",
+    "unreal/gdk/tombstone.schema",
+    "unreal/gdk/unreal_metadata.schema",
+    "unreal/gdk/actor_group_member.schema",
+    "unreal/gdk/actor_set_member.schema",
 	"unreal/gdk/migration_diagnostic.schema",
-	"unreal/gdk/actor_ownership.schema",
-	"unreal/generated/rpc_endpoints.schema",
-	"unreal/generated/NetCullDistance/ncdcomponents.schema",
+    "unreal/gdk/actor_ownership.schema",
+    "unreal/gdk/skeleton_entity.schema",
+    "unreal/generated/rpc_endpoints.schema",
+    "unreal/generated/NetCullDistance/ncdcomponents.schema",
 };
 
 const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
@@ -262,6 +270,8 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
     { CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverACKRPCs" },
 	{ MIGRATION_DIAGNOSTIC_COMPONENT_ID, "unreal.MigrationDiagnostic" },
 	{ ACTOR_OWNERSHIP_COMPONENT_ID, "unreal.ActorOwnership" },
+    
+    { SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID, "unreal.SkeletonEntityPopulationFinishedTag"},
 };
 
 const TArray<FString> ClientAuthorityWellKnownSchemaImports = { "unreal/gdk/player_controller.schema", "unreal/gdk/rpc_components.schema",

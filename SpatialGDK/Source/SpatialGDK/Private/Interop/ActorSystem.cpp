@@ -297,14 +297,16 @@ void ActorSystem::Advance()
 		{ SimulatedSubView, ENetRole::ROLE_SimulatedProxy },
 	};
 
+	// First, we process updates; when receiving tear off updates, we want to
+	// process them before a REMOVE if we receive it in the same ViewDelta.
 	for (const FEntitySubView& SubView : SubViews)
 	{
-		ProcessRemoves(SubView);
+		ProcessUpdates(SubView);
 	}
 
 	for (const FEntitySubView& SubView : SubViews)
 	{
-		ProcessUpdates(SubView);
+		ProcessRemoves(SubView);
 	}
 
 	for (const FEntitySubView& SubView : SubViews)
@@ -461,7 +463,8 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 
 					if (!bDormantActor)
 					{
-						UpdateShadowData(EntityId);
+						USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
+						ActorChannel->OnHandoverAuthorityGained();
 					}
 
 					// TODO - Using bActorHadAuthority should be replaced with better tracking system to Actor entity creation [UNR-3960]
@@ -768,12 +771,6 @@ void ActorSystem::HandleDeferredEntityDeletion(const DeferredRetire& Retire) con
 	{
 		RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
 	}
-}
-
-void ActorSystem::UpdateShadowData(const Worker_EntityId EntityId) const
-{
-	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
-	ActorChannel->UpdateShadowData();
 }
 
 void ActorSystem::RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff)
@@ -1640,7 +1637,7 @@ void ActorSystem::ApplyComponentDataOnActorCreation(const Worker_EntityId Entity
 	}
 }
 
-USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, const Worker_EntityId EntityId)
+USpatialActorChannel* ActorSystem::SetUpActorChannel(USpatialNetDriver* NetDriver, AActor* Actor, const Worker_EntityId EntityId)
 {
 	UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
 
@@ -1665,6 +1662,11 @@ USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, const Worker
 	}
 
 	return Channel;
+}
+
+USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, Worker_EntityId EntityId)
+{
+	return SetUpActorChannel(NetDriver, Actor, EntityId);
 }
 
 USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, const Worker_EntityId EntityId)
@@ -1814,6 +1816,12 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
 			return;
 		}
+	}
+
+	// If the actor was torn off and we don't have a channel, don't destroy the actor. 
+	if (Actor->GetTearOff())
+	{
+		return;
 	}
 
 	// Actor is a startup actor that is a part of the level. If it's not Tombstone-d, then it
@@ -2105,11 +2113,30 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 	UE_LOG(LogActorSystem, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"), *Actor->GetName(),
 		   ActorChannel.GetEntityId(), Actor->HasAuthority());
 
-	SpatialGDK::EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
-	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(&ActorChannel, OutBytesWritten);
+	EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
+	TArray<FWorkerComponentData> ComponentDatas;
+	TArray<FWorkerComponentUpdate> ComponentUpdates;
+
+	const EntityViewElement* ExistingEntity = ActorSubView->GetView().Find(ActorChannel.GetEntityId());
+
+	const bool bIsSkeletonEntity =
+		ExistingEntity != nullptr
+		&& ExistingEntity->Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID });
+
+	// If we're not populating a skeleton entity, we're creating a new one.
+	const bool bIsCreatingNewEntity = !bIsSkeletonEntity;
+
+	if (bIsCreatingNewEntity)
+	{
+		ComponentDatas = DataFactory.CreateEntityComponents(&ActorChannel, OutBytesWritten);
+	}
+	else
+	{
+		DataFactory.CreatePopulateSkeletonComponents(ActorChannel, ComponentDatas, ComponentUpdates, OutBytesWritten);
+	}
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
-	ComponentDatas.Add(SpatialGDK::ActorSystem::CreateLevelComponentData(*Actor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
+	ComponentDatas.Add(CreateLevelComponentData(*Actor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
 
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
@@ -2121,14 +2148,38 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 										 });
 	}
 
-	const Worker_RequestId CreateEntityRequestId =
-		NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
+	ViewCoordinator& Coordinator = NetDriver->Connection->GetCoordinator();
 
-	CommandsHandler.AddRequest(CreateEntityRequestId, [this, SpanId](const Worker_CreateEntityResponseOp& Op) {
-		OnEntityCreated(Op, SpanId);
-	});
+	if (bIsCreatingNewEntity)
+	{
+		const Worker_RequestId CreateEntityRequestId =
+			NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
 
-	CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
+		CommandsHandler.AddRequest(CreateEntityRequestId, [this, SpanId](const Worker_CreateEntityResponseOp& Op) {
+			OnEntityCreated(Op, SpanId);
+		});
+
+		CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
+	}
+	else
+	{
+		for (const FWorkerComponentUpdate& ComponentToUpdate : ComponentUpdates)
+		{
+			ComponentUpdate GeneratedUpdate(OwningComponentUpdatePtr(ComponentToUpdate.schema_type), ComponentToUpdate.component_id);
+			Coordinator.SendComponentUpdate(EntityId, MoveTemp(GeneratedUpdate), {});
+		}
+		for (const FWorkerComponentData& ComponentToAdd : ComponentDatas)
+		{
+			ComponentData GeneratedAdd = ComponentData(OwningComponentDataPtr(ComponentToAdd.schema_type), ComponentToAdd.component_id);
+			Coordinator.SendAddComponent(EntityId, MoveTemp(GeneratedAdd), {});
+		}
+
+		// Add this last; due to AddComponent ordering, seeing the POPULATION_FINISHED tag would mean that all the previous ComponentAdds
+		// have been observed.
+		Coordinator.SendAddComponent(EntityId, ComponentData(SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID));
+
+		Coordinator.RefreshEntityCompleteness(EntityId);
+	}
 }
 
 bool ActorSystem::HasPendingOpsForChannel(const USpatialActorChannel& ActorChannel) const

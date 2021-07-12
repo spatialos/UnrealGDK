@@ -41,6 +41,8 @@ void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, 
 	EntityViewElement* Element = View.Find(EntityId);
 	if (ensure(Element != nullptr))
 	{
+		checkf(!Element->Components.ContainsByPredicate(ComponentIdEquality{ Data.GetComponentId() }),
+			   TEXT("Trying to add duplicated component to an entity. EntityId: %lld ComponentId: %d"), EntityId, Data.GetComponentId());
 		Element->Components.Emplace(Data.DeepCopy());
 		LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Data), SpanId);
 	}

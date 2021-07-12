@@ -5,6 +5,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/InitialOnlyFilter.h"
 #include "Interop/OwnershipCompletenessHandler.h"
+#include "Interop/SkeletonEntities.h"
 #include "Schema/ActorOwnership.h"
 #include "Schema/Restricted.h"
 #include "Schema/Tombstone.h"
@@ -60,6 +61,11 @@ bool MainActorSubviewSetup::IsActorEntity(const Worker_EntityId EntityId, const 
 		return false;
 	}
 
+	if (!SkeletonEntityFunctions::IsCompleteSkeleton(Entity))
+	{
+		return false;
+	}
+
 	if (NetDriver.AsyncPackageLoadFilter != nullptr)
 	{
 		const UnrealMetadata Metadata(
@@ -91,9 +97,10 @@ bool MainActorSubviewSetup::IsActorEntity(const Worker_EntityId EntityId, const 
 
 TArray<FDispatcherRefreshCallback> MainActorSubviewSetup::GetCallbacks(ViewCoordinator& Coordinator)
 {
-	return { Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
-			 Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
-			 Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID) };
+	return CombineCallbacks({ Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
+							  Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
+							  Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID) },
+							SkeletonEntityFunctions::GetSkeletonEntityRefreshCallbacks(Coordinator));
 }
 
 bool AuthoritySubviewSetup::IsAuthorityActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element)
@@ -179,8 +186,12 @@ FSubView& CreateCustomActorSubView(TOptional<Worker_ComponentId> MaybeCustomComp
 
 FSubView& CreateActorAuthSubView(USpatialNetDriver& NetDriver)
 {
-	return NetDriver.Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, FSubView::NoFilter,
-																FSubView::NoDispatcherCallbacks);
+	return NetDriver.Connection->GetCoordinator().CreateSubView(
+		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
+		[&NetDriver](const Worker_EntityId EntityId, const EntityViewElement& Element) {
+			return MainActorSubviewSetup::IsActorEntity(EntityId, Element, NetDriver);
+		},
+		MainActorSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
 }
 
 template <typename TCallable, typename... TValues>
