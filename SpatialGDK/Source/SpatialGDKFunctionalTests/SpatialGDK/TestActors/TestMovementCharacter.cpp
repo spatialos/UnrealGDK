@@ -27,8 +27,8 @@ ATestMovementCharacter::ATestMovementCharacter()
 	SphereComponent->SetVisibility(true);
 	SphereComponent->SetupAttachment(GetCapsuleComponent());
 
-	FVector CameraLocation = FVector(300.0f, 0.0f, 75.0f);
-	FRotator CameraRotation = FRotator::MakeFromEuler(FVector(0.0f, -10.0f, 180.0f));
+	FVector CameraLocation = FVector(300.0f, 300.0f, 75.0f);
+	FRotator CameraRotation = FRotator::MakeFromEuler(FVector(0.0f, -10.0f, 225.0f));
 
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 #if ENGINE_MINOR_VERSION < 24

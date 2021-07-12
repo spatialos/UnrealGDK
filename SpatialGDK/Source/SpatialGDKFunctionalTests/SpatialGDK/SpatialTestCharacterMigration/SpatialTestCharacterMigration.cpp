@@ -27,9 +27,8 @@ float GetTargetDistanceOnLine(const FVector& From, const FVector& Target, const 
 /**
  * This test moves a character backward and forward repeatedly between two workers ensuring migration occurs.
  * PlayerController owned actors are spawned after each successful migration. This tests that owned actors do not hinder migration.
- * Based on the SpatialTestCharacterMovement test. This test requires the CharacterMovementTestGameMode, trying to run this test on a
- * different game mode will fail. The test includes two servers and one client worker. The client worker begins with a PlayerController and
- * a TestCharacterMovement
+ * Based on the SpatialTestCharacterMovement test. This test requires the CharacterMovementTestGameMode, trying to run this test on a different game mode will fail.
+ * The test includes two servers and one client worker. The client worker begins with a PlayerController and a TestCharacterMovement
  */
 
 ASpatialTestCharacterMigration::ASpatialTestCharacterMigration()
@@ -88,16 +87,19 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	MoveForwardStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		bool bAllCharactersReachedDestination = true;
 		int32 Count = 0;
+
+		UGameInstance* GameInstance = GetGameInstance();
+		const FString WorkerId = GameInstance->GetSpatialWorkerId();
 		for (TActorIterator<ATestMovementCharacter> Iter(GetWorld()); Iter; ++Iter)
 		{
 			ATestMovementCharacter* Character = *Iter;
 			Character->AddMovementInput(FVector(1.0f, 0.0f, 0.0f), 10.0f, true);
 
 			float PeakSpeed = Character->GetPeakSpeedInWindow();
-			RequireEqual_Bool(PeakSpeed < 60.0f, true, FString::Printf(TEXT("%s not speeding"), *Character->GetName()));
+			AssertValue_Float(PeakSpeed, EComparisonMethod::Less_Than, 60.0f, TEXT("Actor not speeding"));
 
 			bool bReachDestination = GetTargetDistanceOnLine(Origin, Destination, Character->GetActorLocation()) > -20.0f; // 20cm overlap
-			RequireEqual_Bool(bReachDestination, true, FString::Printf(TEXT("%s reached destination"), *Character->GetName()));
+			RequireEqual_Bool(bReachDestination, true, FString::Printf(TEXT("%s on %s reached destination"), *Character->GetName(), *WorkerId));
 			bAllCharactersReachedDestination &= bReachDestination;
 
 			Count++;
@@ -114,16 +116,19 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	MoveBackwardStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		bool bAllCharactersReachedDestination = true;
 		int32 Count = 0;
+
+		UGameInstance* GameInstance = GetGameInstance();
+		const FString WorkerId = GameInstance->GetSpatialWorkerId();
 		for (TActorIterator<ATestMovementCharacter> Iter(GetWorld()); Iter; ++Iter)
 		{
 			ATestMovementCharacter* Character = *Iter;
 			Character->AddMovementInput(FVector(-1.0f, 0.0f, 0.0f), 10.0f, true);
 
 			float PeakSpeed = Character->GetPeakSpeedInWindow();
-			RequireEqual_Bool(PeakSpeed < 60.0f, true, FString::Printf(TEXT("%s not speeding"), *Character->GetName()));
+			AssertValue_Float(PeakSpeed, EComparisonMethod::Less_Than, 60.0f, TEXT("Actor not speeding"));
 
 			bool bReachDestination = GetTargetDistanceOnLine(Destination, Origin, Character->GetActorLocation()) > -20.0f; // 20cm overlap
-			RequireEqual_Bool(bReachDestination, true, FString::Printf(TEXT("%s reached destination"), *Character->GetName()));
+			RequireEqual_Bool(bReachDestination, true, FString::Printf(TEXT("%s on %s reached destination"), *Character->GetName(), *WorkerId));
 			bAllCharactersReachedDestination &= bReachDestination;
 
 			Count++;
