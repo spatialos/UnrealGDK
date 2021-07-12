@@ -52,7 +52,6 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	WaitForStationaryActorStepDefinition.StepName = TEXT("WaitForStationaryActorStepDefinition");
 	WaitForStationaryActorStepDefinition.TimeLimit = 2.0f;
 	WaitForStationaryActorStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
-
 		for (TActorIterator<ATestMovementCharacter> Iter(GetWorld()); Iter; ++Iter)
 		{
 			ATestMovementCharacter* Character = *Iter;
@@ -78,7 +77,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			float PeakSpeed = Character->GetPeakSpeedInWindow();
 			RequireEqual_Bool(PeakSpeed < 60.0f, true, TEXT("Check actor peak speed"));
 
-			bool bReachDestination = GetTargetDistanceOnLine(Origin, Destination, Character->GetActorLocation()) > -20.0f; // 20cm overlap		
+			bool bReachDestination = GetTargetDistanceOnLine(Origin, Destination, Character->GetActorLocation()) > -20.0f; // 20cm overlap
 			RequireEqual_Bool(bReachDestination, true, TEXT("Check reached destination"));
 			bAllCharactersReachedDestination &= bReachDestination;
 
@@ -94,7 +93,6 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	MoveBackwardStepDefinition.StepName = TEXT("Client1MoveBackward");
 	MoveBackwardStepDefinition.TimeLimit = 5.0f;
 	MoveBackwardStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
-
 		bool bAllCharactersReachedDestination = true;
 		int32 Count = 0;
 		for (TActorIterator<ATestMovementCharacter> Iter(GetWorld()); Iter; ++Iter)
@@ -105,7 +103,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			float PeakSpeed = Character->GetPeakSpeedInWindow();
 			RequireEqual_Bool(PeakSpeed < 60.0f, true, TEXT("Check actor peak speed"));
 
-			bool bReachDestination = GetTargetDistanceOnLine(Destination, Origin, Character->GetActorLocation()) > -20.0f; // 20cm overlap		
+			bool bReachDestination = GetTargetDistanceOnLine(Destination, Origin, Character->GetActorLocation()) > -20.0f; // 20cm overlap
 			RequireEqual_Bool(bReachDestination, true, TEXT("Check reached destination"));
 			bAllCharactersReachedDestination &= bReachDestination;
 
