@@ -49,12 +49,13 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 		[this]() {
 			FTimerManager& TimerManager = GetWorld()->GetTimerManager();
 			TimerManager.SetTimer(
-				DelayTimerHandle, [this]() {
-				FinishStep();
-			}, 0.5f, false);
+				DelayTimerHandle,
+				[this]() {
+					FinishStep();
+				},
+				0.5f, false);
 		},
-		nullptr,
-		5.0f);
+		nullptr, 5.0f);
 
 	// Step 5 - Client check TestIntProp is still 0
 	AddStep(
