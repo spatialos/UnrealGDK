@@ -13,7 +13,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ADormancyTest : public ASpatialFunctionalTes
 
 protected:
 	AActor* CreateDormancyTestActor();
-	void RequireDormancyAndRepProperty(const TEnumAsByte<enum ENetDormancy> ExpectedNetDormancy, const int ExpectedTestIntProp);
+	void RequireDormancyAndRepProperty(const TEnumAsByte<enum ENetDormancy> ExpectedNetDormancy, const int ExpectedTestIntProp, const int ExpectedCount);
 	void DestroyDormancyTestActors();
 	void RequireDormancyActorCount(const int ExpectedCount);
 };

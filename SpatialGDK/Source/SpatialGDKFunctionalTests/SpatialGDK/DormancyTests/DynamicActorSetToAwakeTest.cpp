@@ -18,6 +18,7 @@ void ADynamicActorSetToAwakeTest::PrepareTest()
 	AddStep(TEXT("ServerSpawnDormancyActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		AActor* Actor = CreateDormancyTestActor();
 		Actor->SetNetDormancy(DORM_Awake);
+		RegisterAutoDestroyActor(Actor);
 		FinishStep();
 	});
 
@@ -26,7 +27,7 @@ void ADynamicActorSetToAwakeTest::PrepareTest()
 		TEXT("ServerRequireDormancyAndRepProperty"), FWorkerDefinition::Server(1), nullptr, nullptr,
 		[this](float DeltaTime) {
 			RequireDormancyActorCount(1);
-			RequireDormancyAndRepProperty(DORM_Awake, 0);
+			RequireDormancyAndRepProperty(DORM_Awake, 0, 1);
 			FinishStep();
 		},
 		5.0f);
@@ -35,14 +36,8 @@ void ADynamicActorSetToAwakeTest::PrepareTest()
 	AddStep(
 		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireDormancyAndRepProperty(DORM_Awake, 0);
+			RequireDormancyAndRepProperty(DORM_Awake, 0, 1);
 			FinishStep();
 		},
 		5.0f);
-
-	// Step 4 - Delete the test actor on the server.
-	AddStep(TEXT("ServerDeleteActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		DestroyDormancyTestActors();
-		FinishStep();
-	});
 }
