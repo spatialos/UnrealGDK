@@ -61,6 +61,9 @@ public:
 	void RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
 	void RemoveActor(Worker_EntityId EntityId);
 
+	static USpatialActorChannel* SetUpActorChannel(USpatialNetDriver* NetDriver, AActor* Actor, Worker_EntityId EntityId);
+	USpatialActorChannel* SetUpActorChannel(AActor* Actor, Worker_EntityId EntityId);
+
 	// Tombstones
 	void CreateTombstoneEntity(AActor* Actor);
 	void RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor) const;
@@ -139,7 +142,6 @@ private:
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
 	void HandleEntityDeletedAuthority(Worker_EntityId EntityId) const;
 	void HandleDeferredEntityDeletion(const DeferredRetire& Retire) const;
-	void UpdateShadowData(Worker_EntityId EntityId) const;
 
 	// Component add
 	void HandleDormantComponentAdded(Worker_EntityId EntityId) const;
@@ -167,7 +169,6 @@ private:
 	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data,
 										   USpatialActorChannel& Channel, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 
-	USpatialActorChannel* SetUpActorChannel(AActor* Actor, Worker_EntityId EntityId);
 	USpatialActorChannel* TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, Worker_EntityId EntityId);
 
 	// Entity remove
