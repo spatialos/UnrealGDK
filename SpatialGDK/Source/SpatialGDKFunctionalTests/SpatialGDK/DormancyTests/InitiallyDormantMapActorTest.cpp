@@ -19,16 +19,16 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 	// Step 1 - Check actor exists and that it's NetDormancy and TestIntProp are correct on the server.
 	AddStep(TEXT("ServerCheckkDormancyAndRepProperty"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		RequireDormancyActorCount(1);
-		RequireDormancyAndRepProperty(DORM_Initial, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
+		RequireDormancyTestState(DORM_Initial, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 		FinishStep();
 	});
 
 	// Step 2 - Check dormancy and TestIntProp on client.
 	AddStep(
-		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientRequireDormancyTestState"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
 			RequireDormancyActorCount(1);
-			RequireDormancyAndRepProperty(DORM_Initial, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
+			RequireDormancyTestState(DORM_Initial, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 			FinishStep();
 		},
 		5.0f);
@@ -59,9 +59,9 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 
 	// Step 5 - Check dormancy and TestIntProp on client.
 	AddStep(
-		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientRequireDormancyTestState"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireDormancyAndRepProperty(DORM_Initial, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
+			RequireDormancyTestState(DORM_Initial, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 			FinishStep();
 		},
 		5.0f);
@@ -79,9 +79,9 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 
 	// Step 7 - Check dormancy and TestIntProp on client.
 	AddStep(
-		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientRequireDormancyTestState"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireDormancyAndRepProperty(DORM_DormantAll, /*TestRepProperty*/ 1, /*ActorCount*/ 1);
+			RequireDormancyTestState(DORM_DormantAll, /*TestRepProperty*/ 1, /*ActorCount*/ 1);
 			FinishStep();
 		},
 		5.0f);

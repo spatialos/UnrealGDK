@@ -24,19 +24,19 @@ void ADynamicActorSetToAwakeTest::PrepareTest()
 
 	// Step 2 - Server check NetDormancy is DORM_Awake
 	AddStep(
-		TEXT("ServerRequireDormancyAndRepProperty"), FWorkerDefinition::Server(1), nullptr, nullptr,
+		TEXT("ServerRequireDormancyTestState"), FWorkerDefinition::Server(1), nullptr, nullptr,
 		[this](float DeltaTime) {
 			RequireDormancyActorCount(1);
-			RequireDormancyAndRepProperty(DORM_Awake, 0, 1);
+			RequireDormancyTestState(DORM_Awake, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 			FinishStep();
 		},
 		5.0f);
 
 	// Step 3 - Client check NetDormancy is DORM_Awake
 	AddStep(
-		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientRequireDormancyTestState"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireDormancyAndRepProperty(DORM_Awake, 0, 1);
+		RequireDormancyTestState(DORM_Awake, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 			FinishStep();
 		},
 		5.0f);

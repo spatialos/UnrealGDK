@@ -25,10 +25,10 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 
 	// Step 2 - Client check NetDormancy is DORM_DormantAll
 	AddStep(
-		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientRequireDormancyTestState"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
 			RequireDormancyActorCount(1);
-			RequireDormancyAndRepProperty(DORM_DormantAll, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
+			RequireDormancyTestState(DORM_DormantAll, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 			FinishStep();
 		},
 		5.0f);
@@ -59,9 +59,9 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 
 	// Step 5 - Client check TestIntProp is still 0
 	AddStep(
-		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientRequireDormancyTestState"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireDormancyAndRepProperty(DORM_DormantAll, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
+			RequireDormancyTestState(DORM_DormantAll, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 			FinishStep();
 		},
 		5.0f);
@@ -78,9 +78,9 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 
 	// Step 7 - Client check NetDormancy is DORM_Awake and TestIntProp is 1
 	AddStep(
-		TEXT("ClientRequireDormancyAndRepProperty"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("ClientRequireDormancyTestState"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireDormancyAndRepProperty(DORM_Awake, /*TestRepProperty*/ 1, /*ActorCount*/ 1);
+			RequireDormancyTestState(DORM_Awake, /*TestRepProperty*/ 1, /*ActorCount*/ 1);
 			FinishStep();
 		},
 		5.0f);
