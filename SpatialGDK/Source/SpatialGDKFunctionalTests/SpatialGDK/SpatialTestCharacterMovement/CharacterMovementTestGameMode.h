@@ -13,4 +13,12 @@ UCLASS()
 class ACharacterMovementTestGameMode : public AGameModeBase
 {
 	GENERATED_UCLASS_BODY()
+
+	virtual void BeginPlay() override;
+	AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName) override;
+
+private:
+
+	int32 SpawnRequests = 0;
+	TArray<APlayerStart*> PlayerStarts;
 };
