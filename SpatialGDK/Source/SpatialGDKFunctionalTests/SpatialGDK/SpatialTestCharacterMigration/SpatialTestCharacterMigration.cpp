@@ -52,11 +52,13 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	WaitForStationaryActorStepDefinition.StepName = TEXT("WaitForStationaryActorStepDefinition");
 	WaitForStationaryActorStepDefinition.TimeLimit = 2.0f;
 	WaitForStationaryActorStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
+		UGameInstance* GameInstance = GetGameInstance();
+		const FString WorkerId = GameInstance->GetSpatialWorkerId();
 		for (TActorIterator<ATestMovementCharacter> Iter(GetWorld()); Iter; ++Iter)
 		{
 			ATestMovementCharacter* Character = *Iter;
 			float AverageSpeed = Character->GetAverageSpeedOverWindow();
-			RequireEqual_Float(AverageSpeed, 0.0f, FString::Printf(TEXT("%s is stationary"), *Character->GetName()));
+			RequireEqual_Float(AverageSpeed, 0.0f, FString::Printf(TEXT("%s on %s is stationary"), *Character->GetName(), *WorkerId));
 		}
 
 		FinishStep();
