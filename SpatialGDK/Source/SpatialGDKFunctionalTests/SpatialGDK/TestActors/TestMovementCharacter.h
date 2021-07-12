@@ -24,9 +24,10 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
+	static int32 SpeedWindowSize;
+
 	FVector PreviousLocation;
 	int32 SpeedWindowIndex = 0;
-	int32 SpeedWindowSize = 10;
 	TArray<float> SpeedWindow;
 
 	float GetPeakSpeedInWindow() const;

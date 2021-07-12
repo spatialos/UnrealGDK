@@ -38,130 +38,88 @@ ASpatialTestCharacterMigration::ASpatialTestCharacterMigration()
 	Author = "Victoria";
 	Description = TEXT("Test Character Migration");
 	TimeLimit = 300;
+
+	Destination = FVector(132.0f, 0.0f, 40.0f);
+	Origin = FVector(-132.0f, 0.0f, 40.0f);
 }
 
 void ASpatialTestCharacterMigration::PrepareTest()
 {
 	Super::PrepareTest();
 
-	// Reset test
-	FSpatialFunctionalTestStepDefinition ResetStepDefinition(/*bIsNativeDefinition*/ true);
-	ResetStepDefinition.StepName = TEXT("Reset");
-	ResetStepDefinition.TimeLimit = 0.0f;
-	ResetStepDefinition.NativeStartEvent.BindLambda([this]() {
-		bCharacterReachedDestination = false;
-		bCharacterReachedOrigin = false;
-		FinishStep();
-	});
-
-	// Add actor to controller
-	FSpatialFunctionalTestStepDefinition AddActorStepDefinition(/*bIsNativeDefinition*/ true);
-	AddActorStepDefinition.StepName = TEXT("Add actor to player controller");
-	AddActorStepDefinition.TimeLimit = 0.0f;
-	AddActorStepDefinition.NativeStartEvent.BindLambda([this]() {
-		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
-		{
-			AController* PlayerController = Cast<AController>(FlowController->GetOwner());
-
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.Owner = PlayerController;
-			AActor* TestActor = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), FTransform(), SpawnParams);
-			TestActor->SetReplicates(
-				true); // NOTE: this currently causes parent not to migrate after a delay and outputs a warning in the test
-			RegisterAutoDestroyActor(TestActor);
-		}
-		FinishStep();
-	});
-
-	// Wait for actor to be still
+	// Wait for actor to be stationary
 	FSpatialFunctionalTestStepDefinition WaitForStationaryActorStepDefinition(/*bIsNativeDefinition*/ true);
 	WaitForStationaryActorStepDefinition.StepName = TEXT("WaitForStationaryActorStepDefinition");
 	WaitForStationaryActorStepDefinition.TimeLimit = 2.0f;
 	WaitForStationaryActorStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
-		AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
-		ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
-		float AverageSpeed = PlayerCharacter->GetAverageSpeedOverWindow();
+		for (TActorIterator<ATestMovementCharacter> Iter(GetWorld()); Iter; ++Iter)
+		{
+			ATestMovementCharacter* Character = *Iter;
+			float AverageSpeed = Character->GetAverageSpeedOverWindow();
+			RequireEqual_Float(AverageSpeed, 0.0f, TEXT("Actor has become stationary"));
+		}
 
-		RequireEqual_Float(AverageSpeed, 0.0f, TEXT("Actor has become stationary"));
 		FinishStep();
 	});
 
 	// Move character forward
 	FSpatialFunctionalTestStepDefinition MoveForwardStepDefinition(/*bIsNativeDefinition*/ true);
 	MoveForwardStepDefinition.StepName = TEXT("Client1MoveForward");
-	MoveForwardStepDefinition.TimeLimit = 0.0f;
+	MoveForwardStepDefinition.TimeLimit = 5.0f;
 	MoveForwardStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
-		AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
-		ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
-
-		PlayerCharacter->AddMovementInput(FVector(1, 0, 0), 10.0f, true);
-
-		float PeakSpeed = PlayerCharacter->GetPeakSpeedInWindow();
-		AssertTrue(PeakSpeed < 60.0f, TEXT("Check actor peak speed"));
-
-		bCharacterReachedDestination =
-			GetTargetDistanceOnLine(Origin, Destination, PlayerCharacter->GetActorLocation()) > -20.0f; // 20cm overlap
-
-		if (bCharacterReachedDestination)
+		bool bAllCharactersReachedDestination = true;
+		int32 Count = 0;
+		for (TActorIterator<ATestMovementCharacter> Iter(GetWorld()); Iter; ++Iter)
 		{
-			AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the autonomous proxy."));
-			FinishStep();
+			ATestMovementCharacter* Character = *Iter;
+			Character->AddMovementInput(FVector(1.0f, 0.0f, 0.0f), 10.0f, true);
+
+			float PeakSpeed = Character->GetPeakSpeedInWindow();
+			RequireEqual_Bool(PeakSpeed < 60.0f, true, TEXT("Check actor peak speed"));
+
+			bool bReachDestination = GetTargetDistanceOnLine(Origin, Destination, Character->GetActorLocation()) > -20.0f; // 20cm overlap		
+			RequireEqual_Bool(bReachDestination, true, TEXT("Check reached destination"));
+			bAllCharactersReachedDestination &= bReachDestination;
+
+			Count++;
 		}
+
+		RequireEqual_Int(Count, 2, TEXT("Check actor count"));
+		FinishStep();
 	});
 
 	// Move character backward
 	FSpatialFunctionalTestStepDefinition MoveBackwardStepDefinition(/*bIsNativeDefinition*/ true);
 	MoveBackwardStepDefinition.StepName = TEXT("Client1MoveBackward");
-	MoveBackwardStepDefinition.TimeLimit = 0.0f;
+	MoveBackwardStepDefinition.TimeLimit = 5.0f;
 	MoveBackwardStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
-		AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
-		ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
-		PlayerCharacter->AddMovementInput(FVector(-1, 0, 0), 10.0f, true);
-
-		float PeakSpeed = PlayerCharacter->GetPeakSpeedInWindow();
-		AssertTrue(PeakSpeed < 60.0f, TEXT("Check actor peak speed"));
-
-		bCharacterReachedOrigin = GetTargetDistanceOnLine(Destination, Origin, PlayerCharacter->GetActorLocation()) > -20.0f;
-		// 20cm overlap
-
-		if (bCharacterReachedOrigin)
+		bool bAllCharactersReachedDestination = true;
+		int32 Count = 0;
+		for (TActorIterator<ATestMovementCharacter> Iter(GetWorld()); Iter; ++Iter)
 		{
-			AssertTrue(bCharacterReachedOrigin, TEXT("Player character has reached the origin on the autonomous proxy."));
-			FinishStep();
+			ATestMovementCharacter* Character = *Iter;
+			Character->AddMovementInput(FVector(-1.0f, 0.0f, 0.0f), 10.0f, true);
+
+			float PeakSpeed = Character->GetPeakSpeedInWindow();
+			RequireEqual_Bool(PeakSpeed < 60.0f, true, TEXT("Check actor peak speed"));
+
+			bool bReachDestination = GetTargetDistanceOnLine(Destination, Origin, Character->GetActorLocation()) > -20.0f; // 20cm overlap		
+			RequireEqual_Bool(bReachDestination, true, TEXT("Check reached destination"));
+			bAllCharactersReachedDestination &= bReachDestination;
+
+			Count++;
 		}
-	});
 
-	// Universal setup step to create the TriggerBox and to set the helper variable
-	AddStep(TEXT("UniversalSetupStep"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
-		bCharacterReachedDestination = false;
-		bCharacterReachedOrigin = false;
-
-		Destination = FVector(132.0f, 0.0f, 40.0f);
-		Origin = FVector(-132.0f, 0.0f, 40.0f);
-
+		RequireEqual_Int(Count, 2, TEXT("Check actor count"));
 		FinishStep();
 	});
 
-	// Repeatedly move character forwards and backwards over the worker boundary and adding actors every time
+	AddStepFromDefinition(WaitForStationaryActorStepDefinition, FWorkerDefinition::AllClients);
 	for (int i = 0; i < 5; i++)
 	{
-		if (i < 1)
-		{
-			AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
-			AddStepFromDefinition(WaitForStationaryActorStepDefinition, FWorkerDefinition::Client(1));
-		}
-
-		AddStepFromDefinition(MoveForwardStepDefinition, FWorkerDefinition::Client(1));
-
-		if (i < 1)
-		{
-			AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
-		}
-
-		AddStepFromDefinition(MoveBackwardStepDefinition, FWorkerDefinition::Client(1));
-
-		AddStepFromDefinition(ResetStepDefinition, FWorkerDefinition::AllWorkers);
+		AddStepFromDefinition(MoveForwardStepDefinition, FWorkerDefinition::AllClients);
+		AddStepFromDefinition(MoveBackwardStepDefinition, FWorkerDefinition::AllClients);
 	}
 }
