@@ -77,9 +77,10 @@ void ASpatialDynamicComponentsFastReadditionTest::PrepareTest()
 			const ADynamicComponentsTestActor* TestActor = FindTestActor();
 			if (RequireTrue(IsValid(TestActor), TEXT("Should have the test actor")))
 			{
-				const int DiscoveredRecreatingComponents = Algo::CountIf(TestActor->GetComponents(), [](const UActorComponent* Component) {
-					return Component->IsA<USelfRecreatingDynamicComponent>();
-				});
+				const int32 DiscoveredRecreatingComponents =
+					Algo::CountIf(TestActor->GetComponents(), [](const UActorComponent* Component) {
+						return Component->IsA<USelfRecreatingDynamicComponent>();
+					});
 				RequireEqual_Int(DiscoveredRecreatingComponents, 1, TEXT("Should only have one recreating component"));
 			}
 			RequireCompare_Float(StepTimeCounter, EComparisonMethod::Greater_Than, 1.0f, TEXT("Waited for 1 second"));
@@ -89,9 +90,9 @@ void ASpatialDynamicComponentsFastReadditionTest::PrepareTest()
 
 ADynamicComponentsTestActor* ASpatialDynamicComponentsFastReadditionTest::FindTestActor()
 {
-	for (auto Iterator = TActorIterator<ADynamicComponentsTestActor>(GetWorld()); Iterator; ++Iterator)
+	for (ADynamicComponentsTestActor* Actor : TActorRange<ADynamicComponentsTestActor>(GetWorld()))
 	{
-		return *Iterator;
+		return Actor;
 	}
 	return nullptr;
 }
