@@ -28,6 +28,7 @@ void ASpatialDynamicComponentsFastReadditionTest::PrepareTest()
 		{
 			return;
 		}
+		RegisterAutoDestroyActor(TestActor);
 		USelfRecreatingDynamicComponent* DynamicComponent = NewObject<USelfRecreatingDynamicComponent>(TestActor, TEXT("Initial"));
 		if (!AssertIsValid(DynamicComponent, TEXT("Spawned initial component successfully")))
 		{
