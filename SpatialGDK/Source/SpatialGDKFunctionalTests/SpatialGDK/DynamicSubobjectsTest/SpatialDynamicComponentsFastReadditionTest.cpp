@@ -4,44 +4,6 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 
-ADynamicComponentsTestActor::ADynamicComponentsTestActor()
-{
-	bReplicates = true;
-	bAlwaysRelevant = true;
-}
-
-USelfRecreatingDynamicComponent::USelfRecreatingDynamicComponent()
-{
-	SetIsReplicatedByDefault(true);
-}
-
-void USelfRecreatingDynamicComponent::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
-{
-	Super::PreReplication(ChangedPropertyTracker);
-	if (!bNeedsToRecreateItself)
-	{
-		return;
-	}
-
-	bNeedsToRecreateItself = false;
-
-	TSharedPtr<FDelegateHandle> DelegateHandle = MakeShared<FDelegateHandle>();
-	auto OnFrame = [this, DelegateHandle] {
-		// Set another component up.
-		USelfRecreatingDynamicComponent* Another =
-			NewObject<USelfRecreatingDynamicComponent>(GetOwner(), *FString::Printf(TEXT("Recreated")));
-		Another->bNeedsToRecreateItself = false;
-
-		Another->RegisterComponent();
-
-		// Destroy self.
-		DestroyComponent();
-
-		FCoreDelegates::OnEndFrame.Remove(*DelegateHandle);
-	};
-	*DelegateHandle = FCoreDelegates::OnEndFrame.Add(FSimpleDelegate::CreateLambda(OnFrame));
-}
-
 /*
  * This tests UNR-5818: A Spatial component is duplicated if an Unreal component is
  * recreated in between USpatialActorChannel::ReplicateActor calls.
@@ -95,4 +57,42 @@ ADynamicComponentsTestActor* ASpatialDynamicComponentsFastReadditionTest::FindTe
 		return Actor;
 	}
 	return nullptr;
+}
+
+ADynamicComponentsTestActor::ADynamicComponentsTestActor()
+{
+	bReplicates = true;
+	bAlwaysRelevant = true;
+}
+
+USelfRecreatingDynamicComponent::USelfRecreatingDynamicComponent()
+{
+	SetIsReplicatedByDefault(true);
+}
+
+void USelfRecreatingDynamicComponent::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
+{
+	Super::PreReplication(ChangedPropertyTracker);
+	if (!bNeedsToRecreateItself)
+	{
+		return;
+	}
+
+	bNeedsToRecreateItself = false;
+
+	TSharedPtr<FDelegateHandle> DelegateHandle = MakeShared<FDelegateHandle>();
+	auto OnFrame = [this, DelegateHandle] {
+		// Set another component up.
+		USelfRecreatingDynamicComponent* Another =
+			NewObject<USelfRecreatingDynamicComponent>(GetOwner(), *FString::Printf(TEXT("Recreated")));
+		Another->bNeedsToRecreateItself = false;
+
+		Another->RegisterComponent();
+
+		// Destroy self.
+		DestroyComponent();
+
+		FCoreDelegates::OnEndFrame.Remove(*DelegateHandle);
+	};
+	*DelegateHandle = FCoreDelegates::OnEndFrame.Add(FSimpleDelegate::CreateLambda(OnFrame));
 }
