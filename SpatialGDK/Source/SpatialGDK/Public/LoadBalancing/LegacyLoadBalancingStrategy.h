@@ -13,6 +13,7 @@ class FSpatialPositionStorage;
 class FActorGroupStorage;
 class FDirectAssignmentStorage;
 class FLoadBalancingCalculator;
+class FDebugComponentStorage;
 
 class FLegacyLoadBalancing : public FLoadBalancingStrategy
 {

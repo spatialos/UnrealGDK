@@ -7,6 +7,7 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/PartitionManager.h"
+#include "Schema/DebugComponent.h"
 
 namespace SpatialGDK
 {
@@ -23,8 +24,8 @@ FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, S
 	}
 	else
 	{
-		PositionStorage = MakeUnique<SpatialGDK::FSpatialPositionStorage>();
-		GroupStorage = MakeUnique<SpatialGDK::FActorGroupStorage>();
+		PositionStorage = MakeUnique<FSpatialPositionStorage>();
+		GroupStorage = MakeUnique<FActorGroupStorage>();
 		LegacyLBStrat.GetLegacyLBInformation(LBContext);
 	}
 }
