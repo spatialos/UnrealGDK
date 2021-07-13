@@ -177,15 +177,12 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 		{
 			const Worker_EntityId EntityId = Delta.EntityId;
 
-			if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority)
+			// Check if this entity is EntitiesToRetireOnAuthorityGain first,
+			// to avoid creating an actor that might've been deleted before.
+			if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority && HasEntityBeenRequestedForDelete(EntityId))
 			{
-				// Check if this entity is EntitiesToRetireOnAuthorityGain first,
-				// to avoid creating an actor that might've been deleted before.
-				if (HasEntityBeenRequestedForDelete(EntityId))
-				{
-					HandleEntityDeletedAuthority(EntityId);
-					continue;
-				}
+				HandleEntityDeletedAuthority(EntityId);
+				continue;
 			}
 
 			if (!PresentEntities.Contains(Delta.EntityId))
@@ -199,15 +196,31 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 			{
 				RefreshEntity(Delta.EntityId);
 			}
+		}
+	}
+}
 
-			if (SubViewUpdate.SubViewType != ENetRole::ROLE_SimulatedProxy)
+void ActorSystem::ProcessAuthorityGains(const FEntitySubViewUpdate& SubViewUpdate)
+{
+	for (const EntityDelta& Delta : SubViewUpdate.EntityDeltas)
+	{
+		if ((Delta.Type == EntityDelta::ADD || Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
+			&& SubViewUpdate.SubViewType != ENetRole::ROLE_SimulatedProxy)
+		{
+			const Worker_EntityId EntityId = Delta.EntityId;
+
+			// Check if this entity is EntitiesToRetireOnAuthorityGain first,
+			// to avoid authority gain on an actor that might've been deleted during a RepNotify.
+			if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority && HasEntityBeenRequestedForDelete(EntityId))
 			{
-				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
-																		? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
-																		: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
-
-				AuthorityGained(EntityId, AuthorityComponentSet);
+				HandleEntityDeletedAuthority(EntityId);
+				continue;
 			}
+
+			const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
+																	? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
+																	: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
+			AuthorityGained(EntityId, AuthorityComponentSet);
 		}
 	}
 }
@@ -296,6 +309,15 @@ void ActorSystem::Advance()
 		{ OwnershipSubView, ENetRole::ROLE_AutonomousProxy },
 		{ SimulatedSubView, ENetRole::ROLE_SimulatedProxy },
 	};
+	const FEntitySubView& EntityAuthSubView = SubViews[0];
+	const FEntitySubView& EntityOwnershipSubView = SubViews[1];
+
+	// First, we process updates; when receiving tear off updates, we want to
+	// process them before a REMOVE if we receive it in the same ViewDelta.
+	for (const FEntitySubView& SubView : SubViews)
+	{
+		ProcessUpdates(SubView);
+	}
 
 	for (const FEntitySubView& SubView : SubViews)
 	{
@@ -304,15 +326,17 @@ void ActorSystem::Advance()
 
 	for (const FEntitySubView& SubView : SubViews)
 	{
-		ProcessUpdates(SubView);
-	}
-
-	for (const FEntitySubView& SubView : SubViews)
-	{
 		ProcessAdds(SubView);
 	}
 
+	// Order here matters: Rep Notifies should be called before authority gains.
+	// This is because it wouldn't make sense to be told a property was updated while you are authoritative over that actor, as while
+	// authoritative you are supposed to be the only server that can update properties.
 	InvokeRepNotifies();
+
+	// No need to ProcessAuthorityGains on SimulatedSubView as we won't have gained authority on Entities in that SubView.
+	ProcessAuthorityGains(EntityAuthSubView);
+	ProcessAuthorityGains(EntityOwnershipSubView);
 
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
 	{
@@ -461,7 +485,8 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 
 					if (!bDormantActor)
 					{
-						UpdateShadowData(EntityId);
+						USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
+						ActorChannel->OnHandoverAuthorityGained();
 					}
 
 					// TODO - Using bActorHadAuthority should be replaced with better tracking system to Actor entity creation [UNR-3960]
@@ -770,12 +795,6 @@ void ActorSystem::HandleDeferredEntityDeletion(const DeferredRetire& Retire) con
 	}
 }
 
-void ActorSystem::UpdateShadowData(const Worker_EntityId EntityId) const
-{
-	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
-	ActorChannel->UpdateShadowData();
-}
-
 void ActorSystem::RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff)
 {
 	DeferredRetire DeferredObj = { EntityId, ActorClassId, bIsNetStartup, bNeedsTearOff };
@@ -948,7 +967,7 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 		ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 		bool bOutReferencesChanged = false;
 
-		FObjectRepNotifies& ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(&TargetObject));
+		FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
 		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
 
 		RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
@@ -1063,7 +1082,7 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 			DependentChannel->ResetShadowData(RepLayout, ShadowData, ReplicatingObject);
 		}
 
-		FObjectRepNotifies& ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(ReplicatingObject));
+		FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(*ReplicatingObject);
 		ResolveObjectReferences(RepLayout, ReplicatingObject, *RepState, RepState->ReferenceMap, ShadowData.GetData(),
 								(uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(), ObjectRepNotifiesOut,
 								bSomeObjectsWereMapped);
@@ -1223,6 +1242,11 @@ USpatialActorChannel* ActorSystem::GetOrRecreateChannelForDormantActor(AActor* A
 	check(!Channel->bCreatingNewEntity);
 	check(Channel->GetEntityId() == EntityID);
 
+	if (!ActorSubView->HasComponent(EntityID, SpatialConstants::DORMANT_COMPONENT_ID))
+	{
+		Actor->NetDormancy = DORM_Awake;
+	}
+
 	NetDriver->RemovePendingDormantChannel(Channel);
 	NetDriver->UnregisterDormantEntityId(EntityID);
 
@@ -1236,7 +1260,7 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 	bool bOutReferencesChanged = false;
-	FObjectRepNotifies& ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(&TargetObject));
+	FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
 	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
 	RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 
@@ -1567,6 +1591,7 @@ AActor* ActorSystem::CreateActor(ActorData& ActorComponents, const Worker_Entity
 	// Don't have authority over Actor until SpatialOS delegates authority
 	NewActor->Role = ROLE_SimulatedProxy;
 	NewActor->RemoteRole = ROLE_Authority;
+	NewActor->NetDormancy = ActorSubView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID) ? DORM_DormantAll : DORM_Awake;
 
 	return NewActor;
 }
@@ -1634,7 +1659,7 @@ void ActorSystem::ApplyComponentDataOnActorCreation(const Worker_EntityId Entity
 	}
 }
 
-USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, const Worker_EntityId EntityId)
+USpatialActorChannel* ActorSystem::SetUpActorChannel(USpatialNetDriver* NetDriver, AActor* Actor, const Worker_EntityId EntityId)
 {
 	UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
 
@@ -1661,6 +1686,11 @@ USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, const Worker
 	return Channel;
 }
 
+USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, Worker_EntityId EntityId)
+{
+	return SetUpActorChannel(NetDriver, Actor, EntityId);
+}
+
 USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, const Worker_EntityId EntityId)
 {
 	if (!NetDriver->PackageMap->ResolveEntityActorAndSubobjects(EntityId, StablyNamedActor))
@@ -1682,35 +1712,67 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 	return Channel;
 }
 
+FObjectRepNotifies& ActorSystem::GetObjectRepNotifies(UObject& Object)
+{
+	return Object.IsA<AActor>() ? ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&Object))
+								: SubobjectRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&Object));
+}
+
 void ActorSystem::InvokeRepNotifies()
 {
-	for (FObjectRepNotifies& ObjectRepNotifies : RepNotifiesToSend)
+	// We have two lists of ObjectRepNotifies, one for Actors and one for Subobjects.
+	// The reason for this is native always calls Rep Notifies on an actor and then on its subobjects.
+	// However, we call Rep Notifies after data on all actors and subobjects has been applied.
+	// So, to match native functionality, we simply need to call all Subobject Rep Notifies after all Actor Rep Notifies.
+	for (auto& RepNotifiesPair : ActorRepNotifiesToSend)
 	{
-		UObject* Object = ObjectRepNotifies.Object.Get();
-		if (!IsValid(Object))
-		{
-			continue;
-		}
-		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Object);
-		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-		{
-			// TODO UNR-5785 - Once fixed, change log level to warning
-			UE_LOG(LogActorSystem, Log, TEXT("Failed to invoke rep notifies for an object as its entity id was invalid. Object: %s"),
-				   *Object->GetName());
-			continue;
-		}
-		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
-		if (!IsValid(Channel))
-		{
-			UE_LOG(LogActorSystem, Warning,
-				   TEXT("Failed to invoke rep notifies for an object as its channel was invalid. Object: %s, Entity: %lld"),
-				   *Object->GetName(), EntityId);
-			continue;
-		}
-		RemoveRepNotifiesWithUnresolvedObjs(*Object, *Channel, ObjectRepNotifies.RepNotifies);
-		Channel->PostReceiveSpatialUpdate(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
+		TryInvokeRepNotifiesForObject(RepNotifiesPair.Key, RepNotifiesPair.Value);
 	}
-	RepNotifiesToSend.Empty();
+	for (auto& RepNotifiesPair : SubobjectRepNotifiesToSend)
+	{
+		TryInvokeRepNotifiesForObject(RepNotifiesPair.Key, RepNotifiesPair.Value);
+	}
+
+	ActorRepNotifiesToSend.Empty();
+	SubobjectRepNotifiesToSend.Empty();
+}
+
+void ActorSystem::TryInvokeRepNotifiesForObject(FWeakObjectPtr& WeakObjectPtr, FObjectRepNotifies& ObjectRepNotifies) const
+{
+	if (ObjectRepNotifies.RepNotifies.Num() == 0)
+	{
+		return;
+	}
+
+	// Object could have been killed during a RepNotify
+	UObject* Object = WeakObjectPtr.Get();
+	if (!Object)
+	{
+		return;
+	}
+	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Object);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		UE_LOG(LogActorSystem, Warning, TEXT("Failed to invoke rep notifies for an object as its entity id was invalid. Object: %s"),
+			   *Object->GetName());
+		return;
+	}
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	if (!IsValid(Channel))
+	{
+		UE_LOG(LogActorSystem, Warning,
+			   TEXT("Failed to invoke rep notifies for an object as its channel was invalid. Object: %s, Entity: %lld"), *Object->GetName(),
+			   EntityId);
+		return;
+	}
+
+	ObjectRepNotifies.RepNotifies.Sort([](GDK_PROPERTY(Property) & A, GDK_PROPERTY(Property) & B) -> bool {
+		// We want to call RepNotifies on properties with a lower RepIndex earlier.
+		return A.RepIndex < B.RepIndex;
+	});
+
+	RemoveRepNotifiesWithUnresolvedObjs(*Object, *Channel, ObjectRepNotifies.RepNotifies);
+	Channel->PostReceiveSpatialUpdate(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
 }
 
 void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
@@ -1808,6 +1870,12 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
 			return;
 		}
+	}
+
+	// If the actor was torn off and we don't have a channel, don't destroy the actor.
+	if (Actor->GetTearOff())
+	{
+		return;
 	}
 
 	// Actor is a startup actor that is a part of the level. If it's not Tombstone-d, then it
@@ -2099,11 +2167,30 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 	UE_LOG(LogActorSystem, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"), *Actor->GetName(),
 		   ActorChannel.GetEntityId(), Actor->HasAuthority());
 
-	SpatialGDK::EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
-	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(&ActorChannel, OutBytesWritten);
+	EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
+	TArray<FWorkerComponentData> ComponentDatas;
+	TArray<FWorkerComponentUpdate> ComponentUpdates;
+
+	const EntityViewElement* ExistingEntity = ActorSubView->GetView().Find(ActorChannel.GetEntityId());
+
+	const bool bIsSkeletonEntity =
+		ExistingEntity != nullptr
+		&& ExistingEntity->Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID });
+
+	// If we're not populating a skeleton entity, we're creating a new one.
+	const bool bIsCreatingNewEntity = !bIsSkeletonEntity;
+
+	if (bIsCreatingNewEntity)
+	{
+		ComponentDatas = DataFactory.CreateEntityComponents(&ActorChannel, OutBytesWritten);
+	}
+	else
+	{
+		DataFactory.CreatePopulateSkeletonComponents(ActorChannel, ComponentDatas, ComponentUpdates, OutBytesWritten);
+	}
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
-	ComponentDatas.Add(SpatialGDK::ActorSystem::CreateLevelComponentData(*Actor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
+	ComponentDatas.Add(CreateLevelComponentData(*Actor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
 
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
@@ -2115,14 +2202,38 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 										 });
 	}
 
-	const Worker_RequestId CreateEntityRequestId =
-		NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
+	ViewCoordinator& Coordinator = NetDriver->Connection->GetCoordinator();
 
-	CommandsHandler.AddRequest(CreateEntityRequestId, [this, SpanId](const Worker_CreateEntityResponseOp& Op) {
-		OnEntityCreated(Op, SpanId);
-	});
+	if (bIsCreatingNewEntity)
+	{
+		const Worker_RequestId CreateEntityRequestId =
+			NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
 
-	CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
+		CommandsHandler.AddRequest(CreateEntityRequestId, [this, SpanId](const Worker_CreateEntityResponseOp& Op) {
+			OnEntityCreated(Op, SpanId);
+		});
+
+		CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
+	}
+	else
+	{
+		for (const FWorkerComponentUpdate& ComponentToUpdate : ComponentUpdates)
+		{
+			ComponentUpdate GeneratedUpdate(OwningComponentUpdatePtr(ComponentToUpdate.schema_type), ComponentToUpdate.component_id);
+			Coordinator.SendComponentUpdate(EntityId, MoveTemp(GeneratedUpdate), {});
+		}
+		for (const FWorkerComponentData& ComponentToAdd : ComponentDatas)
+		{
+			ComponentData GeneratedAdd = ComponentData(OwningComponentDataPtr(ComponentToAdd.schema_type), ComponentToAdd.component_id);
+			Coordinator.SendAddComponent(EntityId, MoveTemp(GeneratedAdd), {});
+		}
+
+		// Add this last; due to AddComponent ordering, seeing the POPULATION_FINISHED tag would mean that all the previous ComponentAdds
+		// have been observed.
+		Coordinator.SendAddComponent(EntityId, ComponentData(SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID));
+
+		Coordinator.RefreshEntityCompleteness(EntityId);
+	}
 }
 
 bool ActorSystem::HasPendingOpsForChannel(const USpatialActorChannel& ActorChannel) const

@@ -15,7 +15,6 @@ class ASpatialTestRepNotifyActor : public AReplicatedTestActorBase
 
 public:
 	ASpatialTestRepNotifyActor();
-	void SetUpTestProperties();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -29,6 +28,8 @@ public:
 
 	TArray<int32> OldTestArray;
 
+	// OnChangedRepNotifyInt1 should remain defined before OnChangedRepNotifyInt2 to ensure the repindex of Int2 is higher than the repindex
+	// of Int1.
 	UPROPERTY(ReplicatedUsing = OnRep_OnChangedRepNotifyInt1)
 	int32 OnChangedRepNotifyInt1;
 
@@ -48,6 +49,8 @@ public:
 	USpatialTestRepNotifySubobject* TestSubobject = nullptr;
 	int32 ExpectedSubobjectIntProperty = 0;
 	bool bSubobjectIntPropertyWasExpectedProperty;
+
+	bool bOnRepOnChangedInt1CalledBeforeInt2;
 
 	UFUNCTION()
 	void OnRep_OnChangedRepNotifyInt1(int32 OldOnChangedRepNotifyInt1);
