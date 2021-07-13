@@ -84,7 +84,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 
 	// Move character forward
 	FSpatialFunctionalTestStepDefinition MoveForwardStepDefinition(/*bIsNativeDefinition*/ true);
-	MoveForwardStepDefinition.StepName = TEXT("Client1MoveForward");
+	MoveForwardStepDefinition.StepName = TEXT("MoveForwardStepDefinition");
 	MoveForwardStepDefinition.TimeLimit = 5.0f;
 	MoveForwardStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		int32 Count = 0;
@@ -122,7 +122,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 
 	// Move character backward
 	FSpatialFunctionalTestStepDefinition MoveBackwardStepDefinition(/*bIsNativeDefinition*/ true);
-	MoveBackwardStepDefinition.StepName = TEXT("Client1MoveBackward");
+	MoveBackwardStepDefinition.StepName = TEXT("MoveBackwardStepDefinition");
 	MoveBackwardStepDefinition.TimeLimit = 5.0f;
 	MoveBackwardStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		int32 Count = 0;
