@@ -87,6 +87,13 @@ private:
 	USpatialNetDriver* NetDriver;
 };
 
+class FSpatialStrategyStartupHandler
+{
+public:
+	explicit FSpatialStrategyStartupHandler(USpatialNetDriver& InNetDriver);
+	bool TryFinishStartup();
+};
+
 class FSpatialClientStartupHandler
 {
 public:

@@ -92,6 +92,7 @@ class FSpatialStrategySystem;
 class FSkeletonEntityCreationStartupStep;
 class FSpatialServerStartupHandler;
 class FSpatialClientStartupHandler;
+class FSpatialStrategyStartupHandler;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -242,6 +243,7 @@ public:
 
 	TUniquePtr<SpatialGDK::FSpatialServerStartupHandler> StartupHandler;
 	TUniquePtr<SpatialGDK::FSpatialClientStartupHandler> ClientStartupHandler;
+	TUniquePtr<SpatialGDK::FSpatialStrategyStartupHandler> StrategyStartupHandler;
 
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;

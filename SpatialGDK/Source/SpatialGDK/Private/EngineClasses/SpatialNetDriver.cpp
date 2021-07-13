@@ -460,18 +460,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		CreateAndInitializeLoadBalancingClasses();
 
-		if (IsServer())
-		{
-			StartupHandler = MakeUnique<SpatialGDK::FSpatialServerStartupHandler>(
-				*this, SpatialGDK::FSpatialServerStartupHandler::FInitialSetup{
-						   static_cast<int32>(LoadBalanceStrategy->GetMinimumRequiredWorkers()) });
-		}
-		else
-		{
-			ClientStartupHandler = MakeUnique<SpatialGDK::FSpatialClientStartupHandler>(
-				*this, *GameInstance, SpatialGDK::FSpatialClientStartupHandler::FInitialSetup{});
-		}
-
 		Dispatcher->Init(SpatialWorkerFlags);
 		Sender->Init(this, &TimerManager, Connection->GetEventTracer());
 		Receiver->Init(this, Connection->GetEventTracer());
@@ -492,17 +480,34 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		// The interest factory depends on the package map, so is created last.
 		InterestFactory = MakeUnique<SpatialGDK::UnrealServerInterestFactory>(ClassInfoManager, PackageMap);
 
-		if (!IsServer())
+		if (IsServer())
 		{
-			return;
+			SpatialGDK::FSubView& WellKnownSubView =
+				Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID,
+														   SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+			WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, Connection, this,
+																				  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
+																				  *VirtualWorkerTranslator, *GlobalStateManager);
 		}
+	}
 
-		SpatialGDK::FSubView& WellKnownSubView =
-			Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
-													   SpatialGDK::FSubView::NoDispatcherCallbacks);
-		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, Connection, this,
-																			  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
-																			  *VirtualWorkerTranslator, *GlobalStateManager);
+	if (WorkerType == SpatialConstants::DefaultServerWorkerType)
+	{
+		StartupHandler = MakeUnique<SpatialGDK::FSpatialServerStartupHandler>(
+			*this, SpatialGDK::FSpatialServerStartupHandler::FInitialSetup{
+					   static_cast<int32>(LoadBalanceStrategy->GetMinimumRequiredWorkers()) });
+	}
+	else if (WorkerType == SpatialConstants::DefaultClientWorkerType)
+	{
+		ClientStartupHandler = MakeUnique<SpatialGDK::FSpatialClientStartupHandler>(
+			*this, *GameInstance, SpatialGDK::FSpatialClientStartupHandler::FInitialSetup{});
+	}
+	else if (WorkerType == SpatialConstants::StrategyWorkerType)
+	{
+		StrategyStartupHandler = MakeUnique<SpatialGDK::FSpatialStrategyStartupHandler>(*this);
+	}
+	else if (WorkerType == SpatialConstants::RoutingWorkerType)
+	{
 	}
 }
 
@@ -3197,36 +3202,39 @@ void USpatialNetDriver::TryFinishStartup()
 
 		if (WorkerType == SpatialConstants::StrategyWorkerType)
 		{
-			const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass =
-				USpatialStatics::GetSpatialMultiWorkerClass(GetWorld());
+			if (StrategyStartupHandler->TryFinishStartup())
+			{
+				const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass =
+					USpatialStatics::GetSpatialMultiWorkerClass(GetWorld());
 
-			const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
-				MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
+				const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
+					MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
 
-			LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
-			LoadBalanceStrategy->Init();
-			Cast<ULayeredLBStrategy>(LoadBalanceStrategy)->SetLayers(MultiWorkerSettings->WorkerLayers);
-			LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
+				LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
+				LoadBalanceStrategy->Init();
+				Cast<ULayeredLBStrategy>(LoadBalanceStrategy)->SetLayers(MultiWorkerSettings->WorkerLayers);
+				LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
 
-			VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
+				VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
-			SpatialGDK::FSubView& LBView =
-				Connection->GetCoordinator().CreateSubView(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID,
-														   SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+				SpatialGDK::FSubView& LBView =
+					Connection->GetCoordinator().CreateSubView(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID,
+															   SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-			auto PartitionMgr =
-				MakeUnique<SpatialGDK::FPartitionManager>(Connection->GetWorkerSystemEntityId(), Connection->GetCoordinator(),
-														  MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
+				auto PartitionMgr =
+					MakeUnique<SpatialGDK::FPartitionManager>(Connection->GetWorkerSystemEntityId(), Connection->GetCoordinator(),
+															  MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
 
-			PartitionMgr->Init(Connection->GetCoordinator());
+				PartitionMgr->Init(Connection->GetCoordinator());
 
-			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy =
-				MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy, *VirtualWorkerTranslator);
+				TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy =
+					MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy, *VirtualWorkerTranslator);
 
-			StrategySystem = MakeUnique<SpatialGDK::FSpatialStrategySystem>(MoveTemp(PartitionMgr), LBView, MoveTemp(Strategy));
+				StrategySystem = MakeUnique<SpatialGDK::FSpatialStrategySystem>(MoveTemp(PartitionMgr), LBView, MoveTemp(Strategy));
 
-			bIsReadyToStart = true;
-			Connection->SetStartupComplete();
+				bIsReadyToStart = true;
+				Connection->SetStartupComplete();
+			}
 		}
 
 		if (WorkerType == SpatialConstants::DefaultServerWorkerType)

@@ -432,6 +432,13 @@ UGlobalStateManager& FSpatialServerStartupHandler::GetGSM()
 	return *NetDriver->GlobalStateManager;
 }
 
+FSpatialStrategyStartupHandler::FSpatialStrategyStartupHandler(USpatialNetDriver& InNetDriver) {}
+
+bool FSpatialStrategyStartupHandler::TryFinishStartup()
+{
+	return true;
+}
+
 FSpatialClientStartupHandler::FSpatialClientStartupHandler(USpatialNetDriver& InNetDriver, UGameInstance& InGameInstance,
 														   const FInitialSetup& InSetup)
 	: Setup(InSetup)
