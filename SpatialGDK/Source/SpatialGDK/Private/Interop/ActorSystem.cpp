@@ -1686,9 +1686,8 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 
 FObjectRepNotifies& ActorSystem::GetObjectRepNotifies(UObject& Object)
 {
-	return Object.IsA<AActor>()
-					? ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&Object))
-					: SubobjectRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&Object));
+	return Object.IsA<AActor>() ? ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&Object))
+								: SubobjectRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&Object));
 }
 
 void ActorSystem::InvokeRepNotifies()
@@ -1845,7 +1844,7 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 		}
 	}
 
-	// If the actor was torn off and we don't have a channel, don't destroy the actor. 
+	// If the actor was torn off and we don't have a channel, don't destroy the actor.
 	if (Actor->GetTearOff())
 	{
 		return;
