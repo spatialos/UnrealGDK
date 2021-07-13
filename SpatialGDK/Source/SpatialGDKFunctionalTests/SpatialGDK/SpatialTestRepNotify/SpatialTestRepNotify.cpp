@@ -44,6 +44,9 @@ void ASpatialTestRepNotify::PrepareTest()
 	 *
 	 * To test this, we update a replicated property on our actor and a subobject of that actor.
 	 * Then in repnotifies on both the actor and the subobject, we check that the property on the other object has already been updated.
+	 *
+	 * We also check that the actor's RepNotify was called before the subobject's RepNotify, along with ensuring members are called in the
+	 * correct repindex-based order.
 	 * */
 	AddStep(TEXT("SpatialTestRepNotifyServerSetReplicatedVariables1"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		TestActor = GetWorld()->SpawnActor<ASpatialTestRepNotifyActor>(FVector(0, 0, 0), FRotator::ZeroRotator, FActorSpawnParameters());
@@ -51,6 +54,7 @@ void ASpatialTestRepNotify::PrepareTest()
 
 		TestActor->TestSubobject->OnChangedRepNotifyInt = 400;
 		TestActor->OnChangedRepNotifyInt1 = 350;
+		TestActor->OnChangedRepNotifyInt2 = 360;
 
 		FinishStep();
 	});
@@ -71,6 +75,8 @@ void ASpatialTestRepNotify::PrepareTest()
 							 TEXT("The subobject's OnChangedRepNotifyInt property should have been updated."));
 			RequireEqual_Int(TestActor->OnChangedRepNotifyInt1, 350,
 							 TEXT("The actors OnChangedRepNotifyInt1 property should have been updated."));
+			RequireEqual_Int(TestActor->OnChangedRepNotifyInt2, 360,
+							 TEXT("The actors OnChangedRepNotifyInt2 property should have been updated."));
 
 			RequireEqual_Bool(
 				TestActor->TestSubobject->bParentPropertyWasExpectedProperty, true,
@@ -79,6 +85,15 @@ void ASpatialTestRepNotify::PrepareTest()
 			RequireEqual_Bool(TestActor->bSubobjectIntPropertyWasExpectedProperty, true,
 							  TEXT("The OnChangedRepNotifyInt1 on subobject USpatialTestRepNotifySubobject should have been set to 400 "
 								   "before the actor's RepNotify was called."));
+
+			RequireEqual_Bool(TestActor->TestSubobject->bParentRepNotifyWasCalledBeforeChild, true,
+							  TEXT("OnRep_OnChangedRepNotifyInt1 on parent actor ASpatialTestRepNotifyActor should have been called before "
+								   "OnRep_OnChangedRepNotifyInt on child subobject."));
+
+			RequireEqual_Bool(TestActor->bOnRepOnChangedInt1CalledBeforeInt2, true,
+							  TEXT("OnRep_OnChangedRepNotifyInt1 should have been called before OnRep_OnChangedRepNotifyInt2 as "
+								   "OnChangedRepNotifyInt1's RepIndex is lower than OnChangedRepNotifyInt2's."));
+
 			FinishStep();
 		},
 		5.0f);
