@@ -49,7 +49,7 @@ bool RPCExecutor::ExecuteCommand(const FCrossServerRPCParams& Params)
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 	const float TimeQueued = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
-	bool CanProcessRPC = UnresolvedRefs.Num() == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued;
+	bool CanProcessRPC = UnresolvedRefs.Num() == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued
 						 || (Function->SpatialFunctionFlags & SPATIALFUNC_NeverQueueForUnresolvedParameters) != 0;
 	if (CanProcessRPC)
 	{
@@ -60,9 +60,9 @@ bool RPCExecutor::ExecuteCommand(const FCrossServerRPCParams& Params)
 				return Ref.ToString();
 			});
 			UE_LOG(LogSpatialRPCService, Warning,
-				TEXT("Executed RPC %s::%s with unresolved references (%s) after %.3f seconds of queueing. Owner name: %s"),
-				*GetNameSafe(TargetObject), *GetNameSafe(Function), *UnresolvedEntityIds, TimeQueued,
-				*GetNameSafe(TargetObject->GetOuter()));
+				   TEXT("Executed RPC %s::%s with unresolved references (%s) after %.3f seconds of queueing. Owner name: %s"),
+				   *GetNameSafe(TargetObject), *GetNameSafe(Function), *UnresolvedEntityIds, TimeQueued,
+				   *GetNameSafe(TargetObject->GetOuter()));
 		}
 
 		if (EventTracer != nullptr)
