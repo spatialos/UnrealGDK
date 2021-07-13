@@ -10,6 +10,7 @@
  * A Helper actor for the dormancy tests.
  * Has a TestIntProp to see if it replicates when it should/shouldn't.
  */
+
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ADormancyTestActor : public AReplicatedTestActorBase
 {
