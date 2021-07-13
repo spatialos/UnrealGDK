@@ -24,14 +24,9 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
-	static int32 SpeedWindowSize;
-
 	FVector PreviousLocation;
-	int32 SpeedWindowIndex = 0;
-	TArray<float> SpeedWindow;
 
-	float GetPeakSpeedInWindow() const;
-	float GetAverageSpeedOverWindow() const;
+	float Speed;
 
 	UFUNCTION(Client, Reliable)
 	void UpdateCameraLocationAndRotation(FVector Location, FRotator NewRotation);

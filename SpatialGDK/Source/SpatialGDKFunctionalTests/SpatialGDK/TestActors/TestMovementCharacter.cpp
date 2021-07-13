@@ -47,8 +47,6 @@ ATestMovementCharacter::ATestMovementCharacter()
 
 	UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement();
 	CharacterMovementComponent->MaxSimulationIterations = 14;
-
-	SpeedWindow.SetNum(SpeedWindowSize);
 }
 
 void ATestMovementCharacter::BeginPlay()
@@ -59,42 +57,10 @@ void ATestMovementCharacter::BeginPlay()
 
 void ATestMovementCharacter::Tick(float DeltaTime)
 {
-	float Speed = FVector(GetActorLocation() - PreviousLocation).Size() / DeltaTime;
-
-	if (SpeedWindowIndex > SpeedWindowSize - 1)
-	{
-		SpeedWindowIndex = 0;
-	}
-
-	SpeedWindow[SpeedWindowIndex] = Speed;
-	SpeedWindowIndex++;
-
-	PreviousLocation = GetActorLocation();
+	const FVector ActorLocation = GetActorLocation();
+	Speed = FVector(ActorLocation - PreviousLocation).Size() / DeltaTime;
+	PreviousLocation = ActorLocation;
 }
-
-float ATestMovementCharacter::GetPeakSpeedInWindow() const
-{
-	float Max = 0.0f;
-	for (float Speed : SpeedWindow)
-	{
-		if (Speed > Max)
-		{
-			Max = Speed;
-		}
-	}
-	return Max;
-}
-
-float ATestMovementCharacter::GetAverageSpeedOverWindow() const
-{
-	float Total = 0.0f;
-	for (float Speed : SpeedWindow)
-	{
-		Total += Speed;
-	}
-	return Total / SpeedWindowSize;
-}
-
 void ATestMovementCharacter::UpdateCameraLocationAndRotation_Implementation(FVector NewLocation, FRotator NewRotation)
 {
 	CameraComponent->SetRelativeLocation(NewLocation);
