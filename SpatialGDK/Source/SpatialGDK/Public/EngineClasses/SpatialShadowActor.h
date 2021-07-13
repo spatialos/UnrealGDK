@@ -4,7 +4,6 @@
 #include "SpatialConstants.h"
 #include "SpatialShadowActor.generated.h"
 
-
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialShadowActor, Log, All);
 
 UCLASS(Transient)
@@ -23,8 +22,7 @@ public:
 
 private:
 	Worker_EntityId EntityId;
-	AActor* Actor; 
+	AActor* Actor;
 	FString ReplicatedPropertyHash;
 	FString CreateHash(AActor* InActor);
-
 };

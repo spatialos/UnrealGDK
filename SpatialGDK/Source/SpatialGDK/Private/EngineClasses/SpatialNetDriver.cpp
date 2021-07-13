@@ -26,8 +26,8 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
-#include "EngineClasses/SpatialWorldSettings.h"
 #include "EngineClasses/SpatialShadowActor.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSubviews.h"
 #include "Interop/ActorSystem.h"
@@ -3527,8 +3527,7 @@ bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
 	return false;
 }
 
-void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkObjectInfo*>& OutConsiderList,
-																		   const float ServerTickTime)
+void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkObjectInfo*>& OutConsiderList, const float ServerTickTime)
 {
 	TArray<FNetworkObjectInfo*> TmpConsiderList;
 	TmpConsiderList.Reserve(GetNetworkObjectList().GetActiveObjects().Num());
@@ -3536,8 +3535,7 @@ void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkO
 	Super::ServerReplicateActors_BuildConsiderList(TmpConsiderList, ServerTickTime);
 
 	// Cache if we are running with Spatial Networking to avoid getting the settings in every iteration of the loop.
-	const bool bSpatialNetworking = GetDefault<UGeneralProjectSettings>()
-										->UsesSpatialNetworking();
+	const bool bSpatialNetworking = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 	if (!bSpatialNetworking)
 	{
 		return;
@@ -3549,7 +3547,7 @@ void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkO
 		check(Actor != nullptr);
 
 		Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
-		
+
 		// Check for unauthorised data changes no non-auth actors and add auth actors only to the consider list
 		if (!Actor->HasAuthority())
 		{
@@ -3577,7 +3575,6 @@ void USpatialNetDriver::CheckUnauthorisedDataChanges(Worker_EntityId_Key EntityI
 
 	if (SpatialShadowActors[EntityId] != nullptr)
 	{
-		
 		SpatialShadowActors[EntityId]->CheckUnauthorisedDataChanges(EntityId, Actor);
 	}
 	else
@@ -3600,13 +3597,12 @@ void USpatialNetDriver::AddSpatialShadowActor(Worker_EntityId_Key EntityId)
 		return;
 	}
 
-
 	if (SpatialShadowActors.Contains(EntityId))
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Should only be adding a SpatialShadowActor once for each entity, EntityID %i"),
 			   EntityId);
 	}
-	else //if (!HasServerAuthority(EntityId))
+	else // if (!HasServerAuthority(EntityId))
 	{
 		USpatialShadowActor* SpatialShadowActor(NewObject<USpatialShadowActor>());
 		SpatialShadowActor->Init(EntityId, Actor);

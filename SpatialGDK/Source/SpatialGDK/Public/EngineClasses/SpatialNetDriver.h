@@ -414,8 +414,7 @@ private:
 	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
 
-	virtual void ServerReplicateActors_BuildConsiderList(TArray<FNetworkObjectInfo*>& OutConsiderList,
-																	const float ServerTickTime) override;
+	virtual void ServerReplicateActors_BuildConsiderList(TArray<FNetworkObjectInfo*>& OutConsiderList, const float ServerTickTime) override;
 
 	UPROPERTY()
 	TMap<int64, USpatialShadowActor*> SpatialShadowActors;

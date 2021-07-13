@@ -228,8 +228,8 @@ void ActorSystem::ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate)
 			if (PresentEntities.Contains(EntityId))
 			{
 				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
-																			? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
-																			: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
+																		? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
+																		: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
 				AuthorityLost(EntityId, AuthorityComponentSet);
 			}
 		}
