@@ -40,8 +40,8 @@ ASpatialTestCharacterMigration::ASpatialTestCharacterMigration()
 	Description = TEXT("Test Character Migration");
 	TimeLimit = 300;
 
-	Destination = FVector(200.0f, 0.0f, 40.0f);
-	Origin = FVector(-200.0f, 0.0f, 40.0f);
+	PositionOnServerOne = FVector(-200.0f, 0.0f, 40.0f);
+	PositionOnServerTwo = FVector(200.0f, 0.0f, 40.0f);
 }
 
 void ASpatialTestCharacterMigration::PrepareTest()
@@ -113,15 +113,17 @@ void ASpatialTestCharacterMigration::PrepareTest()
 				if (bShouldRunRequires)
 				{
 					const VirtualWorkerId VirtualWorker = SpatialNetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Character);
-					RequireEqual_Int(VirtualWorker, ExpectedVirtualWorker, FString::Printf(TEXT("%s on %s crossed boundary"), *Character->GetName(), *WorkerId));
+					RequireEqual_Int(VirtualWorker, ExpectedVirtualWorker,
+									 FString::Printf(TEXT("%s on %s crossed boundary"), *Character->GetName(), *WorkerId));
 				}
 			}
 
 			if (bShouldRunRequires)
 			{
-				const bool bReachDestination = GetTargetDistanceOnLine(Origin, Destination, Character->GetActorLocation()) > -40.0f; // 40cm overlap
+				const bool bReachDestination =
+					GetTargetDistanceOnLine(PositionOnServerOne, PositionOnServerTwo, Character->GetActorLocation()) > -40.0f; // 40cm overlap
 				RequireEqual_Bool(bReachDestination, true,
-					FString::Printf(TEXT("%s on %s reached destination"), *Character->GetName(), *WorkerId));
+								  FString::Printf(TEXT("%s on %s reached destination"), *Character->GetName(), *WorkerId));
 			}
 
 			Count++;
@@ -162,15 +164,17 @@ void ASpatialTestCharacterMigration::PrepareTest()
 				if (bShouldRunRequires)
 				{
 					const VirtualWorkerId VirtualWorker = SpatialNetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Character);
-					RequireEqual_Int(VirtualWorker, ExpectedVirtualWorker, FString::Printf(TEXT("%s on %s crossed boundary"), *Character->GetName(), *WorkerId));
+					RequireEqual_Int(VirtualWorker, ExpectedVirtualWorker,
+									 FString::Printf(TEXT("%s on %s crossed boundary"), *Character->GetName(), *WorkerId));
 				}
 			}
 
 			if (bShouldRunRequires)
 			{
-				const bool bReachDestination = GetTargetDistanceOnLine(Destination, Origin, Character->GetActorLocation()) > -40.0f; // 40cm overlap
+				const bool bReachDestination =
+					GetTargetDistanceOnLine(PositionOnServerTwo, PositionOnServerOne, Character->GetActorLocation()) > -40.0f; // 40cm overlap
 				RequireEqual_Bool(bReachDestination, true,
-					FString::Printf(TEXT("%s on %s reached destination"), *Character->GetName(), *WorkerId));
+								  FString::Printf(TEXT("%s on %s reached destination"), *Character->GetName(), *WorkerId));
 			}
 
 			Count++;

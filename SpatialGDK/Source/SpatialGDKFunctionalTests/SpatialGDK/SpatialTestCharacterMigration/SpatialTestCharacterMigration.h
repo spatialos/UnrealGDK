@@ -18,6 +18,6 @@ public:
 
 	virtual void PrepareTest() override;
 
-	FVector Origin;
-	FVector Destination;
+	FVector PositionOnServerOne;
+	FVector PositionOnServerTwo;
 };
