@@ -286,9 +286,9 @@ const FSpatialFunctionalTestStepDefinition ASpatialFunctionalTest::GetStepDefini
 	return DummyStepDefinition;
 }
 
-int ASpatialFunctionalTest::GetNumberOfServerWorkers()
+int32 ASpatialFunctionalTest::GetNumberOfServerWorkers() const
 {
-	int Counter = 0;
+	int32 Counter = 0;
 	for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
 	{
 		if (FlowController != nullptr && FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
@@ -299,9 +299,9 @@ int ASpatialFunctionalTest::GetNumberOfServerWorkers()
 	return Counter;
 }
 
-int ASpatialFunctionalTest::GetNumberOfClientWorkers()
+int32 ASpatialFunctionalTest::GetNumberOfClientWorkers() const
 {
-	int Counter = 0;
+	int32 Counter = 0;
 	for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
 	{
 		if (FlowController != nullptr && FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
