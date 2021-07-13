@@ -8,8 +8,6 @@
 #include "Materials/Material.h"
 #include "Net/UnrealNetwork.h"
 
-int32 ATestMovementCharacter::SpeedWindowSize = 10;
-
 ATestMovementCharacter::ATestMovementCharacter()
 {
 	bReplicates = true;
