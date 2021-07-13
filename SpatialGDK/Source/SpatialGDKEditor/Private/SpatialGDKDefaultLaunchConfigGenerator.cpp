@@ -179,7 +179,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 		Writer->WriteValue(TEXT("max_concurrent_workers"), LaunchConfigDescription.MaxConcurrentWorkers);
 
 		// Event tracing
-		if (SpatialGDKSettings->bEventTracingEnabled)
+		if (SpatialGDKSettings->GetEventTracingEnabled())
 		{
 			Writer->WriteObjectStart(TEXT("event_tracing_configuration"));
 			Writer->WriteValue(TEXT("enabled"), true);
