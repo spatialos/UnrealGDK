@@ -177,15 +177,12 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 		{
 			const Worker_EntityId EntityId = Delta.EntityId;
 
-			if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority)
+			// Check if this entity is EntitiesToRetireOnAuthorityGain first,
+			// to avoid creating an actor that might've been deleted before.
+			if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority && HasEntityBeenRequestedForDelete(EntityId))
 			{
-				// Check if this entity is EntitiesToRetireOnAuthorityGain first,
-				// to avoid creating an actor that might've been deleted before.
-				if (HasEntityBeenRequestedForDelete(EntityId))
-				{
-					HandleEntityDeletedAuthority(EntityId);
-					continue;
-				}
+				HandleEntityDeletedAuthority(EntityId);
+				continue;
 			}
 
 			if (!PresentEntities.Contains(Delta.EntityId))
@@ -199,15 +196,31 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 			{
 				RefreshEntity(Delta.EntityId);
 			}
+		}
+	}
+}
 
-			if (SubViewUpdate.SubViewType != ENetRole::ROLE_SimulatedProxy)
+void ActorSystem::ProcessAuthorityGains(const FEntitySubViewUpdate& SubViewUpdate)
+{
+	for (const EntityDelta& Delta : SubViewUpdate.EntityDeltas)
+	{
+		if ((Delta.Type == EntityDelta::ADD || Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
+			&& SubViewUpdate.SubViewType != ENetRole::ROLE_SimulatedProxy)
+		{
+			const Worker_EntityId EntityId = Delta.EntityId;
+
+			// Check if this entity is EntitiesToRetireOnAuthorityGain first,
+			// to avoid authority gain on an actor that might've been deleted during a RepNotify.
+			if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority && HasEntityBeenRequestedForDelete(EntityId))
 			{
-				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
-																		? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
-																		: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
-
-				AuthorityGained(EntityId, AuthorityComponentSet);
+				HandleEntityDeletedAuthority(EntityId);
+				continue;
 			}
+
+			const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
+																	? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
+																	: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
+			AuthorityGained(EntityId, AuthorityComponentSet);
 		}
 	}
 }
@@ -296,6 +309,8 @@ void ActorSystem::Advance()
 		{ OwnershipSubView, ENetRole::ROLE_AutonomousProxy },
 		{ SimulatedSubView, ENetRole::ROLE_SimulatedProxy },
 	};
+	const FEntitySubView& EntityAuthSubView = SubViews[0];
+	const FEntitySubView& EntityOwnershipSubView = SubViews[1];
 
 	// First, we process updates; when receiving tear off updates, we want to
 	// process them before a REMOVE if we receive it in the same ViewDelta.
@@ -314,7 +329,14 @@ void ActorSystem::Advance()
 		ProcessAdds(SubView);
 	}
 
+	// Order here matters: Rep Notifies should be called before authority gains.
+	// This is because it wouldn't make sense to be told a property was updated while you are authoritative over that actor, as while
+	// authoritative you are supposed to be the only server that can update properties.
 	InvokeRepNotifies();
+
+	// No need to ProcessAuthorityGains on SimulatedSubView as we won't have gained authority on Entities in that SubView.
+	ProcessAuthorityGains(EntityAuthSubView);
+	ProcessAuthorityGains(EntityOwnershipSubView);
 
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
 	{

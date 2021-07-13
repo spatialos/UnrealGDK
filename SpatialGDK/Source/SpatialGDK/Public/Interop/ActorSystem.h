@@ -115,6 +115,7 @@ private:
 
 	void ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate);
 	void ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate);
+	void ProcessAuthorityGains(const FEntitySubViewUpdate& SubViewUpdate);
 	void ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate);
 
 	void ApplyComponentAdd(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
