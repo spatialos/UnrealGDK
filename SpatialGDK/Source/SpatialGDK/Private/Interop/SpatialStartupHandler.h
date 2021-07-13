@@ -10,14 +10,14 @@ class USpatialNetDriver;
 
 namespace SpatialGDK
 {
-class FSpatialStartupHandler
+class FSpatialServerStartupHandler
 {
 public:
 	struct FInitialSetup
 	{
 		int32 ExpectedServerWorkersCount;
 	};
-	explicit FSpatialStartupHandler(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup);
+	explicit FSpatialServerStartupHandler(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup);
 	bool TryFinishStartup();
 	void SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorkerId);
 

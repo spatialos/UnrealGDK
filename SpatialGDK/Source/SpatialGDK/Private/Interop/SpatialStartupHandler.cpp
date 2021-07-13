@@ -17,14 +17,13 @@ DEFINE_LOG_CATEGORY_STATIC(LogSpatialStartupHandler, Log, All);
 
 namespace SpatialGDK
 {
-FSpatialStartupHandler::FSpatialStartupHandler(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup)
+FSpatialServerStartupHandler::FSpatialServerStartupHandler(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup)
 	: Setup(InSetup)
 	, NetDriver(&InNetDriver)
-
 {
 }
 
-bool FSpatialStartupHandler::TryFinishStartup()
+bool FSpatialServerStartupHandler::TryFinishStartup()
 {
 	if (Stage == EStage::CreateWorkerEntity)
 	{
@@ -357,7 +356,7 @@ bool FSpatialStartupHandler::TryFinishStartup()
 	return Stage == EStage::Finished;
 }
 
-void FSpatialStartupHandler::SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorkerId)
+void FSpatialServerStartupHandler::SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorkerId)
 {
 	const bool bRunStrategyWorker = USpatialStatics::IsStrategyWorkerEnabled();
 	UAbstractLBStrategy* LoadBalanceStrategy = NetDriver->LoadBalanceStrategy;
@@ -389,7 +388,7 @@ void FSpatialStartupHandler::SpawnPartitionEntity(Worker_EntityId PartitionEntit
 	EntityHandler.AddRequest(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
 }
 
-bool FSpatialStartupHandler::TryClaimingStartupPartition()
+bool FSpatialServerStartupHandler::TryClaimingStartupPartition()
 {
 	UGlobalStateManager* GlobalStateManager = &GetGSM();
 
@@ -413,22 +412,22 @@ bool FSpatialStartupHandler::TryClaimingStartupPartition()
 	return false;
 }
 
-ViewCoordinator& FSpatialStartupHandler::GetCoordinator()
+ViewCoordinator& FSpatialServerStartupHandler::GetCoordinator()
 {
 	return NetDriver->Connection->GetCoordinator();
 }
 
-const ViewCoordinator& FSpatialStartupHandler::GetCoordinator() const
+const ViewCoordinator& FSpatialServerStartupHandler::GetCoordinator() const
 {
 	return NetDriver->Connection->GetCoordinator();
 }
 
-const TArray<Worker_Op>& FSpatialStartupHandler::GetOps() const
+const TArray<Worker_Op>& FSpatialServerStartupHandler::GetOps() const
 {
 	return GetCoordinator().GetWorkerMessages();
 }
 
-UGlobalStateManager& FSpatialStartupHandler::GetGSM()
+UGlobalStateManager& FSpatialServerStartupHandler::GetGSM()
 {
 	return *NetDriver->GlobalStateManager;
 }
