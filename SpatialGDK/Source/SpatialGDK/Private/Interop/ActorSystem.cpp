@@ -945,9 +945,7 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 		ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 		bool bOutReferencesChanged = false;
 
-		FObjectRepNotifies& ObjectRepNotifiesOut = TargetObject.IsA<AActor>()
-													   ? ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&TargetObject))
-													   : SubobjectRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&TargetObject));
+		FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
 		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
 
 		RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
@@ -1062,9 +1060,7 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 			DependentChannel->ResetShadowData(RepLayout, ShadowData, ReplicatingObject);
 		}
 
-		FObjectRepNotifies& ObjectRepNotifiesOut = ReplicatingObject->IsA<AActor>()
-													   ? ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(ReplicatingObject))
-													   : SubobjectRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(ReplicatingObject));
+		FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(*ReplicatingObject);
 		ResolveObjectReferences(RepLayout, ReplicatingObject, *RepState, RepState->ReferenceMap, ShadowData.GetData(),
 								(uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(), ObjectRepNotifiesOut,
 								bSomeObjectsWereMapped);
@@ -1237,9 +1233,7 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 	bool bOutReferencesChanged = false;
-	FObjectRepNotifies& ObjectRepNotifiesOut = TargetObject.IsA<AActor>()
-												   ? ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&TargetObject))
-												   : SubobjectRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&TargetObject));
+	FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
 	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
 	RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 
@@ -1688,6 +1682,13 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 	}
 
 	return Channel;
+}
+
+FObjectRepNotifies& ActorSystem::GetObjectRepNotifies(UObject& Object)
+{
+	return Object.IsA<AActor>()
+					? ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&Object))
+					: SubobjectRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&Object));
 }
 
 void ActorSystem::InvokeRepNotifies()

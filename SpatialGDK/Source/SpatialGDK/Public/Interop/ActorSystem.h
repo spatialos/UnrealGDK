@@ -170,6 +170,7 @@ private:
 										   USpatialActorChannel& Channel, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 
 	USpatialActorChannel* TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, Worker_EntityId EntityId);
+	FObjectRepNotifies& GetObjectRepNotifies(UObject& Object);
 
 	// Entity remove
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
