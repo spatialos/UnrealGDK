@@ -18,8 +18,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogSpatialStartupHandler, Log, All);
 namespace SpatialGDK
 {
 FSpatialStartupHandler::FSpatialStartupHandler(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup)
-	: ClaimHandler(*InNetDriver.Connection)
-	, Setup(InSetup)
+	: Setup(InSetup)
 	, NetDriver(&InNetDriver)
 
 {
@@ -221,7 +220,7 @@ bool FSpatialStartupHandler::TryFinishStartup()
 			// Assign the worker's partition to its system entity.
 			const ComponentData* ServerWorkerComponentData = WorkerComponents.FindChecked(Entry.Value.ServerWorkerEntityId);
 			const ServerWorker ServerWorkerData(ServerWorkerComponentData->GetUnderlying());
-			ClaimHandler.ClaimPartition(ServerWorkerData.SystemEntityId, Entry.Value.PartitionEntityId);
+			ClaimHandler.ClaimPartition(GetCoordinator(), ServerWorkerData.SystemEntityId, Entry.Value.PartitionEntityId);
 
 			// Reflect the partition assignment in the translator object.
 			Schema_Object* EntryObject = Schema_AddObject(Update.GetFields(), SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
@@ -294,9 +293,25 @@ bool FSpatialStartupHandler::TryFinishStartup()
 					Schema_AddBool(MarkAsReady.GetFields(), SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, true);
 					GetCoordinator().SendComponentUpdate(WorkerEntityId, MoveTemp(MarkAsReady));
 
-					Stage = bHasGSMAuth ? EStage::DispatchGSMStartPlay : EStage::WaitForGSMStartPlay;
+					if (GetDefault<USpatialGDKSettings>()->bEnableSkeletonEntityCreation)
+					{
+						SkeletonEntityStep.Emplace(*NetDriver);
+						Stage = EStage::CreateSkeletonEntities;
+					}
+					else
+					{
+						Stage = bHasGSMAuth ? EStage::DispatchGSMStartPlay : EStage::WaitForGSMStartPlay;
+					}
 				}
 			}
+		}
+	}
+
+	if (Stage == EStage::CreateSkeletonEntities)
+	{
+		if (SkeletonEntityStep->TryFinish())
+		{
+			Stage = bHasGSMAuth ? EStage::DispatchGSMStartPlay : EStage::WaitForGSMStartPlay;
 		}
 	}
 
@@ -367,8 +382,7 @@ void FSpatialStartupHandler::SpawnPartitionEntity(Worker_EntityId PartitionEntit
 
 	PartitionsToCreate.Emplace(PartitionEntityId);
 
-	CreateEntityDelegate OnCreateWorkerEntityResponse;
-	OnCreateWorkerEntityResponse.BindLambda([this, PartitionEntityId](const Worker_CreateEntityResponseOp& Op) {
+	FCreateEntityDelegate OnCreateWorkerEntityResponse = ([this, PartitionEntityId](const Worker_CreateEntityResponseOp& Op) {
 		PartitionsToCreate.Remove(PartitionEntityId);
 	});
 
@@ -425,6 +439,17 @@ FSpatialClientStartupHandler::FSpatialClientStartupHandler(USpatialNetDriver& In
 	, NetDriver(&InNetDriver)
 	, GameInstance(&InGameInstance)
 {
+}
+
+FSpatialClientStartupHandler::~FSpatialClientStartupHandler()
+{
+	if (GSMQueryRetryTimer.IsValid())
+	{
+		if (GameInstance.IsValid())
+		{
+			GameInstance->GetTimerManager().ClearTimer(GSMQueryRetryTimer);
+		}
+	}
 }
 
 bool FSpatialClientStartupHandler::TryFinishStartup()
@@ -585,8 +610,7 @@ void FSpatialClientStartupHandler::QueryGSM()
 
 	const Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery, RETRY_UNTIL_COMPLETE);
 
-	EntityQueryDelegate GSMQueryDelegate;
-	GSMQueryDelegate.BindLambda([this](const Worker_EntityQueryResponseOp& Op) {
+	FEntityQueryDelegate GSMQueryDelegate = [this](const Worker_EntityQueryResponseOp& Op) {
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogGlobalStateManager, Warning, TEXT("Could not find GSM via entity query: %s"), UTF8_TO_TCHAR(Op.message));
@@ -628,17 +652,20 @@ void FSpatialClientStartupHandler::QueryGSM()
 
 		if (Stage != EStage::Finished)
 		{
-			// Automatically retry.
-			FTimerManager& TimerManager = GameInstance->GetTimerManager();
-			FTimerHandle Dummy;
-			TimerManager.SetTimer(
-				Dummy,
-				[this]() {
-					QueryGSM();
-				},
-				0.1f, /*bInLoop =*/false);
+			if (!bStartedRetrying)
+			{
+				bStartedRetrying = true;
+				// Automatically retry.
+				FTimerManager& TimerManager = GameInstance->GetTimerManager();
+				TimerManager.SetTimer(
+					GSMQueryRetryTimer,
+					[this]() {
+						QueryGSM();
+					},
+					0.1f, /*bInLoop =*/true);
+			}
 		}
-	});
+	};
 
 	QueryHandler.AddRequest(RequestID, GSMQueryDelegate);
 }

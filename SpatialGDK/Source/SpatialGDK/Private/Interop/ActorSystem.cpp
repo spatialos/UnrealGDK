@@ -247,7 +247,6 @@ ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InAutho
 	, NetDriver(InNetDriver)
 	, EventTracer(InEventTracer)
 	, ClientNetLoadActorHelper(*InNetDriver)
-	, ClaimPartitionHandler(*InNetDriver->Connection)
 {
 }
 
@@ -298,11 +297,8 @@ void ActorSystem::Advance()
 		{ SimulatedSubView, ENetRole::ROLE_SimulatedProxy },
 	};
 
-	for (const FEntitySubView& SubView : SubViews)
-	{
-		ProcessRemoves(SubView);
-	}
-
+	// First, we process updates; when receiving tear off updates, we want to
+	// process them before a REMOVE if we receive it in the same ViewDelta.
 	for (const FEntitySubView& SubView : SubViews)
 	{
 		ProcessUpdates(SubView);
@@ -310,8 +306,15 @@ void ActorSystem::Advance()
 
 	for (const FEntitySubView& SubView : SubViews)
 	{
+		ProcessRemoves(SubView);
+	}
+
+	for (const FEntitySubView& SubView : SubViews)
+	{
 		ProcessAdds(SubView);
 	}
+
+	InvokeRepNotifies();
 
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
 	{
@@ -333,8 +336,7 @@ void ActorSystem::Advance()
 		}
 	}
 
-	CreateEntityHandler.ProcessOps(*ActorSubView->GetViewDelta().WorkerMessages);
-	ClaimPartitionHandler.ProcessOps(*ActorSubView->GetViewDelta().WorkerMessages);
+	CommandsHandler.ProcessOps(*ActorSubView->GetViewDelta().WorkerMessages);
 }
 
 UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)
@@ -461,7 +463,8 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 
 					if (!bDormantActor)
 					{
-						UpdateShadowData(EntityId);
+						USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
+						ActorChannel->OnHandoverAuthorityGained();
 					}
 
 					// TODO - Using bActorHadAuthority should be replaced with better tracking system to Actor entity creation [UNR-3960]
@@ -770,12 +773,6 @@ void ActorSystem::HandleDeferredEntityDeletion(const DeferredRetire& Retire) con
 	}
 }
 
-void ActorSystem::UpdateShadowData(const Worker_EntityId EntityId) const
-{
-	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
-	ActorChannel->UpdateShadowData();
-}
-
 void ActorSystem::RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff)
 {
 	DeferredRetire DeferredObj = { EntityId, ActorClassId, bIsNetStartup, bNeedsTearOff };
@@ -947,7 +944,9 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 
 		ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 		bool bOutReferencesChanged = false;
-		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, bOutReferencesChanged);
+
+		FObjectRepNotifies& ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(&TargetObject));
+		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
 
 		RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 	}
@@ -956,6 +955,12 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 		UE_LOG(LogActorSystem, Verbose, TEXT("Entity: %d Component: %d - Skipping because RPC components don't have actual data."),
 			   Channel.GetEntityId(), ComponentId);
 	}
+}
+
+void ActorSystem::ResolveAsyncPendingLoad(UObject* LoadedObject, const FUnrealObjectRef& ObjectRef)
+{
+	ResolvePendingOperations(LoadedObject, ObjectRef);
+	InvokeRepNotifies();
 }
 
 void ActorSystem::ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)
@@ -1047,7 +1052,6 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 		}
 
 		bool bSomeObjectsWereMapped = false;
-		TArray<GDK_PROPERTY(Property)*> RepNotifies;
 
 		FRepLayout& RepLayout = DependentChannel->GetObjectRepLayout(ReplicatingObject);
 		FRepStateStaticBuffer& ShadowData = DependentChannel->GetObjectStaticBuffer(ReplicatingObject);
@@ -1056,16 +1060,15 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 			DependentChannel->ResetShadowData(RepLayout, ShadowData, ReplicatingObject);
 		}
 
+		FObjectRepNotifies& ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(ReplicatingObject));
 		ResolveObjectReferences(RepLayout, ReplicatingObject, *RepState, RepState->ReferenceMap, ShadowData.GetData(),
-								(uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(), RepNotifies,
+								(uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(), ObjectRepNotifiesOut,
 								bSomeObjectsWereMapped);
 
 		if (bSomeObjectsWereMapped)
 		{
-			DependentChannel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, RepLayout, RepState->ReferenceMap, ReplicatingObject);
-
 			UE_LOG(LogActorSystem, Verbose, TEXT("Resolved for target object %s"), *ReplicatingObject->GetName());
-			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies, {});
+			ReplicatingObject->PostNetReceive();
 		}
 
 		RepState->UnresolvedRefs.Remove(ObjectRef);
@@ -1074,8 +1077,7 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 
 void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState,
 										  FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data,
-										  int32 MaxAbsOffset, TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-										  bool& bOutSomeObjectsWereMapped)
+										  int32 MaxAbsOffset, FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutSomeObjectsWereMapped)
 {
 	for (auto It = ObjectReferencesMap.CreateIterator(); It; ++It)
 	{
@@ -1111,7 +1113,7 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 			int32 NewMaxOffset = Array->Num() * ArrayProperty->Inner->ElementSize;
 
 			ResolveObjectReferences(RepLayout, ReplicatedObject, RepState, *ObjectReferences.Array, (uint8*)StoredArray->GetData(),
-									(uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped);
+									(uint8*)Array->GetData(), NewMaxOffset, ObjectRepNotifiesOut, bOutSomeObjectsWereMapped);
 			continue;
 		}
 
@@ -1200,7 +1202,7 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 			{
 				if (Parent.RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + StoredDataOffset, Data + AbsOffset))
 				{
-					RepNotifies.AddUnique(Parent.Property);
+					ObjectRepNotifiesOut.RepNotifies.AddUnique(Parent.Property);
 				}
 			}
 		}
@@ -1231,7 +1233,8 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 	bool bOutReferencesChanged = false;
-	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, bOutReferencesChanged);
+	FObjectRepNotifies& ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(&TargetObject));
+	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
 	RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 
 	// This is a temporary workaround, see UNR-841:
@@ -1628,7 +1631,7 @@ void ActorSystem::ApplyComponentDataOnActorCreation(const Worker_EntityId Entity
 	}
 }
 
-USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, const Worker_EntityId EntityId)
+USpatialActorChannel* ActorSystem::SetUpActorChannel(USpatialNetDriver* NetDriver, AActor* Actor, const Worker_EntityId EntityId)
 {
 	UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
 
@@ -1655,6 +1658,11 @@ USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, const Worker
 	return Channel;
 }
 
+USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, Worker_EntityId EntityId)
+{
+	return SetUpActorChannel(NetDriver, Actor, EntityId);
+}
+
 USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, const Worker_EntityId EntityId)
 {
 	if (!NetDriver->PackageMap->ResolveEntityActorAndSubobjects(EntityId, StablyNamedActor))
@@ -1674,6 +1682,50 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 	}
 
 	return Channel;
+}
+
+void ActorSystem::InvokeRepNotifies()
+{
+	for (FObjectRepNotifies& ObjectRepNotifies : RepNotifiesToSend)
+	{
+		UObject* Object = ObjectRepNotifies.Object.Get();
+		if (!IsValid(Object))
+		{
+			continue;
+		}
+		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Object);
+		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+		{
+			// TODO UNR-5785 - Once fixed, change log level to warning
+			UE_LOG(LogActorSystem, Log, TEXT("Failed to invoke rep notifies for an object as its entity id was invalid. Object: %s"),
+				   *Object->GetName());
+			continue;
+		}
+		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+		if (!IsValid(Channel))
+		{
+			UE_LOG(LogActorSystem, Warning,
+				   TEXT("Failed to invoke rep notifies for an object as its channel was invalid. Object: %s, Entity: %lld"),
+				   *Object->GetName(), EntityId);
+			continue;
+		}
+		RemoveRepNotifiesWithUnresolvedObjs(*Object, *Channel, ObjectRepNotifies.RepNotifies);
+		Channel->PostReceiveSpatialUpdate(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
+	}
+	RepNotifiesToSend.Empty();
+}
+
+void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
+													  TArray<GDK_PROPERTY(Property) *>& RepNotifies)
+{
+	if (const TSharedRef<FObjectReplicator>* ReplicatorRef = Channel.ReplicationMap.Find(&Object))
+	{
+		if (const FSpatialObjectRepState* ObjectRepState = Channel.ObjectReferenceMap.Find(&Object))
+		{
+			FObjectReplicator& Replicator = ReplicatorRef->Get();
+			Channel.RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator.RepLayout, ObjectRepState->ReferenceMap, &Object);
+		}
+	}
 }
 
 void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
@@ -1758,6 +1810,12 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
 			return;
 		}
+	}
+
+	// If the actor was torn off and we don't have a channel, don't destroy the actor.
+	if (Actor->GetTearOff())
+	{
+		return;
 	}
 
 	// Actor is a startup actor that is a part of the level. If it's not Tombstone-d, then it
@@ -2049,11 +2107,30 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 	UE_LOG(LogActorSystem, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"), *Actor->GetName(),
 		   ActorChannel.GetEntityId(), Actor->HasAuthority());
 
-	SpatialGDK::EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
-	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(&ActorChannel, OutBytesWritten);
+	EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
+	TArray<FWorkerComponentData> ComponentDatas;
+	TArray<FWorkerComponentUpdate> ComponentUpdates;
+
+	const EntityViewElement* ExistingEntity = ActorSubView->GetView().Find(ActorChannel.GetEntityId());
+
+	const bool bIsSkeletonEntity =
+		ExistingEntity != nullptr
+		&& ExistingEntity->Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID });
+
+	// If we're not populating a skeleton entity, we're creating a new one.
+	const bool bIsCreatingNewEntity = !bIsSkeletonEntity;
+
+	if (bIsCreatingNewEntity)
+	{
+		ComponentDatas = DataFactory.CreateEntityComponents(&ActorChannel, OutBytesWritten);
+	}
+	else
+	{
+		DataFactory.CreatePopulateSkeletonComponents(ActorChannel, ComponentDatas, ComponentUpdates, OutBytesWritten);
+	}
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
-	ComponentDatas.Add(SpatialGDK::ActorSystem::CreateLevelComponentData(*Actor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
+	ComponentDatas.Add(CreateLevelComponentData(*Actor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
 
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
@@ -2065,12 +2142,38 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 										 });
 	}
 
-	const Worker_RequestId CreateEntityRequestId =
-		NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
+	ViewCoordinator& Coordinator = NetDriver->Connection->GetCoordinator();
 
-	CreateEntityHandler.AddRequest(CreateEntityRequestId, CreateEntityDelegate::CreateRaw(this, &ActorSystem::OnEntityCreated, SpanId));
+	if (bIsCreatingNewEntity)
+	{
+		const Worker_RequestId CreateEntityRequestId =
+			NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
 
-	CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
+		CommandsHandler.AddRequest(CreateEntityRequestId, [this, SpanId](const Worker_CreateEntityResponseOp& Op) {
+			OnEntityCreated(Op, SpanId);
+		});
+
+		CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
+	}
+	else
+	{
+		for (const FWorkerComponentUpdate& ComponentToUpdate : ComponentUpdates)
+		{
+			ComponentUpdate GeneratedUpdate(OwningComponentUpdatePtr(ComponentToUpdate.schema_type), ComponentToUpdate.component_id);
+			Coordinator.SendComponentUpdate(EntityId, MoveTemp(GeneratedUpdate), {});
+		}
+		for (const FWorkerComponentData& ComponentToAdd : ComponentDatas)
+		{
+			ComponentData GeneratedAdd = ComponentData(OwningComponentDataPtr(ComponentToAdd.schema_type), ComponentToAdd.component_id);
+			Coordinator.SendAddComponent(EntityId, MoveTemp(GeneratedAdd), {});
+		}
+
+		// Add this last; due to AddComponent ordering, seeing the POPULATION_FINISHED tag would mean that all the previous ComponentAdds
+		// have been observed.
+		Coordinator.SendAddComponent(EntityId, ComponentData(SpatialConstants::SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID));
+
+		Coordinator.RefreshEntityCompleteness(EntityId);
+	}
 }
 
 bool ActorSystem::HasPendingOpsForChannel(const USpatialActorChannel& ActorChannel) const
@@ -2194,7 +2297,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 		// components (such as client RPC endpoints, player controller component, etc).
 		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Cast<APlayerController>(Actor));
 		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
-		ClaimPartitionHandler.ClaimPartition(ClientSystemEntityId, Op.entity_id);
+		CommandsHandler.ClaimPartition(NetDriver->Connection->GetCoordinator(), ClientSystemEntityId, Op.entity_id);
 	}
 }
 
@@ -2299,10 +2402,8 @@ void ActorSystem::CreateEntityWithRetries(Worker_EntityId EntityId, FString Enti
 	const Worker_RequestId RequestId =
 		NetDriver->Connection->SendCreateEntityRequest(CopyEntityComponentData(EntityComponents), &EntityId, RETRY_UNTIL_COMPLETE);
 
-	CreateEntityDelegate Delegate;
-
-	Delegate.BindLambda([this, EntityId, Name = MoveTemp(EntityName),
-						 Components = MoveTemp(EntityComponents)](const Worker_CreateEntityResponseOp& Op) mutable {
+	FCreateEntityDelegate Delegate = [this, EntityId, Name = MoveTemp(EntityName),
+									  Components = MoveTemp(EntityComponents)](const Worker_CreateEntityResponseOp& Op) mutable {
 		switch (Op.status_code)
 		{
 		case WORKER_STATUS_CODE_SUCCESS:
@@ -2327,9 +2428,9 @@ void ActorSystem::CreateEntityWithRetries(Worker_EntityId EntityId, FString Enti
 			DeleteEntityComponentData(Components);
 			break;
 		}
-	});
+	};
 
-	CreateEntityHandler.AddRequest(RequestId, MoveTemp(Delegate));
+	CommandsHandler.AddRequest(RequestId, MoveTemp(Delegate));
 }
 
 TArray<FWorkerComponentData> ActorSystem::CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents)

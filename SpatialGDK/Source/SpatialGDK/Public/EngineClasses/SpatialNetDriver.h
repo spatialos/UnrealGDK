@@ -89,6 +89,7 @@ class InitialOnlyFilter;
 class CrossServerRPCSender;
 class CrossServerRPCHandler;
 class FSpatialStrategySystem;
+class FSkeletonEntityCreationStartupStep;
 class FSpatialStartupHandler;
 class FSpatialClientStartupHandler;
 } // namespace SpatialGDK
@@ -237,6 +238,8 @@ public:
 	TUniquePtr<SpatialGDK::UnrealServerInterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
+	TUniquePtr<SpatialGDK::FSkeletonEntityCreationStartupStep> SkeletonEntityCreationStep;
+
 	TUniquePtr<SpatialGDK::FSpatialStartupHandler> StartupHandler;
 	TUniquePtr<SpatialGDK::FSpatialClientStartupHandler> ClientStartupHandler;
 
@@ -245,9 +248,6 @@ public:
 	TUniquePtr<SpatialGDK::InitialOnlyFilter> InitialOnlyFilter;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
-
-	// If this worker is authoritative over the translation, the manager will be instantiated.
-	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
 
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
@@ -302,7 +302,7 @@ private:
 	TUniquePtr<SpatialGDK::CrossServerRPCSender> CrossServerRPCSender;
 	TUniquePtr<SpatialGDK::CrossServerRPCHandler> CrossServerRPCHandler;
 
-	SpatialGDK::EntityQueryHandler QueryHandler;
+	SpatialGDK::FEntityQueryHandler QueryHandler;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;

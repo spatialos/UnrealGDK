@@ -3,6 +3,7 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
+#include "SkeletonEntityCreationStep.h"
 #include "SpatialView/ViewCoordinator.h"
 
 class USpatialNetDriver;
@@ -34,7 +35,7 @@ private:
 	bool bIsRecoveringOrSnapshot = false;
 
 	bool bHasCalledPartitionEntityCreate = false;
-	CreateEntityHandler EntityHandler;
+	FCreateEntityHandler EntityHandler;
 	TArray<Worker_PartitionId> WorkerPartitions;
 
 	TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation> WorkersToPartitions;
@@ -43,7 +44,9 @@ private:
 	VirtualWorkerId LocalVirtualWorkerId;
 	Worker_PartitionId LocalPartitionId;
 
-	ClaimPartitionHandler ClaimHandler;
+	FClaimPartitionHandler ClaimHandler;
+
+	TOptional<FSkeletonEntityCreationStartupStep> SkeletonEntityStep;
 
 	ViewCoordinator& GetCoordinator();
 	const ViewCoordinator& GetCoordinator() const;
@@ -68,6 +71,8 @@ private:
 		GetVirtualWorkerTranslationState,
 		WaitForAssignedPartition,
 
+		CreateSkeletonEntities,
+
 		DispatchGSMStartPlay,
 		WaitForGSMStartPlay,
 
@@ -90,6 +95,7 @@ public:
 		int32 ExpectedServerWorkersCount;
 	};
 	explicit FSpatialClientStartupHandler(USpatialNetDriver& InNetDriver, UGameInstance& InGameInstance, const FInitialSetup& InSetup);
+	virtual ~FSpatialClientStartupHandler();
 	bool TryFinishStartup();
 	void QueryGSM();
 	ViewCoordinator& GetCoordinator();
@@ -98,8 +104,9 @@ public:
 
 private:
 	bool bQueriedGSM = false;
-
-	EntityQueryHandler QueryHandler;
+	bool bStartedRetrying = false;
+	FTimerHandle GSMQueryRetryTimer;
+	FEntityQueryHandler QueryHandler;
 	struct FDeploymentMapData
 	{
 		FString DeploymentMapURL;
@@ -138,7 +145,7 @@ private:
 	EStage Stage = EStage::Initial;
 
 	USpatialNetDriver* NetDriver;
-	UGameInstance* GameInstance;
+	TWeakObjectPtr<UGameInstance> GameInstance;
 };
 
 } // namespace SpatialGDK

@@ -21,7 +21,6 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(S
 	, NetDriver(InNetDriver)
 	, Partitions({})
 	, bWorkerEntityQueryInFlight(false)
-	, ClaimPartitionHandler(*InConnection)
 {
 }
 
@@ -43,7 +42,11 @@ void SpatialVirtualWorkerTranslationManager::SetNumberOfVirtualWorkers(const uin
 
 void SpatialVirtualWorkerTranslationManager::Advance(const TArray<Worker_Op>& Ops)
 {
-	CreateEntityHandler.ProcessOps(Ops);
-	ClaimPartitionHandler.ProcessOps(Ops);
-	QueryHandler.ProcessOps(Ops);
+	CommandsHandler.ProcessOps(Ops);
+}
+
+const SpatialVirtualWorkerTranslationManager::FVirtualToPhysicalWorkerMapping&
+SpatialVirtualWorkerTranslationManager::GetVirtualWorkerMapping() const
+{
+	return VirtualToPhysicalWorkerMapping;
 }

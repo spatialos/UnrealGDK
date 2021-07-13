@@ -40,6 +40,8 @@
 #include "Interop/MigrationDiagnosticsSystem.h"
 #include "Interop/OwnershipCompletenessHandler.h"
 #include "Interop/RPCExecutor.h"
+#include "Interop/SkeletonEntities.h"
+#include "Interop/SkeletonEntityCreationStep.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialNetDriverLoadBalancingHandler.h"
@@ -441,6 +443,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		Sender = NewObject<USpatialSender>();
 		Receiver = NewObject<USpatialReceiver>();
 
+		if (IsServer() && GetDefault<USpatialGDKSettings>()->bEnableSkeletonEntityCreation)
+		{
+			SkeletonEntityCreationStep = MakeUnique<SpatialGDK::FSkeletonEntityCreationStartupStep>(*this);
+		}
+
 		// TODO: UNR-2452
 		// Ideally the GlobalStateManager and StaticComponentView would be created as part of USpatialWorkerConnection::Init
 		// however, this causes a crash upon the second instance of running PIE due to a destroyed USpatialNetDriver still being reference.
@@ -660,7 +667,11 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
 	const SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+		SpatialConstants::LB_TAG_COMPONENT_ID,
+		[](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
+			return SpatialGDK::SkeletonEntityFunctions::IsCompleteSkeleton(Element);
+		},
+		SpatialGDK::SkeletonEntityFunctions::GetSkeletonEntityRefreshCallbacks(Connection->GetCoordinator()));
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (!SpatialSettings->bRunStrategyWorker)
@@ -1037,6 +1048,9 @@ void USpatialNetDriver::Shutdown()
 
 	SpatialOutputDevice = nullptr;
 
+	StartupHandler.Reset();
+	ClientStartupHandler.Reset();
+
 	Super::Shutdown();
 
 	// This is done after Super::Shutdown so the NetDriver is given an opportunity to shutdown all open channels, and those
@@ -1066,15 +1080,6 @@ void USpatialNetDriver::Shutdown()
 
 	if (Connection != nullptr)
 	{
-		// Delete all load-balancing partition entities if we're translator authoritative.
-		if (VirtualWorkerTranslationManager != nullptr)
-		{
-			for (const auto& Partition : VirtualWorkerTranslationManager->GetAllPartitions())
-			{
-				Connection->SendDeleteEntityRequest(Partition.PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
-			}
-		}
-
 		if (RoutingSystem)
 		{
 			RoutingSystem->Destroy(Connection);
@@ -2508,7 +2513,7 @@ void USpatialNetDriver::PollPendingLoads()
 		UObject* ResolvedObject = FUnrealObjectRef::ToObjectPtr(ObjectReference, PackageMap, bOutUnresolved);
 		if (ResolvedObject)
 		{
-			ActorSystem->ResolvePendingOperations(ResolvedObject, ObjectReference);
+			ActorSystem->ResolveAsyncPendingLoad(ResolvedObject, ObjectReference);
 		}
 		else
 		{
@@ -3359,8 +3364,7 @@ void USpatialNetDriver::RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebug
 
 		if (IsServer())
 		{
-			DebuggerSubViewPtr = &Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
-																			 FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
+			DebuggerSubViewPtr = &SpatialGDK::ActorSubviews::CreateActorAuthSubView(*this);
 		}
 		else
 		{

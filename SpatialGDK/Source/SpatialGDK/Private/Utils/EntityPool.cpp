@@ -36,8 +36,7 @@ void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 	}
 
 	// Set up reserve IDs delegate
-	ReserveEntityIDsDelegate CacheEntityIDsDelegate;
-	CacheEntityIDsDelegate.BindLambda([EntitiesToReserve, this](const Worker_ReserveEntityIdsResponseOp& Op) {
+	FReserveEntityIDsDelegate CacheEntityIDsDelegate = [EntitiesToReserve, this](const Worker_ReserveEntityIdsResponseOp& Op) {
 		bIsAwaitingResponse = false;
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -74,7 +73,7 @@ void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 			bIsReady = true;
 			EntityPoolReadyDelegate.Broadcast();
 		}
-	});
+	};
 
 	// Reserve the Entity IDs
 	const Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToReserve, RETRY_UNTIL_COMPLETE);

@@ -34,7 +34,6 @@ using namespace SpatialGDK;
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-	ClaimHandler = MakeUnique<ClaimPartitionHandler>(*NetDriver->Connection);
 	ViewCoordinator = &InNetDriver->Connection->GetCoordinator();
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
@@ -166,6 +165,12 @@ void UGlobalStateManager::SendShutdownAdditionalServersEvent()
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &ComponentUpdate);
 }
 #endif // WITH_EDITOR
+
+bool UGlobalStateManager::HasAuthority() const
+{
+	check(ViewCoordinator->HasEntity(GlobalStateManagerEntityId));
+	return ViewCoordinator->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
+}
 
 void UGlobalStateManager::SetDeploymentState()
 {
@@ -299,7 +304,8 @@ Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
 
 void UGlobalStateManager::ClaimSnapshotPartition()
 {
-	ClaimHandler->ClaimPartition(NetDriver->Connection->GetWorkerSystemEntityId(), SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	CommandsHandler.ClaimPartition(*ViewCoordinator, NetDriver->Connection->GetWorkerSystemEntityId(),
+								   SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 }
 
 void UGlobalStateManager::TriggerBeginPlay()
@@ -362,7 +368,7 @@ void UGlobalStateManager::Advance()
 {
 	const TArray<Worker_Op>& Ops = NetDriver->Connection->GetCoordinator().GetViewDelta().GetWorkerMessages();
 
-	ClaimHandler->ProcessOps(Ops);
+	CommandsHandler.ProcessOps(Ops);
 
 #if WITH_EDITOR
 	RequestHandler.ProcessOps(Ops);

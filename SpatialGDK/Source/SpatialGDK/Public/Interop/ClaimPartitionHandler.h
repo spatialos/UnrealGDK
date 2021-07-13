@@ -6,30 +6,27 @@
 #include "SpatialCommonTypes.h"
 #include "Templates/Function.h"
 
-class SpatialOSWorkerInterface;
+using FSystemEntityCommandDelegate = TFunction<void(const Worker_CommandResponseOp&)>;
 
 namespace SpatialGDK
 {
-class ClaimPartitionHandler
+class ISpatialOSWorker;
+class FClaimPartitionHandler
 {
 public:
-	using FPartitionClaimCallback = TFunction<void(void)>;
-
-	ClaimPartitionHandler(SpatialOSWorkerInterface& InWorkerInterface);
-
-	void ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim,
-						FPartitionClaimCallback InCallback = FPartitionClaimCallback());
+	void ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim);
+	void ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim,
+						FSystemEntityCommandDelegate Delegate);
 
 	void ProcessOps(const TArray<Worker_Op>& Ops);
 
 private:
-	struct FPartitionClaimRequest
+	struct FClaimPartitionRequest
 	{
 		Worker_PartitionId PartitionId;
-		FPartitionClaimCallback Callback;
+		FSystemEntityCommandDelegate Delegate;
 	};
-	TMap<Worker_RequestId_Key, FPartitionClaimRequest> ClaimPartitionRequestIds;
 
-	SpatialOSWorkerInterface& WorkerInterface;
+	TMap<Worker_RequestId_Key, FClaimPartitionRequest> ClaimPartitionRequestIds;
 };
 } // namespace SpatialGDK

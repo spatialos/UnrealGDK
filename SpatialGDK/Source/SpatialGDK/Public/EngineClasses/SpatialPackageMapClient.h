@@ -72,6 +72,7 @@ public:
 	TSet<FNetworkGUID> PendingReferences;
 
 	Worker_EntityId AllocateNewEntityId() const;
+	void SlowCheckMapsConsistency(const UObject* Object) const;
 
 private:
 	UPROPERTY()
@@ -105,6 +106,8 @@ public:
 	// This function is ONLY used in SpatialPackageMapClient::UnregisterActorObjectRefOnly
 	// to undo the unintended registering of objects when looking them up with static paths.
 	void UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef);
+
+	void SlowCheckMapsConsistency(const UObject* Object) const;
 
 private:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRefInternal(const FUnrealObjectRef& ObjectRef);

@@ -52,5 +52,5 @@ private:
 
 	FEntityPoolReadyEvent EntityPoolReadyDelegate;
 
-	SpatialGDK::ReserveEntityIdsHandler ReserveEntityIdsHandler;
+	SpatialGDK::FReserveEntityIdsHandler ReserveEntityIdsHandler;
 };

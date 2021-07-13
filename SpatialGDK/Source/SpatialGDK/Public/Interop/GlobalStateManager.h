@@ -10,8 +10,8 @@
 #include <WorkerSDK/improbable/c_worker.h>
 
 #include "EntityQueryHandler.h"
-#include "Interop/ClaimPartitionHandler.h"
 #include "Interop/EntityCommandHandler.h"
+#include "Interop/SpatialCommandsHandler.h"
 #include "Utils/SchemaUtils.h"
 
 #include "GlobalStateManager.generated.h"
@@ -38,6 +38,8 @@ public:
 	void Init(USpatialNetDriver* InNetDriver);
 
 	void ApplySessionId(int32 InSessionId);
+
+	bool HasAuthority() const;
 
 	void SetDeploymentState();
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
@@ -96,7 +98,7 @@ private:
 
 	SpatialGDK::ViewCoordinator* ViewCoordinator;
 
-	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimHandler;
+	SpatialGDK::FCommandsHandler CommandsHandler;
 
 #if WITH_EDITOR
 	SpatialGDK::EntityCommandRequestHandler RequestHandler;

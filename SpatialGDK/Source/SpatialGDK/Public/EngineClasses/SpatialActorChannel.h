@@ -254,8 +254,10 @@ public:
 								  const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
-											 const FObjectReferencesMap& RefMap, UObject* Object);
+											 const FObjectReferencesMap& RefMap, const UObject* Object) const;
 
+	Worker_ComponentId GetInterestComponentId() const;
+	void OnHandoverAuthorityGained();
 	void UpdateShadowData();
 	void UpdateSpatialPosition();
 	void ForcePositionReplication() { TimeWhenPositionLastUpdated = 0; }
