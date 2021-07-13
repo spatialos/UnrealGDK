@@ -12,6 +12,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/DormancyTests/InitiallyDormantDynamicActorTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DynamicSubobjectsTest/DynamicSubObjectTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DynamicSubobjectsTest/DynamicSubObjectsTest.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/DynamicSubobjectsTest/SpatialDynamicComponentsFastReadditionTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RegisterAutoDestroyActorsTest/RegisterAutoDestroyActorsTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestPossession/SpatialTestPossession.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestPossession/SpatialTestRepossession.h"
@@ -45,6 +46,7 @@ void USpatialNetworkingMap::CreateCustomContentForMap()
 	AddActorToLevel<ASpatialTestMultipleOwnership>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicSubobjectsTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<AStaticSubobjectsTest>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ASpatialDynamicComponentsFastReadditionTest>(CurrentLevel, FTransform::Identity);
 
 	AddActorToLevel<AInitiallyDormantDynamicActorTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicActorSetToAwakeTest>(CurrentLevel, FTransform::Identity);
