@@ -55,9 +55,8 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	WaitForStationaryActorStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		UGameInstance* GameInstance = GetGameInstance();
 		const FString WorkerId = GameInstance->GetSpatialWorkerId();
-		for (TActorIterator<ATestMovementCharacter> Iter(GetWorld()); Iter; ++Iter)
+		for (ATestMovementCharacter* Character : TActorRange<ATestMovementCharacter>(GetWorld()))
 		{
-			ATestMovementCharacter* Character = *Iter;
 			RequireEqual_Float(Character->Speed, 0.0f, FString::Printf(TEXT("%s on %s is stationary"), *Character->GetName(), *WorkerId));
 		}
 
@@ -96,10 +95,8 @@ void ASpatialTestCharacterMigration::PrepareTest()
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
 		bool bLoadBalanceStrategyValid = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr;
 
-		for (TActorIterator<ATestMovementCharacter> Iter(GetWorld()); Iter; ++Iter)
+		for (ATestMovementCharacter* Character : TActorRange<ATestMovementCharacter>(GetWorld()))
 		{
-			ATestMovementCharacter* Character = *Iter;
-
 			if (Character->IsLocallyControlled())
 			{
 				Character->AddMovementInput(FVector(1.0f, 0.0f, 0.0f), 10.0f, true);
@@ -109,8 +106,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			if (bLoadBalanceStrategyValid)
 			{
 				const VirtualWorkerId VirtualWorker = SpatialNetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Character);
-				RequireEqual_Int(VirtualWorker, 2,
-					FString::Printf(TEXT("%s on %s crossed boundary"), *Character->GetName(), *WorkerId));
+				RequireEqual_Int(VirtualWorker, 2, FString::Printf(TEXT("%s on %s crossed boundary"), *Character->GetName(), *WorkerId));
 			}
 
 			bool bReachDestination = GetTargetDistanceOnLine(Origin, Destination, Character->GetActorLocation()) > -40.0f; // 40cm overlap
@@ -137,10 +133,8 @@ void ASpatialTestCharacterMigration::PrepareTest()
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
 		bool bLoadBalanceStrategyValid = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr;
 
-		for (TActorIterator<ATestMovementCharacter> Iter(GetWorld()); Iter; ++Iter)
+		for (ATestMovementCharacter* Character : TActorRange<ATestMovementCharacter>(GetWorld()))
 		{
-			ATestMovementCharacter* Character = *Iter;
-
 			if (Character->IsLocallyControlled())
 			{
 				Character->AddMovementInput(FVector(-1.0f, 0.0f, 0.0f), 10.0f, true);
@@ -150,8 +144,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			if (bLoadBalanceStrategyValid)
 			{
 				const VirtualWorkerId VirtualWorker = SpatialNetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Character);
-				RequireEqual_Int(VirtualWorker, 1,
-					FString::Printf(TEXT("%s on %s crossed boundary"), *Character->GetName(), *WorkerId));
+				RequireEqual_Int(VirtualWorker, 1, FString::Printf(TEXT("%s on %s crossed boundary"), *Character->GetName(), *WorkerId));
 			}
 
 			bool bReachDestination = GetTargetDistanceOnLine(Destination, Origin, Character->GetActorLocation()) > -40.0f; // 40cm overlap
