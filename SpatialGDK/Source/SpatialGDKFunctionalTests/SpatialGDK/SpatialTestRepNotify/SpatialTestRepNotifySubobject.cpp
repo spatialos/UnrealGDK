@@ -15,9 +15,11 @@ USpatialTestRepNotifySubobject::USpatialTestRepNotifySubobject()
 void USpatialTestRepNotifySubobject::OnRep_OnChangedRepNotifyInt(int32 OldOnChangedRepNotifyInt)
 {
 	bParentPropertyWasExpectedProperty = false;
+	bParentRepNotifyWasCalledBeforeChild = false;
 	if (ASpatialTestRepNotifyActor* Parent = Cast<ASpatialTestRepNotifyActor>(GetOwner()))
 	{
 		bParentPropertyWasExpectedProperty = Parent->OnChangedRepNotifyInt1 == ExpectedParentInt1Property;
+		bParentRepNotifyWasCalledBeforeChild = Parent->bSubobjectIntPropertyWasExpectedProperty;
 	}
 }
 

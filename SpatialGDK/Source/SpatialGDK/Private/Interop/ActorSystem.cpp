@@ -969,7 +969,7 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 		ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 		bool bOutReferencesChanged = false;
 
-		FObjectRepNotifies& ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(&TargetObject));
+		FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
 		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
 
 		RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
@@ -1084,7 +1084,7 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 			DependentChannel->ResetShadowData(RepLayout, ShadowData, ReplicatingObject);
 		}
 
-		FObjectRepNotifies& ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(ReplicatingObject));
+		FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(*ReplicatingObject);
 		ResolveObjectReferences(RepLayout, ReplicatingObject, *RepState, RepState->ReferenceMap, ShadowData.GetData(),
 								(uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(), ObjectRepNotifiesOut,
 								bSomeObjectsWereMapped);
@@ -1262,7 +1262,7 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 	bool bOutReferencesChanged = false;
-	FObjectRepNotifies& ObjectRepNotifiesOut = RepNotifiesToSend.Emplace_GetRef(TWeakObjectPtr<UObject>(&TargetObject));
+	FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
 	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
 	RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 
@@ -1714,35 +1714,67 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 	return Channel;
 }
 
+FObjectRepNotifies& ActorSystem::GetObjectRepNotifies(UObject& Object)
+{
+	return Object.IsA<AActor>() ? ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&Object))
+								: SubobjectRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&Object));
+}
+
 void ActorSystem::InvokeRepNotifies()
 {
-	for (FObjectRepNotifies& ObjectRepNotifies : RepNotifiesToSend)
+	// We have two lists of ObjectRepNotifies, one for Actors and one for Subobjects.
+	// The reason for this is native always calls Rep Notifies on an actor and then on its subobjects.
+	// However, we call Rep Notifies after data on all actors and subobjects has been applied.
+	// So, to match native functionality, we simply need to call all Subobject Rep Notifies after all Actor Rep Notifies.
+	for (auto& RepNotifiesPair : ActorRepNotifiesToSend)
 	{
-		UObject* Object = ObjectRepNotifies.Object.Get();
-		if (!IsValid(Object))
-		{
-			continue;
-		}
-		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Object);
-		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-		{
-			// TODO UNR-5785 - Once fixed, change log level to warning
-			UE_LOG(LogActorSystem, Log, TEXT("Failed to invoke rep notifies for an object as its entity id was invalid. Object: %s"),
-				   *Object->GetName());
-			continue;
-		}
-		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
-		if (!IsValid(Channel))
-		{
-			UE_LOG(LogActorSystem, Warning,
-				   TEXT("Failed to invoke rep notifies for an object as its channel was invalid. Object: %s, Entity: %lld"),
-				   *Object->GetName(), EntityId);
-			continue;
-		}
-		RemoveRepNotifiesWithUnresolvedObjs(*Object, *Channel, ObjectRepNotifies.RepNotifies);
-		Channel->PostReceiveSpatialUpdate(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
+		TryInvokeRepNotifiesForObject(RepNotifiesPair.Key, RepNotifiesPair.Value);
 	}
-	RepNotifiesToSend.Empty();
+	for (auto& RepNotifiesPair : SubobjectRepNotifiesToSend)
+	{
+		TryInvokeRepNotifiesForObject(RepNotifiesPair.Key, RepNotifiesPair.Value);
+	}
+
+	ActorRepNotifiesToSend.Empty();
+	SubobjectRepNotifiesToSend.Empty();
+}
+
+void ActorSystem::TryInvokeRepNotifiesForObject(FWeakObjectPtr& WeakObjectPtr, FObjectRepNotifies& ObjectRepNotifies) const
+{
+	if (ObjectRepNotifies.RepNotifies.Num() == 0)
+	{
+		return;
+	}
+
+	// Object could have been killed during a RepNotify
+	UObject* Object = WeakObjectPtr.Get();
+	if (!Object)
+	{
+		return;
+	}
+	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Object);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		UE_LOG(LogActorSystem, Warning, TEXT("Failed to invoke rep notifies for an object as its entity id was invalid. Object: %s"),
+			   *Object->GetName());
+		return;
+	}
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	if (!IsValid(Channel))
+	{
+		UE_LOG(LogActorSystem, Warning,
+			   TEXT("Failed to invoke rep notifies for an object as its channel was invalid. Object: %s, Entity: %lld"), *Object->GetName(),
+			   EntityId);
+		return;
+	}
+
+	ObjectRepNotifies.RepNotifies.Sort([](GDK_PROPERTY(Property) & A, GDK_PROPERTY(Property) & B) -> bool {
+		// We want to call RepNotifies on properties with a lower RepIndex earlier.
+		return A.RepIndex < B.RepIndex;
+	});
+
+	RemoveRepNotifiesWithUnresolvedObjs(*Object, *Channel, ObjectRepNotifies.RepNotifies);
+	Channel->PostReceiveSpatialUpdate(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
 }
 
 void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
@@ -1842,7 +1874,7 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 		}
 	}
 
-	// If the actor was torn off and we don't have a channel, don't destroy the actor. 
+	// If the actor was torn off and we don't have a channel, don't destroy the actor.
 	if (Actor->GetTearOff())
 	{
 		return;
