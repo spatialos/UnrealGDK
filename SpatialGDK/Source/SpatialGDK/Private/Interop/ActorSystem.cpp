@@ -314,6 +314,8 @@ void ActorSystem::Advance()
 		{ OwnershipSubView, ENetRole::ROLE_AutonomousProxy },
 		{ SimulatedSubView, ENetRole::ROLE_SimulatedProxy },
 	};
+	const FEntitySubView& AuthSubView = SubViews[0];
+	const FEntitySubView& OwnershipSubView = SubViews[1];
 
 	for (const FEntitySubView& SubView : SubViews)
 	{
@@ -330,13 +332,13 @@ void ActorSystem::Advance()
 		ProcessAdds(SubView);
 	}
 
-	// Order here matters: Rep Notifies should be called before authority gains
+	// Order here matters: Rep Notifies should be called before authority gains.
+	// This is because it wouldn't make sense to be told a property was updated while you are authoritative over that actor, as while authoritative you are supposed to be the only server that can update properties.
 	InvokeRepNotifies();
 
-	for (const FEntitySubView& SubView : SubViews)
-	{
-		ProcessAuthorityGains(SubView);
-	}
+	// No need to ProcessAuthorityGains on SimulatedSubView as we won't have gained authority on Entities in that SubView.
+	ProcessAuthorityGains(AuthSubView);
+	ProcessAuthorityGains(OwnershipSubView);
 
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
 	{
