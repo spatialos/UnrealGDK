@@ -121,7 +121,8 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			if (bShouldRunRequires)
 			{
 				const bool bReachDestination =
-					GetTargetDistanceOnLine(PositionOnServerOne, PositionOnServerTwo, Character->GetActorLocation()) > -40.0f; // 40cm overlap
+					GetTargetDistanceOnLine(PositionOnServerOne, PositionOnServerTwo, Character->GetActorLocation())
+					> -40.0f; // 40cm overlap
 				RequireEqual_Bool(bReachDestination, true,
 								  FString::Printf(TEXT("%s on %s reached destination"), *Character->GetName(), *WorkerId));
 			}
@@ -172,7 +173,8 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			if (bShouldRunRequires)
 			{
 				const bool bReachDestination =
-					GetTargetDistanceOnLine(PositionOnServerTwo, PositionOnServerOne, Character->GetActorLocation()) > -40.0f; // 40cm overlap
+					GetTargetDistanceOnLine(PositionOnServerTwo, PositionOnServerOne, Character->GetActorLocation())
+					> -40.0f; // 40cm overlap
 				RequireEqual_Bool(bReachDestination, true,
 								  FString::Printf(TEXT("%s on %s reached destination"), *Character->GetName(), *WorkerId));
 			}
