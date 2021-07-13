@@ -177,15 +177,12 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 		{
 			const Worker_EntityId EntityId = Delta.EntityId;
 
-			if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority)
+			// Check if this entity is EntitiesToRetireOnAuthorityGain first,
+			// to avoid creating an actor that might've been deleted before.
+			if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority && HasEntityBeenRequestedForDelete(EntityId))
 			{
-				// Check if this entity is EntitiesToRetireOnAuthorityGain first,
-				// to avoid creating an actor that might've been deleted before.
-				if (HasEntityBeenRequestedForDelete(EntityId))
-				{
-					HandleEntityDeletedAuthority(EntityId);
-					continue;
-				}
+				HandleEntityDeletedAuthority(EntityId);
+				continue;
 			}
 
 			if (!PresentEntities.Contains(Delta.EntityId))
@@ -211,15 +208,13 @@ void ActorSystem::ProcessAuthorityGains(const FEntitySubViewUpdate& SubViewUpdat
 			&& SubViewUpdate.SubViewType != ENetRole::ROLE_SimulatedProxy)
 		{
 			const Worker_EntityId EntityId = Delta.EntityId;
-			if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority)
+
+			// Check if this entity is EntitiesToRetireOnAuthorityGain first,
+			// to avoid authority gain on an actor that might've been deleted during a RepNotify.
+			if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority && HasEntityBeenRequestedForDelete(EntityId))
 			{
-				// Check if this entity is EntitiesToRetireOnAuthorityGain first,
-				// to avoid authority gain on an actor that might've been deleted during a RepNotify.
-				if (HasEntityBeenRequestedForDelete(EntityId))
-				{
-					HandleEntityDeletedAuthority(EntityId);
-					continue;
-				}
+				HandleEntityDeletedAuthority(EntityId);
+				continue;
 			}
 
 			const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
@@ -314,8 +309,8 @@ void ActorSystem::Advance()
 		{ OwnershipSubView, ENetRole::ROLE_AutonomousProxy },
 		{ SimulatedSubView, ENetRole::ROLE_SimulatedProxy },
 	};
-	const FEntitySubView& AuthSubView = SubViews[0];
-	const FEntitySubView& OwnershipSubView = SubViews[1];
+	const FEntitySubView& EntityAuthSubView = SubViews[0];
+	const FEntitySubView& EntityOwnershipSubView = SubViews[1];
 
 	// First, we process updates; when receiving tear off updates, we want to
 	// process them before a REMOVE if we receive it in the same ViewDelta.
@@ -340,8 +335,8 @@ void ActorSystem::Advance()
 	InvokeRepNotifies();
 
 	// No need to ProcessAuthorityGains on SimulatedSubView as we won't have gained authority on Entities in that SubView.
-	ProcessAuthorityGains(AuthSubView);
-	ProcessAuthorityGains(OwnershipSubView);
+	ProcessAuthorityGains(EntityAuthSubView);
+	ProcessAuthorityGains(EntityOwnershipSubView);
 
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
 	{
