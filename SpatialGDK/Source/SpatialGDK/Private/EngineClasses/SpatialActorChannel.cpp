@@ -384,7 +384,6 @@ void USpatialActorChannel::UpdateShadowData()
 {
 	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Called UpdateShadowData but Actor was nullptr")))
 	{
-		UE_LOG(LogNetTraffic, Warning, TEXT("Called UpdateShadowData but Actor was nullptr"));
 		return;
 	}
 
@@ -394,7 +393,6 @@ void USpatialActorChannel::UpdateShadowData()
 	// TODO: UNR-1029 - log when the shadow data differs from the current state of the Actor.
 	if (bCreatedEntity)
 	{
-		UE_LOG(LogNetTraffic, Warning, TEXT("Called UpdateShadowData for created actor"));
 		return;
 	}
 
@@ -789,71 +787,6 @@ int64 USpatialActorChannel::ReplicateActor()
 	INC_DWORD_STAT_BY(STAT_NumReplicatedActorBytes, ReplicationBytesWritten);
 
 	return ReplicationBytesWritten * 8;
-}
-
-void USpatialActorChannel::CheckUnauthorisedDataChanges(const bool bChannelCreated)
-{
-	check(Actor);
-	check(!Closing);
-	check(Connection);
-	check(Connection->PackageMap);
-
-	if (bCreatingNewEntity || EntityId == SpatialConstants::INVALID_ENTITY_ID || NetDriver->HasServerAuthority(EntityId))
-	{
-		// if we are not ready yet or have authority we do not need to check changes
-		return;
-	}
-
-	if (bActorIsPendingKill || Actor->IsPendingKillOrUnreachable())
-	{
-		// Don't need to do anything, because it should have already been logged.
-		return;
-	}
-
-	// Here, Unreal would have determined if this connection belongs to this actor's Outer.
-	// We don't have this concept when it comes to connections, our ownership-based logic is in the interop layer.
-	// Setting this to true, but should not matter in the end.
-	FReplicationFlags RepFlags;
-	RepFlags.bNetOwner = false;
-	RepFlags.bNetSimulated = (Actor->GetRemoteRole() == ROLE_SimulatedProxy);
-#if ENGINE_MINOR_VERSION <= 23
-	RepFlags.bRepPhysics = Actor->ReplicatedMovement.bRepPhysics;
-#else
-	RepFlags.bRepPhysics = Actor->GetReplicatedMovement().bRepPhysics;
-#endif
-#if ENGINE_MINOR_VERSION >= 26
-	const UWorld* const ActorWorld = Actor->GetWorld();
-	const bool bReplay = ActorWorld && ActorWorld->GetDemoNetDriver() == Connection->GetDriver();
-#else
-	const bool bReplay = ActorWorld && ActorWorld->DemoNetDriver == Connection->GetDriver();
-#endif
-	RepFlags.bReplay = bReplay;
-	RepFlags.bNetInitial = false;
-	RepFlags.bIgnoreRPCs = true;
-
-	FMemMark MemMark(FMemStack::Get()); // The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in
-										// ::PostSendBunch. we free it below
-
-	// ----------------------------------------------------------
-	// Check Actor and Component properties and RPCs
-	// ----------------------------------------------------------
-
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	// Update the replicated property change list.
-	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
-
-	const ERepLayoutResult UpdateResult =
-		ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr,
-														Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
-	MemMark.Pop();
-
-	if (UpdateResult == ERepLayoutResult::Success)
-	{
-		UE_LOG(LogActorSystem, Error, TEXT("Changed actor without authority! %s"), *Actor->GetName());
-	}
-
-	return;
 }
 
 void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
@@ -1340,12 +1273,10 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 {
 	if (StaticBuffer.Num() == 0)
 	{
-		UE_LOG(LogSpatialActorChannel, Warning, TEXT("ResetShadowData empty buffer"));
 		RepLayout.InitRepStateStaticBuffer(StaticBuffer, reinterpret_cast<const uint8*>(TargetObject));
 	}
 	else
 	{
-		UE_LOG(LogSpatialActorChannel, Warning, TEXT("ResetShadowData buffer size %i"), StaticBuffer.Num());
 		RepLayout.CopyProperties(StaticBuffer, reinterpret_cast<uint8*>(TargetObject));
 	}
 }

@@ -4,6 +4,7 @@
 
 #include "Interop/CrossServerRPCHandler.h"
 #include "Engine/EngineBaseTypes.h"
+#include "EngineClasses/SpatialShadowActor.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/CrossServerRPCSender.h"
 #include "Interop/EntityQueryHandler.h"
@@ -283,6 +284,11 @@ public:
 
 	virtual int64 GetActorEntityId(const AActor& Actor) const override;
 
+	void CheckUnauthorisedDataChanges(Worker_EntityId_Key EntityId, AActor* Actor);
+	void AddSpatialShadowActor(Worker_EntityId_Key EntityId);
+	void RemoveSpatialShadowActor(Worker_EntityId_Key EntityId);
+	void UpdateSpatialShadowActor(Worker_EntityId_Key EntityId);
+
 	FShutdownEvent OnShutdown;
 
 private:
@@ -407,4 +413,10 @@ private:
 
 	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
+
+	virtual void ServerReplicateActors_BuildConsiderList(TArray<FNetworkObjectInfo*>& OutConsiderList,
+																	const float ServerTickTime) override;
+
+	UPROPERTY()
+	TMap<int64, USpatialShadowActor*> SpatialShadowActors;
 };

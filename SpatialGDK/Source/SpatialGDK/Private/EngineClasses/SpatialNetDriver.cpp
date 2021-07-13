@@ -27,6 +27,7 @@
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "EngineClasses/SpatialShadowActor.h"
 #include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSubviews.h"
 #include "Interop/ActorSystem.h"
@@ -1739,7 +1740,6 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 
 			if (bIsRecentlyRelevant)
 			{
-				bool bChannelCreated = false;
 				// Find or create the channel for this actor.
 				// we can't create the channel if the client is in a different world than we are
 				// or the package map doesn't support the actor's class/archetype (or the actor itself in the case of serializable actors)
@@ -1753,27 +1753,12 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 						continue;
 					}
 
-					Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
-
-					if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+					if (!ensureAlwaysMsgf(Actor->HasAuthority(), TEXT("Trying to replicate Actor without authority")))
 					{
-						// Gets existing channel if there is one for this entity ID
-						Channel = GetActorChannelByEntityId(EntityId);
+						continue;
 					}
 
-					if (Channel == nullptr)
-					{
-						// Need to create the channel
-						bChannelCreated = true;
-						Channel = GetOrCreateSpatialActorChannel(Actor);
-						if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-						{
-							if (!Channel->TryResolveActor())
-							{
-								continue;
-							}
-						}
-					}
+					Channel = GetOrCreateSpatialActorChannel(Actor);
 
 					if ((Channel == nullptr) && (Actor->NetUpdateFrequency < 1.0f))
 					{
@@ -1797,16 +1782,6 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 						{
 							LastRelevantActors.Add(Actor);
 						}
-
-						Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
-						if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-						{
-							if (!Channel->TryResolveActor())
-							{
-								continue;
-							}
-						}
-						Channel->CheckUnauthorisedDataChanges(bChannelCreated);
 
 						if (Channel->ReplicateActor())
 						{
@@ -3550,6 +3525,140 @@ bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
 		return true;
 	}
 	return false;
+}
+
+void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkObjectInfo*>& OutConsiderList,
+																		   const float ServerTickTime)
+{
+	TArray<FNetworkObjectInfo*> TmpConsiderList;
+	TmpConsiderList.Reserve(GetNetworkObjectList().GetActiveObjects().Num());
+
+	Super::ServerReplicateActors_BuildConsiderList(TmpConsiderList, ServerTickTime);
+
+	// Cache if we are running with Spatial Networking to avoid getting the settings in every iteration of the loop.
+	const bool bSpatialNetworking = GetDefault<UGeneralProjectSettings>()
+										->UsesSpatialNetworking();
+	if (!bSpatialNetworking)
+	{
+		return;
+	}
+
+	for (FNetworkObjectInfo* const& ActorInfo : TmpConsiderList)
+	{
+		AActor* Actor = ActorInfo->Actor;
+		check(Actor != nullptr);
+
+		Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+		
+		// Check for unauthorised data changes no non-auth actors and add auth actors only to the consider list
+		if (!Actor->HasAuthority())
+		{
+			CheckUnauthorisedDataChanges(EntityId, Actor);
+		}
+		else
+		{
+			OutConsiderList.Add(ActorInfo);
+		}
+	}
+}
+
+void USpatialNetDriver::CheckUnauthorisedDataChanges(Worker_EntityId_Key EntityId, AActor* Actor)
+{
+	if (!IsServer())
+	{
+		return;
+	}
+
+	if (!SpatialShadowActors.Contains(EntityId))
+	{
+		// Haven't received an update yet for this entity so can't check
+		return;
+	}
+
+	if (SpatialShadowActors[EntityId] != nullptr)
+	{
+		
+		SpatialShadowActors[EntityId]->CheckUnauthorisedDataChanges(EntityId, Actor);
+	}
+	else
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Trying to check SpatialShadowActor which is invalid, EntityID %i"), EntityId);
+		return;
+	}
+}
+
+void USpatialNetDriver::AddSpatialShadowActor(Worker_EntityId_Key EntityId)
+{
+	if (!IsServer())
+	{
+		return;
+	}
+
+	AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
+	if (Actor == nullptr || !IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
+	{
+		return;
+	}
+
+
+	if (SpatialShadowActors.Contains(EntityId))
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Should only be adding a SpatialShadowActor once for each entity, EntityID %i"),
+			   EntityId);
+	}
+	else //if (!HasServerAuthority(EntityId))
+	{
+		USpatialShadowActor* SpatialShadowActor(NewObject<USpatialShadowActor>());
+		SpatialShadowActor->Init(EntityId, Actor);
+		SpatialShadowActors.Add(EntityId, SpatialShadowActor);
+	}
+}
+
+void USpatialNetDriver::RemoveSpatialShadowActor(Worker_EntityId_Key EntityId)
+{
+	if (!IsServer())
+	{
+		return;
+	}
+
+	if (SpatialShadowActors.Contains(EntityId))
+	{
+		USpatialShadowActor* SpatialShadowActor = SpatialShadowActors[EntityId];
+		SpatialShadowActors.Remove(EntityId);
+	}
+}
+
+void USpatialNetDriver::UpdateSpatialShadowActor(Worker_EntityId_Key EntityId)
+{
+	if (!IsServer())
+	{
+		return;
+	}
+	AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
+	if (Actor == nullptr || !IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
+	{
+		return;
+	}
+
+	if (!SpatialShadowActors.Contains(EntityId))
+	{
+		// We can receive updates without receiving adds - in this case create the SpatialShadowActor
+		AddSpatialShadowActor(EntityId);
+		return;
+	}
+
+	USpatialShadowActor* SpatialShadowActor = SpatialShadowActors[EntityId];
+	if (SpatialShadowActor == nullptr)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Trying to update SpatialShadowActor with invalid actor with EntityID %i"), EntityId);
+		return;
+	}
+	else
+	{
+		SpatialShadowActor->Update(EntityId, Actor);
+	}
+
+	return;
 }
 
 // This should only be called once on each client, in the SpatialDebugger constructor after the class is replicated to each client.
