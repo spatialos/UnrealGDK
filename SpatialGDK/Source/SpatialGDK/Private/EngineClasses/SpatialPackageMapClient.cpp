@@ -181,6 +181,22 @@ void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealOb
 	{
 		SpatialGuidCache->AssignNewSubobjectNetGUID(Object, ObjectRef);
 	}
+	else
+	{
+		// TODO UNR-5785 - Remove this once fixed, as really SpatialGuidCache and Native's GuidCache should be in sync
+		const FNetworkGUID ObjectNetGUID = GetNetGUIDFromObject(Object);
+		if (!ObjectNetGUID.IsValid())
+		{
+			UE_LOG(LogSpatialPackageMap, Log,
+				   TEXT("SpatialGuidCache has a NetGUID mapping which native's GuidCache does not have for object: %s with NetGUID: %u. "
+						"Removing existing mapping from SpatialGuidCache and recreating."),
+				   *Object->GetName(), NetGUID.Value);
+			RemoveSubobject(ObjectRef);
+			SpatialGuidCache->AssignNewSubobjectNetGUID(Object, ObjectRef);
+		}
+	}
+
+	SlowCheckMapsConsistency(Object);
 }
 
 void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
@@ -386,6 +402,14 @@ Worker_EntityId USpatialPackageMapClient::AllocateNewEntityId() const
 	return EntityPool->GetNextEntityId();
 }
 
+void USpatialPackageMapClient::SlowCheckMapsConsistency(const UObject* Object) const
+{
+#if DO_GUARD_SLOW
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	SpatialGuidCache->SlowCheckMapsConsistency(Object);
+#endif
+}
+
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 	: FNetGUIDCache(InDriver)
 {
@@ -421,11 +445,15 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 		// and then register the entity id ref.
 		StablyNamedRef = NetGUIDToUnrealObjectRef[NetGUID];
 		NetGUIDToUnrealObjectRef.Emplace(NetGUID, EntityObjectRef);
+
+		SlowCheckMapsConsistency(Actor);
 	}
 	else
 	{
 		NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
 		RegisterObjectRef(NetGUID, EntityObjectRef);
+
+		SlowCheckMapsConsistency(Actor);
 	}
 
 	UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"), *Actor->GetName(),
@@ -472,6 +500,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 		UE_LOG(LogSpatialPackageMap, Verbose,
 			   TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"), *Subobject->GetName(),
 			   *Actor->GetName(), *SubobjectNetGUID.ToString(), *EntityIdSubobjectRef.ToString());
+
+		SlowCheckMapsConsistency(Subobject);
 	}
 
 	return NetGUID;
@@ -481,6 +511,8 @@ void FSpatialNetGUIDCache::AssignNewSubobjectNetGUID(UObject* Subobject, const F
 {
 	FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
 	RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
+
+	SlowCheckMapsConsistency(Subobject);
 }
 
 // Recursively assign netguids to the outer chain of a UObject. Then associate them with their Spatial representation (FUnrealObjectRef)
@@ -518,6 +550,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(UObject* Ob
 		0, 0, Object->GetFName().ToString(),
 		(OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : FUnrealObjectRef(), bNoLoadOnClient);
 	RegisterObjectRef(NetGUID, StablyNamedObjRef);
+
+	SlowCheckMapsConsistency(Object);
 
 	return NetGUID;
 }
@@ -625,8 +659,7 @@ void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& Subobj
 
 	if (UnrealMetadata->NativeClass.IsStale())
 	{
-		UE_LOG(LogSpatialPackageMap, Log, TEXT("Attempting to remove stale subobject from package map - %s"),
-			   *UnrealMetadata->ClassPath);
+		UE_LOG(LogSpatialPackageMap, Log, TEXT("Attempting to remove stale subobject from package map - %s"), *UnrealMetadata->ClassPath);
 	}
 	else
 	{
@@ -831,4 +864,42 @@ void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const FUnreal
 		*UnrealObjectRefToNetGUID.FindChecked(RemappedObjectRef).ToString(), *RemappedObjectRef.ToString());
 	NetGUIDToUnrealObjectRef.Emplace(NetGUID, RemappedObjectRef);
 	UnrealObjectRefToNetGUID.Emplace(RemappedObjectRef, NetGUID);
+}
+
+void FSpatialNetGUIDCache::SlowCheckMapsConsistency(const UObject* Object) const
+{
+#if DO_GUARD_SLOW
+	const FNetworkGUID ObjectNetGUID = GetNetGUID(Object);
+	const FUnrealObjectRef ObjectRef = GetUnrealObjectRefFromNetGUID(ObjectNetGUID);
+	const FNetworkGUID ObjectRefNetGUID = UnrealObjectRefToNetGUID.FindRef(ObjectRef);
+
+	ensureAlwaysMsgf(ObjectNetGUID == ObjectRefNetGUID,
+					 TEXT("NetGUID inconsistency between SpatialNetGuidCache and native's NetGuidCache. Object: %s, ObjectNetGUID: %u, "
+						  "ObjectRefNetGUID: %u"),
+					 *GetNameSafe(Object), ObjectNetGUID.Value, ObjectRefNetGUID.Value);
+
+	if (!IsValid(Object))
+	{
+		ensureAlwaysMsgf(!ObjectNetGUID.IsValid(), TEXT("Object is not valid but has a valid ObjectNetGUID. Object: %s, ObjectNetGUID: %u"),
+						 *GetNameSafe(Object), ObjectNetGUID.Value);
+		ensureAlwaysMsgf(!ObjectRefNetGUID.IsValid(),
+						 TEXT("Object is not valid but has a valid ObjectRefNetGUID. Object: %s, ObjectRefNetGUID: %u"),
+						 *GetNameSafe(Object), ObjectRefNetGUID.Value);
+		ensureAlwaysMsgf(ObjectRef.Entity == SpatialConstants::INVALID_ENTITY_ID,
+						 TEXT("Object is not valid but has a valid ObjectRef Entity ID. Object: %s, EntityId: %lld, Offset: %u"),
+						 *GetNameSafe(Object), ObjectRef.Entity, ObjectRef.Offset);
+	}
+	else
+	{
+		ensureAlwaysMsgf(ObjectNetGUID.IsValid(), TEXT("Object is valid but has an invalid ObjectNetGUID. Object: %s, ObjectNetGUID: %u"),
+						 *Object->GetName(), ObjectNetGUID.Value);
+		ensureAlwaysMsgf(ObjectRefNetGUID.IsValid(),
+						 TEXT("Object is valid but has an invalid ObjRefNetGUID. Object: %s, ObjectRefNetGUID: %u"), *Object->GetName(),
+						 ObjectRefNetGUID.Value);
+		ensureAlwaysMsgf(
+			ObjectRef.Entity != SpatialConstants::INVALID_ENTITY_ID || ObjectRef.Path.IsSet(),
+			TEXT("Object is valid but has an ObjectRef with an invalid Entity ID and no set Path. Object: %s, EntityId: %lld, offset: %u"),
+			*Object->GetName(), ObjectRef.Entity, ObjectRef.Offset);
+	}
+#endif
 }

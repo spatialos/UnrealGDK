@@ -514,4 +514,10 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication")
 	bool bEnableStrategyLoadBalancingComponents;
+
+	/**	-- EXPERIMENTAL --
+		Enables skeleton entities. If enabled, skeleton entities for level actors would be created during startup.
+	*/
+	UPROPERTY(EditAnywhere, Config, Category = "Startup")
+	bool bEnableSkeletonEntityCreation;
 };

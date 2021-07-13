@@ -103,6 +103,7 @@ prepfullrelease "UnrealGDKExampleProject" "${GDK_VERSION}-rc" "spatialos"
 prepfullrelease "UnrealGDKTestGyms"       "${GDK_VERSION}-rc" "spatialos"
 prepfullrelease "UnrealGDKEngineNetTest"  "${GDK_VERSION}-rc" "improbable"
 prepfullrelease "TestGymBuildKite"        "${GDK_VERSION}-rc" "improbable"
+prepfullrelease "UnrealGDKBuild"          "${GDK_VERSION}-rc" "improbable"
 
 for ENGINE_VERSION in "${ENGINE_VERSIONS[@]}"
 do
