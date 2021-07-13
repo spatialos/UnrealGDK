@@ -27,7 +27,7 @@ public:
 	virtual void PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker) override;
 
 private:
-	bool bNeedsToRecreateItself = true;
+	bool bNeedsToRecreateItself;
 };
 
 UCLASS()

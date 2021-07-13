@@ -66,6 +66,7 @@ ADynamicComponentsTestActor::ADynamicComponentsTestActor()
 }
 
 USelfRecreatingDynamicComponent::USelfRecreatingDynamicComponent()
+	: bNeedsToRecreateItself(true)
 {
 	SetIsReplicatedByDefault(true);
 }
