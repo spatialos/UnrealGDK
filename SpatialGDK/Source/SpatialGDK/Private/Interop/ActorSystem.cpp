@@ -333,7 +333,8 @@ void ActorSystem::Advance()
 	}
 
 	// Order here matters: Rep Notifies should be called before authority gains.
-	// This is because it wouldn't make sense to be told a property was updated while you are authoritative over that actor, as while authoritative you are supposed to be the only server that can update properties.
+	// This is because it wouldn't make sense to be told a property was updated while you are authoritative over that actor, as while
+	// authoritative you are supposed to be the only server that can update properties.
 	InvokeRepNotifies();
 
 	// No need to ProcessAuthorityGains on SimulatedSubView as we won't have gained authority on Entities in that SubView.
