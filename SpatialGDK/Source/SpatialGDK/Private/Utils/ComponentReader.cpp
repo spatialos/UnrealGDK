@@ -120,7 +120,9 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 	{
 		UpdatedIds.AddUnique(ID);
 	}
-	UpdatedIds.Sort([](const Schema_FieldId A, const Schema_FieldId B){ return A < B; });
+	UpdatedIds.Sort([](const Schema_FieldId A, const Schema_FieldId B) {
+		return A < B;
+	});
 
 	ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentId, ObjectRepNotifiesOut, bOutReferencesChanged);
 }
@@ -154,7 +156,6 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId,
 		ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, ObjectRepNotifiesOut, bOutReferencesChanged);
 	}
 }
-
 
 void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
 										const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId,

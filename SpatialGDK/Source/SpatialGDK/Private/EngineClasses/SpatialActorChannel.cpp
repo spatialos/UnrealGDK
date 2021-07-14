@@ -432,7 +432,7 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 	for (uint16 CmdIdx = 0; CmdIdx < CmdCount; ++CmdIdx)
 	{
 		const auto& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
-		const auto& Parent =  Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
+		const auto& Parent = Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
 
 		const bool RepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
 
