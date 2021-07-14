@@ -75,7 +75,7 @@ void AVisibilityTest::PrepareTest()
 
 			AssertTrue(HasAuthority(), TEXT("We should have authority over the test actor."));
 
-			if (AssertIsValid(PlayerController, TEXT("PlayerController for client 1 should be valid.")))
+			if (IsValid(PlayerController))
 			{
 				ClientOneSpawnedPawn =
 					GetWorld()->SpawnActor<ATestMovementCharacter>(CharacterSpawnLocation, FRotator::ZeroRotator, FActorSpawnParameters());
@@ -97,12 +97,14 @@ void AVisibilityTest::PrepareTest()
 				TArray<AActor*> FoundActors;
 				UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedVisibilityTestActor::StaticClass(), FoundActors);
 
-				if (RequireEqual_Int(FoundActors.Num(), 1, TEXT("We should have exactly 1 ReplicatedVisibilityTestActor in the world.")))
+				if (FoundActors.Num() == 1)
 				{
 					TestActor = Cast<AReplicatedVisibilityTestActor>(FoundActors[0]);
 
-					RequireTrue(IsValid(TestActor), TEXT("TestActor should be valid."));
-					FinishStep();
+					if (IsValid(TestActor))
+					{
+						FinishStep();
+					}
 				}
 			},
 			StepTimeLimit);
@@ -278,7 +280,7 @@ void AVisibilityTest::PrepareTest()
 
 	{ // Step 12 - Server Set AReplicatedVisibilityTestActor to not be hidden anymore.
 		AddStep(TEXT("VisibilityTestServerSetActorNotHidden"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			if (AssertIsValid(TestActor, TEXT("TestActor should be valid.")))
+			if (IsValid(TestActor))
 			{
 				TestActor->SetHidden(false);
 				FinishStep();
