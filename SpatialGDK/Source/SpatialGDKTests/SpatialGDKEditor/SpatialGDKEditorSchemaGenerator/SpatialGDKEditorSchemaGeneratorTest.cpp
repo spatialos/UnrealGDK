@@ -1115,7 +1115,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 
 	TestTrue("Schema bundle file successfully read", SpatialGDKEditor::Schema::ExtractInformationFromSchemaJson(
 														 SchemaJsonPath, SchemaDatabase->ComponentSetIdToComponentIds,
-														 SchemaDatabase->ComponentIdToFieldIdsIndex, SchemaDatabase->FieldIdsArray));
+														 SchemaDatabase->ComponentIdToFieldIdsIndex, SchemaDatabase->FieldIdsArray, SchemaDatabase->ListIdsArray));
 
 	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 14);
 

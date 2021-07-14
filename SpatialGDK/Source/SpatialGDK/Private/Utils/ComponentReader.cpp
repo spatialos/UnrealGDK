@@ -112,9 +112,17 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 	// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
 	// However, we still want to apply this empty data, so we need the full list of field IDs for
 	// that component type (Data, OwnerOnly, Handover, etc.).
-	const TArray<Schema_FieldId>& InitialIds = ClassInfoManager->GetFieldIdsByComponentId(ComponentId);
+	TArray<Schema_FieldId> UpdatedIds;
+	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
+	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
+	const TArray<Schema_FieldId>& ListIDs = ClassInfoManager->GetListIdsByComponentId(ComponentId);
+	for (Schema_FieldId ID : ListIDs)
+	{
+		UpdatedIds.AddUnique(ID);
+	}
+	UpdatedIds.Sort([](const Schema_FieldId A, const Schema_FieldId B){ return A < B; });
 
-	ApplySchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentId, ObjectRepNotifiesOut, bOutReferencesChanged);
+	ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentId, ObjectRepNotifiesOut, bOutReferencesChanged);
 }
 
 void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& Object,
@@ -146,6 +154,7 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId,
 		ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, ObjectRepNotifiesOut, bOutReferencesChanged);
 	}
 }
+
 
 void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
 										const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId,
@@ -685,5 +694,4 @@ uint32 ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_Fie
 		return 0;
 	}
 }
-
 } // namespace SpatialGDK

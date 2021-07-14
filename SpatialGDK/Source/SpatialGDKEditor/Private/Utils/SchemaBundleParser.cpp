@@ -66,6 +66,16 @@ TSharedPtr<FJsonObject> OpenJsonFile(const FString& SchemaJsonPath)
 
 namespace SpatialGDK
 {
+	
+void AddToListIfClearable(const TSharedPtr<FJsonObject>* ArrayObject, int32 FieldId, TArray<uint32>& OutIDs)
+{
+	const TSharedPtr<FJsonObject>* JsonObject;
+	if ((*ArrayObject)->TryGetObjectField(TEXT("listType"), JsonObject))
+	{
+		OutIDs.Add(FieldId);
+	}
+}
+
 bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,
 									  TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex, TArray<FFieldIDs>& OutFieldIdsArray)
 {
@@ -100,6 +110,7 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 											 TEXT("The schema bundle contains duplicate data definitions for %s."), *ComponentName);
 			DataDefinitionNameToFieldIdsIndex.Add(ComponentName, OutFieldIdsArray.Num());
 			TArray<uint32>& FieldIDs = OutFieldIdsArray.AddDefaulted_GetRef().FieldIds;
+			TArray<uint32>& ListIDs = OutListIdsArray.AddDefaulted_GetRef().FieldIds;
 
 			const TArray<TSharedPtr<FJsonValue>>* FieldArray;
 			SAFE_TRYGETFIELD((*TypeObject), Array, "fields", FieldArray);
@@ -116,6 +127,8 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 												 TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId,
 												 *ComponentName);
 				FieldIDs.Add(FieldId);
+
+				AddToListIfClearable(ArrayObject, FieldId ,ListIDs);
 			}
 		}
 
@@ -145,6 +158,7 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 												 *ComponentName);
 				OutComponentIdToFieldIdsIndex.Add(ComponentId, OutFieldIdsArray.Num());
 				TArray<uint32>& FieldIDs = OutFieldIdsArray.AddDefaulted_GetRef().FieldIds;
+				TArray<uint32>& ListIDs = OutListIdsArray.AddDefaulted_GetRef().FieldIds;
 
 				for (const auto& ArrayValue : *FieldArray)
 				{
@@ -158,6 +172,8 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 													 TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId,
 													 *ComponentName);
 					FieldIDs.Add(FieldId);
+
+					AddToListIfClearable(ArrayObject, FieldId ,ListIDs);
 				}
 			}
 

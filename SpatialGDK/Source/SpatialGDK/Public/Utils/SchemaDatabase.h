@@ -155,6 +155,9 @@ public:
 	TArray<FFieldIDs> FieldIdsArray;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<FFieldIDs> ListIdsArray;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<uint32, FComponentIDs> ComponentSetIdToComponentIds;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)

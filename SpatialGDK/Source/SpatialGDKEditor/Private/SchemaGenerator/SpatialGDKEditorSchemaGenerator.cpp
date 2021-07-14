@@ -1552,7 +1552,7 @@ bool SpatialGDKGenerateSchema()
 	}
 
 	if (!ExtractInformationFromSchemaJson(SchemaJsonOutput, SchemaDatabase->ComponentSetIdToComponentIds,
-										  SchemaDatabase->ComponentIdToFieldIdsIndex, SchemaDatabase->FieldIdsArray))
+										  SchemaDatabase->ComponentIdToFieldIdsIndex, SchemaDatabase->FieldIdsArray, SchemaDatabase->ListIdsArray))
 	{
 		return false;
 	}
