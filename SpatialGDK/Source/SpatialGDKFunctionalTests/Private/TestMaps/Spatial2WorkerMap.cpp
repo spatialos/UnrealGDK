@@ -2,6 +2,7 @@
 
 #include "TestMaps/Spatial2WorkerMap.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "SpatialGDK/SpatialTestNetReceive/SpatialTestNetReceive.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/CrossServerAndClientOrchestrationTest/CrossServerAndClientOrchestrationTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RegisterAutoDestroyActorsTest/RegisterAutoDestroyActorsTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RelevancyTest/RelevancyTest.h"
@@ -9,7 +10,6 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestMultiServerUnrealComponents/SpatialTestMultiServerUnrealComponents.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestReplicationConditions/SpatialTestReplicationConditions.h"
 #include "TestWorkerSettings.h"
-#include "SpatialGDK/SpatialTestNetReceive/SpatialTestNetReceive.h"
 
 USpatial2WorkerMap::USpatial2WorkerMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("Spatial2WorkerMap"))

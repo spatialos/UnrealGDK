@@ -38,7 +38,6 @@ void ASpatialTestNetReceive::PrepareTest()
 {
 	Super::PrepareTest();
 
-
 	AddStep(TEXT("SpatialTestNetReceiveInitialise"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		TestActor = GetWorld()->SpawnActor<ASpatialTestNetReceiveActor>(Server1Pos, FRotator::ZeroRotator, FActorSpawnParameters());
 		RegisterAutoDestroyActor(TestActor);
@@ -66,14 +65,20 @@ void ASpatialTestNetReceive::PrepareTest()
 		RequireEqual_Bool(TestActor->Subobject->bPreNetReceiveCalled, true, TEXT("bPreNetReceiveCalled should be the correct value"));
 		RequireEqual_Bool(TestActor->Subobject->bPostNetReceiveCalled, true, TEXT("bPostNetReceiveCalled should be the correct value"));
 
-		RequireEqual_Bool(TestActor->Subobject->bPostNetCalledBeforePreNet, false, TEXT("bPostNetCalledBeforePreNet should be the correct value"));
-		RequireEqual_Bool(TestActor->Subobject->bRepNotifyCalledBeforePreNet, false, TEXT("bRepNotifyCalledBeforePreNet should be the correct value"));
+		RequireEqual_Bool(TestActor->Subobject->bPostNetCalledBeforePreNet, false,
+						  TEXT("bPostNetCalledBeforePreNet should be the correct value"));
+		RequireEqual_Bool(TestActor->Subobject->bRepNotifyCalledBeforePreNet, false,
+						  TEXT("bRepNotifyCalledBeforePreNet should be the correct value"));
 
-		RequireEqual_Bool(TestActor->Subobject->bPreNetCalledBeforePostNet, true, TEXT("bPreNetCalledBeforePostNet should be the correct value"));
-		RequireEqual_Bool(TestActor->Subobject->bRepNotifyCalledBeforePostNet, false, TEXT("bRepNotifyCalledBeforePostNet should be the correct value"));
+		RequireEqual_Bool(TestActor->Subobject->bPreNetCalledBeforePostNet, true,
+						  TEXT("bPreNetCalledBeforePostNet should be the correct value"));
+		RequireEqual_Bool(TestActor->Subobject->bRepNotifyCalledBeforePostNet, false,
+						  TEXT("bRepNotifyCalledBeforePostNet should be the correct value"));
 
-		RequireEqual_Bool(TestActor->Subobject->bPreNetCalledBeforeRepNotify, true, TEXT("bPreNetCalledBeforeRepNotify should be the correct value"));
-		RequireEqual_Bool(TestActor->Subobject->bPostNetCalledBeforeRepNotify, true, TEXT("bPostNetCalledBeforeRepNotify should be the correct value"));
+		RequireEqual_Bool(TestActor->Subobject->bPreNetCalledBeforeRepNotify, true,
+						  TEXT("bPreNetCalledBeforeRepNotify should be the correct value"));
+		RequireEqual_Bool(TestActor->Subobject->bPostNetCalledBeforeRepNotify, true,
+						  TEXT("bPostNetCalledBeforeRepNotify should be the correct value"));
 
 		RequireEqual_Int(TestActor->Subobject->PreNetNumTimesCalled, 1, TEXT("PreNetNumTimesCalled should be the correct value"));
 		RequireEqual_Int(TestActor->Subobject->PostNetNumTimesCalled, 1, TEXT("PostNetNumTimesCalled should be the correct value"));
@@ -89,7 +94,6 @@ void ASpatialTestNetReceive::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 
 	DOREPLIFETIME(ASpatialTestNetReceive, TestActor);
 }
-
 
 ASpatialTestNetReceiveActor::ASpatialTestNetReceiveActor()
 {
@@ -168,4 +172,3 @@ void USpatialTestNetReceiveSubobject::GetLifetimeReplicatedProps(TArray<FLifetim
 	DOREPLIFETIME(USpatialTestNetReceiveSubobject, TestInt);
 	DOREPLIFETIME_CONDITION(USpatialTestNetReceiveSubobject, ServerOnlyTestInt, COND_ServerOnly);
 }
-

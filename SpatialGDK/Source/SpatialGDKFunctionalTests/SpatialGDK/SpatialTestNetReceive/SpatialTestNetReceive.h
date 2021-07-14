@@ -81,5 +81,4 @@ public:
 	void OnRep_TestInt1(int32 OldTestInt1);
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
 };
