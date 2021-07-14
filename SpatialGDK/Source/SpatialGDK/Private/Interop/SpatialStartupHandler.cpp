@@ -262,6 +262,7 @@ bool FSpatialServerStartupHandler::TryFinishStartup()
 				{
 					if (Mapping.Value.ServerWorkerEntityId == WorkerEntityId)
 					{
+						// We've received a virtual worker mapping that mentions our worker entity ID.
 						LocalVirtualWorkerId = Mapping.Key;
 						LocalPartitionId = Mapping.Value.PartitionEntityId;
 						Stage = EStage::WaitForAssignedPartition;
@@ -273,34 +274,30 @@ bool FSpatialServerStartupHandler::TryFinishStartup()
 
 	if (Stage == EStage::WaitForAssignedPartition)
 	{
-		const EntityViewElement* AssignedPartitionEntity = GetCoordinator().GetView().Find(LocalPartitionId);
+		const EntityViewElement* AssignedPartitionEntity = GetCoordinator().GetView().Find(*LocalPartitionId);
 		if (AssignedPartitionEntity != nullptr)
 		{
-			const EntityViewElement* VirtualWorkerTranslatorEntity =
-				GetCoordinator().GetView().Find(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID);
-			if (VirtualWorkerTranslatorEntity != nullptr)
+			const EntityViewElement& VirtualWorkerTranslatorEntity =
+				GetCoordinator().GetView().FindChecked(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID);
+			const ComponentData* WorkerTranslatorComponentData = VirtualWorkerTranslatorEntity.Components.FindByPredicate(
+				ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID });
+			if (ensure(WorkerTranslatorComponentData != nullptr))
 			{
-				const ComponentData* WorkerTranslatorComponentData = VirtualWorkerTranslatorEntity->Components.FindByPredicate(
-					ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID });
-				if (WorkerTranslatorComponentData != nullptr)
+				NetDriver->VirtualWorkerTranslator->ApplyMappingFromSchema(WorkerTranslatorComponentData->GetFields());
+
+				// NOTE: Consider if waiting for partition should be a separate step from sending ReadyToBeginPlay.
+				ComponentUpdate MarkAsReady(SpatialConstants::SERVER_WORKER_COMPONENT_ID);
+				Schema_AddBool(MarkAsReady.GetFields(), SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, true);
+				GetCoordinator().SendComponentUpdate(*WorkerEntityId, MoveTemp(MarkAsReady));
+
+				if (GetDefault<USpatialGDKSettings>()->bEnableSkeletonEntityCreation)
 				{
-					// We've received worker translation data.
-					NetDriver->VirtualWorkerTranslator->ApplyMappingFromSchema(WorkerTranslatorComponentData->GetFields());
-
-					// NOTE: Consider if waiting for partition should be a separate step from sending ReadyToBeginPlay.
-					ComponentUpdate MarkAsReady(SpatialConstants::SERVER_WORKER_COMPONENT_ID);
-					Schema_AddBool(MarkAsReady.GetFields(), SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, true);
-					GetCoordinator().SendComponentUpdate(WorkerEntityId, MoveTemp(MarkAsReady));
-
-					if (GetDefault<USpatialGDKSettings>()->bEnableSkeletonEntityCreation)
-					{
-						SkeletonEntityStep.Emplace(*NetDriver);
-						Stage = EStage::CreateSkeletonEntities;
-					}
-					else
-					{
-						Stage = bHasGSMAuth ? EStage::DispatchGSMStartPlay : EStage::WaitForGSMStartPlay;
-					}
+					SkeletonEntityStep.Emplace(*NetDriver);
+					Stage = EStage::CreateSkeletonEntities;
+				}
+				else
+				{
+					Stage = bHasGSMAuth ? EStage::DispatchGSMStartPlay : EStage::WaitForGSMStartPlay;
 				}
 			}
 		}
@@ -394,15 +391,13 @@ bool FSpatialServerStartupHandler::TryClaimingStartupPartition()
 
 	// Perform a naive leader election where we wait for the correct number of server workers to be present in the deployment, and then
 	// whichever server has the lowest server worker entity ID becomes the leader and claims the snapshot partition.
-	const Worker_EntityId LocalServerWorkerEntityId = WorkerEntityId;
-
-	check(LocalServerWorkerEntityId != SpatialConstants::INVALID_ENTITY_ID);
+	check(WorkerEntityId);
 
 	const Worker_EntityId_Key* LowestEntityId = Algo::MinElement(WorkerEntityIds);
 
 	check(LowestEntityId != nullptr);
 
-	if (LocalServerWorkerEntityId == *LowestEntityId)
+	if (WorkerEntityId == *LowestEntityId)
 	{
 		UE_LOG(LogSpatialStartupHandler, Log, TEXT("MaybeClaimSnapshotPartition claiming snapshot partition"));
 		GlobalStateManager->ClaimSnapshotPartition();
@@ -467,12 +462,12 @@ bool FSpatialClientStartupHandler::TryFinishStartup()
 	}
 
 	TOptional<USpatialNetDriver::FPendingNetworkFailure> PendingNetworkFailure;
+	TOptional<FString> StartupClientDebugString;
 
 	QueryHandler.ProcessOps(GetOps());
 
 	if (Stage == EStage::QueryGSM)
 	{
-		FString StartupClientDebugString;
 		if (GSMData && SnapshotData && GSMData->bAcceptingPlayers)
 		{
 			// TODO: Get snapshot version from the GSM entity or whatever.
@@ -571,6 +566,11 @@ bool FSpatialClientStartupHandler::TryFinishStartup()
 	if (PendingNetworkFailure)
 	{
 		NetDriver->PendingNetworkFailure = PendingNetworkFailure;
+	}
+
+	if (StartupClientDebugString)
+	{
+		NetDriver->StartupClientDebugString = *StartupClientDebugString;
 	}
 
 	return Stage == EStage::Finished;

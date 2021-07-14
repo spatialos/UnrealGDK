@@ -26,7 +26,7 @@ private:
 
 	bool bCalledCreateEntity = false;
 	TOptional<ServerWorkerEntityCreator> ServerWorkerEntityCreator1;
-	Worker_EntityId WorkerEntityId;
+	TOptional<Worker_EntityId> WorkerEntityId;
 
 	TArray<Worker_EntityId_Key> WorkerEntityIds;
 
@@ -41,8 +41,8 @@ private:
 	TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation> WorkersToPartitions;
 	TSet<Worker_PartitionId> PartitionsToCreate;
 
-	VirtualWorkerId LocalVirtualWorkerId;
-	Worker_PartitionId LocalPartitionId;
+	TOptional<VirtualWorkerId> LocalVirtualWorkerId;
+	TOptional<Worker_PartitionId> LocalPartitionId;
 
 	FClaimPartitionHandler ClaimHandler;
 

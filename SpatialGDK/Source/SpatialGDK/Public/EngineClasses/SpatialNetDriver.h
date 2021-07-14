@@ -295,6 +295,7 @@ public:
 		FString Message;
 	};
 	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
+	FString StartupClientDebugString;
 
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
@@ -406,7 +407,6 @@ private:
 
 	TSet<Worker_EntityId_Key> OwnershipChangedEntities;
 	uint64 StartupTimestamp;
-	FString StartupClientDebugString;
 
 	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
