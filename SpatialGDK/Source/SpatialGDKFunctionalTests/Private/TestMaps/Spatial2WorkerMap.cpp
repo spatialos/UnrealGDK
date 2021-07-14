@@ -9,6 +9,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestMultiServerUnrealComponents/SpatialTestMultiServerUnrealComponents.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestReplicationConditions/SpatialTestReplicationConditions.h"
 #include "TestWorkerSettings.h"
+#include "SpatialGDK/SpatialTestNetReceive/SpatialTestNetReceive.h"
 
 USpatial2WorkerMap::USpatial2WorkerMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("Spatial2WorkerMap"))
@@ -35,6 +36,7 @@ void USpatial2WorkerMap::CreateCustomContentForMap()
 	AddActorToLevel<ASpatialTestReplicationConditions>(CurrentLevel, Server1Pos);
 
 	AddActorToLevel<ASpatialActorResolutionTest>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ASpatialTestNetReceive>(CurrentLevel, FTransform::Identity);
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2FullInterestWorkerSettings::StaticClass());
