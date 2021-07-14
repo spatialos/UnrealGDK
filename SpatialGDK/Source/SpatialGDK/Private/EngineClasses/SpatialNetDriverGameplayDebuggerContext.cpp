@@ -3,7 +3,6 @@
 #include "EngineClasses/SpatialNetDriverGameplayDebuggerContext.h"
 
 #if WITH_GAMEPLAY_DEBUGGER
-#include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
@@ -103,7 +102,6 @@ void USpatialNetDriverGameplayDebuggerContext::Reset()
 		{
 			UnregisterServerRequestCallback(*Replicator, TrackedEntity.Value);
 			UnregisterPlayerControllerAuthorityLostCallback(*Replicator, TrackedEntity.Value);
-			UnregisterDebugActorChangedCallback(*Replicator, TrackedEntity.Value);
 		}
 	}
 
@@ -242,7 +240,6 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 			// b. Register callback(s)
 			RegisterServerRequestCallback(*CategoryReplicator, *EntityData);
 			RegisterPlayerControllerAuthorityLostCallback(*CategoryReplicator, *EntityData);
-			RegisterDebugActorChangedCallback(*CategoryReplicator, *EntityData);
 		}
 
 		It.RemoveCurrent();
@@ -362,7 +359,6 @@ void USpatialNetDriverGameplayDebuggerContext::RemoveAuthority(Worker_EntityId I
 	{
 		UnregisterServerRequestCallback(*Replicator, *InOptionalEntityData);
 		UnregisterPlayerControllerAuthorityLostCallback(*Replicator, *InOptionalEntityData);
-		UnregisterDebugActorChangedCallback(*Replicator, *InOptionalEntityData);
 	}
 }
 
@@ -476,30 +472,6 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerTrackingRequest(AGameplay
 	}
 }
 
-void USpatialNetDriverGameplayDebuggerContext::RegisterDebugActorChangedCallback(AGameplayDebuggerCategoryReplicator& InReplicator,
-																				 FEntityData& InEntityData)
-{
-	if (!InEntityData.DebugActorChangedHandle.IsValid())
-	{
-		InEntityData.DebugActorChangedHandle =
-			InReplicator.OnDebugActorChanged().AddUObject(this, &USpatialNetDriverGameplayDebuggerContext::OnDebugActorChanged);
-	}
-	else
-	{
-		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Trying to bind change notification more than once"));
-	}
-}
-
-void USpatialNetDriverGameplayDebuggerContext::UnregisterDebugActorChangedCallback(AGameplayDebuggerCategoryReplicator& InReplicator,
-																				   FEntityData& InEntityData)
-{
-	if (InEntityData.DebugActorChangedHandle.IsValid())
-	{
-		InReplicator.OnDebugActorChanged().Remove(InEntityData.DebugActorChangedHandle);
-		InEntityData.DebugActorChangedHandle.Reset();
-	}
-}
-
 VirtualWorkerId USpatialNetDriverGameplayDebuggerContext::GetActorVirtualWorkerId(const AActor& InActor) const
 {
 	check(SubView != nullptr && NetDriver != nullptr && NetDriver->PackageMap != nullptr);
@@ -561,27 +533,6 @@ void USpatialNetDriverGameplayDebuggerContext::UnregisterPlayerControllerAuthori
 			InEntityData.PlayerControllerAuthorityChangeHandle.Reset();
 		}
 	}
-}
-
-void USpatialNetDriverGameplayDebuggerContext::OnDebugActorChanged(AGameplayDebuggerCategoryReplicator* InCategoryReplicator,
-																   AActor* InDebugActor)
-{
-	check(NetDriver != nullptr && NetDriver->PackageMap != nullptr);
-
-	if (InCategoryReplicator == nullptr)
-	{
-		return;
-	}
-
-	const Worker_EntityId ReplicatorEntityId = NetDriver->PackageMap->GetEntityIdFromObject(InCategoryReplicator);
-
-	USpatialActorChannel* ReplicatorChannel = NetDriver->GetActorChannelByEntityId(ReplicatorEntityId);
-	if (ReplicatorChannel == nullptr)
-	{
-		return;
-	}
-
-	ReplicatorChannel->SetNeedOwnerInterestUpdate(true);
 }
 
 void USpatialNetDriverGameplayDebuggerContext::OnPlayerControllerAuthorityLost(const APlayerController& InPlayerController)

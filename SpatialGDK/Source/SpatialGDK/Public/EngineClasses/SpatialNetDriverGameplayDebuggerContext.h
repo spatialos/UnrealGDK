@@ -65,7 +65,6 @@ protected:
 		FString CurrentWorkerId;
 		FDelegateHandle ServerTrackingRequestHandle;
 		FDelegateHandle PlayerControllerAuthorityChangeHandle;
-		FDelegateHandle DebugActorChangedHandle;
 	};
 
 	void TrackEntity(Worker_EntityId InEntityId);
@@ -80,9 +79,6 @@ protected:
 	void RegisterPlayerControllerAuthorityLostCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
 	void UnregisterPlayerControllerAuthorityLostCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
 	void OnPlayerControllerAuthorityLost(const APlayerController& InPlayerController);
-	void RegisterDebugActorChangedCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
-	void UnregisterDebugActorChangedCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
-	void OnDebugActorChanged(AGameplayDebuggerCategoryReplicator* InCategoryReplicator, AActor* InDebugActor);
 
 	USpatialNetDriver* NetDriver = nullptr;
 	const SpatialGDK::FSubView* SubView = nullptr;
