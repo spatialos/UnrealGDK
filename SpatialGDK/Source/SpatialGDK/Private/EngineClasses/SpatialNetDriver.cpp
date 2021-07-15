@@ -382,12 +382,6 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 
 	CreateAndInitializeCoreClasses();
 
-	// Query the GSM to figure out what map to load
-	if (bConnectAsClient)
-	{
-		QueryGSMToLoadMap();
-	}
-
 	USpatialGameInstance* GameInstance = GetGameInstance();
 	check(GameInstance != nullptr);
 	GameInstance->HandleOnConnected(*this);
@@ -483,10 +477,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		check(NewPackageMap == PackageMap);
 
 		PackageMap->Init(*this);
-		if (IsServer())
-		{
-			PackageMap->GetEntityPoolReadyDelegate().AddUObject(Connection, &USpatialWorkerConnection::CreateServerWorkerEntity);
-		}
 
 		// The interest factory depends on the package map, so is created last.
 		InterestFactory = MakeUnique<SpatialGDK::UnrealServerInterestFactory>(ClassInfoManager, PackageMap);
@@ -766,157 +756,6 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 		   TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
 }
 
-bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests() const
-{
-	return GlobalStateManager->GetAcceptingPlayers() && SessionId == GlobalStateManager->GetSessionId();
-}
-
-void USpatialNetDriver::ClientOnGSMQuerySuccess()
-{
-	StartupClientDebugString.Empty();
-
-	const uint64 SnapshotVersion = GlobalStateManager->GetSnapshotVersion();
-	if (SpatialConstants::SPATIAL_SNAPSHOT_VERSION != SnapshotVersion) // Are we running with the same snapshot version?
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error,
-			   TEXT("Your client's snapshot version does not match your deployment's snapshot version. Client version: = '%llu', Server "
-					"version = '%llu'"),
-			   SnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
-
-		PendingNetworkFailure = {
-			ENetworkFailure::OutdatedClient,
-			TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot.")
-		};
-
-		return;
-	}
-
-	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
-	if (bWaitingToSpawn && ClientCanSendPlayerSpawnRequests())
-	{
-		uint32 ServerHash = GlobalStateManager->GetSchemaHash();
-		if (ClassInfoManager->SchemaDatabase->SchemaBundleHash != ServerHash) // Are we running with the same schema hash as the server?
-		{
-			UE_LOG(LogSpatialOSNetDriver, Error,
-				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
-				   ClassInfoManager->SchemaDatabase->SchemaBundleHash, ServerHash);
-
-			PendingNetworkFailure = {
-				ENetworkFailure::OutdatedClient,
-				TEXT("Your version of the game does not match that of the server. Please try updating your game version.")
-			};
-			return;
-		}
-
-		UWorld* CurrentWorld = GetWorld();
-		const FString& DeploymentMapURL = GlobalStateManager->GetDeploymentMapURL();
-		if (CurrentWorld == nullptr
-			|| CurrentWorld->RemovePIEPrefix(DeploymentMapURL) != CurrentWorld->RemovePIEPrefix(CurrentWorld->URL.Map))
-		{
-			// Load the correct map based on the GSM URL
-			UE_LOG(LogSpatial, Log, TEXT("Welcomed by SpatialOS (Level: %s)"), *DeploymentMapURL);
-
-			// Extract map name and options
-			FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this);
-			FURL LastURL = WorldContext.PendingNetGame->URL;
-
-			FURL RedirectURL = FURL(&LastURL, *DeploymentMapURL, (ETravelType)WorldContext.TravelType);
-			RedirectURL.Host = LastURL.Host;
-			RedirectURL.Port = LastURL.Port;
-			RedirectURL.Portal = LastURL.Portal;
-
-			// Usually the LastURL options are added to the RedirectURL in the FURL constructor.
-			// However this is not the case when TravelType = TRAVEL_Absolute so we must do it explicitly here.
-			if (WorldContext.TravelType == ETravelType::TRAVEL_Absolute)
-			{
-				RedirectURL.Op.Append(LastURL.Op);
-			}
-
-			RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
-
-			WorldContext.PendingNetGame->bSuccessfullyConnected = true;
-			WorldContext.PendingNetGame->bSentJoinRequest = false;
-			WorldContext.PendingNetGame->URL = RedirectURL;
-		}
-		else
-		{
-			MakePlayerSpawnRequest();
-		}
-	}
-}
-
-void USpatialNetDriver::RetryQueryGSM()
-{
-	float RetryTimerDelay = SpatialConstants::ENTITY_QUERY_RETRY_WAIT_SECONDS;
-
-	// In PIE we want to retry the entity query as soon as possible.
-#if WITH_EDITOR
-	RetryTimerDelay = 0.1f;
-#endif
-
-	UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
-	FTimerHandle RetryTimer;
-	TimerManager.SetTimer(
-		RetryTimer,
-		[WeakThis = TWeakObjectPtr<USpatialNetDriver>(this)]() {
-			if (WeakThis.IsValid())
-			{
-				if (UGlobalStateManager* GSM = WeakThis.Get()->GlobalStateManager)
-				{
-					UGlobalStateManager::QueryDelegate QueryDelegate;
-					QueryDelegate.BindUObject(WeakThis.Get(), &USpatialNetDriver::GSMQueryDelegateFunction);
-					GSM->QueryGSM(QueryDelegate);
-				}
-			}
-		},
-		RetryTimerDelay, false);
-}
-
-void USpatialNetDriver::GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op)
-{
-	bool bNewAcceptingPlayers = false;
-	int32 QuerySessionId = 0;
-	bool bQueryResponseSuccess =
-		GlobalStateManager->GetAcceptingPlayersAndSessionIdFromQueryResponse(Op, bNewAcceptingPlayers, QuerySessionId);
-
-	if (!bQueryResponseSuccess)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to extract AcceptingPlayers and SessionId from GSM query response."));
-		RetryQueryGSM();
-		return;
-	}
-	else if (!bNewAcceptingPlayers)
-	{
-		StartupClientDebugString = FString(
-			TEXT("GlobalStateManager not accepting players. This is likely caused by waiting for all the required servers to connect"));
-		RetryQueryGSM();
-		return;
-	}
-	else if (QuerySessionId != SessionId)
-	{
-		StartupClientDebugString =
-			FString::Printf(TEXT("GlobalStateManager session id mismatch - got (%d) expected (%d)."), QuerySessionId, SessionId);
-		RetryQueryGSM();
-		return;
-	}
-
-	ClientOnGSMQuerySuccess();
-}
-
-void USpatialNetDriver::QueryGSMToLoadMap()
-{
-	check(bConnectAsClient);
-
-	// Register our interest in spawning.
-	bWaitingToSpawn = true;
-
-	UGlobalStateManager::QueryDelegate QueryDelegate;
-	QueryDelegate.BindUObject(this, &USpatialNetDriver::GSMQueryDelegateFunction);
-
-	// Begin querying the state of the GSM so we know the state of AcceptingPlayers and SessionId.
-	GlobalStateManager->QueryGSM(QueryDelegate);
-}
-
 void USpatialNetDriver::OnActorSpawned(AActor* Actor) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
@@ -968,28 +807,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		// As the delegate is a global variable, it triggers all 3 USpatialNetDriver::OnMapLoaded callbacks. As a result, we should
 		// make sure that the net driver of this world is in fact us.
 		return;
-	}
-
-	if (IsServer())
-	{
-		if (WellKnownEntitySystem.IsValid())
-		{
-			WellKnownEntitySystem->OnMapLoaded();
-		}
-	}
-	else
-	{
-		if (ClientCanSendPlayerSpawnRequests())
-		{
-			MakePlayerSpawnRequest();
-		}
-		else
-		{
-			UE_LOG(LogSpatial, Warning,
-				   TEXT("Client map finished loading but could not send player spawn request. Will requery the GSM for the correct map to "
-						"load."));
-			QueryGSMToLoadMap();
-		}
 	}
 
 	bMapLoaded = true;

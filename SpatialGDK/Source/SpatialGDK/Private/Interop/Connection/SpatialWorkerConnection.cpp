@@ -250,11 +250,6 @@ void USpatialWorkerConnection::Advance(float DeltaTimeS)
 {
 	check(Coordinator.IsValid());
 	Coordinator->Advance(DeltaTimeS);
-
-	if (WorkerEntityCreator.IsSet())
-	{
-		WorkerEntityCreator->ProcessOps(Coordinator->GetViewDelta().GetWorkerMessages());
-	}
 }
 
 bool USpatialWorkerConnection::HasDisconnected() const
@@ -359,13 +354,4 @@ void USpatialWorkerConnection::SetStartupComplete()
 SpatialGDK::ISpatialOSWorker* USpatialWorkerConnection::GetSpatialWorkerInterface() const
 {
 	return Coordinator.Get();
-}
-
-void USpatialWorkerConnection::CreateServerWorkerEntity()
-{
-	if (ensure(!WorkerEntityCreator.IsSet()))
-	{
-		USpatialNetDriver* SpatialNetDriver = CastChecked<USpatialNetDriver>(GetWorld()->GetNetDriver());
-		WorkerEntityCreator.Emplace(*SpatialNetDriver, *this);
-	}
 }
