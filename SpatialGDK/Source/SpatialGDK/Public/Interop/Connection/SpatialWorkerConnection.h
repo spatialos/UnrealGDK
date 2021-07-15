@@ -26,6 +26,8 @@ public:
 	ServerWorkerEntityCreator(USpatialNetDriver& InNetDriver, USpatialWorkerConnection& InConnection);
 	void CreateWorkerEntity();
 	void ProcessOps(const TArray<Worker_Op>& Ops);
+	bool IsFinished() const;
+	Worker_EntityId GetWorkerEntityId() const;
 
 private:
 	void OnEntityCreated(const Worker_CreateEntityResponseOp& Op);
@@ -33,8 +35,11 @@ private:
 	{
 		CreatingWorkerSystemEntity,
 		ClaimingWorkerPartition,
+		Finished,
 	};
 	WorkerSystemEntityCreatorState State;
+
+	Worker_EntityId WorkerEntityId;
 
 	USpatialNetDriver& NetDriver;
 	USpatialWorkerConnection& Connection;
