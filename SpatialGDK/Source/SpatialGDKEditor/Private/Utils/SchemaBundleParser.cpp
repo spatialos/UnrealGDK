@@ -69,6 +69,7 @@ namespace SpatialGDK
 void AddToListIfClearable(const TSharedPtr<FJsonObject>* ArrayObject, int32 FieldId, TArray<uint32>& OutIDs)
 {
 	const TSharedPtr<FJsonObject>* JsonObject;
+	// Only listType's are clearable, for the moment at least.
 	if ((*ArrayObject)->TryGetObjectField(TEXT("listType"), JsonObject))
 	{
 		OutIDs.Add(FieldId);
@@ -76,7 +77,8 @@ void AddToListIfClearable(const TSharedPtr<FJsonObject>* ArrayObject, int32 Fiel
 }
 
 bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,
-									  TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex, TArray<FFieldIDs>& OutFieldIdsArray, TArray<FFieldIDs>& OutListIdsArray)
+									  TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex, TArray<FFieldIDs>& OutFieldIdsArray,
+									  TArray<FFieldIDs>& OutListIdsArray)
 {
 	TSharedPtr<FJsonObject> RootObject = OpenJsonFile(SchemaJsonPath);
 

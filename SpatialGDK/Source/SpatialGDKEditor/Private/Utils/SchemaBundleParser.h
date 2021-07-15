@@ -16,7 +16,8 @@ struct SchemaComponentIdentifiers
 };
 
 bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,
-									  TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex, TArray<FFieldIDs>& OutFieldIdsArray, TArray<FFieldIDs>& OutListIdsArray);
+									  TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex, TArray<FFieldIDs>& OutFieldIdsArray,
+									  TArray<FFieldIDs>& OutListIdsArray);
 
 bool ExtractComponentsFromSchemaJson(const FString& SchemaJsonPath, TArray<SchemaComponentIdentifiers>& OutComponents,
 									 const TSet<FString>& Files);

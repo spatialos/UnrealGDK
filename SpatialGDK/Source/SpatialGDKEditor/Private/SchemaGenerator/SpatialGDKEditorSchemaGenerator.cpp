@@ -1511,10 +1511,11 @@ bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPa
 }
 
 bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,
-									  TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex, TArray<FFieldIDs>& OutFieldIdsArray, TArray<FFieldIDs>& OutListIdsArray)
+									  TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex, TArray<FFieldIDs>& OutFieldIdsArray,
+									  TArray<FFieldIDs>& OutListIdsArray)
 {
-	return SpatialGDK::ExtractInformationFromSchemaJson(SchemaJsonPath, OutComponentSetMap, OutComponentIdToFieldIdsIndex,
-														OutFieldIdsArray, OutListIdsArray);
+	return SpatialGDK::ExtractInformationFromSchemaJson(SchemaJsonPath, OutComponentSetMap, OutComponentIdToFieldIdsIndex, OutFieldIdsArray,
+														OutListIdsArray);
 }
 
 bool SpatialGDKGenerateSchema()

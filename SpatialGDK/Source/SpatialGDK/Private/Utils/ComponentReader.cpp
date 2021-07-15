@@ -110,19 +110,16 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 	// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
-	// However, we still want to apply this empty data, so we need the full list of field IDs for
-	// that component type (Data, OwnerOnly, Handover, etc.).
+	// Additional they may be empty if they are currently not active and not being replicated.
 	TArray<Schema_FieldId> UpdatedIds;
 	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
 	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
 	const TArray<Schema_FieldId>& ListIDs = ClassInfoManager->GetListIdsByComponentId(ComponentId);
 	for (Schema_FieldId ID : ListIDs)
 	{
+		// The list might be out of order because of these adds
 		UpdatedIds.AddUnique(ID);
 	}
-	UpdatedIds.Sort([](const Schema_FieldId A, const Schema_FieldId B) {
-		return A < B;
-	});
 
 	ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentId, ObjectRepNotifiesOut, bOutReferencesChanged);
 }
