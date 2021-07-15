@@ -15,9 +15,9 @@ ACharacterMovementTestGameMode::ACharacterMovementTestGameMode(const FObjectInit
 void ACharacterMovementTestGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-	for (TActorIterator<APlayerStart> Iter(GetWorld()); Iter; ++Iter)
+	for (const APlayerStart* PlayerStart : TActorRange<APlayerStart>(GetWorld()))
 	{
-		PlayerStarts.Add(*Iter);
+		PlayerStarts.Add(PlayerStart);
 	}
 }
 

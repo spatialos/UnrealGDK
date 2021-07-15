@@ -51,15 +51,13 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	// Wait for actor to be stationary
 	FSpatialFunctionalTestStepDefinition WaitForStationaryActorStepDefinition(/*bIsNativeDefinition*/ true);
 	WaitForStationaryActorStepDefinition.StepName = TEXT("WaitForStationaryActorStepDefinition");
-	WaitForStationaryActorStepDefinition.TimeLimit = 2.0f;
 	WaitForStationaryActorStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
-		UGameInstance* GameInstance = GetGameInstance();
+		const UGameInstance* GameInstance = GetGameInstance();
 		const FString WorkerId = GameInstance->GetSpatialWorkerId();
 		for (const ATestMovementCharacter* Character : TActorRange<ATestMovementCharacter>(GetWorld()))
 		{
 			RequireEqual_Float(Character->Speed, 0.0f, FString::Printf(TEXT("%s on %s is stationary"), *Character->GetName(), *WorkerId));
 		}
-
 		FinishStep();
 	});
 
@@ -85,7 +83,6 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	// Move character forward
 	FSpatialFunctionalTestStepDefinition MoveForwardStepDefinition(/*bIsNativeDefinition*/ true);
 	MoveForwardStepDefinition.StepName = TEXT("MoveForwardStepDefinition");
-	MoveForwardStepDefinition.TimeLimit = 5.0f;
 	MoveForwardStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		int32 Count = 0;
 
@@ -137,7 +134,6 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	// Move character backward
 	FSpatialFunctionalTestStepDefinition MoveBackwardStepDefinition(/*bIsNativeDefinition*/ true);
 	MoveBackwardStepDefinition.StepName = TEXT("MoveBackwardStepDefinition");
-	MoveBackwardStepDefinition.TimeLimit = 5.0f;
 	MoveBackwardStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		int32 Count = 0;
 

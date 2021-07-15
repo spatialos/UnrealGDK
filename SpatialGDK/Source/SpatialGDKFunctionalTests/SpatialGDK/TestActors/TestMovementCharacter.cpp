@@ -43,6 +43,7 @@ ATestMovementCharacter::ATestMovementCharacter()
 #endif
 	CameraComponent->SetupAttachment(GetCapsuleComponent());
 
+	// Increase MaxSimulationIterations to 14 so that we do not get warnings inside UCharacterMovementComponent::GetSimulationTimeStep
 	UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement();
 	CharacterMovementComponent->MaxSimulationIterations = 14;
 }
