@@ -5,17 +5,18 @@
 #include "ReplicatedTestActor.h"
 
 /**
- * This is an example test. It's cited in https://brevi.link/how-to-test-unrealgdk.
- * It tests that an Actor can replicate a property across the network during play.
- * This test contains 1 Server and 3 Client workers.
+ * "This tests that the data debug mode detects changes on non-auth servers.
+ * This test contains 2 Servers and 2 Client workers.
  *
  * The flow is as follows:
  * - Setup:
- *  - The Server spawns one ReplicatedTestActor.
+ *  - The authorative server spawns one ReplicatedTestActor
  * - Test:
- *  - All Clients check that they can see exactly 1 ReplicatedTestActor.
- *  - The Server changes the ReplicatedProperty of the ReplicatedTestActor from "0" to "99".
- *  - All Clients check that the ReplicatedProperty is now set to "99".
+ *  - All workers check that they can see exactly 1 ReplicatedTestActor.
+ *  - The authorative server changes the ReplicatedProperty of the ReplicatedTestActor from "0" to "99".
+ *  - All workers check that the ReplicatedProperty is now set to "99".
+ *  - The non-auth server changes the ReplicatedProperty of the ReplicatedTestActor to "55" which generates an expected error.
+ *  - Auth server check that the ReplicatedProperty is still set to "99"
  * - Clean-up:
  *  - ReplicatedTestActor is destroyed using the RegisterAutoDestroyActor helper function.
  */
@@ -24,16 +25,17 @@ ASpatialTestPropertyReplicationMultiworker::ASpatialTestPropertyReplicationMulti
 	: Super()
 {
 	Author = "Victoria Bloom";
-	Description = TEXT(
-		"This tests that an Actor can replicate a property across the network during play. It is an example test intended to teach the "
-		"basics of the UnrealGDK Functional Test Framework. It's accompanied by this document: https://brevi.link/how-to-test-unrealgdk");
+	Description = TEXT(	"This tests that the data debug mode detects changes on non-auth servers.");
 }
 
 void ASpatialTestPropertyReplicationMultiworker::PrepareTest()
 {
 	Super::PrepareTest();
 
-	// TODO: add override flag to turn on debug settings -> may want this test therefore on its own map!
+	if (HasAuthority())
+	{
+		AddExpectedLogError(TEXT("Changed actor without authority! ReplicatedTestActor_0 ReplicatedTestActor"), 1, true);
+	}
 
 	AddStep(
 		TEXT("The auth server spawns one ReplicatedTestActor"), FWorkerDefinition::Server(1), nullptr,
@@ -87,7 +89,7 @@ void ASpatialTestPropertyReplicationMultiworker::PrepareTest()
 		},
 		5.0f);
 
-	// TODO: should expect warning once new debug feature is implemented
+	// This step generates an expected error "Changed actor without authority! ReplicatedTestActor_0 ReplicatedTestActor" 
 	AddStep(
 		TEXT("The non-auth server changes the ReplicatedProperty of the ReplicatedTestActor to 55"), FWorkerDefinition::Server(2),
 		[this]() -> bool {
@@ -95,18 +97,6 @@ void ASpatialTestPropertyReplicationMultiworker::PrepareTest()
 		},
 		[this]() {
 			TestActor->TestReplicatedProperty = 55;
-
-			FinishStep();
-		});
-
-	// TODO: should expect warning once new debug feature is implemented
-	AddStep(
-		TEXT("The client changes the ReplicatedProperty of the ReplicatedTestActor to 22"), FWorkerDefinition::AllClients,
-		[this]() -> bool {
-			return IsValid(TestActor);
-		},
-		[this]() {
-			TestActor->TestReplicatedProperty = 22;
 
 			FinishStep();
 		});

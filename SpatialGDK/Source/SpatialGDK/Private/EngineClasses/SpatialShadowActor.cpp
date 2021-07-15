@@ -14,6 +14,7 @@ USpatialShadowActor::USpatialShadowActor(const FObjectInitializer& ObjectInitial
 	SuppressedActors.Add("DefaultPawn");
 	SuppressedActors.Add("PlayerState");
 	SuppressedActors.Add("SpatialFunctionalTestFlowController");
+	SuppressedActors.Add("GameplayDebuggerCategoryReplicator");
 }
 
 void USpatialShadowActor::Init(const Worker_EntityId InEntityId, AActor* InActor)
