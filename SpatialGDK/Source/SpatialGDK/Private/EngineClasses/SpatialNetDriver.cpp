@@ -53,6 +53,7 @@
 #include "Interop/SpatialSnapshotManager.h"
 #include "Interop/SpatialStrategySystem.h"
 #include "Interop/SpatialWorkerFlags.h"
+#include "Interop/Startup/DefaultServerWorkerStartupHandler.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/DebugLBStrategy.h"
@@ -498,6 +499,13 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 																				  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
 																				  *VirtualWorkerTranslator, *GlobalStateManager);
 		}
+	}
+
+	if (WorkerType == SpatialConstants::DefaultServerWorkerType)
+	{
+		StartupHandler = MakeUnique<SpatialGDK::FSpatialServerStartupHandler>(
+			*this, SpatialGDK::FSpatialServerStartupHandler::FInitialSetup{
+					   static_cast<int32>(LoadBalanceStrategy->GetMinimumRequiredWorkers()) });
 	}
 }
 
@@ -1219,6 +1227,8 @@ void USpatialNetDriver::Shutdown()
 	USpatialNetDriverDebugContext::DisableDebugSpatialGDK(this);
 
 	SpatialOutputDevice = nullptr;
+
+	StartupHandler.Reset();
 
 	Super::Shutdown();
 
@@ -3404,36 +3414,15 @@ void USpatialNetDriver::TryFinishStartup()
 			{
 				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the EntityPool to be ready."));
 			}
-			else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
+			else if (!StartupHandler->TryFinishStartup())
 			{
-				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the load balancing system to be ready."));
-			}
-			else if (SkeletonEntityCreationStep.IsValid() && !SkeletonEntityCreationStep->TryFinish())
-			{
-				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for skeleton entities to be created and populated"));
-			}
-			else if (!GlobalStateManager->IsReady())
-			{
-				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log,
-						TEXT("Waiting for the GSM to be ready (this includes waiting for the expected number of servers to be connected)"));
-			}
-			else if (!Connection->GetCoordinator().HasEntity(VirtualWorkerTranslator->GetClaimedPartitionId()))
-			{
-				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the partition entity to be ready."));
+				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the new startup handler."));
 			}
 			else
 			{
 				UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
 				bIsReadyToStart = true;
 				Connection->SetStartupComplete();
-
-				CreateAndInitializeCoreClassesAfterStartup();
-
-				// We've found and dispatched all ops we need for startup,
-				// trigger BeginPlay() on the GSM and process the queued ops.
-				// Note that FindAndDispatchStartupOps() will have notified the Dispatcher
-				// to skip the startup ops that we've processed already.
-				GlobalStateManager->TriggerBeginPlay();
 			}
 		}
 	}
