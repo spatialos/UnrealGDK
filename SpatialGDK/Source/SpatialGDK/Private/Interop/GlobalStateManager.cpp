@@ -169,6 +169,11 @@ void UGlobalStateManager::ApplyDeploymentMapUpdate(Schema_ComponentUpdate* Updat
 	}
 }
 
+void UGlobalStateManager::ApplySessionId(int32 InSessionId)
+{
+	DeploymentSessionId = InSessionId;
+}
+
 #if WITH_EDITOR
 void UGlobalStateManager::OnPrePIEEnded(bool bValue)
 {
@@ -319,12 +324,10 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	// We should only be able to change whether we're accepting players if:
 	// - we're authoritative over the DeploymentMap which has the acceptingPlayers property,
 	// - we've called BeginPlay (so startup Actors can do initialization before any spawn requests are received),
-	// - we aren't duplicating the current state.
 	const bool bHasDeploymentMapAuthority =
 		ViewCoordinator->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
 	const bool bHasBegunPlay = NetDriver->GetWorld()->HasBegunPlay();
-	const bool bIsDuplicatingCurrentState = bAcceptingPlayers == bInAcceptingPlayers;
-	if (!bHasDeploymentMapAuthority || !bHasBegunPlay || bIsDuplicatingCurrentState)
+	if (!ensure(bHasDeploymentMapAuthority) || !ensure(bHasBegunPlay))
 	{
 		return;
 	}

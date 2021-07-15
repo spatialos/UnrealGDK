@@ -42,6 +42,8 @@ public:
 	void ApplyStartupActorManagerData(Schema_ComponentData* Data);
 	void WorkerEntityReady();
 
+	void ApplySessionId(int32 InSessionId);
+
 	void ApplyDeploymentMapUpdate(Schema_ComponentUpdate* Update);
 	void ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update);
 	bool HasAuthority() const;
@@ -86,6 +88,9 @@ public:
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
+	// Startup Actor Manager Component
+	bool bCanSpawnWithAuthority;
+
 private:
 	// Deployment Map Component
 	FString DeploymentMapURL;
@@ -99,7 +104,6 @@ private:
 	bool bWorkerEntityReady;
 	bool bHasSentReadyForVirtualWorkerAssignment;
 	bool bCanBeginPlay;
-	bool bCanSpawnWithAuthority;
 
 public:
 #if WITH_EDITOR
@@ -113,11 +117,12 @@ public:
 #endif // WITH_EDITOR
 
 private:
-	void SetDeploymentMapURL(const FString& MapURL);
 	void SendSessionIdUpdate();
 
+public:
 	void SendCanBeginPlayUpdate(const bool bInCanBeginPlay);
 
+private:
 #if WITH_EDITOR
 	void SendShutdownMultiProcessRequest();
 	void SendShutdownAdditionalServersEvent();
