@@ -536,8 +536,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClassesAfterStartup()
 		const SpatialGDK::FSubView& WorkerEntitySubView = Connection->GetCoordinator().CreateSubView(
 			SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-		RPCService =
-			MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, WorkerEntitySubView, Connection->GetEventTracer(), this);
+		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, WorkerEntitySubView,
+															   Connection->GetEventTracer(), this);
 
 		if (IsServer())
 		{

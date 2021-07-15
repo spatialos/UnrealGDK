@@ -6,11 +6,11 @@
 
 #include "Containers/Map.h"
 #include "Containers/StaticArray.h"
+#include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialGDKSpanId.h"
 #include "SpatialConstants.h"
 #include "SpatialLatencyPayload.h"
 #include "Utils/GDKPropertyMacros.h"
-#include "Interop/Connection/SpatialEventTracer.h"
-#include "Interop/Connection/SpatialGDKSpanId.h"
 
 #include "SpatialLatencyTracer.generated.h"
 
@@ -22,7 +22,7 @@ class USpatialGameInstance;
 
 namespace SpatialGDK
 {
-	struct FOutgoingMessage;
+struct FOutgoingMessage;
 } // namespace SpatialGDK
 
 /**
@@ -31,12 +31,12 @@ namespace SpatialGDK
 UENUM()
 namespace ETraceType
 {
-	enum Type
-	{
-		RPC,
-		Property,
-		Tagged
-	};
+enum Type
+{
+	RPC,
+	Property,
+	Tagged
+};
 }
 
 UCLASS(BlueprintType)
@@ -65,21 +65,19 @@ public:
 	// You must also send the OutContinuedLatencyPayload as a parameter in the RPC.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	bool ContinueLatencyTraceRPC(const AActor* Actor, const FString& Function, const FString& TraceDesc,
-										const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload);
+								 const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload);
 
 	// Attach a LatencyPayload to an Property/Actor pair. The next time that Property is executed on that Actor, the timings will be
 	// measured. The property being measured should be a FSpatialLatencyPayload and should be set to OutContinuedLatencyPayload.
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	bool ContinueLatencyTraceProperty(const AActor* Actor, const FString& Property,
-											 const FString& TraceDesc, const FSpatialLatencyPayload& LatencyPayload,
-											 FSpatialLatencyPayload& OutContinuedLatencyPayload);
+	bool ContinueLatencyTraceProperty(const AActor* Actor, const FString& Property, const FString& TraceDesc,
+									  const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload);
 
 	// Store a LatencyPayload to an Tag/Actor pair. This payload will be stored internally until the user is ready to retrieve it.
 	// Use RetrievePayload to retrieve the Payload
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	bool ContinueLatencyTraceTagged( const AActor* Actor, const FString& Tag, const FString& TraceDesc,
-										   const FSpatialLatencyPayload& LatencyPayload,
-										   FSpatialLatencyPayload& OutContinuedLatencyPayload);
+	bool ContinueLatencyTraceTagged(const AActor* Actor, const FString& Tag, const FString& TraceDesc,
+									const FSpatialLatencyPayload& LatencyPayload, FSpatialLatencyPayload& OutContinuedLatencyPayload);
 
 	// End a latency trace. This will terminate the trace, and can be called on multiple workers all operating on the same trace but the
 	// worker that called BeginLatencyTrace must call this at some point to ensure correct e2e latency timings.
