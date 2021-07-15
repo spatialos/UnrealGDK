@@ -285,6 +285,16 @@ public:
 
 	FShutdownEvent OnShutdown;
 
+	uint32 ClientGetSessionId() const;
+
+	struct FPendingNetworkFailure
+	{
+		ENetworkFailure::Type FailureType;
+		FString Message;
+	};
+	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
+	FString StartupClientDebugString;
+
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
@@ -307,13 +317,6 @@ private:
 	bool bWaitingToSpawn;
 	bool bIsReadyToStart;
 	bool bMapLoaded;
-
-	struct FPendingNetworkFailure
-	{
-		ENetworkFailure::Type FailureType;
-		FString Message;
-	};
-	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
 	FString SnapshotToLoad;
 
 	// Client variable which stores the SessionId given to us by the server in the URL options.
@@ -326,8 +329,11 @@ private:
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
+
+public:
 	void CreateAndInitializeCoreClassesAfterStartup();
 
+private:
 	void CreateAndInitializeLoadBalancingClasses();
 
 	void CreateServerSpatialOSNetConnection();
@@ -403,7 +409,6 @@ private:
 
 	TSet<Worker_EntityId_Key> OwnershipChangedEntities;
 	uint64 StartupTimestamp;
-	FString StartupClientDebugString;
 
 	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
