@@ -91,6 +91,7 @@ class CrossServerRPCHandler;
 class FSpatialStrategySystem;
 class FSkeletonEntityCreationStartupStep;
 class FSpatialServerStartupHandler;
+class FSpatialClientStartupHandler;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -245,6 +246,7 @@ public:
 	TUniquePtr<SpatialGDK::FSkeletonEntityCreationStartupStep> SkeletonEntityCreationStep;
 
 	TUniquePtr<SpatialGDK::FSpatialServerStartupHandler> StartupHandler;
+	TUniquePtr<SpatialGDK::FSpatialClientStartupHandler> ClientStartupHandler;
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
 	TUniquePtr<SpatialGDK::InitialOnlyFilter> InitialOnlyFilter;

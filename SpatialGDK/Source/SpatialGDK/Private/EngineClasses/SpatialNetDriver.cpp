@@ -54,6 +54,7 @@
 #include "Interop/SpatialStrategySystem.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Interop/Startup/DefaultServerWorkerStartupHandler.h"
+#include "Interop/Startup/SpatialClientWorkerStartupHandler.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/DebugLBStrategy.h"
@@ -506,6 +507,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		StartupHandler = MakeUnique<SpatialGDK::FSpatialServerStartupHandler>(
 			*this, SpatialGDK::FSpatialServerStartupHandler::FInitialSetup{
 					   static_cast<int32>(LoadBalanceStrategy->GetMinimumRequiredWorkers()) });
+	}
+	else if (WorkerType == SpatialConstants::DefaultClientWorkerType)
+	{
+		ClientStartupHandler = MakeUnique<SpatialGDK::FSpatialClientStartupHandler>(
+			*this, *GameInstance, SpatialGDK::FSpatialClientStartupHandler::FInitialSetup{});
 	}
 }
 
@@ -1225,6 +1231,7 @@ void USpatialNetDriver::Shutdown()
 	SpatialOutputDevice = nullptr;
 
 	StartupHandler.Reset();
+	ClientStartupHandler.Reset();
 
 	Super::Shutdown();
 
@@ -3424,7 +3431,7 @@ void USpatialNetDriver::TryFinishStartup()
 	}
 	else
 	{
-		if (bMapLoaded)
+		if (ClientStartupHandler->TryFinishStartup())
 		{
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();
