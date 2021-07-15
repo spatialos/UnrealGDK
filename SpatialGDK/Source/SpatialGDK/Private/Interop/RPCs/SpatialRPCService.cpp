@@ -11,7 +11,6 @@
 #include "SpatialConstants.h"
 #include "Utils/ObjectAllocUtils.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/SpatialLatencyTracer.h"
 
 #include "Algo/AnyOf.h"
 #include "Net/NetworkProfiler.h"
@@ -23,10 +22,9 @@ DECLARE_CYCLE_STAT(TEXT("SpatialRPCService SendRPC"), STAT_SpatialRPCServiceSend
 namespace SpatialGDK
 {
 SpatialRPCService::SpatialRPCService(const FSubView& InActorAuthSubView, const FSubView& InActorNonAuthSubView,
-									 const FSubView& InWorkerEntitySubView, USpatialLatencyTracer* InSpatialLatencyTracer,
+									 const FSubView& InWorkerEntitySubView, 
 									 SpatialEventTracer* InEventTracer, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
-	, SpatialLatencyTracer(InSpatialLatencyTracer)
 	, EventTracer(InEventTracer)
 	, RPCStore(FRPCStore())
 	, ClientServerRPCs(ActorCanExtractRPCDelegate::CreateRaw(this, &SpatialRPCService::ActorCanExtractRPC),

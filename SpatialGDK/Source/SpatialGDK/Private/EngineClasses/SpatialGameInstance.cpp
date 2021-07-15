@@ -22,7 +22,6 @@
 #include "Interop/SpatialWorkerFlags.h"
 #include "SpatialConstants.h"
 #include "Utils/SpatialDebugger.h"
-#include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialStatics.h"
@@ -232,8 +231,6 @@ void USpatialGameInstance::Init()
 	{
 		GetEngine()->OnNetworkFailure().AddStatic(&HandleOnSimulatedPlayerNetworkFailure);
 	}
-
-	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
 
 	if (HasSpatialNetDriver())
 	{

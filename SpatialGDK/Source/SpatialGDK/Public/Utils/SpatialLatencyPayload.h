@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "Hash/CityHash.h"
 #include "SpatialCommonTypes.h"
+#include "Interop/Connection/SpatialGDKSpanId.h"
 
 #include "SpatialLatencyPayload.generated.h"
 
@@ -16,28 +17,25 @@ struct SPATIALGDK_API FSpatialLatencyPayload
 
 	FSpatialLatencyPayload() {}
 
-	FSpatialLatencyPayload(TArray<uint8>&& TraceBytes, TArray<uint8>&& SpanBytes, TraceKey InKey)
-		: TraceId(MoveTemp(TraceBytes))
-		, SpanId(MoveTemp(SpanBytes))
-		, Key(InKey)
+	FSpatialLatencyPayload(TArray<uint8>&& Data)
+		: Data(MoveTemp(Data))
 	{
 	}
 
 	UPROPERTY()
-	TArray<uint8> TraceId;
-
-	UPROPERTY()
-	TArray<uint8> SpanId;
-
-	UPROPERTY(NotReplicated)
-	int32 Key = InvalidTraceKey;
+	TArray<uint8> Data;
 
 	// Required for TMap hash
-	bool operator==(const FSpatialLatencyPayload& Other) const { return TraceId == Other.TraceId && SpanId == Other.SpanId; }
+	bool operator==(const FSpatialLatencyPayload& Other) const { return Data == Other.Data; }
 
-	friend uint32 GetTypeHash(const FSpatialLatencyPayload& Obj)
+	friend uint32 GetTypeHash(const FSpatialLatencyPayload& Obj) // TODO: Why is this needed?
 	{
-		return CityHash32((const char*)Obj.TraceId.GetData(), Obj.TraceId.Num())
-			   ^ CityHash32((const char*)Obj.SpanId.GetData(), Obj.SpanId.Num());
+		return CityHash32((const char*)Obj.Data.GetData(), Obj.Data.Num());
+	}
+
+	void SetSpan(const FSpatialGDKSpanId& SpanId)
+	{
+		Data.SetNum(sizeof(FSpatialGDKSpanId));
+		memcpy(&Data[0], SpanId.GetConstId(), sizeof(FSpatialGDKSpanId));
 	}
 };

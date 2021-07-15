@@ -51,7 +51,6 @@ public:
 	void DestroySpatialConnectionManager();
 
 	FORCEINLINE USpatialConnectionManager* GetSpatialConnectionManager() { return SpatialConnectionManager; }
-	FORCEINLINE USpatialLatencyTracer* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
 	FORCEINLINE UGlobalStateManager* GetGlobalStateManager() { return GlobalStateManager; };
 
 	void HandleOnConnected(USpatialNetDriver& NetDriver);
@@ -93,9 +92,6 @@ private:
 
 	bool bShouldConnectUsingCommandLineArgs = true;
 	bool bHasPreviouslyConnectedToSpatial = false;
-
-	UPROPERTY()
-	USpatialLatencyTracer* SpatialLatencyTracer = nullptr;
 
 	// GlobalStateManager must persist when server traveling
 	UPROPERTY()

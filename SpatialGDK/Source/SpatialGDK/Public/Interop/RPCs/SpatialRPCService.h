@@ -30,7 +30,7 @@ class SPATIALGDK_API SpatialRPCService
 {
 public:
 	explicit SpatialRPCService(const FSubView& InActorAuthSubView, const FSubView& InActorNonAuthSubView,
-							   const FSubView& InWorkerEntitySubView, USpatialLatencyTracer* InSpatialLatencyTracer,
+							   const FSubView& InWorkerEntitySubView,
 							   SpatialEventTracer* InEventTracer, USpatialNetDriver* InNetDriver);
 
 	void AdvanceView();
@@ -82,7 +82,6 @@ private:
 	bool ActorCanExtractRPC(Worker_EntityId) const;
 
 	USpatialNetDriver* NetDriver;
-	USpatialLatencyTracer* SpatialLatencyTracer;
 	SpatialEventTracer* EventTracer;
 
 	FRPCContainer OutgoingRPCs{ ERPCQueueType::Send };

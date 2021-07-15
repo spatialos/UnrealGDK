@@ -35,7 +35,6 @@
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialDebuggerSystem.h"
-#include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialStatics.h"
 
