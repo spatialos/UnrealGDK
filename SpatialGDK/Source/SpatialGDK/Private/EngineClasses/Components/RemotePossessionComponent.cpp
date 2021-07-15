@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
+#include "Net/UnrealNetwork.h"
 
 DEFINE_LOG_CATEGORY(LogRemotePossessionComponent);
 
@@ -39,6 +40,13 @@ void URemotePossessionComponent::BeginPlay()
 			MarkToDestroy();
 		}
 	}
+}
+
+void URemotePossessionComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ThisClass, Target, COND_ServerOnly);
 }
 
 void URemotePossessionComponent::OnAuthorityGained()

@@ -2,8 +2,11 @@
 
 #include "Utils/SpatialMetrics.h"
 
+#include "CoreGlobals.h"
 #include "Engine/Engine.h"
 #include "EngineGlobals.h"
+#include "TimerManager.h"
+
 #if ENGINE_MINOR_VERSION >= 26
 #include "ProfilingDebugging/TraceAuxiliary.h"
 #endif
@@ -14,37 +17,6 @@
 #include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialMetrics);
-
-namespace SpatialMetricsPrivate
-{
-enum class EServerCommands : uint8
-{
-	StartInsights,
-
-	ServerCommandsCount,
-	ServerCommandInvalid = ServerCommandsCount,
-};
-
-const FString ServerCommandNames[static_cast<uint8>(EServerCommands::ServerCommandsCount) + 1] = { TEXT("StartInsights"), TEXT("Invalid") };
-
-const FString& ServerCommandsEnumToString(const EServerCommands Command)
-{
-	return ServerCommandNames[static_cast<uint8>(Command)];
-}
-
-const EServerCommands ServerCommandsStringToEnum(const FString& Command)
-{
-	for (uint8 i = 0; i < static_cast<uint8>(EServerCommands::ServerCommandsCount); ++i)
-	{
-		if (Command.Equals(ServerCommandNames[i], ESearchCase::IgnoreCase))
-		{
-			return static_cast<EServerCommands>(i);
-		}
-	}
-
-	return EServerCommands::ServerCommandInvalid;
-}
-} // namespace SpatialMetricsPrivate
 
 void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetServerMaxTickRate, bool bInIsServer)
 {
@@ -381,127 +353,32 @@ void USpatialMetrics::OnModifySettingCommand(Schema_Object* CommandPayload)
 
 void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FString& Command, const FString& Args)
 {
-	const SpatialMetricsPrivate::EServerCommands ServerCommand = SpatialMetricsPrivate::ServerCommandsStringToEnum(Command);
-	if (ServerCommand == SpatialMetricsPrivate::EServerCommands::ServerCommandInvalid)
+	const int32 Index = StaticEnum<ESpatialServerCommands>()->GetIndexByNameString(Command);
+	if (Index == INDEX_NONE)
 	{
 		UE_LOG(LogSpatialMetrics, Error, TEXT("SpatialExecServerCmd: Failed to execute server command. Command not found. Command %s (%s)"),
 			   *Command, *Args);
 		return;
 	}
 
-	if (!bIsServer && ControllerRefProvider.IsBound())
-	{
-		const FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
-		const Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
-
-		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
-		{
-			Worker_CommandRequest Request = {};
-			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
-			Request.command_index = SpatialConstants::DEBUG_METRICS_EXEC_SERVER_COMMAND_ID;
-			Request.schema_type = Schema_CreateCommandRequest();
-
-			Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
-
-			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_SERVER_NAME_ID, ServerName);
-			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_COMMAND_ID, Command);
-			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_ARGS_ID, Args);
-
-			Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialGDK::RETRY_MAX_TIMES, {});
-		}
-		else
-		{
-			UE_LOG(LogSpatialMetrics, Warning,
-				   TEXT("SpatialExecServerCmd: Could not resolve local PlayerController entity! Command will not be sent to server."));
-		}
-	}
-	else
-	{
-		bool bExecuteLocally = ServerName.Equals(TEXT("local"), ESearchCase::IgnoreCase);
-		Worker_EntityId ServerWorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
-		if (!bExecuteLocally)
-		{
-			for (const auto& Iter : Connection->GetView())
-			{
-				const Worker_EntityId EntityId = Iter.Key;
-				const SpatialGDK::EntityViewElement& Element = Iter.Value;
-				const SpatialGDK::ComponentData* Data = Element.Components.FindByPredicate([](const SpatialGDK::ComponentData& Component) {
-					return Component.GetComponentId() == SpatialConstants::SERVER_WORKER_COMPONENT_ID;
-				});
-
-				if (Data != nullptr)
-				{
-					SpatialGDK::ServerWorker ServerWorkerData(Data->GetWorkerComponentData());
-
-					if (ServerWorkerData.WorkerName.Equals(ServerName, ESearchCase::IgnoreCase))
-					{
-						ServerWorkerEntityId = EntityId;
-						bExecuteLocally = Element.Authority.Contains(SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID);
-						break;
-					}
-				}
-			}
-		}
-
-		if (bExecuteLocally)
-		{
-			UE_LOG(LogSpatialMetrics, Log, TEXT("SpatialExecServerCmd: Executing server command. Command %s (%s)"), *Command, *Args);
-
-			switch (ServerCommand)
-			{
-			case SpatialMetricsPrivate::EServerCommands::StartInsights:
-#if ENGINE_MINOR_VERSION >= 26
-				FTraceAuxiliary::UpdateTraceCapture(*Args);
-#else
-				UE_LOG(LogSpatialMetrics, Warning,
-					   TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. Command only available prior to 4.26."),
-					   *Command, *Args);
-#endif
-				break;
-
-			default:
-				UE_LOG(LogSpatialMetrics, Error,
-					   TEXT("SpatialExecServerCmd: Failed to execute server command. Command not handled. Command %s (%s)"), *Command,
-					   *Args);
-				break;
-			}
-		}
-		else if (ServerWorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
-		{
-			UE_LOG(LogSpatialMetrics, Log, TEXT("SpatialExecServerCmd: Forwarding server command. ServerName %s. Command %s (%s)"),
-				   *ServerName, *Command, *Args);
-
-			// Forward command to correct server.
-			Worker_CommandRequest Request = {};
-			Request.component_id = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
-			Request.command_index = SpatialConstants::SERVER_WORKER_EXEC_SERVER_COMMAND_COMMAND_ID;
-			Request.schema_type = Schema_CreateCommandRequest();
-
-			Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
-
-			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_SERVER_NAME_ID, ServerName);
-			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_COMMAND_ID, Command);
-			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_ARGS_ID, Args);
-
-			Connection->SendCommandRequest(ServerWorkerEntityId, &Request, SpatialGDK::RETRY_MAX_TIMES, {});
-		}
-		else
-		{
-			UE_LOG(LogSpatialMetrics, Error,
-				   TEXT("SpatialExecServerCmd: Failed to execute server command. Server not found. ServerName %s. Command %s (%s)"),
-				   *ServerName, *Command, *Args);
-		}
-	}
+	SpatialExecServerCmd_Internal(ServerName, static_cast<const ESpatialServerCommands>(Index), Args);
 }
 
 void USpatialMetrics::OnExecServerCmdCommand(Schema_Object* CommandPayload)
 {
 	const FString ServerName =
 		SpatialGDK::GetStringFromSchema(CommandPayload, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_SERVER_NAME_ID);
-	const FString Command = SpatialGDK::GetStringFromSchema(CommandPayload, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_COMMAND_ID);
+	const int32 Command = Schema_GetInt32(CommandPayload, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_COMMAND_ID);
 	const FString Args = SpatialGDK::GetStringFromSchema(CommandPayload, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_ARGS_ID);
 
-	SpatialExecServerCmd(ServerName, Command, Args);
+	if (!StaticEnum<ESpatialServerCommands>()->IsValidEnumValue(Command))
+	{
+		UE_LOG(LogSpatialMetrics, Error,
+			   TEXT("OnExecServerCmdCommand: Failed to execute server command. Command not found. Command %d (%s)"), Command, *Args);
+		return;
+	}
+
+	SpatialExecServerCmd_Internal(ServerName, static_cast<ESpatialServerCommands>(Command), Args);
 }
 
 void USpatialMetrics::TrackSentRPC(UFunction* Function, ERPCType RPCType, int PayloadSize)
@@ -589,4 +466,175 @@ void USpatialMetrics::RemoveCustomMetric(const FString& Metric)
 			   ExistingMetric->GetUObject() ? *GetNameSafe(ExistingMetric->GetUObject()) : TEXT("Not attached to UObject"));
 		UserSuppliedMetrics.Remove(Metric);
 	}
+}
+
+void USpatialMetrics::SpatialExecServerCmd_Internal(const FString& ServerName, const ESpatialServerCommands& ServerCommand,
+													const FString& Args)
+{
+	const FString Command = StaticEnum<ESpatialServerCommands>()->GetNameStringByIndex(static_cast<const int32>(ServerCommand));
+	if (!bIsServer && ControllerRefProvider.IsBound())
+	{
+		const FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
+		const Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+
+		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			Worker_CommandRequest Request = {};
+			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
+			Request.command_index = SpatialConstants::DEBUG_METRICS_EXEC_SERVER_COMMAND_ID;
+			Request.schema_type = Schema_CreateCommandRequest();
+
+			Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
+
+			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_SERVER_NAME_ID, ServerName);
+			Schema_AddInt32(RequestObject, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_COMMAND_ID,
+							static_cast<const int32>(ServerCommand));
+			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_ARGS_ID, Args);
+
+			Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialGDK::RETRY_MAX_TIMES, {});
+		}
+		else
+		{
+			UE_LOG(LogSpatialMetrics, Warning,
+				   TEXT("SpatialExecServerCmd: Could not resolve local PlayerController entity! Command will not be sent to server."));
+		}
+	}
+	else
+	{
+		bool bExecuteLocally = ServerName.Equals(TEXT("local"), ESearchCase::IgnoreCase);
+		Worker_EntityId ServerWorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
+		if (!bExecuteLocally)
+		{
+			for (const auto& Iter : Connection->GetView())
+			{
+				const Worker_EntityId EntityId = Iter.Key;
+				const SpatialGDK::EntityViewElement& Element = Iter.Value;
+				const SpatialGDK::ComponentData* Data = Element.Components.FindByPredicate([](const SpatialGDK::ComponentData& Component) {
+					return Component.GetComponentId() == SpatialConstants::SERVER_WORKER_COMPONENT_ID;
+				});
+
+				if (Data != nullptr)
+				{
+					SpatialGDK::ServerWorker ServerWorkerData(Data->GetWorkerComponentData());
+
+					if (ServerWorkerData.WorkerName.Equals(ServerName, ESearchCase::IgnoreCase))
+					{
+						ServerWorkerEntityId = EntityId;
+						bExecuteLocally = Element.Authority.Contains(SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID);
+						break;
+					}
+				}
+			}
+		}
+
+		if (bExecuteLocally)
+		{
+			UE_LOG(LogSpatialMetrics, Log, TEXT("SpatialExecServerCmd: Executing server command. Command %s (%s)"), *Command, *Args);
+
+			switch (ServerCommand)
+			{
+			case ESpatialServerCommands::StartInsights:
+			{
+				if (StartInsightsCapture(Args))
+				{
+					FString TraceTimeString;
+					if (FParse::Value(*Args, TEXT("-tracetime="), TraceTimeString))
+					{
+						const int32 TraceTime = FCString::Atoi(*TraceTimeString);
+
+						if (TraceTime <= 0)
+						{
+							UE_LOG(LogSpatialMetrics, Warning,
+								   TEXT("SpatialExecServerCmd: Invalid `tracetime` param %d. Trace will not be stopped."), TraceTime);
+						}
+						else if (UWorld* World = GetWorld())
+						{
+							FTimerHandle Handle;
+							World->GetTimerManager().SetTimer(
+								Handle,
+								[WeakThis = TWeakObjectPtr<USpatialMetrics>(this)]() {
+									if (WeakThis.IsValid())
+									{
+										WeakThis->StopInsightsCapture();
+									}
+								},
+								TraceTime, false);
+						}
+					}
+				}
+				break;
+			}
+
+			case ESpatialServerCommands::StopInsights:
+			{
+				StopInsightsCapture();
+				break;
+			}
+
+			default:
+				UE_LOG(LogSpatialMetrics, Error,
+					   TEXT("SpatialExecServerCmd: Failed to execute server command. Command not handled. Command %s (%s)"), *Command,
+					   *Args);
+				break;
+			}
+		}
+		else if (ServerWorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			UE_LOG(LogSpatialMetrics, Log, TEXT("SpatialExecServerCmd: Forwarding server command. ServerName %s. Command %s (%s)"),
+				   *ServerName, *Command, *Args);
+
+			// Forward command to correct server.
+			Worker_CommandRequest Request = {};
+			Request.component_id = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
+			Request.command_index = SpatialConstants::SERVER_WORKER_EXEC_SERVER_COMMAND_COMMAND_ID;
+			Request.schema_type = Schema_CreateCommandRequest();
+
+			Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
+
+			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_SERVER_NAME_ID, ServerName);
+			Schema_AddInt32(RequestObject, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_COMMAND_ID,
+							static_cast<const int32>(ServerCommand));
+			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_ARGS_ID, Args);
+
+			Connection->SendCommandRequest(ServerWorkerEntityId, &Request, SpatialGDK::RETRY_MAX_TIMES, {});
+		}
+		else
+		{
+			UE_LOG(LogSpatialMetrics, Error,
+				   TEXT("SpatialExecServerCmd: Failed to execute server command. Server not found. ServerName %s. Command %s (%s)"),
+				   *ServerName, *Command, *Args);
+		}
+	}
+}
+
+bool USpatialMetrics::StartInsightsCapture(const FString& Args)
+{
+#if ENGINE_MINOR_VERSION < 26
+	UE_LOG(LogSpatialMetrics, Warning,
+		TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. Command only available post 4.26."));
+#elif !UE_TRACE_ENABLED
+	UE_LOG(LogSpatialMetrics, Warning,
+		TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. UE_TRACE_ENABLE not defined."));
+#else
+	GCycleStatsShouldEmitNamedEvents++;
+
+	return FTraceAuxiliary::StartTraceCapture(*Args);
+#endif
+	return false;
+}
+
+bool USpatialMetrics::StopInsightsCapture()
+{
+#if ENGINE_MINOR_VERSION < 26
+	UE_LOG(LogSpatialMetrics, Warning,
+		TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. Command only available post 4.26."));
+#elif !UE_TRACE_ENABLED
+	UE_LOG(LogSpatialMetrics, Warning,
+		TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. UE_TRACE_ENABLE not defined."));
+#else
+	GCycleStatsShouldEmitNamedEvents = FMath::Max(0, GCycleStatsShouldEmitNamedEvents - 1);
+
+	return FTraceAuxiliary::StopTraceCapture();
+#endif
+	return false;
 }

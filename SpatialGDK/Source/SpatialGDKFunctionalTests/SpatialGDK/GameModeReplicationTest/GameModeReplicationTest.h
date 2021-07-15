@@ -13,7 +13,7 @@
 
 #include "GameModeReplicationTest.generated.h"
 
-UCLASS(BlueprintType)
+UCLASS(HideDropdown)
 class UGameModeReplicationGridLBStrategy : public UGridBasedLBStrategy
 {
 public:
@@ -29,7 +29,7 @@ public:
 	}
 };
 
-UCLASS(BlueprintType)
+UCLASS(HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UGameModeReplicationMultiWorkerSettings : public USpatialMultiWorkerSettings
 {
 public:
@@ -45,7 +45,7 @@ public:
 	UGameModeReplicationMultiWorkerSettings() { WorkerLayers.Append(GetLayerSetup()); }
 };
 
-UCLASS(BlueprintType)
+UCLASS(HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API AGameModeReplicationTestGameMode : public AGameModeBase
 {
 public:
@@ -63,7 +63,7 @@ public:
 	int ReplicatedValue = StartingValue;
 };
 
-UCLASS(BlueprintType)
+UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API AGameModeReplicationTest : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()

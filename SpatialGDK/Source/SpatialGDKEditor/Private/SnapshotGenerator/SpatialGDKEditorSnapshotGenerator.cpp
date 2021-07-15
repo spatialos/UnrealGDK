@@ -36,19 +36,7 @@ TArray<Worker_ComponentData> UnpackedComponentData;
 void SetEntityData(Worker_Entity& Entity, const TArray<FWorkerComponentData>& Components)
 {
 	Entity.component_count = Components.Num();
-
-#if TRACE_LIB_ACTIVE
-	// We have to unpack these as Worker_ComponentData is not the same as FWorkerComponentData
-	UnpackedComponentData.Empty();
-	UnpackedComponentData.SetNum(Components.Num());
-	for (int i = 0, Num = Components.Num(); i < Num; i++)
-	{
-		UnpackedComponentData[i] = Components[i];
-	}
-	Entity.components = UnpackedComponentData.GetData();
-#else
 	Entity.components = Components.GetData();
-#endif
 }
 
 bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)

@@ -52,8 +52,8 @@ protected:
 		FLocalDeploymentManager* LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
 		if (LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStarting())
 		{
-			UE_LOG(LogGDKTestBase, Warning, TEXT("Deployment found! (Was this left over from another test?)"))
-			UE_LOG(LogGDKTestBase, Warning, TEXT("Ending PIE session"))
+			UE_LOG(LogGDKTestBase, Log, TEXT("Deployment found! (Was this left over from another test?)"))
+			UE_LOG(LogGDKTestBase, Log, TEXT("Ending PIE session"))
 			GEditor->RequestEndPlayMap();
 			ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment);
 			ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));

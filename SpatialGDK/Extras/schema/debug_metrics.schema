@@ -10,7 +10,7 @@ type ModifySettingPayload {
 
 type ExecServerCommandPayload {
     string server_worker = 1;
-    string command = 2;
+    int32 command = 2;
     string args = 3;
 }
 

@@ -19,7 +19,7 @@
  * UTest2x1FullInterestGridStrategy
  * UTest2x2FullInterestGridStrategy
  */
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest1x2FullInterestGridStrategy : public UGridBasedLBStrategy
 {
 	GENERATED_BODY()
@@ -34,7 +34,7 @@ public:
 	}
 };
 
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest2x1FullInterestGridStrategy : public UGridBasedLBStrategy
 {
 	GENERATED_BODY()
@@ -49,7 +49,7 @@ public:
 	}
 };
 
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest2x2FullInterestGridStrategy : public UGridBasedLBStrategy
 {
 	GENERATED_BODY()
@@ -72,7 +72,7 @@ public:
  * UTest2x1SmallInterestGridStrategy
  * UTest2x2SmallInterestGridStrategy
  */
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest1x2SmallInterestGridStrategy : public UTest1x2FullInterestGridStrategy
 {
 	GENERATED_BODY()
@@ -81,7 +81,7 @@ public:
 	UTest1x2SmallInterestGridStrategy() { InterestBorder = 150.0f; }
 };
 
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest2x1SmallInterestGridStrategy : public UTest2x1FullInterestGridStrategy
 {
 	GENERATED_BODY()
@@ -90,7 +90,7 @@ public:
 	UTest2x1SmallInterestGridStrategy() { InterestBorder = 150.0f; }
 };
 
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest2x2SmallInterestGridStrategy : public UTest2x2FullInterestGridStrategy
 {
 	GENERATED_BODY()
@@ -107,7 +107,7 @@ public:
  * UTest2x1NoInterestGridStrategy
  * UTest2x2NoInterestGridStrategy
  */
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest1x2NoInterestGridStrategy : public UTest1x2FullInterestGridStrategy
 {
 	GENERATED_BODY()
@@ -116,7 +116,7 @@ public:
 	UTest1x2NoInterestGridStrategy() { InterestBorder = 0.0f; }
 };
 
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest2x1NoInterestGridStrategy : public UTest2x1FullInterestGridStrategy
 {
 	GENERATED_BODY()
@@ -125,7 +125,7 @@ public:
 	UTest2x1NoInterestGridStrategy() { InterestBorder = 0.0f; }
 };
 
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest2x2NoInterestGridStrategy : public UTest2x2FullInterestGridStrategy
 {
 	GENERATED_BODY()
@@ -137,7 +137,7 @@ public:
 /**
  * Worker settings that use the above LB strategies.
  */
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest1x2FullInterestWorkerSettings : public USpatialMultiWorkerSettings
 {
 	GENERATED_BODY()
@@ -146,7 +146,7 @@ public:
 	UTest1x2FullInterestWorkerSettings() { WorkerLayers[0].LoadBalanceStrategy = UTest1x2FullInterestGridStrategy::StaticClass(); }
 };
 
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest2x1FullInterestWorkerSettings : public USpatialMultiWorkerSettings
 {
 	GENERATED_BODY()
@@ -155,7 +155,7 @@ public:
 	UTest2x1FullInterestWorkerSettings() { WorkerLayers[0].LoadBalanceStrategy = UTest2x1FullInterestGridStrategy::StaticClass(); }
 };
 
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest2x2FullInterestWorkerSettings : public USpatialMultiWorkerSettings
 {
 	GENERATED_BODY()
@@ -164,7 +164,7 @@ public:
 	UTest2x2FullInterestWorkerSettings() { WorkerLayers[0].LoadBalanceStrategy = UTest2x2FullInterestGridStrategy::StaticClass(); }
 };
 
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest1x2SmallInterestWorkerSettings : public USpatialMultiWorkerSettings
 {
 	GENERATED_BODY()
@@ -173,7 +173,7 @@ public:
 	UTest1x2SmallInterestWorkerSettings() { WorkerLayers[0].LoadBalanceStrategy = UTest1x2SmallInterestGridStrategy::StaticClass(); }
 };
 
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest2x1SmallInterestWorkerSettings : public USpatialMultiWorkerSettings
 {
 	GENERATED_BODY()
@@ -182,7 +182,7 @@ public:
 	UTest2x1SmallInterestWorkerSettings() { WorkerLayers[0].LoadBalanceStrategy = UTest2x1SmallInterestGridStrategy::StaticClass(); }
 };
 
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest2x2SmallInterestWorkerSettings : public USpatialMultiWorkerSettings
 {
 	GENERATED_BODY()
@@ -191,7 +191,7 @@ public:
 	UTest2x2SmallInterestWorkerSettings() { WorkerLayers[0].LoadBalanceStrategy = UTest2x2SmallInterestGridStrategy::StaticClass(); }
 };
 
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest1x2NoInterestWorkerSettings : public USpatialMultiWorkerSettings
 {
 	GENERATED_BODY()
@@ -200,7 +200,7 @@ public:
 	UTest1x2NoInterestWorkerSettings() { WorkerLayers[0].LoadBalanceStrategy = UTest1x2NoInterestGridStrategy::StaticClass(); }
 };
 
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest2x1NoInterestWorkerSettings : public USpatialMultiWorkerSettings
 {
 	GENERATED_BODY()
@@ -209,7 +209,7 @@ public:
 	UTest2x1NoInterestWorkerSettings() { WorkerLayers[0].LoadBalanceStrategy = UTest2x1NoInterestGridStrategy::StaticClass(); }
 };
 
-UCLASS()
+UCLASS(NotBlueprintable, HideDropdown)
 class SPATIALGDKFUNCTIONALTESTS_API UTest2x2NoInterestWorkerSettings : public USpatialMultiWorkerSettings
 {
 	GENERATED_BODY()

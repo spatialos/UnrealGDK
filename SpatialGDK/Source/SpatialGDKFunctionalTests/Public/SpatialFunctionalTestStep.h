@@ -76,7 +76,7 @@ struct FSpatialFunctionalTestStepDefinition
 	 */
 	FSpatialFunctionalTestStepDefinition(bool bIsNative = false)
 		: bIsNativeDefinition(bIsNative)
-		, TimeLimit(0.0f)
+		, TimeLimit(20.0f)
 	{
 	}
 

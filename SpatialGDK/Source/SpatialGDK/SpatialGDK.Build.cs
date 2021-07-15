@@ -44,6 +44,11 @@ public class SpatialGDK : ModuleRules
                                             Target.Configuration != UnrealTargetConfiguration.Test))
         {
             PublicDependencyModuleNames.Add("GameplayDebugger");
+            PublicDefinitions.Add("WITH_GAMEPLAY_DEBUGGER=1");
+        }
+        else
+        {
+            PublicDefinitions.Add("WITH_GAMEPLAY_DEBUGGER=0");
         }
 
         if (Target.bBuildEditor)
@@ -144,14 +149,14 @@ public class SpatialGDK : ModuleRules
         string TraceDynamicLibPath = "";
         if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
         {
-            TraceStaticLibPath = Path.Combine(WorkerLibraryDir, "trace_dynamic.lib");
-            TraceDynamicLib = "trace_dynamic.dll";
+            TraceStaticLibPath = Path.Combine(WorkerLibraryDir, "legacy_trace_dynamic.lib");
+            TraceDynamicLib = "legacy_trace_dynamic.dll";
             TraceDynamicLibPath = Path.Combine(WorkerLibraryDir, TraceDynamicLib);
         }
         else if (Target.Platform == UnrealTargetPlatform.Linux)
         {
-            TraceStaticLibPath = Path.Combine(WorkerLibraryDir, "libtrace_dynamic.so");
-            TraceDynamicLib = "libtrace_dynamic.so";
+            TraceStaticLibPath = Path.Combine(WorkerLibraryDir, "liblegacy_trace_dynamic.so");
+            TraceDynamicLib = "liblegacy_trace_dynamic.so";
             TraceDynamicLibPath = Path.Combine(WorkerLibraryDir, TraceDynamicLib);
         }
 

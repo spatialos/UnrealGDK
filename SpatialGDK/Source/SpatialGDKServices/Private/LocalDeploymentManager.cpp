@@ -2,13 +2,9 @@
 
 #include "LocalDeploymentManager.h"
 
-#include "AssetRegistryModule.h"
 #include "Async/Async.h"
 #include "DirectoryWatcherModule.h"
-#include "Editor.h"
 #include "Engine/World.h"
-#include "FileCache.h"
-#include "GeneralProjectSettings.h"
 #include "HAL/FileManagerGeneric.h"
 #include "HttpModule.h"
 #include "IAutomationControllerModule.h"
@@ -16,8 +12,6 @@
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Internationalization/Internationalization.h"
-#include "Internationalization/Regex.h"
-#include "Json/Public/Dom/JsonObject.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
@@ -27,7 +21,6 @@
 #include "SpatialCommandUtils.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
-#include "UObject/CoreNet.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
@@ -37,7 +30,15 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
 	, bStartingDeployment(false)
 	, bStoppingDeployment(false)
+	, bTestRunnning(false)
 {
+}
+
+FLocalDeploymentManager::~FLocalDeploymentManager()
+{
+	// The idea behind this lock is to try and make the thread calling the destructor wait for the thread that is cleaning up processes
+	// if something tries to run on this object after the destructor then we're ruined anyway
+	FScopeLock StoppingDeploymentScoped(&StoppingDeployment);
 }
 
 void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
@@ -268,7 +269,11 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	// Give the snapshot path a timestamp to ensure we don't overwrite snapshots from older deployments.
 	// The snapshot service saves snapshots with the name `snapshot-n.snapshot` for a given deployment,
 	// where 'n' is the number of snapshots taken since starting the deployment.
-	FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, *RuntimeStartTime.ToString());
+	CurrentSnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, *RuntimeStartTime.ToString());
+
+	// Create the folder for storing the snapshots.
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	PlatformFile.CreateDirectoryTree(*CurrentSnapshotPath);
 
 	// Use the runtime start timestamp as the log directory, e.g. `<Project>/spatial/localdeployment/<timestamp>/`
 	FString LocalDeploymentLogsDir = FPaths::Combine(SpatialGDKServicesConstants::LocalDeploymentLogsDir, RuntimeStartTime.ToString());
@@ -276,7 +281,6 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	// Store these logs alongside the GDK ones for convenience
 	const TCHAR* RuntimeEventLogPaths = TEXT("EventTracing/runtime");
 	FString EventTracingPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectSavedDir(), RuntimeEventLogPaths));
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	if (!PlatformFile.CreateDirectoryTree(*EventTracingPath))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to create runtime event log path."));
@@ -290,7 +294,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 		TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
 			 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
 		*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-		*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *SnapshotPath, *SchemaBundle, *EventTracingPath, *LaunchArgs);
+		*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *CurrentSnapshotPath, *SchemaBundle, *EventTracingPath, *LaunchArgs);
 
 	if (!RuntimeIPToExpose.IsEmpty())
 	{
@@ -300,7 +304,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	// Setup the runtime file logger.
 	SetupRuntimeFileLogger(LocalDeploymentLogsDir);
 
-	FString RuntimePath = SpatialGDKServicesConstants::GetRuntimeExecutablePath(RuntimeVersion);
+	RuntimePath = SpatialGDKServicesConstants::GetRuntimeExecutablePath(RuntimeVersion);
 
 	RuntimeProcess = { *RuntimePath, *RuntimeArgs, SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
 					   /*InCreatePipes*/ true };
@@ -360,6 +364,11 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	EAutomationControllerModuleState::Type TestState = AutomationController->GetTestState();
 	bTestRunnning = TestState == EAutomationControllerModuleState::Type::Running;
 
+	if (CallBack)
+	{
+		CallBack(/*bSuccess*/ true);
+	}
+
 	return ERuntimeStartResponse::Success;
 }
 
@@ -391,17 +400,16 @@ bool FLocalDeploymentManager::SetupRuntimeFileLogger(const FString& RuntimeLogDi
 
 bool FLocalDeploymentManager::TryStopLocalDeployment()
 {
+	FScopeLock StoppingDeploymentScoped(&StoppingDeployment);
 	if (!StartLocalDeploymentShutDown())
 	{
 		return false;
 	}
 
-	RuntimeProcess->Stop();
-
-	bool bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
+	const bool bRuntimeShutDownSuccessfully = ForceShutdownAndWaitForTermination();
 	FinishLocalDeploymentShutDown();
 
-	return bRuntimeShutDownSuccesfully;
+	return bRuntimeShutDownSuccessfully;
 }
 
 bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
@@ -412,41 +420,20 @@ bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
 		return TryStopLocalDeployment();
 	}
 
+	FScopeLock StoppingDeploymentScoped(&StoppingDeployment);
 	if (!StartLocalDeploymentShutDown())
 	{
 		return false;
 	}
 
-	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
-#if ENGINE_MINOR_VERSION >= 26
-	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = HttpModule.Get().CreateRequest();
-#else
-	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
-#endif
-
-	FString URL = FString::Printf(TEXT("http://localhost:%d/shutdown"), HTTPPort);
-	HttpRequest->SetURL(URL);
-	HttpRequest->SetVerb("GET");
-	HttpRequest->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
-		int32 ResponseCode = HttpResponse->GetResponseCode();
-		if (ResponseCode != 200)
-		{
-			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime shutdown http request failed with code: %d"), ResponseCode);
-		}
-	});
-
-	HttpRequest->ProcessRequest();
-
-	bool bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
-	if (!bRuntimeShutDownSuccesfully)
+	bool bShutdownSuccess = GracefulShutdownAndWaitForTermination();
+	if (!bShutdownSuccess)
 	{
-		RuntimeProcess->Stop();
-		bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
+		bShutdownSuccess = ForceShutdownAndWaitForTermination();
 	}
 
 	FinishLocalDeploymentShutDown();
-
-	return bRuntimeShutDownSuccesfully;
+	return bShutdownSuccess;
 }
 
 bool FLocalDeploymentManager::StartLocalDeploymentShutDown()
@@ -467,6 +454,27 @@ bool FLocalDeploymentManager::StartLocalDeploymentShutDown()
 	return true;
 }
 
+bool FLocalDeploymentManager::GracefulShutdownAndWaitForTermination()
+{
+	if (RuntimeProcess.IsSet())
+	{
+		const FString RuntimeProcName = RuntimePath.Replace(TEXT("/"), TEXT("\\"));
+		SpatialCommandUtils::TryGracefullyKill(RuntimeProcName, RuntimeProcess->GetProcessHandle());
+
+		const bool bGracefulShutdownSuccess = WaitForRuntimeProcessToShutDown();
+		return bGracefulShutdownSuccess;
+	}
+	UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Trying to stop deployment gracefully but RuntimeProcess is not set."));
+	return false;
+}
+
+bool FLocalDeploymentManager::ForceShutdownAndWaitForTermination()
+{
+	RuntimeProcess->Stop();
+	const bool bForcefulShutdownSuccess = WaitForRuntimeProcessToShutDown();
+	return bForcefulShutdownSuccess;
+}
+
 bool FLocalDeploymentManager::WaitForRuntimeProcessToShutDown()
 {
 	double RuntimeStopTime = RuntimeProcess->GetDuration().GetTotalSeconds();
@@ -478,7 +486,6 @@ bool FLocalDeploymentManager::WaitForRuntimeProcessToShutDown()
 		if (RuntimeProcess->GetDuration().GetTotalSeconds() > RuntimeStopTime + RuntimeTimeout)
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to stop."));
-			bStoppingDeployment = false;
 			return false;
 		}
 	}
@@ -490,6 +497,21 @@ void FLocalDeploymentManager::FinishLocalDeploymentShutDown()
 {
 	// Kill the log file handle.
 	RuntimeLogFileHandle.Reset();
+
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	const auto IsDirectoryEmpty = [&PlatformFile](const TCHAR* Directory) -> bool {
+		bool bDirectoryIsEmpty = true;
+		PlatformFile.IterateDirectory(Directory, [&bDirectoryIsEmpty](const TCHAR* FilenameOrDirectory, bool bIsDirectory) -> bool {
+			bDirectoryIsEmpty = false;
+			return false;
+		});
+		return bDirectoryIsEmpty;
+	};
+
+	if (IsDirectoryEmpty(*CurrentSnapshotPath))
+	{
+		PlatformFile.DeleteDirectory(*CurrentSnapshotPath);
+	}
 
 	bLocalDeploymentRunning = false;
 	bStoppingDeployment = false;
@@ -545,11 +567,6 @@ void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World,
 #else
 	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
 #endif
-
-	FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, *RuntimeStartTime.ToString());
-	// Create the folder for storing the snapshots.
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	PlatformFile.CreateDirectoryTree(*SnapshotPath);
 
 	HttpRequest->OnProcessRequestComplete().BindLambda(
 		[World, OnSnapshotTaken](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {

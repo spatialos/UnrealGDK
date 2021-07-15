@@ -25,7 +25,7 @@ class USpatialTestLoadBalancingDataTestMap : public UGeneratedTestMap
 	virtual void CreateCustomContentForMap() override;
 };
 
-UCLASS()
+UCLASS(HideDropdown)
 class USpatialTestLoadBalancingDataMultiWorkerSettings : public USpatialMultiWorkerSettings
 {
 	GENERATED_BODY()

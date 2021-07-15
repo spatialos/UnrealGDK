@@ -10,6 +10,7 @@
 
 namespace SpatialGDK
 {
+/** Stores a utf8 string. */
 class StringStorage
 {
 public:

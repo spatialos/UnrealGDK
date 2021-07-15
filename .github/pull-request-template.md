@@ -1,3 +1,6 @@
+#### This is a public repo
+So don't post or commit non-public information.
+
 #### Description
 Describe your changes here.
 

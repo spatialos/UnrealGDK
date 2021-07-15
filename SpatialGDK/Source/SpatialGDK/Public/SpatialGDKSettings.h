@@ -70,8 +70,23 @@ class SPATIALGDK_API UEventTracingSamplingSettings : public UObject
 {
 	GENERATED_BODY()
 public:
+	struct TraceQueryDeleter
+	{
+		void operator()(Trace_Query* Query) const
+		{
+			if (Query != nullptr)
+			{
+				Trace_Query_Destroy(Query);
+			}
+		}
+	};
+
+	using TraceQueryPtr = TUniquePtr<Trace_Query, TraceQueryDeleter>;
+
+	UEventTracingSamplingSettings();
+
 	UPROPERTY(EditAnywhere, Category = "Event Tracing", meta = (ClampMin = 0.0f, ClampMax = 1.0f))
-	double SamplingProbability = 1.0f;
+	double SamplingProbability;
 
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
 	TMap<FName, double> EventSamplingModeOverrides;
@@ -90,9 +105,25 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
 	FString RuntimeEventPostFilter;
 
+	const FString& GetGDKEventPreFilterString() const { return GetFilterString(GDKEventPreFilter); }
+	const FString& GetGDKEventPostFilterString() const { return GetFilterString(GDKEventPostFilter); }
+	const FString& GetRuntimeEventPreFilterString() const { return GetFilterString(RuntimeEventPreFilter); }
+	const FString& GetRuntimeEventPostFilterString() const { return GetFilterString(RuntimeEventPostFilter); }
+
+	TraceQueryPtr GetGDKEventPreFilter() const { return ParseOrDefault(GDKEventPreFilter, TEXT("gdk-pre-filter")); }
+	TraceQueryPtr GetGDKEventPostFilter() const { return ParseOrDefault(GDKEventPostFilter, TEXT("gdk-post-filter")); }
+	TraceQueryPtr GetRuntimeEventPreFilter() const { return ParseOrDefault(RuntimeEventPreFilter, TEXT("runtime-pre-filter")); }
+	TraceQueryPtr GetRuntimeEventPostFilter() const { return ParseOrDefault(RuntimeEventPostFilter, TEXT("runtime-post-filter")); }
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
+private:
+	static FString DefaultFilter;
+
+	static bool IsFilterValid(const FString& Str);
+	static TraceQueryPtr ParseOrDefault(const FString& Str, const TCHAR* FilterForLog);
+	static const FString& GetFilterString(const FString& Filter);
 };
 
 UCLASS(config = SpatialGDKSettings, defaultconfig)

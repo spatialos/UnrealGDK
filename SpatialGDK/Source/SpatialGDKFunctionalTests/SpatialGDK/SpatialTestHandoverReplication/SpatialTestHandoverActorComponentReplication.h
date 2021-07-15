@@ -71,10 +71,10 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UPROPERTY(Handover)
+	UPROPERTY(Replicated)
 	int HandoverTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
 
-	UPROPERTY(Handover)
+	UPROPERTY(Replicated)
 	FHandoverReplicationTestStruct HandoverTestStruct;
 
 	UPROPERTY(Replicated)
@@ -99,16 +99,16 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UPROPERTY(Handover)
+	UPROPERTY(Replicated)
 	int HandoverTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
 
-	UPROPERTY(Handover)
+	UPROPERTY(Replicated)
 	FHandoverReplicationTestStruct HandoverTestStruct;
 
 	UPROPERTY(Replicated)
 	int ReplicatedTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
 
-	UPROPERTY(Handover)
+	UPROPERTY(Replicated)
 	EHandoverReplicationTestStage TestStage = EHandoverReplicationTestStage::Initial;
 
 	UPROPERTY()

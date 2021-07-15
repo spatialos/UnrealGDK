@@ -18,6 +18,8 @@ extern TMap<FString, FSubobjectSchemaData> SubobjectClassPathToSchema;
 extern TMap<FString, Worker_ComponentId> LevelPathToComponentId;
 extern TMap<float, Worker_ComponentId> NetCullDistanceToComponentId;
 
+EReplicatedPropertyGroup SchemaComponentTypeToPropertyGroup(ESchemaComponentType SchemaType);
+
 // Generates schema for an Actor
 void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath);
 // Generates schema for a Subobject class - the schema type and the dynamic schema components

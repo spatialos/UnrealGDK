@@ -30,6 +30,8 @@ public:
 
 	virtual void PrepareTest() override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	ATestPossessionPawn* GetPawn();
 
 	bool IsReadyForPossess();
@@ -47,6 +49,6 @@ protected:
 	void AddToOriginalPawns(ATestPossessionPlayerController* PlayerController, APawn* Pawn);
 
 	// To save original Pawns and possess them back at the end
-	UPROPERTY(Handover, Transient)
+	UPROPERTY(Replicated, Transient)
 	TArray<FControllerPawnPair> OriginalPawns;
 };

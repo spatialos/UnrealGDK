@@ -118,7 +118,12 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 
 	const FVector2D Actor2DLocation = GetActorLoadBalancingPosition(Actor);
 
-	check(VirtualWorkerIds.Num() == WorkerCells.Num());
+	if (!ensureAlwaysMsgf(VirtualWorkerIds.Num() == WorkerCells.Num(),
+						  TEXT("Found a mismatch between virtual worker count and worker cells count in load balancing strategy")))
+	{
+		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	}
+
 	for (int i = 0; i < WorkerCells.Num(); i++)
 	{
 		if (IsInside(WorkerCells[i], Actor2DLocation))
@@ -154,7 +159,13 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 	const FVector Center3D{ Center2D.X, Center2D.Y, 0.0f };
 
 	const FVector2D EdgeLengths2D = Interest2D.GetSize();
-	check(EdgeLengths2D.X > 0.0f && EdgeLengths2D.Y > 0.0f);
+
+	if (!ensureAlwaysMsgf(EdgeLengths2D.X > 0.0f && EdgeLengths2D.Y > 0.0f,
+						  TEXT("Failed to create worker interest constraint. Grid cell area was 0")))
+	{
+		return SpatialGDK::QueryConstraint();
+	}
+
 	const FVector EdgeLengths3D{ EdgeLengths2D.X, EdgeLengths2D.Y, FLT_MAX };
 
 	SpatialGDK::QueryConstraint Constraint;
@@ -170,8 +181,17 @@ FVector2D UGridBasedLBStrategy::GetActorLoadBalancingPosition(const AActor& Acto
 
 FVector UGridBasedLBStrategy::GetWorkerEntityPosition() const
 {
-	check(IsReady());
-	check(bIsStrategyUsedOnLocalWorker);
+	if (!ensureAlwaysMsgf(IsReady(), TEXT("Called GetWorkerEntityPosition before load balancing strategy is ready")))
+	{
+		return FVector::ZeroVector;
+	}
+
+	if (!ensureAlwaysMsgf(bIsStrategyUsedOnLocalWorker,
+						  TEXT("Called GetWorkerEntityPosition on load balancing stratey that isn't in use by the local worker")))
+	{
+		return FVector::ZeroVector;
+	}
+
 	const FVector2D Centre = WorkerCells[LocalCellId].GetCenter();
 	return FVector{ Centre.X, Centre.Y, 0.f };
 }

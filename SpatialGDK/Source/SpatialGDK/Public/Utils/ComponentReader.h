@@ -18,18 +18,16 @@ public:
 	explicit ComponentReader(class USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap,
 							 SpatialEventTracer* InEventTracer);
 
-	void ApplyComponentData(const Worker_ComponentData& ComponentData, UObject& Object, USpatialActorChannel& Channel, bool bIsHandover,
+	void ApplyComponentData(const Worker_ComponentData& ComponentData, UObject& Object, USpatialActorChannel& Channel,
 							bool& bOutReferencesChanged);
 	void ApplyComponentData(Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object, USpatialActorChannel& Channel,
-							bool bIsHandover, bool& bOutReferencesChanged);
+							bool& bOutReferencesChanged);
 	void ApplyComponentUpdate(Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update, UObject& Object,
-							  USpatialActorChannel& Channel, bool bIsHandover, bool& bOutReferencesChanged);
+							  USpatialActorChannel& Channel, bool& bOutReferencesChanged);
 
 private:
 	void ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
 						   const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId, bool& bOutReferencesChanged);
-	void ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
-								   const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId, bool& bOutReferencesChanged);
 
 	void ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index,
 					   GDK_PROPERTY(Property) * Property, uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex,

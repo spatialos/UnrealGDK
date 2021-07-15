@@ -146,7 +146,7 @@ void FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method, TFunction
 		}
 
 		// Make sure SchemaDatabase is not loaded.
-		if (UPackage* LoadedDatabase = FindPackage(nullptr, *FPaths::Combine(TEXT("/Game/"), *SpatialConstants::SCHEMA_DATABASE_FILE_PATH)))
+		if (UPackage* LoadedDatabase = FindPackage(nullptr, *SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
 		{
 			TArray<UPackage*> ToUnload;
 			ToUnload.Add(LoadedDatabase);
@@ -232,9 +232,18 @@ void FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method, TFunction
 		else
 		{
 			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Schema generation failed. View earlier log messages for errors."));
+
+			// Make sure SchemaDatabase is not loaded (unlocks the file after any failed schema gen operations)
+			if (UPackage* LoadedDatabase = FindPackage(nullptr, *SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
+			{
+				TArray<UPackage*> ToUnload;
+				ToUnload.Add(LoadedDatabase);
+				UPackageTools::UnloadPackages(ToUnload);
+			}
 		}
 
 		ResultCallback(bResult);
+
 		return;
 	}
 }

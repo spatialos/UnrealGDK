@@ -27,16 +27,12 @@ namespace SpatialGDK
 class SPATIALGDK_API ComponentFactory
 {
 public:
-	ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, USpatialLatencyTracer* LatencyTracer);
+	ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver);
 
 	TArray<FWorkerComponentData> CreateComponentDatas(UObject* Object, const FClassInfo& Info, const FRepChangeState& RepChangeState,
-													  const FHandoverChangeState& HandoverChangeState, uint32& OutBytesWritten);
+													  uint32& OutBytesWritten);
 	TArray<FWorkerComponentUpdate> CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId,
-														  const FRepChangeState* RepChangeState,
-														  const FHandoverChangeState* HandoverChangeState, uint32& OutBytesWritten);
-
-	FWorkerComponentData CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info,
-													 const FHandoverChangeState& Changes, uint32& OutBytesWritten);
+														  const FRepChangeState* RepChangeState, uint32& OutBytesWritten);
 
 	bool WasInitialOnlyDataWritten() const { return bInitialOnlyDataWritten; }
 
@@ -49,15 +45,7 @@ private:
 												 ESchemaComponentType PropertyGroup, uint32& OutBytesWritten);
 
 	uint32 FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes,
-							ESchemaComponentType PropertyGroup, bool bIsInitialData, TraceKey* OutLatencyTraceId,
-							TArray<Schema_FieldId>* ClearedIds = nullptr);
-
-	FWorkerComponentUpdate CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info,
-														 const FHandoverChangeState& Changes, uint32& OutBytesWritten);
-
-	uint32 FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FClassInfo& Info,
-									const FHandoverChangeState& Changes, bool bIsInitialData, TraceKey* OutLatencyTraceId,
-									TArray<Schema_FieldId>* ClearedIds = nullptr);
+							ESchemaComponentType PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
 
 	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, GDK_PROPERTY(Property) * Property, const uint8* Data,
 					 TArray<Schema_FieldId>* ClearedIds);
@@ -69,8 +57,6 @@ private:
 	bool bInterestHasChanged;
 	bool bInitialOnlyDataWritten;
 	bool bInitialOnlyReplicationEnabled;
-
-	USpatialLatencyTracer* LatencyTracer;
 };
 
 } // namespace SpatialGDK

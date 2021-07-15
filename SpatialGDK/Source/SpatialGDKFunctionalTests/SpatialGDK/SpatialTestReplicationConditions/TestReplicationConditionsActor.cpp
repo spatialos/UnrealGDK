@@ -53,6 +53,9 @@ void UTestReplicationConditionsComponent_Common::GetLifetimeReplicatedProps(TArr
 	DOREPLIFETIME_CONDITION(ThisClass, CondSimulatedOnlyNoReplay_Var, COND_SimulatedOnlyNoReplay);
 	DOREPLIFETIME_CONDITION(ThisClass, CondSimulatedOrPhysicsNoReplay_Var, COND_SimulatedOrPhysics);
 	DOREPLIFETIME_CONDITION(ThisClass, CondSkipReplay_Var, COND_SkipReplay);
+
+	// Our added conditions
+	DOREPLIFETIME_CONDITION(ThisClass, CondServerOnly_Var, COND_ServerOnly);
 }
 
 ATestReplicationConditionsActor_Common::ATestReplicationConditionsActor_Common()
@@ -81,6 +84,9 @@ void ATestReplicationConditionsActor_Common::GetLifetimeReplicatedProps(TArray<F
 	DOREPLIFETIME_CONDITION(ThisClass, CondSimulatedOnlyNoReplay_Var, COND_SimulatedOnlyNoReplay);
 	DOREPLIFETIME_CONDITION(ThisClass, CondSimulatedOrPhysicsNoReplay_Var, COND_SimulatedOrPhysics);
 	DOREPLIFETIME_CONDITION(ThisClass, CondSkipReplay_Var, COND_SkipReplay);
+
+	// Our added conditions
+	DOREPLIFETIME_CONDITION(ThisClass, CondServerOnly_Var, COND_ServerOnly);
 
 	DOREPLIFETIME(ThisClass, StaticComponent);
 	DOREPLIFETIME(ThisClass, DynamicComponent);

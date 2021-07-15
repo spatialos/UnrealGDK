@@ -10,10 +10,20 @@ namespace SpatialGDK
 ActorSetMember GetActorSetData(const USpatialPackageMapClient& PackageMap, const AActor& Actor)
 {
 	const AActor* LeaderActor = GetReplicatedHierarchyRoot(&Actor);
-	check(IsValid(LeaderActor));
+
+	if (!ensureAlwaysMsgf(IsValid(LeaderActor), TEXT("Failed to get replicated hierarchy root when getting Actor set data for Actor: %s"),
+						  *GetNameSafe(&Actor)))
+	{
+		return ActorSetMember();
+	}
 
 	const Worker_EntityId LeaderEntityId = PackageMap.GetEntityIdFromObject(LeaderActor);
-	check(LeaderEntityId != SpatialConstants::INVALID_ENTITY_ID);
+
+	if (!ensureAlwaysMsgf(LeaderEntityId != SpatialConstants::INVALID_ENTITY_ID,
+						  TEXT("Failed to get entity Id from package map for Actor: %s"), *GetNameSafe(LeaderActor)))
+	{
+		return ActorSetMember();
+	}
 
 	return ActorSetMember(LeaderEntityId);
 }

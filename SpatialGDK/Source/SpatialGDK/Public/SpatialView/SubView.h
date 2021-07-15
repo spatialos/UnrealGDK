@@ -40,6 +40,8 @@ public:
 
 	void Advance(const ViewDelta& Delta);
 	const FSubViewDelta& GetViewDelta() const;
+	const TArray<Worker_EntityId>& GetCompleteEntities() const;
+	void Refresh();
 	void RefreshEntity(const Worker_EntityId EntityId);
 
 	const EntityView& GetView() const;

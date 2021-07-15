@@ -10,7 +10,6 @@
 #include "Templates/UniquePtr.h"
 #include "Templates/UnrealTemplate.h"
 #include "UObject/NameTypes.h"
-#include "Utils/SpatialLatencyTracer.h"
 
 #include <string>
 

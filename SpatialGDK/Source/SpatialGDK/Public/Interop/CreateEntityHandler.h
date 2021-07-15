@@ -21,7 +21,10 @@ class CreateEntityHandler
 public:
 	void AddRequest(Worker_RequestId RequestId, CreateEntityDelegate&& Handler)
 	{
-		check(Handler.IsBound());
+		if (!ensureAlwaysMsgf(Handler.IsBound(), TEXT("Failed to add create entity requested handler. Handler delegate was unbound")))
+		{
+			return;
+		}
 		Handlers.Emplace(RequestId, MoveTemp(Handler));
 	}
 

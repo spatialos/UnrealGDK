@@ -204,7 +204,8 @@ public:
 		check(!HasNextOpList());
 		TArray<TArray<OpList>> NewListsOfOpLists;
 		TArray<OpList> OpLists;
-		OpLists.Add(Builder.Move().CreateOpList());
+		OpLists.Add(MoveTemp(Builder).CreateOpList());
+		Builder = EntityComponentOpListBuilder();
 		NewListsOfOpLists.Add(MoveTemp(OpLists));
 		SetListsOfOpLists(MoveTemp(NewListsOfOpLists));
 	}
@@ -245,12 +246,12 @@ static FComponentSetData const& GetComponentSetData()
 	static FComponentSetData s_ComponentSetData = [] {
 		FComponentSetData Data;
 		auto& ServerSet = Data.ComponentSets.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
-		ServerSet.Add(SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID);
-		ServerSet.Add(SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID);
+		ServerSet.Add(SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID);
+		ServerSet.Add(SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID);
 
 		auto& RoutingSet = Data.ComponentSets.Add(SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID);
-		RoutingSet.Add(SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID);
-		RoutingSet.Add(SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID);
+		RoutingSet.Add(SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID);
+		RoutingSet.Add(SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID);
 
 		return Data;
 	}();
@@ -261,10 +262,10 @@ static FComponentSetData const& GetComponentSetData()
 void AddEntityAndCrossServerComponents(EntityComponentOpListBuilder& Builder, Worker_EntityId Id)
 {
 	Builder.AddEntity(Id);
-	Builder.AddComponent(Id, ComponentData{ SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID });
-	Builder.AddComponent(Id, ComponentData{ SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID });
-	Builder.AddComponent(Id, ComponentData{ SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID });
-	Builder.AddComponent(Id, ComponentData{ SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID });
+	Builder.AddComponent(Id, ComponentData{ SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID });
+	Builder.AddComponent(Id, ComponentData{ SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID });
+	Builder.AddComponent(Id, ComponentData{ SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID });
+	Builder.AddComponent(Id, ComponentData{ SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID });
 	Builder.AddComponent(Id, ComponentData{ SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID });
 	Builder.AddComponent(Id, ComponentData{ SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID });
 }
@@ -272,8 +273,8 @@ void AddEntityAndCrossServerComponents(EntityComponentOpListBuilder& Builder, Wo
 void AddComponentAuthForRoutingWorker(EntityComponentOpListBuilder& Builder, Worker_EntityId Id)
 {
 	TArray<ComponentData> CanonicalData;
-	CanonicalData.Emplace(ComponentData{ SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID });
-	CanonicalData.Emplace(ComponentData{ SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID });
+	CanonicalData.Emplace(ComponentData{ SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID });
+	CanonicalData.Emplace(ComponentData{ SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID });
 	Builder.SetAuthority(Id, SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID, WORKER_AUTHORITY_AUTHORITATIVE,
 						 MoveTemp(CanonicalData));
 }
@@ -281,21 +282,21 @@ void AddComponentAuthForRoutingWorker(EntityComponentOpListBuilder& Builder, Wor
 void AddComponentAuthForServerWorker(EntityComponentOpListBuilder& Builder, Worker_EntityId Id)
 {
 	TArray<ComponentData> CanonicalData;
-	CanonicalData.Emplace(ComponentData{ SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID });
-	CanonicalData.Emplace(ComponentData{ SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID });
+	CanonicalData.Emplace(ComponentData{ SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID });
+	CanonicalData.Emplace(ComponentData{ SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID });
 	Builder.SetAuthority(Id, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, WORKER_AUTHORITY_AUTHORITATIVE, MoveTemp(CanonicalData));
 }
 
 void RemoveEntityAndCrossServerComponents(ViewCoordinator& Coordinator, EntityComponentOpListBuilder& Builder, Worker_EntityId Id)
 {
-	Coordinator.SendRemoveComponent(Id, SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID, {});
-	Builder.RemoveComponent(Id, SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID);
-	Coordinator.SendRemoveComponent(Id, SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, {});
-	Builder.RemoveComponent(Id, SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID);
-	Coordinator.SendRemoveComponent(Id, SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID, {});
-	Builder.RemoveComponent(Id, SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID);
-	Coordinator.SendRemoveComponent(Id, SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, {});
-	Builder.RemoveComponent(Id, SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID);
+	Coordinator.SendRemoveComponent(Id, SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID, {});
+	Builder.RemoveComponent(Id, SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID);
+	Coordinator.SendRemoveComponent(Id, SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, {});
+	Builder.RemoveComponent(Id, SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID);
+	Coordinator.SendRemoveComponent(Id, SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID, {});
+	Builder.RemoveComponent(Id, SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID);
+	Coordinator.SendRemoveComponent(Id, SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, {});
+	Builder.RemoveComponent(Id, SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID);
 	Coordinator.SendRemoveComponent(Id, SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID, {});
 	Builder.RemoveComponent(Id, SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID);
 	Coordinator.SendRemoveComponent(Id, SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, {});
@@ -326,19 +327,19 @@ struct Components
 
 		for (auto& Data : Element.Components)
 		{
-			if (Data.GetComponentId() == SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID)
+			if (Data.GetComponentId() == SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID)
 			{
 				Sender.Emplace(CrossServerEndpoint(Data.GetUnderlying()));
 			}
-			if (Data.GetComponentId() == SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID)
+			if (Data.GetComponentId() == SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID)
 			{
 				SenderACK.Emplace(CrossServerEndpointACK(Data.GetUnderlying()));
 			}
-			if (Data.GetComponentId() == SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID)
+			if (Data.GetComponentId() == SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID)
 			{
 				Receiver.Emplace(CrossServerEndpoint(Data.GetUnderlying()));
 			}
-			if (Data.GetComponentId() == SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID)
+			if (Data.GetComponentId() == SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID)
 			{
 				ReceiverACK.Emplace(CrossServerEndpointACK(Data.GetUnderlying()));
 			}
@@ -434,11 +435,10 @@ struct RoutingWorkerMock : WorkerMock
 struct ServerWorkerMock : WorkerMock
 {
 	ServerWorkerMock()
-		: SubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
-											[](const Worker_EntityId, const SpatialGDK::EntityViewElement&) {
-												return true;
-											},
-											{}))
+		: SubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
+											SpatialGDK::FSubView::NoDispatcherCallbacks))
+		, DummyRoutingWorkerSubView(Coordinator.CreateSubView(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID,
+															  SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks))
 	{
 	}
 
@@ -453,6 +453,7 @@ struct ServerWorkerMock : WorkerMock
 	}
 
 	SpatialGDK::FSubView& SubView;
+	SpatialGDK::FSubView& DummyRoutingWorkerSubView;
 };
 
 struct TestRoutingFixture
@@ -553,7 +554,8 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_WhiteBox_SendOneMessage)
 
 	SpatialGDK::FRPCStore RPCStore;
 	SpatialGDK::CrossServerRPCService RPCService(TestFixture.CanExtractDelegate, ExtractRPCDelegate::CreateLambda(ExtractRPCCallback),
-												 TestFixture.ServerWorker.SubView, RPCStore);
+												 TestFixture.ServerWorker.SubView, TestFixture.ServerWorker.DummyRoutingWorkerSubView,
+												 RPCStore);
 
 	RPCServiceBackptr = &RPCService;
 	RPCService.AdvanceView();
@@ -652,7 +654,8 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendSeveralMessagesToSeveralEnti
 
 	SpatialGDK::FRPCStore RPCStore;
 	SpatialGDK::CrossServerRPCService RPCService(TestFixture.CanExtractDelegate, ExtractRPCDelegate::CreateLambda(ExtractRPCCallback),
-												 TestFixture.ServerWorker.SubView, RPCStore);
+												 TestFixture.ServerWorker.SubView, TestFixture.ServerWorker.DummyRoutingWorkerSubView,
+												 RPCStore);
 	RPCServiceBackptr = &RPCService;
 	RPCService.AdvanceView();
 	RPCService.ProcessChanges();
@@ -728,7 +731,8 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendOneMessageBetweenDeletedEnti
 
 	SpatialGDK::FRPCStore RPCStore;
 	SpatialGDK::CrossServerRPCService RPCService(TestFixture.CanExtractDelegate, ExtractRPCDelegate::CreateLambda(ExtractRPCCallback),
-												 TestFixture.ServerWorker.SubView, RPCStore);
+												 TestFixture.ServerWorker.SubView, TestFixture.ServerWorker.DummyRoutingWorkerSubView,
+												 RPCStore);
 
 	RPCServiceBackptr = &RPCService;
 	RPCService.AdvanceView();
@@ -814,7 +818,8 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendMoreMessagesThanRingBufferCa
 
 	SpatialGDK::FRPCStore RPCStore;
 	SpatialGDK::CrossServerRPCService RPCService(TestFixture.CanExtractDelegate, ExtractRPCDelegate::CreateLambda(ExtractRPCCallback),
-												 TestFixture.ServerWorker.SubView, RPCStore);
+												 TestFixture.ServerWorker.SubView, TestFixture.ServerWorker.DummyRoutingWorkerSubView,
+												 RPCStore);
 
 	RPCServiceBackptr = &RPCService;
 

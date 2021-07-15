@@ -63,4 +63,7 @@ public:
 
 	EPropertyReplicationStage ReplicationStage;
 	int32 PropertyOffset;
+
+private:
+	void Action(int32& Source, int32 Expected, ELifetimeCondition Cond, bool bWrite, bool bCondIgnore[COND_Max], FString AdditionalText);
 };

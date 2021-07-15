@@ -10,8 +10,11 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 			   EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(CreateSpatialGDKSchemaFull, "Schema (Full Scan)", "Creates SpatialOS Unreal GDK schema for all assets.",
 			   EUserInterfaceActionType::Button, FInputGesture());
-	UI_COMMAND(DeleteSchemaDatabase, "Delete schema database", "Deletes the schema database file", EUserInterfaceActionType::Button,
+	UI_COMMAND(DeleteSchemaDatabase, "Delete Schema Database", "Deletes the schema database file", EUserInterfaceActionType::Button,
 			   FInputGesture());
+	UI_COMMAND(CleanGenerateSchema, "Clean and Generate Schema",
+			   "Deletes the schema database file and all generated schema files, and then runs Schema Full Scan",
+			   EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(CreateSpatialGDKSnapshot, "Snapshot", "Creates SpatialOS Unreal GDK snapshot.", EUserInterfaceActionType::Button,
 			   FInputGesture());
 	UI_COMMAND(StartNative, "Start Deployment", "Use native Unreal networking", EUserInterfaceActionType::Button, FInputGesture());

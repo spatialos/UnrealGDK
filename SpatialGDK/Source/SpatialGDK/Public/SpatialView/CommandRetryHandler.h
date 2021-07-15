@@ -1,7 +1,8 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
+#include "SpatialConstants.h"
 #include "SpatialView/OpList/OpList.h"
 #include "SpatialView/WorkerView.h"
 

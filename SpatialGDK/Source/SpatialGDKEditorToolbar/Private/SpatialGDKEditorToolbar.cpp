@@ -248,6 +248,10 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().DeleteSchemaDatabase,
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked));
 
+	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().CleanGenerateSchema,
+								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CleanSchemaGenerateButtonClicked),
+								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator));
+
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot,
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked),
 								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSnapshotGenerator));
@@ -403,6 +407,7 @@ TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuCont
 	{
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchemaFull);
 		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().DeleteSchemaDatabase);
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CleanGenerateSchema);
 	}
 	MenuBuilder.EndSection();
 
@@ -559,15 +564,49 @@ void FSpatialGDKEditorToolbarModule::DeleteSchemaDatabaseButtonClicked()
 							 LOCTEXT("DeleteSchemaDatabase_Prompt", "Are you sure you want to delete the schema database?"))
 		== EAppReturnType::Yes)
 	{
-		OnShowTaskStartNotification(TEXT("Deleting schema database"));
-		if (SpatialGDKEditor::Schema::DeleteSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
-		{
-			OnShowSuccessNotification(TEXT("Schema database deleted"));
-		}
-		else
-		{
-			OnShowFailedNotification(TEXT("Failed to delete schema database"));
-		}
+		DeleteSchemaDatabase();
+	}
+}
+
+bool FSpatialGDKEditorToolbarModule::DeleteSchemaDatabase()
+{
+	OnShowTaskStartNotification(TEXT("Deleting schema database"));
+	bool bResult = SpatialGDKEditor::Schema::DeleteSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH);
+
+	if (bResult)
+	{
+		OnShowSuccessNotification(TEXT("Schema database deleted"));
+	}
+	else
+	{
+		OnShowFailedNotification(TEXT("Failed to delete schema database"));
+	}
+
+	return bResult;
+}
+
+void FSpatialGDKEditorToolbarModule::CleanSchemaGenerateButtonClicked()
+{
+	if (FMessageDialog::Open(
+			EAppMsgType::YesNo,
+			LOCTEXT("DeleteSchemaDatabase_Prompt",
+					"Are you sure you want to delete the schema database, delete all generated schema, and regenerate schema?"))
+		== EAppReturnType::Yes)
+	{
+		CleanSchemaGenerate();
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::CleanSchemaGenerate()
+{
+	if (DeleteSchemaDatabase())
+	{
+		SpatialGDKEditor::Schema::ResetSchemaGeneratorStateAndCleanupFolders();
+		GenerateSchema(true);
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to delete Schema Database; schema will not be cleaned and regenerated."));
 	}
 }
 
@@ -579,6 +618,24 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 void FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked()
 {
 	GenerateSchema(true);
+}
+
+void FSpatialGDKEditorToolbarModule::HandleGenerateSchemaFailure()
+{
+	// Run the dialogue on a background task -- this allows the editor UI to update and display Schema Gen errors in the log
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
+		if (FMessageDialog::Open(EAppMsgType::YesNo,
+								 LOCTEXT("DeleteAndRegenerateSchemaDatabase_Prompt",
+										 "Schema generation failed. Common schema generation issues can be solved by deleting all schema "
+										 "and generating again. Would you like to clean and retry now?"))
+			== EAppReturnType::Yes)
+		{
+			// GameThread is required for building schema
+			AsyncTask(ENamedThreads::GameThread, [this] {
+				CleanSchemaGenerate();
+			});
+		}
+	});
 }
 
 void FSpatialGDKEditorToolbarModule::OnShowSingleFailureNotification(const FString& NotificationText)
@@ -915,7 +972,11 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 		}
 
 		FLocalDeploymentManager::LocalDeploymentCallback CallBack = [this](bool bSuccess) {
-			if (!bSuccess)
+			if (bSuccess)
+			{
+				StartInspectorProcess(/*OnReady*/ nullptr);
+			}
+			else
 			{
 				OnShowFailedNotification(TEXT("Local deployment failed to start"));
 			}
@@ -961,16 +1022,19 @@ void FSpatialGDKEditorToolbarModule::OpenInspectorURL()
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
+void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> OnReady)
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion] {
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion, OnReady] {
 		if (InspectorProcess && InspectorProcess->Update())
 		{
-			// We already have an inspector running. Just open the URL.
-			OpenInspectorURL();
+			// We already have an inspector process running. Call ready callback if any.
+			if (OnReady)
+			{
+				OnReady();
+			}
 			return;
 		}
 
@@ -1011,6 +1075,16 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 
 		InspectorProcess->Launch();
 
+		if (OnReady)
+		{
+			OnReady();
+		}
+	});
+}
+
+void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
+{
+	StartInspectorProcess([this]() {
 		OpenInspectorURL();
 	});
 }
@@ -1284,6 +1358,8 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 		else
 		{
 			OnShowFailedNotification(OnTaskFailMessage);
+
+			HandleGenerateSchemaFailure();
 		}
 	});
 	;

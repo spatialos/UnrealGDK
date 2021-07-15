@@ -31,26 +31,6 @@ using FObjectToRepStateMap = TMap<struct FUnrealObjectRef, TSet<FChannelObjectPa
 
 using AuthorityDelegationMap = TMap<Worker_ComponentSetId, Worker_PartitionId>;
 
-template <typename T>
-struct FTrackableWorkerType : public T
-{
-	FTrackableWorkerType() = default;
-
-	FTrackableWorkerType(const T& Update)
-		: T(Update)
-	{
-	}
-
-	FTrackableWorkerType(T&& Update)
-		: T(MoveTemp(Update))
-	{
-	}
-
-#if TRACE_LIB_ACTIVE
-	TraceKey Trace{ InvalidTraceKey };
-#endif
-};
-
 template <typename ElementType, bool bInAllowDuplicateKeys /*= false*/>
 struct TWeakObjectPtrKeyFuncs : DefaultKeyFuncs<ElementType, bInAllowDuplicateKeys>
 {
@@ -63,8 +43,8 @@ struct TWeakObjectPtrKeyFuncs : DefaultKeyFuncs<ElementType, bInAllowDuplicateKe
 };
 
 // TODO: These can be removed once event tracing is enabled UNR-3981
-using FWorkerComponentUpdate = FTrackableWorkerType<Worker_ComponentUpdate>;
-using FWorkerComponentData = FTrackableWorkerType<Worker_ComponentData>;
+using FWorkerComponentUpdate = Worker_ComponentUpdate;
+using FWorkerComponentData = Worker_ComponentData;
 
 /* A little helper to ensure no re-entrancy of modifications of data structures. */
 struct FUsageLock
