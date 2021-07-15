@@ -413,7 +413,7 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 		return;
 	}
 
-	if (USpatialStatics::IsSpatialOffloadingEnabled(GetWorld()) && !USpatialStatics::IsActorGroupOwnerForActor(Actor)
+	if (USpatialStatics::IsSpatialOffloadingEnabled(Actor->GetWorld()) && !USpatialStatics::IsActorGroupOwnerForActor(Actor)
 		&& !Actor->bNetLoadOnNonAuthServer)
 	{
 		Actor->Destroy(true);
@@ -422,7 +422,14 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 
 	if (!Actor->GetIsReplicated())
 	{
-		return;
+		if (USpatialStatics::IsSpatialOffloadingEnabled(Actor->GetWorld()) && !USpatialStatics::IsActorGroupOwnerForActor(Actor))
+		{
+			// We want to handle this non-replicated actor based on the load balancer, to support legacy offloading behavior.
+		}
+		else
+		{
+			return;
+		}
 	}
 
 	// Replicated level Actors should only be initially authority if:
