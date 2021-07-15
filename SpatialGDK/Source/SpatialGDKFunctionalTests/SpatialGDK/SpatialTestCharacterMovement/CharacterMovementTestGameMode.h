@@ -23,5 +23,5 @@ private:
 	int32 SpawnRequests = 0;
 
 	UPROPERTY()
-	TArray<const APlayerStart*> PlayerStarts;
+	TArray<APlayerStart*> PlayerStarts;
 };
