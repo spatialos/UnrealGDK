@@ -75,6 +75,7 @@ enum class EActorMigrationResult : uint8
 
 namespace SpatialGDK
 {
+class FSubView;
 class SpatialRoutingSystem;
 class SpatialDebuggerSystem;
 class ActorSystem;
@@ -139,6 +140,8 @@ public:
 
 	void OnConnectionToSpatialOSSucceeded();
 	void OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
+
+	void CreateAndInitializeCoreClassesAfterStartup();
 
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
@@ -234,6 +237,8 @@ public:
 	FSpatialNetDriverClientRPC* ClientRPCs = nullptr;
 	FSpatialNetDriverServerRPC* ServerRPCs = nullptr;
 
+	const SpatialGDK::FSubView* LBSubView = nullptr;
+
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
 	TUniquePtr<SpatialGDK::FSpatialStrategySystem> StrategySystem;
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
@@ -285,6 +290,15 @@ public:
 
 	FShutdownEvent OnShutdown;
 
+	uint32 ClientGetSessionId() const;
+
+	struct FPendingNetworkFailure
+	{
+		ENetworkFailure::Type FailureType;
+		FString Message;
+	};
+	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
+
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
@@ -307,13 +321,6 @@ private:
 	bool bWaitingToSpawn;
 	bool bIsReadyToStart;
 	bool bMapLoaded;
-
-	struct FPendingNetworkFailure
-	{
-		ENetworkFailure::Type FailureType;
-		FString Message;
-	};
-	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
 	FString SnapshotToLoad;
 
 	// Client variable which stores the SessionId given to us by the server in the URL options.
@@ -326,7 +333,6 @@ private:
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
-	void CreateAndInitializeCoreClassesAfterStartup();
 
 	void CreateAndInitializeLoadBalancingClasses();
 

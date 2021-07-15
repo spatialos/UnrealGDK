@@ -489,17 +489,15 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		// The interest factory depends on the package map, so is created last.
 		InterestFactory = MakeUnique<SpatialGDK::UnrealServerInterestFactory>(ClassInfoManager, PackageMap);
 
-		if (!IsServer())
+		if (IsServer())
 		{
-			return;
+			SpatialGDK::FSubView& WellKnownSubView =
+				Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID,
+														   SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+			WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, Connection, this,
+																				  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
+																				  *VirtualWorkerTranslator, *GlobalStateManager);
 		}
-
-		SpatialGDK::FSubView& WellKnownSubView =
-			Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
-													   SpatialGDK::FSubView::NoDispatcherCallbacks);
-		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, Connection, this,
-																			  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
-																			  *VirtualWorkerTranslator, *GlobalStateManager);
 	}
 }
 
@@ -512,6 +510,25 @@ void USpatialNetDriver::CreateAndInitializeCoreClassesAfterStartup()
 	FName WorkerType = GameInstance->GetSpatialWorkerType();
 	if (WorkerType == SpatialConstants::DefaultServerWorkerType || WorkerType == SpatialConstants::DefaultClientWorkerType)
 	{
+		if (IsServer() && !SpatialSettings->bRunStrategyWorker)
+		{
+			TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AuthorityUpdate)> AuthorityUpdateSender =
+				[this](SpatialGDK::EntityComponentUpdate AuthorityUpdate) {
+					// We pass the component update function of the view coordinator rather than the connection. This
+					// is so any updates are written to the local view before being sent. This does mean the connection send
+					// is not fully async right now, but could be if we replaced this with a "send and flush", which would
+					// be hard to do now due to short circuiting, but in the near future when LB runs on its own worker then
+					// we can make that optimisation.
+					Connection->GetCoordinator().SendComponentUpdate(AuthorityUpdate.EntityId, MoveTemp(AuthorityUpdate.Update), {});
+				};
+
+			if (ensure(LBSubView != nullptr))
+			{
+				LoadBalanceEnforcer = MakeUnique<SpatialGDK::SpatialLoadBalanceEnforcer>(
+					Connection->GetWorkerId(), *LBSubView, VirtualWorkerTranslator.Get(), MoveTemp(AuthorityUpdateSender));
+			}
+		}
+
 		if (SpatialSettings->bAsyncLoadNewClassesOnEntityCheckout)
 		{
 			AsyncPackageLoadFilter = NewObject<UAsyncPackageLoadFilter>();
@@ -580,6 +597,51 @@ void USpatialNetDriver::CreateAndInitializeCoreClassesAfterStartup()
 		}
 
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
+
+		if (IsServer())
+		{
+#if WITH_EDITORONLY_DATA
+			ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
+			if (WorldSettings && WorldSettings->bEnableDebugInterface)
+			{
+				const FFilterPredicate DebugCompFilter = [this](const Worker_EntityId EntityId,
+																const SpatialGDK::EntityViewElement& Element) {
+					return Element.Components.ContainsByPredicate(
+						SpatialGDK::ComponentIdEquality{ SpatialConstants::GDK_DEBUG_COMPONENT_ID });
+				};
+
+				const TArray<FDispatcherRefreshCallback> DebugCompRefresh = {
+					Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+				};
+
+				// Create the subview here rather than with the others as we only know if we need it or not at
+				// this point.
+				const SpatialGDK::FSubView& DebugActorSubView = SpatialGDK::ActorSubviews::CreateCustomActorSubView(
+					SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID, DebugCompFilter, DebugCompRefresh, *this);
+				USpatialNetDriverDebugContext::EnableDebugSpatialGDK(DebugActorSubView, this);
+			}
+#endif
+
+#if WITH_GAMEPLAY_DEBUGGER
+			if (!USpatialStatics::IsStrategyWorkerEnabled())
+			{
+				const FFilterPredicate GameplayDebuggerCompFilter = [this](const Worker_EntityId EntityId,
+																		   const SpatialGDK::EntityViewElement& Element) {
+					return Element.Components.ContainsByPredicate(
+						SpatialGDK::ComponentIdEquality{ SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID });
+				};
+
+				const TArray<FDispatcherRefreshCallback> GameplayDebuggerCompRefresh = {
+					Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+						SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID)
+				};
+
+				const SpatialGDK::FSubView& GameplayDebuggerActorSubView =
+					SpatialGDK::ActorSubviews::CreateCustomActorSubView({}, GameplayDebuggerCompFilter, GameplayDebuggerCompRefresh, *this);
+				USpatialNetDriverGameplayDebuggerContext::Enable(GameplayDebuggerActorSubView, *this);
+			}
+#endif // WITH_GAMEPLAY_DEBUGGER
+		}
 	}
 }
 
@@ -618,7 +680,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
-	const SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
+	LBSubView = &Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::LB_TAG_COMPONENT_ID,
 		[](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
 			return SpatialGDK::SkeletonEntityFunctions::IsCompleteSkeleton(Element);
@@ -626,27 +688,12 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		SpatialGDK::SkeletonEntityFunctions::GetSkeletonEntityRefreshCallbacks(Connection->GetCoordinator()));
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
-	if (!SpatialSettings->bRunStrategyWorker)
-	{
-		TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AuthorityUpdate)> AuthorityUpdateSender =
-			[this](SpatialGDK::EntityComponentUpdate AuthorityUpdate) {
-				// We pass the component update function of the view coordinator rather than the connection. This
-				// is so any updates are written to the local view before being sent. This does mean the connection send
-				// is not fully async right now, but could be if we replaced this with a "send and flush", which would
-				// be hard to do now due to short circuiting, but in the near future when LB runs on its own worker then
-				// we can make that optimisation.
-				Connection->GetCoordinator().SendComponentUpdate(AuthorityUpdate.EntityId, MoveTemp(AuthorityUpdate.Update), {});
-			};
-
-		LoadBalanceEnforcer = MakeUnique<SpatialGDK::SpatialLoadBalanceEnforcer>(
-			Connection->GetWorkerId(), LBSubView, VirtualWorkerTranslator.Get(), MoveTemp(AuthorityUpdateSender));
-	}
-	else
+	if (SpatialSettings->bRunStrategyWorker)
 	{
 		const SpatialGDK::FSubView& PartitionAuthSubView = Connection->GetCoordinator().CreateSubView(
 			SpatialConstants::PARTITION_AUTH_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-		HandoverManager = MakeUnique<SpatialGDK::FSpatialHandoverManager>(LBSubView, PartitionAuthSubView);
+		HandoverManager = MakeUnique<SpatialGDK::FSpatialHandoverManager>(*LBSubView, PartitionAuthSubView);
 	}
 
 	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
@@ -3382,48 +3429,6 @@ void USpatialNetDriver::TryFinishStartup()
 
 				CreateAndInitializeCoreClassesAfterStartup();
 
-#if WITH_EDITORONLY_DATA
-				ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
-				if (WorldSettings && WorldSettings->bEnableDebugInterface)
-				{
-					const FFilterPredicate DebugCompFilter = [this](const Worker_EntityId EntityId,
-																	const SpatialGDK::EntityViewElement& Element) {
-						return Element.Components.ContainsByPredicate(
-							SpatialGDK::ComponentIdEquality{ SpatialConstants::GDK_DEBUG_COMPONENT_ID });
-					};
-
-					const TArray<FDispatcherRefreshCallback> DebugCompRefresh = {
-						Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::GDK_DEBUG_COMPONENT_ID)
-					};
-
-					// Create the subview here rather than with the others as we only know if we need it or not at
-					// this point.
-					const SpatialGDK::FSubView& DebugActorSubView = SpatialGDK::ActorSubviews::CreateCustomActorSubView(
-						SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID, DebugCompFilter, DebugCompRefresh, *this);
-					USpatialNetDriverDebugContext::EnableDebugSpatialGDK(DebugActorSubView, this);
-				}
-#endif
-
-#if WITH_GAMEPLAY_DEBUGGER
-				if (!USpatialStatics::IsStrategyWorkerEnabled())
-				{
-					const FFilterPredicate GameplayDebuggerCompFilter = [this](const Worker_EntityId EntityId,
-																			   const SpatialGDK::EntityViewElement& Element) {
-						return Element.Components.ContainsByPredicate(
-							SpatialGDK::ComponentIdEquality{ SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID });
-					};
-
-					const TArray<FDispatcherRefreshCallback> GameplayDebuggerCompRefresh = {
-						Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
-							SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID)
-					};
-
-					const SpatialGDK::FSubView& GameplayDebuggerActorSubView = SpatialGDK::ActorSubviews::CreateCustomActorSubView(
-						{}, GameplayDebuggerCompFilter, GameplayDebuggerCompRefresh, *this);
-					USpatialNetDriverGameplayDebuggerContext::Enable(GameplayDebuggerActorSubView, *this);
-				}
-#endif // WITH_GAMEPLAY_DEBUGGER
-
 				// We've found and dispatched all ops we need for startup,
 				// trigger BeginPlay() on the GSM and process the queued ops.
 				// Note that FindAndDispatchStartupOps() will have notified the Dispatcher
@@ -3517,6 +3522,11 @@ int64 USpatialNetDriver::GetActorEntityId(const AActor& Actor) const
 	}
 
 	return PackageMap->GetEntityIdFromObject(&Actor);
+}
+
+uint32 USpatialNetDriver::ClientGetSessionId() const
+{
+	return SessionId;
 }
 
 bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
