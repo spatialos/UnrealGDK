@@ -80,14 +80,16 @@ class SpatialDebuggerSystem;
 class ActorSystem;
 class SpatialRPCService;
 class SpatialRoutingSystem;
+class FSpatialHandoverManager;
 class SpatialLoadBalanceEnforcer;
-class InterestFactory;
+class UnrealServerInterestFactory;
 class WellKnownEntitySystem;
 class ClientConnectionManager;
 class InitialOnlyFilter;
 class CrossServerRPCSender;
 class CrossServerRPCHandler;
-class SpatialStrategySystem;
+class FSpatialStrategySystem;
+class FSkeletonEntityCreationStartupStep;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -233,19 +235,19 @@ public:
 	FSpatialNetDriverServerRPC* ServerRPCs = nullptr;
 
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
-	TUniquePtr<SpatialGDK::SpatialStrategySystem> StrategySystem;
+	TUniquePtr<SpatialGDK::FSpatialStrategySystem> StrategySystem;
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
-	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
+	TUniquePtr<SpatialGDK::FSpatialHandoverManager> HandoverManager;
+	TUniquePtr<SpatialGDK::UnrealServerInterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
+
+	TUniquePtr<SpatialGDK::FSkeletonEntityCreationStartupStep> SkeletonEntityCreationStep;
 
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
 	TUniquePtr<SpatialGDK::InitialOnlyFilter> InitialOnlyFilter;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
-
-	// If this worker is authoritative over the translation, the manager will be instantiated.
-	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
 
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
@@ -291,7 +293,7 @@ private:
 	TUniquePtr<SpatialGDK::CrossServerRPCSender> CrossServerRPCSender;
 	TUniquePtr<SpatialGDK::CrossServerRPCHandler> CrossServerRPCHandler;
 
-	SpatialGDK::EntityQueryHandler QueryHandler;
+	SpatialGDK::FEntityQueryHandler QueryHandler;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;
@@ -324,6 +326,8 @@ private:
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
+	void CreateAndInitializeCoreClassesAfterStartup();
+
 	void CreateAndInitializeLoadBalancingClasses();
 
 	void CreateServerSpatialOSNetConnection();

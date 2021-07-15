@@ -9,6 +9,7 @@
 
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetBitReader.h"
+#include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
@@ -97,14 +98,9 @@ ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver,
 {
 }
 
-void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentData, UObject& Object, USpatialActorChannel& Channel,
-										 bool& bOutReferencesChanged)
-{
-	ApplyComponentData(ComponentData.component_id, ComponentData.schema_type, Object, Channel, bOutReferencesChanged);
-}
-
 void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object,
-										 USpatialActorChannel& Channel, bool& bOutReferencesChanged)
+										 USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut,
+										 bool& bOutReferencesChanged)
 {
 	if (Object.IsPendingKill())
 	{
@@ -118,11 +114,12 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 	// that component type (Data, OwnerOnly, Handover, etc.).
 	const TArray<Schema_FieldId>& InitialIds = ClassInfoManager->GetFieldIdsByComponentId(ComponentId);
 
-	ApplySchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentId, bOutReferencesChanged);
+	ApplySchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentId, ObjectRepNotifiesOut, bOutReferencesChanged);
 }
 
 void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& Object,
-										   USpatialActorChannel& Channel, bool& bOutReferencesChanged)
+										   USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut,
+										   bool& bOutReferencesChanged)
 {
 	if (Object.IsPendingKill())
 	{
@@ -146,13 +143,13 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId,
 
 	if (UpdatedIds.Num() > 0)
 	{
-		ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged);
+		ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, ObjectRepNotifiesOut, bOutReferencesChanged);
 	}
 }
 
 void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
 										const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId,
-										bool& bOutReferencesChanged)
+										FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged)
 {
 	FObjectReplicator* Replicator = Channel.PreReceiveSpatialUpdate(&Object);
 	if (Replicator == nullptr)
@@ -171,10 +168,38 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	bool bIsClient = NetDriver->GetNetMode() == NM_Client;
 	bool bEventTracerEnabled = EventTracer != nullptr;
 
-	FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient);
-
-	TArray<GDK_PROPERTY(Property)*> RepNotifies;
-	TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
+	// RemoteRole (which is swapped into the local Actor's Role property) and bRepPhysics are used to construct the condition map.
+	// We must check to see if these properties have just been received, before we construct the condition map for receiving everything
+	// else.
+	ENetRole ActorRole = Channel.Actor->Role;
+	bool bRepPhysics = Channel.Actor->GetReplicatedMovement().bRepPhysics;
+	if (EnumHasAnyFlags(Replicator->RepLayout->GetFlags(), ERepLayoutFlags::IsActor))
+	{
+		for (uint32 FieldId : UpdatedIds)
+		{
+			int32 CmdIndex = BaseHandleToCmdIndex[FieldId - 1].CmdIndex;
+			const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
+			if (UNLIKELY((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex))
+			{
+				ActorRole = (ENetRole)Schema_IndexUint32(ComponentObject, FieldId, 0);
+				// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
+				// the client RPCs component. A race condition can occur here, if we check out the actor
+				// before the channel is Authoritative of it. The race gets handled in
+				// ActorSystem::HandleActorAuthority where we check USpatialActorChannel::IsAutonomousProxyOnAuthority.
+				if (ActorRole == ROLE_AutonomousProxy && !bIsAuthServer && !bAutonomousProxy)
+				{
+					ActorRole = ROLE_SimulatedProxy;
+				}
+			}
+			else if (UNLIKELY((int32)AActor::ENetFields_Private::ReplicatedMovement == Cmd.ParentIndex))
+			{
+				// Pull out bRepPhysics, based on FRepMovement::NetSerialize
+				TArray<uint8> ValueData = IndexBytesFromSchema(ComponentObject, FieldId, 0);
+				bRepPhysics = ValueData[0] & (1 << 1) ? true : false;
+			}
+		}
+	}
+	FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient, ActorRole, bRepPhysics);
 
 	{
 		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
@@ -310,6 +335,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
 					// the client RPCs component.
 					GDK_PROPERTY(ByteProperty)* ByteProperty = GDK_CASTFIELD<GDK_PROPERTY(ByteProperty)>(Cmd.Property);
+					Channel.SetAutonomousProxyOnAuthority(ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy);
 					if (!bIsAuthServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
 					{
 						ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
@@ -339,7 +365,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 					if (bEventTracerEnabled)
 					{
-						PropertySpanIds.Add(Parent.Property, SpanId);
+						ObjectRepNotifiesOut.PropertySpanIds.Add(Parent.Property, SpanId);
 					}
 
 					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
@@ -347,14 +373,14 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					{
 						if (!bIsIdentical)
 						{
-							RepNotifies.AddUnique(Parent.Property);
+							ObjectRepNotifiesOut.RepNotifies.AddUnique(Parent.Property);
 						}
 					}
 					else
 					{
 						if (Parent.RepNotifyCondition == REPNOTIFY_Always || !bIsIdentical)
 						{
-							RepNotifies.AddUnique(Parent.Property);
+							ObjectRepNotifiesOut.RepNotifies.AddUnique(Parent.Property);
 						}
 					}
 				}
@@ -362,9 +388,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 		}
 	}
 
-	Channel.RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator->RepLayout, RootObjectReferencesMap, &Object);
-
-	Channel.PostReceiveSpatialUpdate(&Object, RepNotifies, PropertySpanIds);
+	// PostReceiveSpatialUpdate is called later when sending RepNotifies in ActorSystem
+	Object.PostNetReceive();
 }
 
 void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap,

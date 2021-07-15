@@ -301,6 +301,21 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 	bool bPreventClientCloudDeploymentAutoConnect;
 
+	/*
+	 * -- EXPERIMENTAL --
+	 * This will enable event tracing for the Unreal client/worker.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
+	bool bEventTracingEnabled;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * Same as bEventTracingEnabled, but used if WITH_EDITOR is defined.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
+	bool bEventTracingEnabledWithEditor;
+
+	friend class AEventTracingSettingsOverride;
 public:
 	bool GetPreventClientCloudDeploymentAutoConnect() const;
 
@@ -337,6 +352,8 @@ public:
 	void SetMultiWorkerEditorEnabled(const bool bIsEnabled);
 	FORCEINLINE bool IsMultiWorkerEditorEnabled() const { return bEnableMultiWorker; }
 #endif // WITH_EDITOR
+
+	bool GetEventTracingEnabled() const;
 
 private:
 #if WITH_EDITOR
@@ -480,16 +497,10 @@ public:
 
 	/*
 	 * -- EXPERIMENTAL --
-	 * This will enable event tracing for the Unreal client/worker.
-	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
-	bool bEventTracingEnabled;
-
-	/*
-	 * -- EXPERIMENTAL --
 	 * Class containing various settings used to configure event trace sampling
 	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing", meta = (EditCondition = "bEventTracingEnabled"))
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing",
+			  meta = (EditCondition = "bEventTracingEnabled || bEventTracingEnabledWithEditor"))
 	TSubclassOf<UEventTracingSamplingSettings> EventTracingSamplingSettingsClass;
 
 	UEventTracingSamplingSettings* GetEventTracingSamplingSettings() const;
@@ -541,4 +552,10 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication")
 	bool bEnableStrategyLoadBalancingComponents;
+
+	/**	-- EXPERIMENTAL --
+		Enables skeleton entities. If enabled, skeleton entities for level actors would be created during startup.
+	*/
+	UPROPERTY(EditAnywhere, Config, Category = "Startup")
+	bool bEnableSkeletonEntityCreation;
 };

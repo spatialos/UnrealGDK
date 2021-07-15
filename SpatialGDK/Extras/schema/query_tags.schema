@@ -26,3 +26,19 @@ component GDKKnownEntityTag {
 component RoutingWorkerEntityTag {
     id = 2009;
 }
+
+component PartitionAuthTag {
+    id = 2012;
+}
+
+component SkeletonEntityQueryTag {
+    id = 2013;
+}
+
+component SkeletonEntityPopulationAuthTag {
+    id = 2014;
+}
+
+component SkeletonEntityPopulationFinishedTag {
+    id = 2015;
+}

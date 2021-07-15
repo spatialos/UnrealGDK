@@ -6,6 +6,7 @@ import "unreal/gdk/spawner.schema";
 import "unreal/gdk/global_state_manager.schema";
 import "unreal/gdk/virtual_worker_translation.schema";
 import "unreal/gdk/server_worker.schema";
+import "unreal/gdk/authority_intent.schema";
 
 component_set KnownEntityAuthComponentSet {
   id = 9905;
@@ -17,6 +18,6 @@ component_set KnownEntityAuthComponentSet {
 	unreal.DeploymentMap,
 	unreal.StartupActorManager,
 	unreal.GSMShutdown,	 
-	unreal.VirtualWorkerTranslation
+	unreal.VirtualWorkerTranslation,
   ];
 }

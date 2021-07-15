@@ -106,6 +106,7 @@ public:
 
 	// # FlowController related APIs.
 
+	void SetLocalFlowController(ASpatialFunctionalTestFlowController* FlowController);
 	void RegisterFlowController(ASpatialFunctionalTestFlowController* FlowController);
 	void DeregisterFlowController(ASpatialFunctionalTestFlowController* FlowController);
 
@@ -186,11 +187,11 @@ public:
 
 	// Convenience function that goes over all FlowControllers and counts how many are Servers.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
-	int GetNumberOfServerWorkers();
+	int32 GetNumberOfServerWorkers() const;
 
 	// Convenience function that goes over all FlowControllers and counts how many are Clients.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
-	int GetNumberOfClientWorkers();
+	int32 GetNumberOfClientWorkers() const;
 
 	// Convenience function that returns the Id used for executing steps on all Servers / Clients.
 	// clang-format off

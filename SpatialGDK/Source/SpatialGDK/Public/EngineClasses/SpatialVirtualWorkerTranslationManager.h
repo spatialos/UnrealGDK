@@ -3,9 +3,7 @@
 #pragma once
 
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/ClaimPartitionHandler.h"
-#include "Interop/CreateEntityHandler.h"
-#include "Interop/EntityQueryHandler.h"
+#include "Interop/SpatialCommandsHandler.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
@@ -43,7 +41,8 @@ public:
 		Worker_EntityId SimulatingWorkerSystemEntityId;
 	};
 
-	SpatialVirtualWorkerTranslationManager(SpatialOSWorkerInterface* InConnection, SpatialVirtualWorkerTranslator* InTranslator);
+	SpatialVirtualWorkerTranslationManager(SpatialOSWorkerInterface* InConnection, USpatialNetDriver* NetDriver,
+										   SpatialVirtualWorkerTranslator* InTranslator);
 
 	void SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers);
 
@@ -58,19 +57,22 @@ public:
 
 	SpatialVirtualWorkerTranslator* Translator;
 
+	using FVirtualToPhysicalWorkerMapping = TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation>;
+
+	const FVirtualToPhysicalWorkerMapping& GetVirtualWorkerMapping() const;
+
 private:
 	SpatialOSWorkerInterface* Connection;
+	USpatialNetDriver* NetDriver;
 
 	TArray<VirtualWorkerId> VirtualWorkersToAssign;
 	TArray<PartitionInfo> Partitions;
-	TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation> VirtualToPhysicalWorkerMapping;
+	FVirtualToPhysicalWorkerMapping VirtualToPhysicalWorkerMapping;
 	uint32 NumVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;
 
-	SpatialGDK::CreateEntityHandler CreateEntityHandler;
-	SpatialGDK::ClaimPartitionHandler ClaimPartitionHandler;
-	SpatialGDK::EntityQueryHandler QueryHandler;
+	SpatialGDK::FCommandsHandler CommandsHandler;
 
 	// Serialization and deserialization of the mapping.
 	void WriteMappingToSchema(Schema_Object* Object) const;

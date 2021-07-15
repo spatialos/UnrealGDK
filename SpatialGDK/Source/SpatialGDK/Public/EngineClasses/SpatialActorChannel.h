@@ -215,6 +215,10 @@ public:
 
 	inline bool IsAuthoritativeServer() const { return bIsAuthServer; }
 
+	bool IsAutonomousProxyOnAuthority() const { return bIsAutonomousProxyOnAuthority; }
+
+	void SetAutonomousProxyOnAuthority(bool bAutonomousProxy) { bIsAutonomousProxyOnAuthority = bAutonomousProxy; }
+
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)
 	{
 		check(ObjectHasReplicator(Object));
@@ -250,10 +254,13 @@ public:
 								  const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
-											 const FObjectReferencesMap& RefMap, UObject* Object);
+											 const FObjectReferencesMap& RefMap, const UObject* Object) const;
 
+	Worker_ComponentId GetInterestComponentId() const;
+	void OnHandoverAuthorityGained();
 	void UpdateShadowData();
 	void UpdateSpatialPosition();
+	void ForcePositionReplication() { TimeWhenPositionLastUpdated = 0; }
 
 	void ServerProcessOwnershipChange();
 	void ClientProcessOwnershipChange(bool bNewNetOwned);
@@ -271,6 +278,8 @@ public:
 
 	bool NeedOwnerInterestUpdate() const { return bNeedOwnerInterestUpdate; }
 
+	const FVector& GetLastUpdatedSpatialPosition() const { return LastPositionSinceUpdate; }
+
 protected:
 	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
@@ -285,7 +294,7 @@ private:
 
 	void UpdateVisibleComponent(AActor* Actor);
 
-	bool SatisfiesSpatialPositionUpdateRequirements();
+	bool SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition);
 
 	void ValidateChannelNotBroken();
 
@@ -347,4 +356,7 @@ private:
 	// In case the actor's owner did not have an entity ID when trying to set interest to it
 	// We set this flag in order to try to add interest as soon as possible.
 	bool bNeedOwnerInterestUpdate;
+
+	// Track whether an Actor should have its Role upgrade to AutonomousProxy when it gains authority
+	uint8 bIsAutonomousProxyOnAuthority : 1;
 };

@@ -225,6 +225,15 @@ public:
 };
 
 UCLASS()
+class UTestReplicationConditionsPrimitiveComponent : public UPrimitiveComponent
+{
+	GENERATED_BODY()
+
+public:
+	virtual bool IsSimulatingPhysics(FName BoneName = NAME_None) const override;
+};
+
+UCLASS()
 class UTestReplicationConditionsComponent_Physics : public UTestReplicationConditionsComponentBase
 {
 	GENERATED_BODY()

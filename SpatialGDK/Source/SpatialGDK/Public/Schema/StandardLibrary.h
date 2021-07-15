@@ -75,7 +75,7 @@ inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId
 
 struct Metadata : AbstractMutableComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::METADATA_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::METADATA_COMPONENT_ID;
 
 	Metadata() = default;
 
@@ -108,7 +108,7 @@ struct Metadata : AbstractMutableComponent
 
 struct Position : AbstractMutableComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::POSITION_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::POSITION_COMPONENT_ID;
 
 	Position() = default;
 
@@ -162,7 +162,7 @@ struct Position : AbstractMutableComponent
 
 struct Persistence : AbstractMutableComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::PERSISTENCE_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::PERSISTENCE_COMPONENT_ID;
 
 	Persistence() = default;
 	Persistence(const Worker_ComponentData& Data) {}
@@ -204,17 +204,26 @@ struct Connection
 
 struct Worker : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::WORKER_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::WORKER_COMPONENT_ID;
 
 	Worker() = default;
 	Worker(const Worker_ComponentData& Data)
+		: Worker(Data.schema_type)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	}
+
+	Worker(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 		WorkerId = GetStringFromSchema(ComponentObject, 1);
 		WorkerType = GetStringFromSchema(ComponentObject, 2);
 		Connection.ReadConnectionData(Schema_GetObject(ComponentObject, 3));
 	}
+
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) {}
+
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update) {}
 
 	FString WorkerId;
 	FString WorkerType;
@@ -236,7 +245,7 @@ struct Worker : Component
 
 struct AuthorityDelegation : AbstractMutableComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
 
 	AuthorityDelegation() = default;
 

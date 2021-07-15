@@ -13,6 +13,31 @@
 #include "AbstractLBStrategy.generated.h"
 
 /**
+ * Simple descriptor of the most commonly used load balancing class
+ * This is directly interpreted by LegacyLoadBalancingStrategy but is not intended
+ * as more than a mock for working and refining the centralized load balancing strategy.
+ * It does away with the compositional pattern of abstract strategies, which should disappear
+ * in favor of a fully user-specified one (still have to work out which tools we make available to help).
+ */
+struct FLegacyLBContext
+{
+	struct Cell
+	{
+		VirtualWorkerId WorkerId;
+		FBox2D Region;
+		float Border;
+	};
+
+	struct Layer
+	{
+		FName Name;
+		TArray<Cell> Cells;
+	};
+
+	TArray<Layer> Layers;
+};
+
+/**
  * This class can be used to define a load balancing strategy.
  * At runtime, all unreal workers will:
  * 1. Instantiate an instance of the strategy class specified in TODO: where are we adding this?
@@ -80,6 +105,13 @@ public:
 	// Currently, this is just the default strategy.
 	virtual UAbstractLBStrategy* GetLBStrategyForVisualRendering() const
 		PURE_VIRTUAL(UAbstractLBStrategy::GetLBStrategyForVisualRendering, return nullptr;);
+
+	virtual bool IsStrategyWorkerAware() const { return false; }
+	virtual void GetLegacyLBInformation(FLegacyLBContext& Ctx) const {}
+	virtual TArray<SpatialGDK::ComponentData> CreateStaticLoadBalancingData(const AActor& Actor) const
+	{
+		return TArray<SpatialGDK::ComponentData>();
+	}
 
 protected:
 	VirtualWorkerId LocalVirtualWorkerId;

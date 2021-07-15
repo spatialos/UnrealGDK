@@ -2,7 +2,6 @@
 
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialConstants.h"
@@ -10,10 +9,9 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 
-SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy, USpatialNetDriver* InNetDriver,
+SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy,
 															   PhysicalWorkerName InLocalPhysicalWorkerName)
-	: NetDriver(InNetDriver)
-	, LoadBalanceStrategy(InLoadBalanceStrategy)
+	: LoadBalanceStrategy(InLoadBalanceStrategy)
 	, bIsReady(false)
 	, LocalPhysicalWorkerName(InLocalPhysicalWorkerName)
 	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
@@ -69,7 +67,7 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 				   Entry.Key, *(Entry.Value.WorkerName), Entry.Value.ServerWorkerEntityId);
 		}
 	}
-#endif //!NO_LOGGING
+#endif //! NO_LOGGING
 }
 
 // The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID.

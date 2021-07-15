@@ -52,7 +52,7 @@ EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapC
 {
 }
 
-FUnrealObjectRef GetStablyNamedObjectRef(UObject* Object)
+FUnrealObjectRef GetStablyNamedObjectRef(const UObject* Object)
 {
 	if (Object == nullptr)
 	{
@@ -66,7 +66,7 @@ FUnrealObjectRef GetStablyNamedObjectRef(UObject* Object)
 	return FUnrealObjectRef(0, 0, TempPath, GetStablyNamedObjectRef(Object->GetOuter()), true);
 }
 
-TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
+TArray<FWorkerComponentData> EntityFactory::CreateMinimalEntityComponents(AActor* Actor)
 {
 	UClass* Class = Actor->GetClass();
 
@@ -80,27 +80,14 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 		ComponentDatas.Add(Persistence().CreateComponentData());
 	}
 
-	// We want to have a stably named ref if this is an Actor placed in the world.
-	// We use this to indicate if a new Actor should be created, or to link a pre-existing Actor when receiving an AddEntityOp.
-	// We presume that all actors not in game worlds are in editor worlds, therefore the actors are stably named.
-	// Previously, IsFullNameStableForNetworking was used but this was only true if bNetLoadOnClient=true.
-	// Actors with bNetLoadOnClient=false also need a StablyNamedObjectRef for linking in the case of loading from a snapshot or the server
-	// crashes and restarts.
-	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
-	TSchemaOption<bool> bNetStartup;
-	if ((Actor->GetWorld() != nullptr && !Actor->GetWorld()->IsGameWorld()) || Actor->HasAnyFlags(RF_WasLoaded)
-		|| Actor->IsNetStartupActor())
-	{
-		StablyNamedObjectRef = GetStablyNamedObjectRef(Actor);
-		bNetStartup = Actor->IsNetStartupActor();
-	}
-	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateComponentData());
+	ComponentDatas.Add(CreateMetadata(*Actor).CreateComponentData());
 
 	// Add Actor completeness tags.
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID));
 
@@ -114,8 +101,30 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 	return ComponentDatas;
 }
 
+UnrealMetadata EntityFactory::CreateMetadata(const AActor& InActor)
+{
+	UClass* Class = InActor.GetClass();
+
+	// We want to have a stably named ref if this is an Actor placed in the world.
+	// We use this to indicate if a new Actor should be created, or to link a pre-existing Actor when receiving an AddEntityOp.
+	// We presume that all actors not in game worlds are in editor worlds, therefore the actors are stably named.
+	// Previously, IsFullNameStableForNetworking was used but this was only true if bNetLoadOnClient=true.
+	// Actors with bNetLoadOnClient=false also need a StablyNamedObjectRef for linking in the case of loading from a snapshot or the server
+	// crashes and restarts.
+	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
+	TSchemaOption<bool> bNetStartup;
+	if ((InActor.GetWorld() != nullptr && !InActor.GetWorld()->IsGameWorld()) || InActor.HasAnyFlags(RF_WasLoaded)
+		|| InActor.IsNetStartupActor())
+	{
+		StablyNamedObjectRef = GetStablyNamedObjectRef(&InActor);
+		bNetStartup = InActor.IsNetStartupActor();
+	}
+	return UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup);
+}
+
 void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDatas, AActor* Actor)
 {
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 	const Worker_PartitionId AuthoritativeServerPartitionId = NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId();
@@ -130,6 +139,15 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
+	if (!SpatialSettings->bRunStrategyWorker)
+	{
+		DelegationMap.Add(SpatialConstants::LB_DELEGATION_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
+	}
+	else
+	{
+		DelegationMap.Add(SpatialConstants::LB_DELEGATION_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
+		DelegationMap.Add(SpatialConstants::STRATEGY_WORKER_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
+	}
 	DelegationMap.Add(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, AuthoritativeClientPartitionId);
 	DelegationMap.Add(SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_ROUTING_PARTITION_ENTITY_ID);
 
@@ -157,7 +175,27 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 
 	// Add actual load balancing components
 	ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId).CreateComponentData());
-	ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
+	if (SpatialSettings->bRunStrategyWorker)
+	{
+		ComponentDatas.Add(AuthorityIntentV2(AuthoritativeServerPartitionId).CreateComponentData());
+		ComponentDatas.Add(AuthorityIntentACK().CreateComponentData());
+		if (NetDriver->LoadBalanceStrategy->IsStrategyWorkerAware())
+		{
+			TArray<SpatialGDK::ComponentData> DecoratorData = NetDriver->LoadBalanceStrategy->CreateStaticLoadBalancingData(*Actor);
+			for (auto& Component : DecoratorData)
+			{
+				FWorkerComponentData DecoratorComponent;
+				DecoratorComponent.component_id = Component.GetComponentId();
+				DecoratorComponent.schema_type = MoveTemp(Component).Release();
+				ComponentDatas.Add(DecoratorComponent);
+			}
+		}
+	}
+	if (!(SpatialSettings->bRunStrategyWorker && NetDriver->LoadBalanceStrategy->IsStrategyWorkerAware()))
+	{
+		ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
+	}
+
 	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
 	if (GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents)
@@ -177,18 +215,16 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	}
 }
 
-void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel,
-										  uint32& OutBytesWritten)
+void EntityFactory::WriteRPCComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel& Channel)
 {
-	AActor* Actor = Channel->Actor;
-	UClass* Class = Actor->GetClass();
-	Worker_EntityId EntityId = Channel->GetEntityId();
+	checkf(RPCService != nullptr, TEXT("Attempting to create an entity with a null RPCService."));
+	ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(Channel.GetEntityId()));
+	ComponentDatas.Append(NetDriver->RPCs->GetRPCComponentsOnEntityCreation(Channel.GetEntityId()));
+}
 
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
-
-	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
-	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
-
+void EntityFactory::CheckStablyNamedActorPath(const TArray<FWorkerComponentData>& ComponentDatas, const AActor* Actor,
+											  Worker_EntityId EntityId) const
+{
 	// Leaving this code block here to guarantee the resolution of outers of stably named actors
 	if (Actor->HasAnyFlags(RF_WasLoaded) || Actor->bNetStartup)
 	{
@@ -204,7 +240,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 		// This block of code is just for checking purposes and should be removed in the future
 		// TODO: UNR-4783
 #if !UE_BUILD_SHIPPING
-		FWorkerComponentData* UnrealMetadataPtr = ComponentDatas.FindByPredicate([](const FWorkerComponentData& Data) {
+		const FWorkerComponentData* UnrealMetadataPtr = ComponentDatas.FindByPredicate([](const FWorkerComponentData& Data) {
 			return Data.component_id == SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 		});
 		checkf(UnrealMetadataPtr,
@@ -234,17 +270,25 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 		}
 #endif
 	}
+}
+
+void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel,
+										  uint32& OutBytesWritten)
+{
+	AActor* Actor = Channel->Actor;
+	UClass* Class = Actor->GetClass();
+	Worker_EntityId EntityId = Channel->GetEntityId();
+
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
+
+	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID));
 
-	if (ShouldActorHaveVisibleComponent(Actor))
+	if (Channel->GetInterestComponentId() != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID));
-	}
-
-	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
-	{
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(Channel->GetInterestComponentId()));
 	}
 
 	if (Actor->NetDormancy >= DORM_DormantAll)
@@ -272,8 +316,6 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 											 ActorOwnership::CreateFromActor(*Actor, *PackageMap).CreateComponentData().Release(),
 											 nullptr });
 
-	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
-
 	Channel->SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor));
 
 	if (SpatialSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
@@ -284,10 +326,6 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID));
 	}
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
-
-	checkf(RPCService != nullptr, TEXT("Attempting to create an entity with a null RPCService."));
-	ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
-	ComponentDatas.Append(NetDriver->RPCs->GetRPCComponentsOnEntityCreation(EntityId));
 
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
@@ -330,9 +368,20 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
-	TArray<FWorkerComponentData> ComponentDatas = CreateSkeletonEntityComponents(Channel->Actor);
+	TArray<FWorkerComponentData> ComponentDatas = CreateMinimalEntityComponents(Channel->Actor);
 	WriteUnrealComponents(ComponentDatas, Channel, OutBytesWritten);
+	WriteRPCComponents(ComponentDatas, *Channel);
 	WriteLBComponents(ComponentDatas, Channel->Actor);
+	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(
+		Channel->Actor, NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass()), Channel->GetEntityId()));
+
+	if (ShouldActorHaveVisibleComponent(Channel->Actor))
+	{
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID));
+	}
+
+	CheckStablyNamedActorPath(ComponentDatas, Channel->Actor, Channel->GetEntityId());
+
 	// This block of code is just for checking purposes and should be removed in the future
 	// TODO: UNR-4783
 #if !UE_BUILD_SHIPPING
@@ -352,6 +401,37 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	}
 #endif // !UE_BUILD_SHIPPING
 	return ComponentDatas;
+}
+
+TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
+{
+	TArray<FWorkerComponentData> ComponentDatas = CreateMinimalEntityComponents(Actor);
+
+	// LB components also contain authority delegation, giving this worker ServerAuth.
+	WriteLBComponents(ComponentDatas, Actor);
+
+	// Empty RPC components.
+	Algo::Transform(SpatialRPCService::GetRPCComponents(), ComponentDatas, &ComponentFactory::CreateEmptyComponentData);
+	Algo::Transform(FSpatialNetDriverRPC::GetRPCComponentIds(), ComponentDatas, &ComponentFactory::CreateEmptyComponentData);
+
+	// Skeleton entity markers.
+	ComponentDatas.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID));
+	ComponentDatas.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID));
+
+	ComponentDatas.Add(NetDriver->InterestFactory->CreateSkeletonEntityInterest().CreateComponentData());
+
+	return ComponentDatas;
+}
+
+void EntityFactory::CreatePopulateSkeletonComponents(USpatialActorChannel& Channel, TArray<FWorkerComponentData>& OutComponentCreates,
+													 TArray<FWorkerComponentUpdate>& OutComponentUpdates, uint32& OutBytesWritten)
+{
+	const ComponentData* StartupActorMetadataComponent =
+		NetDriver->Connection->GetCoordinator().GetComponent(Channel.GetEntityId(), UnrealMetadata::ComponentId);
+	// HACK: WriteUnrealComponents needs to see
+	WriteUnrealComponents(OutComponentCreates, &Channel, OutBytesWritten);
+	OutComponentUpdates = { NetDriver->InterestFactory->CreateInterestUpdate(
+		Channel.Actor, NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Channel.Actor->GetClass()), Channel.GetEntityId()) };
 }
 
 TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AActor* Actor) const
@@ -413,19 +493,32 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	return Components;
 }
 
-TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const Worker_EntityId EntityId,
+TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const FString& PartitionName, const Worker_EntityId EntityId,
 																			const InterestFactory* InterestFactory,
-																			const UAbstractLBStrategy* LbStrategy,
+																			const SpatialGDK::QueryConstraint& LoadBalancingConstraint,
 																			VirtualWorkerId VirtualWorker, bool bDebugContextValid)
 {
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+
 	AuthorityDelegationMap DelegationMap;
-	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, EntityId);
+	if (SpatialSettings->bRunStrategyWorker)
+	{
+		DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
+		DelegationMap.Add(SpatialConstants::PARTITION_WORKER_AUTH_COMPONENT_SET_ID, EntityId);
+	}
+	else
+	{
+		DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, EntityId);
+	}
 
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreateComponentData());
 	Components.Add(Persistence().CreateComponentData());
-	Components.Add(Metadata(FString::Format(TEXT("PartitionEntity:{0}"), { VirtualWorker })).CreateComponentData());
-	Components.Add(InterestFactory->CreatePartitionInterest(LbStrategy, VirtualWorker, bDebugContextValid).CreateComponentData());
+	Components.Add(Metadata(FString::Format(TEXT("{0}:{1}"), { *PartitionName, VirtualWorker })).CreateComponentData());
+	if (InterestFactory != nullptr)
+	{
+		Components.Add(InterestFactory->CreatePartitionInterest(LoadBalancingConstraint, bDebugContextValid).CreateComponentData());
+	}
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_SHADOW_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));

@@ -92,6 +92,7 @@ const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
 const Worker_ComponentId PLAYER_CONTROLLER_COMPONENT_ID = 9991;
 const Worker_ComponentId SNAPSHOT_VERSION_COMPONENT_ID = 9990;
+const Worker_ComponentId SKELETON_ENTITY_MANIFEST_COMPONENT_ID = 9989;
 
 const Worker_ComponentSetId SERVER_AUTH_COMPONENT_SET_ID = 9900;
 const Worker_ComponentSetId CLIENT_AUTH_COMPONENT_SET_ID = 9901;
@@ -102,6 +103,11 @@ const Worker_ComponentSetId GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID = 9905;
 const Worker_ComponentSetId ROUTING_WORKER_AUTH_COMPONENT_SET_ID = 9906;
 const Worker_ComponentSetId INITIAL_ONLY_COMPONENT_SET_ID = 9907;
 const Worker_ComponentSetId SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID = 9908;
+const Worker_ComponentSetId STRATEGY_WORKER_AUTH_COMPONENT_SET_ID = 9909;
+const Worker_ComponentSetId LB_DELEGATION_AUTH_COMPONENT_SET_ID = 9910;
+const Worker_ComponentSetId PARTITION_WORKER_AUTH_COMPONENT_SET_ID = 9911;
+const Worker_ComponentSetId PARTITION_METADATA_AUTH_COMPONENT_SET_ID = 9912;
+const Worker_ComponentSetId SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID = 9913;
 
 extern const FString SERVER_AUTH_COMPONENT_SET_NAME;
 extern const FString CLIENT_AUTH_COMPONENT_SET_NAME;
@@ -141,6 +147,9 @@ const Worker_ComponentId ACTOR_SET_MEMBER_COMPONENT_ID = 9965;
 const Worker_ComponentId ACTOR_GROUP_MEMBER_COMPONENT_ID = 9964;
 
 const Worker_ComponentId ACTOR_OWNERSHIP_COMPONENT_ID = 9959;
+const Worker_ComponentId AUTHORITY_INTENTV2_COMPONENT_ID = 9958;
+const Worker_ComponentId AUTHORITY_INTENT_ACK_COMPONENT_ID = 9957;
+const Worker_ComponentId PARTITION_ACK_COMPONENT_ID = 9956;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
@@ -155,8 +164,12 @@ const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
 const Worker_ComponentId ROUTINGWORKER_TAG_COMPONENT_ID = 2009;
 const Worker_ComponentId STRATEGYWORKER_TAG_COMPONENT_ID = 2010;
 const Worker_ComponentId GDK_DEBUG_TAG_COMPONENT_ID = 2011;
+const Worker_ComponentId PARTITION_AUTH_TAG_COMPONENT_ID = 2012;
+const Worker_ComponentId SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID = 2013;
+const Worker_ComponentId SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID = 2014;
+const Worker_ComponentId SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID = 2015;
 // Add component ids above here, this should always be last and be equal to the previous component id
-const Worker_ComponentId LAST_EC_COMPONENT_ID = 2011;
+const Worker_ComponentId LAST_EC_COMPONENT_ID = 2015;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
@@ -164,6 +177,9 @@ const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID = 3;
 const Schema_FieldId DEPLOYMENT_MAP_SCHEMA_HASH = 4;
 
 const Schema_FieldId SNAPSHOT_VERSION_NUMBER_ID = 1;
+
+const Schema_FieldId SKELETON_ENTITY_MANIFEST_ENTITIES_TO_POPULATE_ID = 1;
+const Schema_FieldId SKELETON_ENTITY_MANIFEST_POPULATED_SKELETON_ENTITIES_ID = 2;
 
 const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID = 1;
 
@@ -215,6 +231,13 @@ const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
 
 // AuthorityIntent codes and Field IDs.
 const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID = 1;
+
+// AuthorityIntentV2 codes and Field IDs.
+const Schema_FieldId AUTHORITY_INTENTV2_PARTITION_ID = 1;
+const Schema_FieldId AUTHORITY_INTENTV2_ASSIGNMENT_COUNTER = 2;
+
+// AuthorityIntentACK codes and Field IDs.
+const Schema_FieldId AUTHORITY_INTENT_ACK_ASSIGNMENT_COUNTER = 1;
 
 // VirtualWorkerTranslation Field IDs.
 const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID = 1;
@@ -396,6 +419,8 @@ extern const TArray<FString> ClientAuthorityWellKnownSchemaImports;
 extern const TMap<Worker_ComponentId, FString> ClientAuthorityWellKnownComponents;
 extern const TMap<Worker_ComponentId, FString> RoutingWorkerComponents;
 extern const TArray<FString> RoutingWorkerSchemaImports;
+extern const TMap<Worker_ComponentId, FString> StrategyWorkerComponents;
+extern const TArray<FString> StrategyWorkerSchemaImports;
 extern const TArray<Worker_ComponentId> KnownEntityAuthorityComponents;
 
 //
@@ -416,7 +441,7 @@ extern const TArray<Worker_ComponentId> KnownEntityAuthorityComponents;
 //
 
 constexpr uint32 SPATIAL_SNAPSHOT_SCHEMA_HASH = 679237978;
-constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 3;
+constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 4;
 constexpr uint64 SPATIAL_SNAPSHOT_VERSION = ((((uint64)SPATIAL_SNAPSHOT_SCHEMA_HASH) << 32) | SPATIAL_SNAPSHOT_VERSION_INC);
 
 } // namespace SpatialConstants

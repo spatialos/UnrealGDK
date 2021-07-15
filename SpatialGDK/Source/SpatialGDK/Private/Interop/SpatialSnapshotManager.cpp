@@ -50,8 +50,8 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 	check(Connection.IsValid());
 	const Worker_RequestId RequestID = Connection->SendEntityQueryRequest(&WorldQuery, RETRY_UNTIL_COMPLETE);
 
-	EntityQueryDelegate WorldQueryDelegate;
-	WorldQueryDelegate.BindLambda([Connection = this->Connection, PostWorldWipeDelegate](const Worker_EntityQueryResponseOp& Op) {
+	FEntityQueryDelegate WorldQueryDelegate = [Connection = this->Connection,
+											   PostWorldWipeDelegate](const Worker_EntityQueryResponseOp& Op) {
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogSnapshotManager, Error, TEXT("SnapshotManager WorldWipe - World entity query failed: %s"), UTF8_TO_TCHAR(Op.message));
@@ -68,9 +68,9 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 			// The world is now ready to finish ServerTravel which means loading in a new map.
 			PostWorldWipeDelegate.ExecuteIfBound();
 		}
-	});
+	};
 
-	QueryHandler.AddRequest(RequestID, WorldQueryDelegate);
+	CommandsHandler.AddRequest(RequestID, WorldQueryDelegate);
 }
 
 void SpatialSnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op, TWeakObjectPtr<USpatialWorkerConnection> Connection)
@@ -163,9 +163,8 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 	Worker_SnapshotInputStream_Destroy(Snapshot);
 
 	// Set up reserve IDs delegate
-	ReserveEntityIDsDelegate SpawnEntitiesDelegate;
-	SpawnEntitiesDelegate.BindLambda([Connection = this->Connection, GlobalStateManager = this->GlobalStateManager,
-									  EntitiesToSpawn](const Worker_ReserveEntityIdsResponseOp& Op) {
+	FReserveEntityIDsDelegate SpawnEntitiesDelegate = [Connection = this->Connection, GlobalStateManager = this->GlobalStateManager,
+													   EntitiesToSpawn](const Worker_ReserveEntityIdsResponseOp& Op) {
 		UE_LOG(LogSnapshotManager, Log, TEXT("Creating entities in snapshot, number of entities to spawn: %i"), Op.number_of_entity_ids);
 
 		// Ensure we have the same number of reserved IDs as we have entities to spawn
@@ -195,7 +194,7 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 
 		GlobalStateManager->SetDeploymentState();
 		GlobalStateManager->SetAcceptingPlayers(true);
-	});
+	};
 
 	// Reserve the Entity IDs
 	check(Connection.IsValid());
@@ -205,12 +204,11 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 	// References to entities that are stored within the snapshot need remapping once we know the new entity IDs.
 
 	// Add the spawn delegate
-	ReserveEntityIdsHandler.AddRequest(ReserveRequestID, SpawnEntitiesDelegate);
+	CommandsHandler.AddRequest(ReserveRequestID, SpawnEntitiesDelegate);
 }
 
 void SpatialSnapshotManager::Advance()
 {
 	const TArray<Worker_Op>& Ops = Connection->GetCoordinator().GetViewDelta().GetWorkerMessages();
-	ReserveEntityIdsHandler.ProcessOps(Ops);
-	QueryHandler.ProcessOps(Ops);
+	CommandsHandler.ProcessOps(Ops);
 }

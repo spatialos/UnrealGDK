@@ -34,7 +34,6 @@ using namespace SpatialGDK;
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-	ClaimHandler = MakeUnique<ClaimPartitionHandler>(*NetDriver->Connection);
 	ViewCoordinator = &InNetDriver->Connection->GetCoordinator();
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
@@ -283,6 +282,12 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(Schema_ComponentUpdate*
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 }
 
+bool UGlobalStateManager::HasAuthority() const
+{
+	check(ViewCoordinator->HasEntity(GlobalStateManagerEntityId));
+	return ViewCoordinator->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
+}
+
 void UGlobalStateManager::SetDeploymentState()
 {
 	check(ViewCoordinator->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID));
@@ -451,7 +456,8 @@ Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
 
 void UGlobalStateManager::ClaimSnapshotPartition()
 {
-	ClaimHandler->ClaimPartition(NetDriver->Connection->GetWorkerSystemEntityId(), SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	CommandsHandler.ClaimPartition(*ViewCoordinator, NetDriver->Connection->GetWorkerSystemEntityId(),
+								   SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 }
 
 void UGlobalStateManager::TriggerBeginPlay()
@@ -553,8 +559,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 	Worker_RequestId RequestID;
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery, RETRY_UNTIL_COMPLETE);
 
-	EntityQueryDelegate GSMQueryDelegate;
-	GSMQueryDelegate.BindLambda([this, Callback](const Worker_EntityQueryResponseOp& Op) {
+	FEntityQueryDelegate GSMQueryDelegate = [this, Callback](const Worker_EntityQueryResponseOp& Op) {
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogGlobalStateManager, Warning, TEXT("Could not find GSM via entity query: %s"), UTF8_TO_TCHAR(Op.message));
@@ -568,9 +573,9 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 			ApplyDataFromQueryResponse(Op);
 			Callback.ExecuteIfBound(Op);
 		}
-	});
+	};
 
-	QueryHandler.AddRequest(RequestID, GSMQueryDelegate);
+	CommandsHandler.AddRequest(RequestID, GSMQueryDelegate);
 }
 
 void UGlobalStateManager::QueryTranslation()
@@ -596,8 +601,7 @@ void UGlobalStateManager::QueryTranslation()
 	bTranslationQueryInFlight = true;
 
 	TWeakObjectPtr<UGlobalStateManager> WeakGlobalStateManager(this);
-	EntityQueryDelegate TranslationQueryDelegate;
-	TranslationQueryDelegate.BindLambda([WeakGlobalStateManager](const Worker_EntityQueryResponseOp& Op) {
+	FEntityQueryDelegate TranslationQueryDelegate = [WeakGlobalStateManager](const Worker_EntityQueryResponseOp& Op) {
 		if (!WeakGlobalStateManager.IsValid())
 		{
 			// The GSM was destroyed before receiving the response.
@@ -613,8 +617,8 @@ void UGlobalStateManager::QueryTranslation()
 			}
 		}
 		GlobalStateManager->bTranslationQueryInFlight = false;
-	});
-	QueryHandler.AddRequest(RequestID, TranslationQueryDelegate);
+	};
+	CommandsHandler.AddRequest(RequestID, TranslationQueryDelegate);
 }
 
 void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const
@@ -704,8 +708,7 @@ void UGlobalStateManager::Advance()
 {
 	const TArray<Worker_Op>& Ops = NetDriver->Connection->GetCoordinator().GetViewDelta().GetWorkerMessages();
 
-	ClaimHandler->ProcessOps(Ops);
-	QueryHandler.ProcessOps(Ops);
+	CommandsHandler.ProcessOps(Ops);
 
 #if WITH_EDITOR
 	RequestHandler.ProcessOps(Ops);
