@@ -88,18 +88,33 @@ void ServerWorkerEntityCreator::OnEntityCreated(const Worker_CreateEntityRespons
 			TEXT("Worker system entity creation failed, SDK returned code %d [%s]"), (int)CreateEntityResponse.status_code,
 			UTF8_TO_TCHAR(CreateEntityResponse.message));
 
-	NetDriver.WorkerEntityId = CreateEntityResponse.entity_id;
+	WorkerEntityId = CreateEntityResponse.entity_id;
+	NetDriver.WorkerEntityId = WorkerEntityId;
 
 	const Worker_PartitionId PartitionId = static_cast<Worker_PartitionId>(CreateEntityResponse.entity_id);
 
 	State = WorkerSystemEntityCreatorState::ClaimingWorkerPartition;
 
-	CommandsHandler.ClaimPartition(Connection.GetCoordinator(), Connection.GetWorkerSystemEntityId(), PartitionId);
+	CommandsHandler.ClaimPartition(Connection.GetCoordinator(), Connection.GetWorkerSystemEntityId(), PartitionId,
+								   [this](const Worker_CommandResponseOp&) {
+									   State = WorkerSystemEntityCreatorState::Finished;
+								   });
 }
 
 void ServerWorkerEntityCreator::ProcessOps(const TArray<Worker_Op>& Ops)
 {
 	CommandsHandler.ProcessOps(Ops);
+}
+
+bool ServerWorkerEntityCreator::IsFinished() const
+{
+	return State == WorkerSystemEntityCreatorState::Finished;
+}
+
+Worker_EntityId ServerWorkerEntityCreator::GetWorkerEntityId() const
+{
+	check(IsFinished());
+	return WorkerEntityId;
 }
 } // namespace SpatialGDK
 
