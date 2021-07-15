@@ -25,7 +25,7 @@ ASpatialTestPropertyReplicationMultiworker::ASpatialTestPropertyReplicationMulti
 	: Super()
 {
 	Author = "Victoria Bloom";
-	Description = TEXT(	"This tests that the data debug mode detects changes on non-auth servers.");
+	Description = TEXT("This tests that the data debug mode detects changes on non-auth servers.");
 }
 
 void ASpatialTestPropertyReplicationMultiworker::PrepareTest()
@@ -89,7 +89,7 @@ void ASpatialTestPropertyReplicationMultiworker::PrepareTest()
 		},
 		5.0f);
 
-	// This step generates an expected error "Changed actor without authority! ReplicatedTestActor_0 ReplicatedTestActor" 
+	// This step generates an expected error "Changed actor without authority! ReplicatedTestActor_0 ReplicatedTestActor"
 	AddStep(
 		TEXT("The non-auth server changes the ReplicatedProperty of the ReplicatedTestActor to 55"), FWorkerDefinition::Server(2),
 		[this]() -> bool {
