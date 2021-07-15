@@ -25,4 +25,9 @@ private:
 	AActor* Actor;
 	FString ReplicatedPropertyHash;
 	FString CreateHash(AActor* InActor);
+
+	// Store a list of actors class names that currently violate the non-auth changes so that the user is not spammed.
+	// TODO: link PR to investigate these cases
+	UPROPERTY()
+	TArray<FString> SuppressedActors;
 };

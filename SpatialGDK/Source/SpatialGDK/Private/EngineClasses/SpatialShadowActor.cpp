@@ -10,6 +10,10 @@ USpatialShadowActor::USpatialShadowActor(const FObjectInitializer& ObjectInitial
 	, ReplicatedPropertyHash("")
 
 {
+	SuppressedActors.Add("GameStateBase");
+	SuppressedActors.Add("DefaultPawn");
+	SuppressedActors.Add("PlayerState");
+	SuppressedActors.Add("SpatialFunctionalTestFlowController");
 }
 
 void USpatialShadowActor::Init(const Worker_EntityId InEntityId, AActor* InActor)
@@ -70,6 +74,12 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges(const Worker_EntityId InE
 	check(InActor != nullptr);
 	check(!InActor->HasAuthority());
 
+	if (SuppressedActors.Contains(InActor->GetClass()->GetName()))
+	{
+		// We are suppressing warnings about some actor classes to avoid spamming the user
+		return;
+	}
+
 	if (ReplicatedPropertyHash.IsEmpty())
 	{
 		// Have not received the first update yet for this actor
@@ -86,7 +96,8 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges(const Worker_EntityId InE
 
 	if (LocalReplicatedPropertyHash != ReplicatedPropertyHash)
 	{
-		UE_LOG(LogSpatialShadowActor, Error, TEXT("Changed actor without authority! %s"), *Actor->GetName());
+		UE_LOG(LogSpatialShadowActor, Error, TEXT("Changed actor without authority! %s %s"), *Actor->GetName(),
+			   *InActor->GetClass()->GetName());
 
 		// Store hash to avoid generating a duplicate error message
 		ReplicatedPropertyHash = LocalReplicatedPropertyHash;
