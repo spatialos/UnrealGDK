@@ -21,9 +21,9 @@ public:
 	virtual void PrepareTest() override;
 
 	UPROPERTY(Replicated)
-	ASpatialTestNetReceiveActor* TestActor;
+	ASpatialTestNetReceiveActor* TestActor = nullptr;
 
-	FVector Server1Pos = FVector(250, -250, 0);
+	FVector Server1Pos = FVector(100, -100, 300);
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 };

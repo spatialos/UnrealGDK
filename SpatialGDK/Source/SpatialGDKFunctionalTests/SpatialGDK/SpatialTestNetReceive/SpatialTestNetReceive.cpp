@@ -27,6 +27,7 @@
  *	- None.
  */
 
+static constexpr float StepTimeLimit = 15.0f;
 ASpatialTestNetReceive::ASpatialTestNetReceive()
 	: Super()
 {
@@ -40,6 +41,13 @@ void ASpatialTestNetReceive::PrepareTest()
 
 	AddStep(TEXT("SpatialTestNetReceiveInitialise"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		TestActor = GetWorld()->SpawnActor<ASpatialTestNetReceiveActor>(Server1Pos, FRotator::ZeroRotator, FActorSpawnParameters());
+		TestActor->SetReplicates(true);
+
+		if (!AssertIsValid(TestActor, TEXT("Failed to spawn TestActor")))
+		{
+			return;
+		}
+
 		RegisterAutoDestroyActor(TestActor);
 
 		TestActor->Subobject->TestInt = 5;
@@ -48,7 +56,7 @@ void ASpatialTestNetReceive::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("SpatialTestNetReceiveInitialise"), FWorkerDefinition::Server(2), nullptr, [this]() {
+	AddStep(TEXT("SpatialTestNetReceiveCheckAllOk"), FWorkerDefinition::Server(2), nullptr, nullptr, [this](float Dt) {
 		if (!RequireEqual_Bool(IsValid(TestActor), true, TEXT("TestActor should be valid")))
 		{
 			return;
@@ -85,7 +93,7 @@ void ASpatialTestNetReceive::PrepareTest()
 		RequireEqual_Int(TestActor->Subobject->RepNotifyNumTimesCalled, 1, TEXT("RepNotifyNumTimesCalled should be the correct value"));
 
 		FinishStep();
-	});
+	}, StepTimeLimit);
 }
 
 void ASpatialTestNetReceive::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
