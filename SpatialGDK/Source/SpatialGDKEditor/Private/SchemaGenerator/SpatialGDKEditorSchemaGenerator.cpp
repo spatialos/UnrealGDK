@@ -1506,8 +1506,13 @@ bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPa
 	Writer.Outdent().Print("}");
 
 	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("ComponentSets/PartitionAuthoritativeComponentSet.schema")));
+}
 
-	return true;
+bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,
+									  TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex, TArray<FFieldIDs>& OutFieldIdsArray)
+{
+	return SpatialGDK::ExtractInformationFromSchemaJson(SchemaJsonPath, OutComponentSetMap, OutComponentIdToFieldIdsIndex,
+														OutFieldIdsArray);
 }
 
 bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,

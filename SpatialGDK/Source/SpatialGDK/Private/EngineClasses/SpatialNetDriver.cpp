@@ -24,6 +24,7 @@
 #include "EngineClasses/SpatialNetDriverGameplayDebuggerContext.h"
 #include "EngineClasses/SpatialNetDriverRPC.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialPartitionSystem.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
@@ -46,6 +47,7 @@
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialNetDriverLoadBalancingHandler.h"
 #include "Interop/SpatialOutputDevice.h"
+#include "Interop/SpatialPartitionSystemImpl.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialRoutingSystem.h"
@@ -479,6 +481,20 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		// Making sure the value is the same
 		USpatialPackageMapClient* NewPackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 		check(NewPackageMap == PackageMap);
+
+		if (WorkerType == SpatialConstants::DefaultServerWorkerType && USpatialStatics::IsStrategyWorkerEnabled())
+		{
+			USpatialPartitionSystem* Partitions = GameInstance->GetSubsystem<USpatialPartitionSystem>();
+			if (Partitions)
+			{
+				SpatialGDK::FSubView& PartitionsSubView =
+					Connection->GetCoordinator().CreateSubView(SpatialConstants::PARTITION_ACK_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
+															   SpatialGDK::FSubView::NoDispatcherCallbacks);
+
+				PartitionSystemImpl = MakeUnique<SpatialGDK::FPartitionSystemImpl>(PartitionsSubView);
+				PartitionSystemImpl->PartitionData.DataStorages = Partitions->GetData();
+			}
+		}
 
 		PackageMap->Init(*this);
 		if (IsServer())
@@ -2371,6 +2387,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (bIsDefaultServerOrClientWorker)
 		{
+			if (PartitionSystemImpl.IsValid())
+			{
+				PartitionSystemImpl->PartitionData.Advance();
+			}
+
 			if (LoadBalanceEnforcer.IsValid())
 			{
 				SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);

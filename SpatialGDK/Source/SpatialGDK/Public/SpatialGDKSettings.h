@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+
+#include "EngineClasses/SpatialPartitionSystem.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RPCContainer.h"
 
@@ -285,6 +287,7 @@ private:
 	bool bEventTracingEnabledWithEditor;
 
 	friend class AEventTracingSettingsOverride;
+
 public:
 	bool GetPreventClientCloudDeploymentAutoConnect() const;
 
@@ -316,6 +319,9 @@ public:
 	/** Run the strategy worker, worker itself is under development */
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL Run the strategy worker"))
 	bool bRunStrategyWorker;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL PartitionSystem to use"))
+	TSubclassOf<USpatialPartitionSystem> PartitionSystemClass;
 
 #if WITH_EDITOR
 	void SetMultiWorkerEditorEnabled(const bool bIsEnabled);
