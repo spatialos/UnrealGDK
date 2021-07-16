@@ -4,7 +4,6 @@
 
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ComponentUpdate.h"
-#include "SpatialView/EntityComponentId.h"
 
 namespace SpatialGDK
 {
@@ -22,44 +21,33 @@ public:
 		REMOVE
 	};
 
-	explicit OutgoingComponentMessage()
-		: EntityId(0)
-		, ComponentId(0)
-		, SpanId()
-		, Type(NONE)
-	{
-	}
-
 	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentData ComponentAdded, const FSpatialGDKSpanId& SpanId)
 		: EntityId(EntityId)
-		, ComponentId(ComponentAdded.GetComponentId())
 		, SpanId(SpanId)
-		, ComponentAdded(MoveTemp(ComponentAdded).Release())
 		, Type(ADD)
 	{
+		new (&Message.Data) ComponentData(MoveTemp(ComponentAdded));
 	}
 
 	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentUpdate ComponentUpdated, const FSpatialGDKSpanId& SpanId)
 		: EntityId(EntityId)
-		, ComponentId(ComponentUpdated.GetComponentId())
 		, SpanId(SpanId)
-		, ComponentUpdated(MoveTemp(ComponentUpdated).Release())
 		, Type(UPDATE)
 	{
+		new (&Message.Update) ComponentUpdate(MoveTemp(ComponentUpdated));
 	}
 
 	explicit OutgoingComponentMessage(Worker_EntityId EntityId, Worker_ComponentId RemovedComponentId, const FSpatialGDKSpanId& SpanId)
 		: EntityId(EntityId)
-		, ComponentId(RemovedComponentId)
 		, SpanId(SpanId)
 		, Type(REMOVE)
 	{
+		Message.RemovedId = RemovedComponentId;
 	}
 
 	~OutgoingComponentMessage()
 	{
-		// As data is stored in owning raw pointers we need to make sure resources are released.
-		DeleteSchemaObjects();
+		DeleteCurrent();
 	}
 
 	// Moveable, not copyable.
@@ -68,50 +56,48 @@ public:
 
 	OutgoingComponentMessage(OutgoingComponentMessage&& Other) noexcept
 		: EntityId(Other.EntityId)
-		, ComponentId(Other.ComponentId)
 		, SpanId(Other.SpanId)
 		, Type(Other.Type)
 	{
+		check(Other.Type != NONE);
 		switch (Other.Type)
 		{
-		case NONE:
-			break;
 		case ADD:
-			ComponentAdded = Other.ComponentAdded;
-			Other.ComponentAdded = nullptr;
+			new (&Message.Data) ComponentData(MoveTemp(Other.Message.Data));
 			break;
 		case UPDATE:
-			ComponentUpdated = Other.ComponentUpdated;
-			Other.ComponentUpdated = nullptr;
+			new (&Message.Update) ComponentUpdate(MoveTemp(Other.Message.Update));
 			break;
 		case REMOVE:
+			Message.RemovedId = Other.Message.RemovedId;
 			break;
+		default:
+			checkNoEntry();
 		}
-		Other.Type = NONE;
 	}
 
 	OutgoingComponentMessage& operator=(OutgoingComponentMessage&& Other) noexcept
 	{
-		EntityId = Other.EntityId;
-		ComponentId = Other.ComponentId;
-		SpanId = Other.SpanId;
+		check(Other.Type != NONE);
+		DeleteCurrent();
 
-		// As data is stored in owning raw pointers we need to make sure resources are released.
-		DeleteSchemaObjects();
+		EntityId = Other.EntityId;
+		SpanId = Other.SpanId;
+		Type = Other.Type;
+
 		switch (Other.Type)
 		{
-		case NONE:
-			break;
 		case ADD:
-			ComponentAdded = Other.ComponentAdded;
-			Other.ComponentAdded = nullptr;
+			new (&Message.Data) ComponentData(MoveTemp(Other.Message.Data));
 			break;
 		case UPDATE:
-			ComponentUpdated = Other.ComponentUpdated;
-			Other.ComponentUpdated = nullptr;
+			new (&Message.Update) ComponentUpdate(MoveTemp(Other.Message.Update));
 			break;
 		case REMOVE:
+			Message.RemovedId = Other.Message.RemovedId;
 			break;
+		default:
+			checkNoEntry();
 		}
 
 		Other.Type = NONE;
@@ -121,50 +107,59 @@ public:
 
 	MessageType GetType() const { return Type; }
 
+	Worker_ComponentId GetRemovedId() const
+	{
+		check(Type == ADD);
+		return Message.RemovedId;
+	}
+
 	ComponentData ReleaseComponentAdded() &&
 	{
 		check(Type == ADD);
-		ComponentData Data(OwningComponentDataPtr(ComponentAdded), ComponentId);
-		ComponentAdded = nullptr;
-		return Data;
+		return MoveTemp(Message.Data);
 	}
 
 	ComponentUpdate ReleaseComponentUpdate() &&
 	{
 		check(Type == UPDATE);
-		ComponentUpdate Update(OwningComponentUpdatePtr(ComponentUpdated), ComponentId);
-		ComponentUpdated = nullptr;
-		return Update;
+		return MoveTemp(Message.Update);
 	}
 
 	Worker_EntityId EntityId;
-	Worker_ComponentId ComponentId;
-
 	FSpatialGDKSpanId SpanId;
 
 private:
-	void DeleteSchemaObjects()
+	void DeleteCurrent()
 	{
 		switch (Type)
 		{
 		case NONE:
 			break;
 		case ADD:
-			Schema_DestroyComponentData(ComponentAdded);
+			Message.Data.~ComponentData();
 			break;
 		case UPDATE:
-			Schema_DestroyComponentUpdate(ComponentUpdated);
+			Message.Update.~ComponentUpdate();
 			break;
 		case REMOVE:
 			break;
 		}
 	}
 
-	union
+	union ComponentMessage
 	{
-		Schema_ComponentData* ComponentAdded;
-		Schema_ComponentUpdate* ComponentUpdated;
-	};
+		ComponentMessage() : RemovedId(0) {}
+#if defined(_MSC_VER)
+#pragma warning(disable : 4583)
+#endif // defined(_MSC_VER)
+		~ComponentMessage() {}
+#if defined(_MSC_VER)
+#pragma warning(default : 4583)
+#endif // defined(_MSC_VER)
+		ComponentData Data;
+		ComponentUpdate Update;
+		Worker_ComponentId RemovedId;
+	} Message;
 
 	MessageType Type;
 };
