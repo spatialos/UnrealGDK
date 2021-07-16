@@ -4,8 +4,8 @@
 
 #include "Components/BoxComponent.h"
 #include "Engine/TriggerBox.h"
-#include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
@@ -99,7 +99,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			{
 				Character->AddMovementInput(FVector(1.0f, 0.0f, 0.0f), 10.0f, true);
 
-				const float MaxExpectedSpeed = Character->GetCharacterMovement()->MaxWalkSpeed + 10.0f;
+				const float MaxExpectedSpeed = Character->GetCharacterMovement()->MaxWalkSpeed * 1.2f;
 				AssertValue_Float(Character->Speed, EComparisonMethod::Less_Than, MaxExpectedSpeed, TEXT("Actor not speeding"));
 			}
 
@@ -152,7 +152,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			{
 				Character->AddMovementInput(FVector(-1.0f, 0.0f, 0.0f), 10.0f, true);
 
-				const float MaxExpectedSpeed = Character->GetCharacterMovement()->MaxWalkSpeed + 10.0f;
+				const float MaxExpectedSpeed = Character->GetCharacterMovement()->MaxWalkSpeed * 1.2f;
 				AssertValue_Float(Character->Speed, EComparisonMethod::Less_Than, MaxExpectedSpeed, TEXT("Actor not speeding"));
 			}
 
