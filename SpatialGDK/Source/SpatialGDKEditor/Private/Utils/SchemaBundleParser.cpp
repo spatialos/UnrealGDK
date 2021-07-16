@@ -280,4 +280,142 @@ bool ExtractComponentsFromSchemaJson(const FString& SchemaJsonPath, TArray<Schem
 	return true;
 }
 
+bool ExtractComponentsDetailsFromSchemaJson(const FString& SchemaJsonPath, TArray<SchemaComponent>& OutComponents,
+											TSet<FString> const& Files)
+{
+	TSharedPtr<FJsonObject> RootObject = OpenJsonFile(SchemaJsonPath);
+
+	const TArray<TSharedPtr<FJsonValue>>* SchemaFiles;
+	SAFE_TRYGETFIELD(RootObject, Array, "schemaFiles", SchemaFiles);
+
+	for (const auto& FileValue : *SchemaFiles)
+	{
+		const TSharedPtr<FJsonObject>* FileObject;
+		SAFE_TRYGET(FileValue, Object, FileObject);
+
+		FString CanonicalPath;
+		SAFE_TRYGETFIELD((*FileObject), String, "canonicalPath", CanonicalPath);
+
+		if (!Files.Contains(CanonicalPath))
+		{
+			continue;
+		}
+
+		const TArray<TSharedPtr<FJsonValue>>* TypesDecl;
+		SAFE_TRYGETFIELD((*FileObject), Array, "types", TypesDecl);
+
+		for (const auto& TypeValue : *TypesDecl)
+		{
+			const TSharedPtr<FJsonObject>* TypeObject;
+			SAFE_TRYGET(TypeValue, Object, TypeObject);
+
+			FString TypeName;
+			SAFE_TRYGETFIELD((*TypeObject), String, "qualifiedName", TypeName);
+
+			// COND_SCHEMA_GEN_ERROR_AND_RETURN(DataDefinitionNameToFieldIdsIndex.Contains(ComponentName),
+			//	TEXT("The schema bundle contains duplicate data definitions for %s."), *ComponentName);
+			// DataDefinitionNameToFieldIdsIndex.Add(ComponentName, OutFieldIdsArray.Num());
+			// TArray<uint32>& FieldIDs = OutFieldIdsArray.AddDefaulted_GetRef().FieldIds;
+
+			const TArray<TSharedPtr<FJsonValue>>* FieldArray;
+			SAFE_TRYGETFIELD((*TypeObject), Array, "fields", FieldArray);
+
+			for (const auto& ArrayValue : *FieldArray)
+			{
+				const TSharedPtr<FJsonObject>* ArrayObject;
+				SAFE_TRYGET(ArrayValue, Object, ArrayObject);
+
+				int32 FieldId;
+				SAFE_TRYGETFIELD((*ArrayObject), Number, "fieldId", FieldId);
+
+				// COND_SCHEMA_GEN_ERROR_AND_RETURN(FieldIDs.Contains(FieldId),
+				//	TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId,
+				//	*ComponentName);
+				// FieldIDs.Add(FieldId);
+			}
+		}
+
+		const TArray<TSharedPtr<FJsonValue>>* ComponentsDecl;
+		SAFE_TRYGETFIELD((*FileObject), Array, "components", ComponentsDecl);
+
+		for (const auto& CompValue : *ComponentsDecl)
+		{
+			SchemaComponent ComponentDesc;
+
+			const TSharedPtr<FJsonObject>* CompObject;
+			SAFE_TRYGET(CompValue, Object, CompObject);
+
+			SAFE_TRYGETFIELD((*CompObject), String, "qualifiedName", ComponentDesc.Id.Name);
+			SAFE_TRYGETFIELD((*CompObject), Number, "componentId", ComponentDesc.Id.ComponentId);
+
+			const TArray<TSharedPtr<FJsonValue>>* FieldArray;
+			SAFE_TRYGETFIELD((*CompObject), Array, "fields", FieldArray);
+
+			bool bIsComponentSupported = true;
+
+			if (FieldArray->Num() > 0)
+			{
+				for (const auto& ArrayValue : *FieldArray)
+				{
+					SchemaField FieldDesc;
+
+					const TSharedPtr<FJsonObject>* FieldObject;
+					SAFE_TRYGET(ArrayValue, Object, FieldObject);
+
+					const TSharedPtr<FJsonObject>* SingularFieldObj;
+
+					if (!(*FieldObject)->TryGetObjectField(TEXT("singularType"), SingularFieldObj))
+					{
+						bIsComponentSupported = false;
+						continue;
+					}
+
+					const TSharedPtr<FJsonObject>* SingularTypeObj;
+					SAFE_TRYGETFIELD((*SingularFieldObj), Object, "type", SingularTypeObj);
+
+					bIsComponentSupported = false;
+
+					if ((*SingularTypeObj)->TryGetStringField(TEXT("primitive"), FieldDesc.Type))
+					{
+						bIsComponentSupported = true;
+					}
+					if ((*SingularTypeObj)->TryGetStringField(TEXT("type"), FieldDesc.Type))
+					{
+						bIsComponentSupported = true;
+					}
+
+					if (!bIsComponentSupported)
+					{
+						continue;
+					}
+
+					// if (!TypesMap.Contains(FieldDesc.Type))
+					//{
+					//	bIsComponentSupported = false;
+					//	continue;
+					//}
+
+					SAFE_TRYGETFIELD((*FieldObject), String, "name", FieldDesc.Name);
+					SAFE_TRYGETFIELD((*FieldObject), Number, "fieldId", FieldDesc.FieldId);
+
+					ComponentDesc.Fields.Add(MoveTemp(FieldDesc));
+				}
+			}
+
+			FString DataDefinition;
+			SAFE_TRYGETFIELD((*CompObject), String, "dataDefinition", DataDefinition);
+
+			if (!DataDefinition.IsEmpty())
+			{
+				bIsComponentSupported = false;
+				return false;
+			}
+			if (bIsComponentSupported)
+			{
+				OutComponents.Add(MoveTemp(ComponentDesc));
+			}
+		}
+	}
+	return true;
+}
 } // namespace SpatialGDK
