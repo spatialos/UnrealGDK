@@ -54,10 +54,7 @@ public:
 	// Adds an update to the component-set-update.
 	void AddUpdate(ComponentUpdate Update) { Updates.Add(MoveTemp(Update)); }
 
-	Worker_ComponentId GetComponentSetId() const
-	{
-		return ComponentSetId;
-	}
+	Worker_ComponentId GetComponentSetId() const { return ComponentSetId; }
 
 private:
 	Worker_ComponentSetId ComponentSetId;
