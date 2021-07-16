@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "EngineClasses/SpatialPartitionSystem.h"
 #include "LoadBalancing/LBDataStorage.h"
 
 namespace SpatialGDK
@@ -17,5 +18,6 @@ public:
 	}
 
 	FLBDataCollection PartitionData;
+	TArray<SpatialGDK::FPartitionEvent> Events;
 };
 } // namespace SpatialGDK

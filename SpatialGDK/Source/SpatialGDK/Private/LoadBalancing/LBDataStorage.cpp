@@ -36,6 +36,7 @@ void FLBDataCollection::Advance()
 		break;
 		case EntityDelta::ADD:
 		{
+			EntitiesAdded.Add(Delta.EntityId);
 			const SpatialGDK::EntityViewElement& Element = SubView.GetView().FindChecked(Delta.EntityId);
 			for (auto& Storage : DataStorages)
 			{
@@ -45,6 +46,7 @@ void FLBDataCollection::Advance()
 		break;
 		case EntityDelta::REMOVE:
 		{
+			EntitiesRemoved.Add(Delta.EntityId);
 			for (auto& Storage : DataStorages)
 			{
 				Storage->OnRemoved(Delta.EntityId);
