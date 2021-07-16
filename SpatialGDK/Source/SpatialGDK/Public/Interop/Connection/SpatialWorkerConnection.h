@@ -26,6 +26,8 @@ public:
 	ServerWorkerEntityCreator(USpatialNetDriver& InNetDriver, USpatialWorkerConnection& InConnection);
 	void CreateWorkerEntity();
 	void ProcessOps(const TArray<Worker_Op>& Ops);
+	bool IsFinished() const;
+	Worker_EntityId GetWorkerEntityId() const;
 
 private:
 	void OnEntityCreated(const Worker_CreateEntityResponseOp& Op);
@@ -33,8 +35,11 @@ private:
 	{
 		CreatingWorkerSystemEntity,
 		ClaimingWorkerPartition,
+		Finished,
 	};
 	WorkerSystemEntityCreatorState State;
+
+	Worker_EntityId WorkerEntityId;
 
 	USpatialNetDriver& NetDriver;
 	USpatialWorkerConnection& Connection;
@@ -84,8 +89,6 @@ public:
 													const SpatialGDK::FRetryData& RetryData) override;
 	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) override;
 
-	void CreateServerWorkerEntity();
-
 	void Advance(float DeltaTimeS);
 	bool HasDisconnected() const;
 	Worker_ConnectionStatusCode GetConnectionStatus() const;
@@ -115,8 +118,6 @@ public:
 	SpatialGDK::SpatialEventTracer* GetEventTracer() const { return EventTracer; }
 
 private:
-	TOptional<SpatialGDK::ServerWorkerEntityCreator> WorkerEntityCreator;
-
 	bool StartupComplete = false;
 	SpatialGDK::SpatialEventTracer* EventTracer;
 	TUniquePtr<SpatialGDK::ViewCoordinator> Coordinator;

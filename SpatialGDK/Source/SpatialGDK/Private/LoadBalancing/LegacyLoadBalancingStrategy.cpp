@@ -52,7 +52,7 @@ void FLegacyLoadBalancing::Advance(ISpatialOSWorker& Connection)
 						if (Data.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
 						{
 							Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-							Translator.ApplyVirtualWorkerManagerData(ComponentObject);
+							Translator.ApplyMappingFromSchema(ComponentObject);
 							bTranslatorIsReady = true;
 							for (uint32 VirtualWorker = 0; VirtualWorker < ExpectedWorkers; ++VirtualWorker)
 							{

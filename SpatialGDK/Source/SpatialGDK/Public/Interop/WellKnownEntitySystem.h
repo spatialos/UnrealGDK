@@ -20,18 +20,12 @@ public:
 						  UGlobalStateManager& InGlobalStateManager);
 	void Advance();
 
-	void OnMapLoaded() const;
-
-	const SpatialVirtualWorkerTranslationManager* GetVirtualWorkerTranslationManager() const;
-
 private:
 	void ProcessComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
-	void ProcessComponentAdd(const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
 	void ProcessAuthorityGain(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
 	void ProcessEntityAdd(const Worker_EntityId EntityId);
 
 	void InitializeVirtualWorkerTranslationManager();
-	void MaybeClaimSnapshotPartition();
 
 	const FSubView* SubView;
 

@@ -90,6 +90,9 @@ class CrossServerRPCSender;
 class CrossServerRPCHandler;
 class FSpatialStrategySystem;
 class FSkeletonEntityCreationStartupStep;
+class FSpatialServerStartupHandler;
+class FSpatialClientStartupHandler;
+class FSpatialStrategyStartupHandler;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -150,11 +153,6 @@ public:
 	// Note: you should only call this after we have connected to Spatial.
 	// You can check if we connected by calling GetSpatialOS()->IsConnected()
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
-
-	// When the AcceptingPlayers/SessionID state on the GSM has changed this method will be called.
-	void ClientOnGSMQuerySuccess();
-	void RetryQueryGSM();
-	void GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op);
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
@@ -243,6 +241,10 @@ public:
 
 	TUniquePtr<SpatialGDK::FSkeletonEntityCreationStartupStep> SkeletonEntityCreationStep;
 
+	TUniquePtr<SpatialGDK::FSpatialServerStartupHandler> StartupHandler;
+	TUniquePtr<SpatialGDK::FSpatialClientStartupHandler> ClientStartupHandler;
+	TUniquePtr<SpatialGDK::FSpatialStrategyStartupHandler> StrategyStartupHandler;
+
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
 	TUniquePtr<SpatialGDK::InitialOnlyFilter> InitialOnlyFilter;
@@ -285,6 +287,16 @@ public:
 
 	FShutdownEvent OnShutdown;
 
+	uint32 ClientGetSessionId() const;
+
+	struct FPendingNetworkFailure
+	{
+		ENetworkFailure::Type FailureType;
+		FString Message;
+	};
+	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
+	FString StartupClientDebugString;
+
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
@@ -307,13 +319,6 @@ private:
 	bool bWaitingToSpawn;
 	bool bIsReadyToStart;
 	bool bMapLoaded;
-
-	struct FPendingNetworkFailure
-	{
-		ENetworkFailure::Type FailureType;
-		FString Message;
-	};
-	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
 	FString SnapshotToLoad;
 
 	// Client variable which stores the SessionId given to us by the server in the URL options.
@@ -326,8 +331,11 @@ private:
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
+
+public:
 	void CreateAndInitializeCoreClassesAfterStartup();
 
+private:
 	void CreateAndInitializeLoadBalancingClasses();
 
 	void CreateServerSpatialOSNetConnection();
@@ -392,10 +400,6 @@ private:
 
 	FUnrealObjectRef GetCurrentPlayerControllerRef();
 
-	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
-	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.
-	bool ClientCanSendPlayerSpawnRequests() const;
-
 	void ProcessOwnershipChanges();
 
 	// Has a certain interval (in seconds) been passed since the previous timestamp
@@ -403,7 +407,6 @@ private:
 
 	TSet<Worker_EntityId_Key> OwnershipChangedEntities;
 	uint64 StartupTimestamp;
-	FString StartupClientDebugString;
 
 	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;

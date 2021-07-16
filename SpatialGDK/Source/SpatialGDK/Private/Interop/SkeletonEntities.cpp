@@ -248,9 +248,11 @@ void FDistributedStartupActorSkeletonEntityCreator::Advance()
 	if (Stage == EStage::CreatingManifests)
 	{
 		// Every worker should get a manifest to proceed through the skeleton entity flow.
-		for (const auto& VirtualWorker : NetDriver->WellKnownEntitySystem->GetVirtualWorkerTranslationManager()->GetVirtualWorkerMapping())
+		const VirtualWorkerId MaxVirtualWorkerId =
+			static_cast<VirtualWorkerId>(NetDriver->LoadBalanceStrategy->GetMinimumRequiredWorkers());
+		for (VirtualWorkerId VirtualWorker = 1; VirtualWorker <= MaxVirtualWorkerId; ++VirtualWorker)
 		{
-			PopulatingWorkersToEntities.FindOrAdd(VirtualWorker.Key);
+			PopulatingWorkersToEntities.FindOrAdd(VirtualWorker);
 		}
 		for (const auto& WorkerToEntities : PopulatingWorkersToEntities)
 		{

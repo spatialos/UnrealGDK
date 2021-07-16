@@ -49,7 +49,7 @@ TUniquePtr<SpatialVirtualWorkerTranslator> CreateVirtualWorkerTranslator()
 	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, ThisVirtualWorker, ThisWorker, ThisWorkerId);
 	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, OtherVirtualWorker, OtherWorker, OtherWorkerId);
 
-	VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(DataObject);
+	VirtualWorkerTranslator->ApplyMappingFromSchema(DataObject);
 
 	return VirtualWorkerTranslator;
 }
