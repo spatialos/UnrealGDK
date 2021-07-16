@@ -20,37 +20,38 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 		return;
 	}
 
-	uint32_t ItemSize = Trace_GetSerializedItemSize(Item);
-	// Depends whether we are using rotating logs or single-log mode (where we track max size).
-	const bool bTrackFileSize = EventTracer->MaxFileSize != 0;
-	if (!bTrackFileSize || (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize))
-	{
-		if (bTrackFileSize)
-		{
-			EventTracer->BytesWrittenToStream += ItemSize;
-		}
-
-		int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
-		if (Code == WORKER_RESULT_FAILURE)
-		{
-			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s)"), Code,
-				   ANSI_TO_TCHAR(Trace_GetLastError()));
-		}
-
-		if (FPlatformAtomics::AtomicRead_Relaxed(&EventTracer->FlushOnWriteAtomic))
-		{
-			if (Io_Stream_Flush(Stream) == -1)
-			{
-				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to flush stream with error code %d (%s)"), Code,
-					   ANSI_TO_TCHAR(Io_Stream_GetLastError(Stream)));
-			}
-		}
-	}
-	else
-	{
-		// Went over max capacity so stop writing here.
-		EventTracer->BytesWrittenToStream = EventTracer->MaxFileSize;
-	}
+	return;
+	// //uint32_t ItemSize = Trace_GetSerializedItemSize(Item);
+	// // Depends whether we are using rotating logs or single-log mode (where we track max size).
+	// const bool bTrackFileSize = EventTracer->MaxFileSize != 0;
+	// if (!bTrackFileSize || (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize))
+	// {
+	// 	if (bTrackFileSize)
+	// 	{
+	// 		EventTracer->BytesWrittenToStream += ItemSize;
+	// 	}
+	//
+	// 	int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
+	// 	if (Code == WORKER_RESULT_FAILURE)
+	// 	{
+	// 		UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s)"), Code,
+	// 			   ANSI_TO_TCHAR(Trace_GetLastError()));
+	// 	}
+	//
+	// 	if (FPlatformAtomics::AtomicRead_Relaxed(&EventTracer->FlushOnWriteAtomic))
+	// 	{
+	// 		if (Io_Stream_Flush(Stream) == -1)
+	// 		{
+	// 			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to flush stream with error code %d (%s)"), Code,
+	// 				   ANSI_TO_TCHAR(Io_Stream_GetLastError(Stream)));
+	// 		}
+	// 	}
+	// }
+	// else
+	// {
+	// 	// Went over max capacity so stop writing here.
+	// 	EventTracer->BytesWrittenToStream = EventTracer->MaxFileSize;
+	// }
 }
 
 SpatialScopedActiveSpanId::SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const FSpatialGDKSpanId& InCurrentSpanId)

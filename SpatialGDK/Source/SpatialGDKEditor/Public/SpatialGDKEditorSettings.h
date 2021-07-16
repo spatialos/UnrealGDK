@@ -47,6 +47,7 @@ struct FWorkerPermissionsSection
 		, bDisconnectWorker(true)
 		, bReserveEntityID(true)
 		, bAllowEntityQuery(true)
+		, bAllowSystemEntityCommands(true)
 	{
 	}
 
@@ -70,6 +71,10 @@ struct FWorkerPermissionsSection
 	 * components to be returned, the query will fail. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow entity queries"))
 	bool bAllowEntityQuery;
+
+	/** Enables a worker instance to send commands to system entities. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow system commands"))
+	bool bAllowSystemEntityCommands;
 };
 
 USTRUCT()
@@ -160,6 +165,10 @@ struct FSpatialLaunchConfigDescription
 	/** The connection request limit for the deployment. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ClampMin = "1", UIMin = "1"))
 	int32 MaxConcurrentWorkers;
+
+	/** The connection request limit for the deployment. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Enable per-entity QBI-F"))
+	bool bEnablePerEntityQBIF;
 };
 
 /**

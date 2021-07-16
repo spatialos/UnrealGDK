@@ -11,6 +11,8 @@
 #include <improbable/c_trace.h>
 #include <improbable/c_worker.h>
 
+#include "Windows/VisualStudioDTE/VisualStudioDTE.h"
+
 namespace SpatialGDK
 {
 SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection, TSharedPtr<SpatialEventTracer> EventTracer)
@@ -92,11 +94,17 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 		}
 		case OutgoingComponentMessage::SET_UPDATE:
 		{
-			for (ComponentUpdate& Update : MoveTemp(Message).ReleaseComponentSetUpdate().Release())
+			FComponentSetUpdate SetUpdate = MoveTemp(Message).ReleaseComponentSetUpdate();
+			Worker_ComponentSetId SetId = SetUpdate.GetComponentSetId();
+			TArray<ComponentUpdate> Updates = MoveTemp(SetUpdate).Release();
+			TArray<Worker_ComponentUpdate> WorkerUpdates;
+			WorkerUpdates.Reserve(Updates.Num());
+			for (ComponentUpdate& Update : Updates)
 			{
-				Worker_ComponentUpdate WorkerUpdate = { nullptr, Update.GetComponentId(), MoveTemp(Update).Release(), nullptr };
-				Worker_Connection_SendComponentUpdate(Connection.Get(), Message.EntityId, &WorkerUpdate, &UpdateParams);
+				WorkerUpdates.Add({ nullptr, Update.GetComponentId(), MoveTemp(Update).Release(), nullptr });
 			}
+			Worker_ComponentSetUpdate WorkerSetUpdate = {nullptr, SetId, WorkerUpdates.Num(), WorkerUpdates.GetData()};
+			Worker_Connection_SendComponentSetUpdate(Connection.Get(), Message.EntityId, &WorkerSetUpdate, &UpdateParams);
 			break;
 		}
 		case OutgoingComponentMessage::REMOVE:

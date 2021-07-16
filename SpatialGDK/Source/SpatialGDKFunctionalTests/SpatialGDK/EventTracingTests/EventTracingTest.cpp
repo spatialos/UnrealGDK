@@ -194,49 +194,50 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 	int8_t ReturnCode = 1;
 	while (BytesToRead != 0 && ReturnCode == 1)
 	{
-		BytesToRead = Trace_GetNextSerializedItemSize(Stream.Get());
-		if (BytesToRead == 0)
-		{
-			break;
-		}
-
-		Trace_Item* Item = Trace_Item_GetThreadLocal();
-		if (BytesToRead != 0)
-		{
-			ReturnCode = Trace_DeserializeItemFromStream(Stream.Get(), Item, BytesToRead);
-		}
-
-		if (Item != nullptr)
-		{
-			if (Item->item_type == TRACE_ITEM_TYPE_EVENT)
-			{
-				const Trace_Event& Event = Item->item.event;
-				FName EventName = FName(*FString(Event.type));
-
-				if (FilterEventNames.Num() == 0 || FilterEventNames.Contains(EventName))
-				{
-					FString SpanIdString = FSpatialGDKSpanId::ToString(Event.span_id);
-					FName& CachedEventName = TraceEvents.FindOrAdd(SpanIdString);
-					CachedEventName = EventName;
-				}
-			}
-			else if (Item->item_type == TRACE_ITEM_TYPE_SPAN)
-			{
-				const Trace_Span& Span = Item->item.span;
-
-				FString SpanIdString = FSpatialGDKSpanId::ToString(Span.id);
-				TArray<FString>& Causes = TraceSpans.FindOrAdd(SpanIdString);
-				for (uint64 i = 0; i < Span.cause_count; ++i)
-				{
-					const int32 ByteOffset = i * TRACE_SPAN_ID_SIZE_BYTES;
-					FSpatialGDKSpanId SpanId(Span.causes + ByteOffset);
-					if (!SpanId.IsNull())
-					{
-						Causes.Add(FSpatialGDKSpanId::ToString(SpanId.GetId()));
-					}
-				}
-			}
-		}
+		break;
+		//BytesToRead = Trace_GetNextSerializedItemSize(Stream.Get());
+		// if (BytesToRead == 0)
+		// {
+		// 	break;
+		// }
+		//
+		// Trace_Item* Item = Trace_Item_GetThreadLocal();
+		// if (BytesToRead != 0)
+		// {
+		// 	ReturnCode = Trace_DeserializeItemFromStream(Stream.Get(), Item, BytesToRead);
+		// }
+		//
+		// if (Item != nullptr)
+		// {
+		// 	if (Item->item_type == TRACE_ITEM_TYPE_EVENT)
+		// 	{
+		// 		const Trace_Event& Event = Item->item.event;
+		// 		FName EventName = FName(*FString(Event.type));
+		//
+		// 		if (FilterEventNames.Num() == 0 || FilterEventNames.Contains(EventName))
+		// 		{
+		// 			FString SpanIdString = FSpatialGDKSpanId::ToString(Event.span_id);
+		// 			FName& CachedEventName = TraceEvents.FindOrAdd(SpanIdString);
+		// 			CachedEventName = EventName;
+		// 		}
+		// 	}
+		// 	else if (Item->item_type == TRACE_ITEM_TYPE_SPAN)
+		// 	{
+		// 		const Trace_Span& Span = Item->item.span;
+		//
+		// 		FString SpanIdString = FSpatialGDKSpanId::ToString(Span.id);
+		// 		TArray<FString>& Causes = TraceSpans.FindOrAdd(SpanIdString);
+		// 		for (uint64 i = 0; i < Span.cause_count; ++i)
+		// 		{
+		// 			const int32 ByteOffset = i * TRACE_SPAN_ID_SIZE_BYTES;
+		// 			FSpatialGDKSpanId SpanId(Span.causes + ByteOffset);
+		// 			if (!SpanId.IsNull())
+		// 			{
+		// 				Causes.Add(FSpatialGDKSpanId::ToString(SpanId.GetId()));
+		// 			}
+		// 		}
+		// 	}
+		// }
 	}
 
 	Stream = nullptr;
