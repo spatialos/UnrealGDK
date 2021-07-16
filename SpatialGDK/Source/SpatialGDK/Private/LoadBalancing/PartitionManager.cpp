@@ -1,7 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "LoadBalancing/PartitionManager.h"
+
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "Interop/SpatialCommandsHandler.h"
 #include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/PartitionManager.h"
 #include "Schema/ServerWorker.h"
@@ -81,82 +83,7 @@ struct FPartitionManager::Impl
 
 	void AdvanceView(ISpatialOSWorker& Connection)
 	{
-		const TArray<Worker_Op>& Messages = Connection.GetWorkerMessages();
-
-		for (const auto& Message : Messages)
-		{
-			switch (Message.op_type)
-			{
-			case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			{
-				const Worker_CreateEntityResponseOp& Op = Message.op.create_entity_response;
-				if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-				{
-					UE_LOG(LogSpatialPartitionManager, Error, TEXT("Partition entity creation failed: \"%s\". Entity: %lld."),
-						   UTF8_TO_TCHAR(Op.message), Op.entity_id);
-				}
-				else
-				{
-					FPartitionHandle* Partition = PartitionCreationRequests.Find(Op.request_id);
-					if (Partition && Partitions.Contains(*Partition))
-					{
-						(*Partition)->State->CreationRequest.Reset();
-						(*Partition)->State->bPartitionCreated = true;
-
-						PartitionCreationRequests.Remove(Op.request_id);
-					}
-				}
-
-				break;
-			}
-			case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-			{
-				const Worker_ReserveEntityIdsResponseOp& Op = Message.op.reserve_entity_ids_response;
-
-				if (PartitionReserveRequest.IsSet() && PartitionReserveRequest.GetValue() == Op.request_id)
-				{
-					PartitionReserveRequest.Reset();
-					if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-					{
-						UE_LOG(LogSpatialPartitionManager, Error, TEXT("Reserve partition Id failed : %s"), UTF8_TO_TCHAR(Op.message));
-					}
-					else
-					{
-						FirstPartitionId = Op.first_entity_id;
-						CurPartitionId = FirstPartitionId;
-					}
-				}
-				break;
-			}
-			case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			{
-				const Worker_CommandResponseOp& Op = Message.op.command_response;
-				if (StrategyWorkerRequest.IsSet() && Op.request_id == StrategyWorkerRequest.GetValue())
-				{
-					if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-					{
-						UE_LOG(LogSpatialPartitionManager, Error, TEXT("Claim Strategy partition failed : %s"), UTF8_TO_TCHAR(Op.message));
-					}
-					StrategyWorkerRequest.Reset();
-				}
-				for (auto Partition : Partitions)
-				{
-					FPartitionInternalState& State = *Partition->State;
-					if (State.AssignmentRequest.IsSet() && State.AssignmentRequest.GetValue() == Op.request_id)
-					{
-						if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-						{
-							UE_LOG(LogSpatialPartitionManager, Error, TEXT("Claim partition %llu failed : %s"), State.Id,
-								   UTF8_TO_TCHAR(Op.message));
-						}
-						State.CurrentAssignment = State.RequestedAssignment;
-						State.AssignmentRequest.Reset();
-					}
-				}
-			}
-			break;
-			}
-		}
+		CommandsHandler.ProcessOps(Connection.GetWorkerMessages());
 
 		for (const EntityDelta& Delta : PartitionView.GetViewDelta().EntityDeltas)
 		{
@@ -275,21 +202,38 @@ struct FPartitionManager::Impl
 		ConnectedWorkersThisFrame.Add(ConnectedWorker);
 	}
 
-	void Flush(ISpatialOSWorker& Connection)
+	bool WaitForPartitionIdAvailable(ISpatialOSWorker& Connection)
 	{
-		// Wait for the initial entityId reservation query to land
-		if (FirstPartitionId == 0)
-		{
-			return;
-		}
-
 		// Ask for more ids if we run out.
-		if (CurPartitionId == FirstPartitionId + k_PartitionsReserveRange)
+		if (FirstPartitionId == 0
+		|| CurPartitionId >= FirstPartitionId + k_PartitionsReserveRange)
 		{
 			if (!PartitionReserveRequest.IsSet())
 			{
 				PartitionReserveRequest = Connection.SendReserveEntityIdsRequest(Impl::k_PartitionsReserveRange, RETRY_UNTIL_COMPLETE);
+				CommandsHandler.AddRequest(*PartitionReserveRequest, [this](const Worker_ReserveEntityIdsResponseOp& Op)
+				{
+					PartitionReserveRequest.Reset();
+					if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+					{
+						UE_LOG(LogSpatialPartitionManager, Error, TEXT("Reserve partition Id failed : %s"), UTF8_TO_TCHAR(Op.message));
+					}
+					else
+					{
+						FirstPartitionId = Op.first_entity_id;
+						CurPartitionId = FirstPartitionId;
+					}
+				});
 			}
+			return true;
+		}
+		return false;
+	}
+
+	void Flush(ISpatialOSWorker& Connection)
+	{
+		if (WaitForPartitionIdAvailable(Connection))
+		{
 			return;
 		}
 
@@ -311,6 +255,25 @@ struct FPartitionManager::Impl
 						Connection.SendCreateEntityRequest(MoveTemp(Components), PartitionEntity, SpatialGDK::RETRY_UNTIL_COMPLETE);
 					PartitionState.CreationRequest = RequestId;
 					PartitionCreationRequests.Add(RequestId, PartitionEntry);
+					CommandsHandler.AddRequest(RequestId, [this](const Worker_CreateEntityResponseOp& Op)
+					{
+						if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+						{
+							UE_LOG(LogSpatialPartitionManager, Error, TEXT("Partition entity creation failed: \"%s\". Entity: %lld."),
+								UTF8_TO_TCHAR(Op.message), Op.entity_id);
+						}
+						else
+						{
+							FPartitionHandle* Partition = PartitionCreationRequests.Find(Op.request_id);
+							if (Partition && Partitions.Contains(*Partition))
+							{
+								(*Partition)->State->CreationRequest.Reset();
+								(*Partition)->State->bPartitionCreated = true;
+
+								PartitionCreationRequests.Remove(Op.request_id);
+							}
+						}
+					});
 				}
 				continue;
 			}
@@ -324,8 +287,24 @@ struct FPartitionManager::Impl
 						Worker_EntityId SystemWorkerEntityId = PartitionState.UserAssignment->State->SystemWorkerId;
 
 						PartitionState.RequestedAssignment = PartitionState.UserAssignment;
-						PartitionState.AssignmentRequest = Connection.SendEntityCommandRequest(
-							SystemWorkerEntityId, CreateClaimPartitionRequest(PartitionState.Id), SpatialGDK::RETRY_UNTIL_COMPLETE, {});
+						PartitionState.AssignmentRequest = CommandsHandler.ClaimPartition(Connection, SystemWorkerEntityId, PartitionState.Id,
+						[this, PartitionEntry](const Worker_CommandResponseOp& Op)
+						{
+							if(Partitions.Contains(PartitionEntry))
+							{ 
+								FPartitionInternalState& State = *PartitionEntry->State;
+								if (State.AssignmentRequest.IsSet() && State.AssignmentRequest.GetValue() == Op.request_id)
+								{
+									if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+									{
+										UE_LOG(LogSpatialPartitionManager, Error, TEXT("Claim partition %llu failed : %s"), State.Id,
+											UTF8_TO_TCHAR(Op.message));
+									}
+									State.CurrentAssignment = State.RequestedAssignment;
+									State.AssignmentRequest.Reset();
+								}
+							}
+						});
 					}
 				}
 				continue;
@@ -383,13 +362,14 @@ struct FPartitionManager::Impl
 
 	Worker_EntityId StrategyWorkerEntityId = 0;
 	TOptional<Worker_RequestId> StrategyWorkerRequest;
+	FCommandsHandler CommandsHandler;
 
 	// +++ Partition management data +++
 	Worker_EntityId FirstPartitionId = 0;
 	Worker_EntityId CurPartitionId = 0;
 
 	TMap<Worker_RequestId_Key, FPartitionHandle> PartitionCreationRequests;
-	TOptional<Worker_RequestId> PartitionReserveRequest = 0;
+	TOptional<Worker_RequestId> PartitionReserveRequest;
 
 	TMap<Worker_EntityId_Key, FPartitionHandle> IdToPartitionsMap;
 	TSet<FPartitionHandle> Partitions;
@@ -418,11 +398,18 @@ FPartitionManager::FPartitionManager(Worker_EntityId InStrategyWorkerEntityId, V
 
 void FPartitionManager::Init(ISpatialOSWorker& Connection)
 {
-	m_Impl->StrategyWorkerRequest = Connection.SendEntityCommandRequest(
-		m_Impl->StrategyWorkerEntityId, CreateClaimPartitionRequest(SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID),
-		SpatialGDK::RETRY_UNTIL_COMPLETE, {});
+	m_Impl->StrategyWorkerRequest =  m_Impl->CommandsHandler.ClaimPartition(Connection, 
+		m_Impl->StrategyWorkerEntityId, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID,
+		[this](const Worker_CommandResponseOp& Op)
+		{
+			if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+			{
+				UE_LOG(LogSpatialPartitionManager, Error, TEXT("Claim Strategy partition failed : %s"), UTF8_TO_TCHAR(Op.message));
+			}
+			m_Impl->StrategyWorkerRequest.Reset();
+		});
 
-	m_Impl->PartitionReserveRequest = Connection.SendReserveEntityIdsRequest(Impl::k_PartitionsReserveRange, RETRY_UNTIL_COMPLETE);
+	m_Impl->WaitForPartitionIdAvailable(Connection);
 }
 
 bool FPartitionManager::IsReady()
