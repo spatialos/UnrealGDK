@@ -292,7 +292,6 @@ public:
 		FString Message;
 	};
 	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
-	FString StartupClientDebugString;
 
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;

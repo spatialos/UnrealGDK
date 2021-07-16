@@ -23,6 +23,7 @@ public:
 	};
 	explicit FSpatialServerStartupHandler(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup);
 	bool TryFinishStartup();
+	FString GetStartupStateDescription() const;
 
 private:
 	void SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorkerId);
