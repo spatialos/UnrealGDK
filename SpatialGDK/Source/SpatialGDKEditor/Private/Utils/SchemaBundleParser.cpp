@@ -69,7 +69,8 @@ namespace SpatialGDK
 void AddToListIfClearable(const TSharedPtr<FJsonObject>* ArrayObject, int32 FieldId, TArray<uint32>& OutIDs)
 {
 	const TSharedPtr<FJsonObject>* JsonObject;
-	// Only listType's are clearable, for the moment at least.
+	// List, options and maps are all clearable, but we can only generate
+	// listTypes, for the moment at least.
 	if ((*ArrayObject)->TryGetObjectField(TEXT("listType"), JsonObject))
 	{
 		OutIDs.Add(FieldId);
