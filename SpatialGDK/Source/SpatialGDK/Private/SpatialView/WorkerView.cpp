@@ -74,6 +74,23 @@ void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentI
 	}
 }
 
+void WorkerView::SendComponentSetUpdate(Worker_EntityId EntityId, FComponentSetUpdate SetUpdate)
+{
+	EntityViewElement* Element = View.Find(EntityId);
+	if (ensure(Element != nullptr))
+	{
+		for (const ComponentUpdate& Update : SetUpdate.GetUpdates())
+		{
+			ComponentData* Data = Element->Components.FindByPredicate(ComponentIdEquality{ Update.GetComponentId() });
+			if (ensure(Element != nullptr))
+			{
+				Data->ApplyUpdate(Update);
+			}
+		}
+	}
+	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(SetUpdate), FSpatialGDKSpanId());
+}
+
 void WorkerView::SendReserveEntityIdsRequest(ReserveEntityIdsRequest Request)
 {
 	LocalChanges->ReserveEntityIdsRequests.Push(MoveTemp(Request));
