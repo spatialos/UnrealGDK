@@ -3,13 +3,12 @@
 #pragma once
 
 #include "SpatialView/ComponentData.h"
+#include "SpatialView/ComponentSetUpdate.h"
 #include "SpatialView/ComponentUpdate.h"
 
 namespace SpatialGDK
 {
-// Represents one of a component addition, update, or removal.
-// Internally schema data is stored using raw pointers. However the interface exclusively uses explicitly owning objects to denote
-// ownership.
+// Represents one of a component addition, update, component-set-update or removal.
 class OutgoingComponentMessage
 {
 public:
@@ -18,6 +17,7 @@ public:
 		NONE,
 		ADD,
 		UPDATE,
+		SET_UPDATE,
 		REMOVE
 	};
 
@@ -37,6 +37,14 @@ public:
 		new (&Message.Update) ComponentUpdate(MoveTemp(ComponentUpdated));
 	}
 
+	explicit OutgoingComponentMessage(Worker_EntityId EntityId, FComponentSetUpdate SetUpdate, const FSpatialGDKSpanId& SpanId)
+		: EntityId(EntityId)
+		, SpanId(SpanId)
+		, Type(SET_UPDATE)
+	{
+		new (&Message.SetUpdate) FComponentSetUpdate(MoveTemp(SetUpdate));
+	}
+
 	explicit OutgoingComponentMessage(Worker_EntityId EntityId, Worker_ComponentId RemovedComponentId, const FSpatialGDKSpanId& SpanId)
 		: EntityId(EntityId)
 		, SpanId(SpanId)
@@ -45,10 +53,7 @@ public:
 		Message.RemovedId = RemovedComponentId;
 	}
 
-	~OutgoingComponentMessage()
-	{
-		DeleteCurrent();
-	}
+	~OutgoingComponentMessage() { DeleteCurrent(); }
 
 	// Moveable, not copyable.
 	OutgoingComponentMessage(const OutgoingComponentMessage&) = delete;
@@ -67,6 +72,9 @@ public:
 			break;
 		case UPDATE:
 			new (&Message.Update) ComponentUpdate(MoveTemp(Other.Message.Update));
+			break;
+		case SET_UPDATE:
+			new (&Message.SetUpdate) FComponentSetUpdate(MoveTemp(Other.Message.SetUpdate));
 			break;
 		case REMOVE:
 			Message.RemovedId = Other.Message.RemovedId;
@@ -93,6 +101,9 @@ public:
 		case UPDATE:
 			new (&Message.Update) ComponentUpdate(MoveTemp(Other.Message.Update));
 			break;
+		case SET_UPDATE:
+			new (&Message.SetUpdate) FComponentSetUpdate(MoveTemp(Other.Message.SetUpdate));
+			break;
 		case REMOVE:
 			Message.RemovedId = Other.Message.RemovedId;
 			break;
@@ -109,7 +120,7 @@ public:
 
 	Worker_ComponentId GetRemovedId() const
 	{
-		check(Type == ADD);
+		check(Type == REMOVE);
 		return Message.RemovedId;
 	}
 
@@ -123,6 +134,12 @@ public:
 	{
 		check(Type == UPDATE);
 		return MoveTemp(Message.Update);
+	}
+
+	FComponentSetUpdate ReleaseComponentSetUpdate() &&
+	{
+		check(Type == SET_UPDATE);
+		return MoveTemp(Message.SetUpdate);
 	}
 
 	Worker_EntityId EntityId;
@@ -141,6 +158,9 @@ private:
 		case UPDATE:
 			Message.Update.~ComponentUpdate();
 			break;
+		case SET_UPDATE:
+			Message.SetUpdate.~FComponentSetUpdate();
+			break;
 		case REMOVE:
 			break;
 		}
@@ -148,7 +168,10 @@ private:
 
 	union ComponentMessage
 	{
-		ComponentMessage() : RemovedId(0) {}
+		ComponentMessage()
+			: RemovedId(0)
+		{
+		}
 #if defined(_MSC_VER)
 #pragma warning(disable : 4583)
 #endif // defined(_MSC_VER)
@@ -158,6 +181,7 @@ private:
 #endif // defined(_MSC_VER)
 		ComponentData Data;
 		ComponentUpdate Update;
+		FComponentSetUpdate SetUpdate;
 		Worker_ComponentId RemovedId;
 	} Message;
 
