@@ -598,7 +598,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 				{
 					// bNoLoadOnClient is set to a fixed value because it does not affect equality
 					UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPair.Value->SubobjectName.ToString(),
-																	StablyNamedRefOption.GetValue(), /*bNoLoadOnClient*/ false));
+																	 StablyNamedRefOption.GetValue(), /*bNoLoadOnClient*/ false));
 				}
 			}
 		}
@@ -637,7 +637,6 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 			}
 		}
 	}
-
 }
 
 void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& SubobjectRef)
