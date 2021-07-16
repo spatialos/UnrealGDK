@@ -195,7 +195,7 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 	while (BytesToRead != 0 && ReturnCode == 1)
 	{
 		break;
-		//BytesToRead = Trace_GetNextSerializedItemSize(Stream.Get());
+		// BytesToRead = Trace_GetNextSerializedItemSize(Stream.Get());
 		// if (BytesToRead == 0)
 		// {
 		// 	break;

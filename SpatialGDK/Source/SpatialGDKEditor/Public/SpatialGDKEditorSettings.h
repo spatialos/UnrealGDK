@@ -127,9 +127,10 @@ struct FSpatialLaunchConfigDescription
 
 	FSpatialLaunchConfigDescription()
 		: bUseDefaultTemplateForRuntimeVariant(true)
-		, Template()
-		, World()
-		, MaxConcurrentWorkers(1000)
+		  , Template()
+		  , World()
+		  , MaxConcurrentWorkers(1000)
+		  , bEnablePerEntityQBIF(true)
 	{
 		ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 	}
