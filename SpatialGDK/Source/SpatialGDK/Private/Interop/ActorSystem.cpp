@@ -2162,6 +2162,8 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 		}
 	}
 
+	TArray<ComponentUpdate> Updates;
+
 	for (int i = 0; i < ComponentUpdates.Num(); i++)
 	{
 		FWorkerComponentUpdate& Update = ComponentUpdates[i];
@@ -2178,8 +2180,11 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 											 });
 		}
 
-		NetDriver->Connection->SendComponentUpdate(EntityId, &Update, SpanId);
+		Updates.Emplace(OwningComponentUpdatePtr(Update.schema_type), Update.component_id);
 	}
+
+	FComponentSetUpdate SetUpdate(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, MoveTemp(Updates));
+	NetDriver->Connection->GetSpatialWorkerInterface()->SendComponentSetUpdate(EntityId, MoveTemp(SetUpdate) /*, SpanId*/);
 }
 
 void ActorSystem::SendActorTornOffUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const
