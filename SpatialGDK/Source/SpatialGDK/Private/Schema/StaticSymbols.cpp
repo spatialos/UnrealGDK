@@ -16,6 +16,7 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
 #include "Schema/UnrealMetadata.h"
+#include "LoadBalancing/LegacyLoadbalancingComponents.h"
 
 // Support older C++ standard by defining constexpr static members, this file should be removed once UE 4.25 is no longer supported.
 // Comment this section and build UE 4.25 on Linux if you wish to analyze the underlying issue.
@@ -45,5 +46,9 @@ constexpr Worker_ComponentId Worker::ComponentId;
 constexpr Worker_ComponentId AuthorityDelegation::ComponentId;
 constexpr Worker_ComponentId Tombstone::ComponentId;
 constexpr Worker_ComponentId UnrealMetadata::ComponentId;
+
+constexpr Worker_ComponentId LegacyLB_GridCell::ComponentId;
+constexpr Worker_ComponentId LegacyLB_Layer::ComponentId;
+constexpr Worker_ComponentId LegacyLB_VirtualWorkerAssignment::ComponentId;
 } // namespace SpatialGDK
 #endif
