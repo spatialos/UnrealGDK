@@ -79,9 +79,9 @@ void APartiallyStablePathTest::PrepareTest()
 			APartiallyStablePathActor* TestActor = CastChecked<APartiallyStablePathActor>(TestActors[0]);
 
 			APlayerController* PlayerController = CastChecked<APlayerController>(GetLocalFlowController()->GetOwner());
-			APartiallyStablePathPawn* Pawn = CastChecked<APartiallyStablePathPawn>(PlayerController->GetPawn());
+			APartiallyStablePathPawn* PawnLocal = CastChecked<APartiallyStablePathPawn>(PlayerController->GetPawn());
 
-			Pawn->ServerVerifyComponentReference(TestActor, TestActor->DynamicComponent);
+			PawnLocal->ServerVerifyComponentReference(TestActor, TestActor->DynamicComponent);
 
 			FinishStep();
 		},
