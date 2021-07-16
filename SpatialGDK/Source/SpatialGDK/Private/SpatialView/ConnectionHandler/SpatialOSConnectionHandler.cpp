@@ -2,7 +2,6 @@
 
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
 
-#include "Async/Async.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialView/OpList/WorkerConnectionOpList.h"
 
@@ -10,8 +9,6 @@
 
 #include <improbable/c_trace.h>
 #include <improbable/c_worker.h>
-
-#include "Windows/VisualStudioDTE/VisualStudioDTE.h"
 
 namespace SpatialGDK
 {
