@@ -8,7 +8,7 @@ namespace SpatialGDK
 {
 struct LegacyLB_GridCell
 {
-	static const Worker_ComponentId ComponentId = 190502;
+	static constexpr Worker_ComponentId ComponentId = 190502;
 
 	LegacyLB_GridCell() {}
 
@@ -69,7 +69,7 @@ struct LegacyLB_GridCell
 
 struct LegacyLB_Layer
 {
-	static const Worker_ComponentId ComponentId = 190501;
+	static constexpr Worker_ComponentId ComponentId = 190501;
 
 	LegacyLB_Layer() {}
 
@@ -127,7 +127,7 @@ struct LegacyLB_Layer
 
 struct LegacyLB_VirtualWorkerAssignment
 {
-	static const Worker_ComponentId ComponentId = 190500;
+	static constexpr Worker_ComponentId ComponentId = 190500;
 
 	LegacyLB_VirtualWorkerAssignment() {}
 
