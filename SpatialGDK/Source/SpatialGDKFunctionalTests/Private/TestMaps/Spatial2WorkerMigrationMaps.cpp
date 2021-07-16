@@ -58,4 +58,3 @@ void USpatial2WorkerNoInterestMigrationMap::CreateCustomContentForMap()
 	WorldSettings->DefaultGameMode = ACharacterMovementTestGameMode::StaticClass();
 	WorldSettings->SetMultiWorkerSettingsClass(UTest2x1NoInterestWorkerSettings::StaticClass());
 }
-
