@@ -117,6 +117,11 @@ void ViewCoordinator::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpd
 	View.SendComponentUpdate(EntityId, MoveTemp(Update), SpanId);
 }
 
+void ViewCoordinator::SendComponentSetUpdate(Worker_EntityId EntityId, FComponentSetUpdate SetUpdate, const FSpatialGDKSpanId& SpanId)
+{
+	View.SendComponentSetUpdate(EntityId, MoveTemp(SetUpdate));
+}
+
 void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId)
 {
 	View.SendRemoveComponent(EntityId, ComponentId, SpanId);

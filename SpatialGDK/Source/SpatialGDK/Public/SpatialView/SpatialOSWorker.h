@@ -28,6 +28,7 @@ public:
 
 	virtual void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId = {}) = 0;
 	virtual void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId = {}) = 0;
+	virtual void SendComponentSetUpdate(Worker_EntityId EntityId, FComponentSetUpdate SetUpdate, const FSpatialGDKSpanId& SpanId = {}) = 0;
 	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId = {}) = 0;
 
 	virtual Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData = NO_RETRIES,

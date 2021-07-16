@@ -4,6 +4,7 @@
 
 #include "SpatialView/CommandRetryHandler.h"
 #include "SpatialView/ComponentSetData.h"
+#include "SpatialView/ComponentSetUpdate.h"
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
 #include "SpatialView/CriticalSectionFilter.h"
 #include "SpatialView/Dispatcher.h"
@@ -61,6 +62,8 @@ public:
 
 	virtual void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId = {}) override;
 	virtual void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId = {}) override;
+	virtual void SendComponentSetUpdate(Worker_EntityId EntityId, FComponentSetUpdate SetUpdate,
+										const FSpatialGDKSpanId& SpanId = {}) override;
 	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
 									 const FSpatialGDKSpanId& SpanId = {}) override;
 
