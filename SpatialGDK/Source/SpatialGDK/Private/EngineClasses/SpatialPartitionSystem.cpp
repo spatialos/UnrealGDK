@@ -36,3 +36,13 @@ TArray<SpatialGDK::FLBDataStorage*> USpatialPartitionSystem::GetData()
 {
 	return TArray<SpatialGDK::FLBDataStorage*>();
 }
+
+TArray<SpatialGDK::FPartitionEvent> USpatialPartitionSystem::ConsumePartitionEvents()
+{
+	TArray<SpatialGDK::FPartitionEvent> EventsToConsume;
+	if (Impl != nullptr)
+	{
+		Swap(EventsToConsume, Impl->Events);
+	}
+	return EventsToConsume;
+}

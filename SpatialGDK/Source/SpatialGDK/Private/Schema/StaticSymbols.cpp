@@ -1,3 +1,4 @@
+#include "LoadBalancing/LegacyLoadbalancingComponents.h"
 #include "Schema/ActorGroupMember.h"
 #include "Schema/ActorOwnership.h"
 #include "Schema/ActorSetMember.h"
@@ -16,7 +17,6 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
 #include "Schema/UnrealMetadata.h"
-#include "LoadBalancing/LegacyLoadbalancingComponents.h"
 
 // Support older C++ standard by defining constexpr static members, this file should be removed once UE 4.25 is no longer supported.
 // Comment this section and build UE 4.25 on Linux if you wish to analyze the underlying issue.

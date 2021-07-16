@@ -113,7 +113,7 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	}
 
 	// Ask the Strategy about the entities that need migration.
-	FMigrationContext Ctx(MigratingEntities, ModifiedEntities);
+	FMigrationContext Ctx(MigratingEntities, ModifiedEntities, DataStorages.EntitiesRemoved);
 	Strategy->CollectEntitiesToMigrate(Ctx);
 
 	// Clear the buffer of modified entities now that the strategy has been informed.
@@ -121,6 +121,10 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	{
 		Storage->ClearModified();
 	}
+	DataStorages.EntitiesAdded.Empty();
+	DataStorages.EntitiesRemoved.Empty();
+	UserDataStorages.EntitiesAdded.Empty();
+	UserDataStorages.EntitiesRemoved.Empty();
 
 	// If there were pending migrations, meld them with the migration requests
 	for (auto PendingMigration : PendingMigrations)

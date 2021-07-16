@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "SpatialCommonTypes.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 
 #include "SpatialPartitionSystem.generated.h"
@@ -13,7 +14,24 @@ namespace SpatialGDK
 {
 class FLBDataStorage;
 class FPartitionSystemImpl;
+
+struct FPartitionEvent
+{
+	enum EventType
+	{
+		Created,
+		Deleted,
+		Delegated,
+		DelegationLost
+	};
+
+	Worker_EntityId PartitionId;
+	EventType Event;
+};
+
 } // namespace SpatialGDK
+
+class USpatialNetDriver;
 
 UCLASS(Abstract)
 class SPATIALGDK_API USpatialPartitionSystem : public UGameInstanceSubsystem
@@ -29,5 +47,11 @@ public:
 
 	virtual TArray<SpatialGDK::FLBDataStorage*> GetData();
 
-protected:
+	TArray<SpatialGDK::FPartitionEvent> ConsumePartitionEvents();
+
+	void SetImpl(SpatialGDK::FPartitionSystemImpl& InImpl) { Impl = &InImpl; }
+	void ClearImpl() { Impl = nullptr; }
+
+private:
+	SpatialGDK::FPartitionSystemImpl* Impl = nullptr;
 };
