@@ -41,7 +41,7 @@ bool ComponentData::ApplyUpdate(const ComponentUpdate& Update)
 
 	const bool bUpdateResult = Schema_ApplyComponentUpdateToData(Update.GetUnderlying(), Data.Get()) != 0;
 	// Copy the component to prevent unbounded memory growth from appending the update to it.
-	Data = OwningComponentDataPtr(Schema_CopyComponentData(Data.Get()));
+	Data.Reset(Schema_CopyComponentData(Data.Get()));
 	return bUpdateResult;
 }
 
