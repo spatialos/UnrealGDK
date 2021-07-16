@@ -625,14 +625,13 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 			TWeakObjectPtr<UObject> WeakObjectPtr = ObjReplicatorPair.Value->GetWeakObjectPtr();
 			if (WeakObjectPtr.IsValid())
 			{
-				if (FNetworkGUID* SubobjectNetGUID = NetGUIDLookup.Find(WeakObjectPtr))
+				if (FNetworkGUID* ObjectNetGUID = NetGUIDLookup.Find(WeakObjectPtr))
 				{
-					// TODO: Figure out why NetGUIDToUnrealObjectRef might not have this GUID. UNR-989
-					if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*SubobjectNetGUID))
+					if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*ObjectNetGUID))
 					{
 						UnrealObjectRefToNetGUID.Remove(*SubobjectRef);
+						NetGUIDToUnrealObjectRef.Remove(*ObjectNetGUID);
 					}
-					NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
 				}
 			}
 		}
