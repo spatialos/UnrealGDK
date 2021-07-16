@@ -385,7 +385,7 @@ void SpatialCommandUtils::TryGracefullyKill(const FString& ProcName, const FProc
 #if PLATFORM_LINUX || PLATFORM_MAC
 	// On Linux this sends a SIGTERM signal
 	// TODO: does this work on Mac?
-	FPlatformProcess::TerminateProc(ProcHandle);
+	FPlatformProcess::TerminateProc(const_cast<FProcHandle &>(ProcHandle));
 #elif PLATFORM_WINDOWS
 	// TerminateProc is too forceful on Windows
 	TryGracefullyKillWindows(ProcName);
