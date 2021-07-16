@@ -5,6 +5,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/SpatialPartitionSystemImpl.h"
 #include "Schema/ServerWorker.h"
 #include "Schema/StandardLibrary.h"
 #include "SpatialGDKSettings.h"
@@ -67,9 +68,13 @@ void ServerWorkerEntityCreator::CreateWorkerEntity()
 	}
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
-	// The load balance strategy won't be set up at this point, but we call this function again later when it is ready in
-	// order to set the interest of the server worker according to the strategy.
-	Components.Add(NetDriver.InterestFactory->CreateServerWorkerInterest(NetDriver.LoadBalanceStrategy).CreateComponentData());
+	TArray<Worker_ComponentId> PartitionsComponents;
+	if (NetDriver.PartitionSystemImpl.IsValid())
+	{
+		PartitionsComponents = NetDriver.PartitionSystemImpl->PartitionData.GetComponentsToWatch().Array();
+	}
+
+	Components.Add(NetDriver.InterestFactory->CreateServerWorkerInterest(PartitionsComponents).CreateComponentData());
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
