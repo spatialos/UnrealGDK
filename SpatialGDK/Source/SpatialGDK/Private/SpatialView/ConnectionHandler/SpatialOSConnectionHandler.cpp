@@ -78,19 +78,21 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 		{
 		case OutgoingComponentMessage::ADD:
 		{
-			Worker_ComponentData Data = { nullptr, Message.ComponentId, MoveTemp(Message).ReleaseComponentAdded().Release(), nullptr };
-			Worker_Connection_SendAddComponent(Connection.Get(), Message.EntityId, &Data, &UpdateParams);
+			ComponentData Data = MoveTemp(Message).ReleaseComponentAdded();
+			Worker_ComponentData WorkerData = { nullptr, Data.GetComponentId(), MoveTemp(Data).Release(), nullptr };
+			Worker_Connection_SendAddComponent(Connection.Get(), Message.EntityId, &WorkerData, &UpdateParams);
 			break;
 		}
 		case OutgoingComponentMessage::UPDATE:
 		{
-			Worker_ComponentUpdate Update = { nullptr, Message.ComponentId, MoveTemp(Message).ReleaseComponentUpdate().Release(), nullptr };
-			Worker_Connection_SendComponentUpdate(Connection.Get(), Message.EntityId, &Update, &UpdateParams);
+			ComponentUpdate Update = MoveTemp(Message).ReleaseComponentUpdate();
+			Worker_ComponentUpdate WorkerUpdate = { nullptr, Update.GetComponentId(), MoveTemp(Update).Release(), nullptr };
+			Worker_Connection_SendComponentUpdate(Connection.Get(), Message.EntityId, &WorkerUpdate, &UpdateParams);
 			break;
 		}
 		case OutgoingComponentMessage::REMOVE:
 		{
-			Worker_Connection_SendRemoveComponent(Connection.Get(), Message.EntityId, Message.ComponentId, &UpdateParams);
+			Worker_Connection_SendRemoveComponent(Connection.Get(), Message.EntityId, Message.GetRemovedId(), &UpdateParams);
 			break;
 		}
 		default:
