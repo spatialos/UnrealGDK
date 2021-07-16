@@ -100,7 +100,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 			{
 				WorkerUpdates.Add({ nullptr, Update.GetComponentId(), MoveTemp(Update).Release(), nullptr });
 			}
-			Worker_ComponentSetUpdate WorkerSetUpdate = { nullptr, SetId, WorkerUpdates.Num(), WorkerUpdates.GetData() };
+			Worker_ComponentSetUpdate WorkerSetUpdate = { nullptr, SetId, static_cast<uint32>(WorkerUpdates.Num()), WorkerUpdates.GetData() };
 			Worker_Connection_SendComponentSetUpdate(Connection.Get(), Message.EntityId, &WorkerSetUpdate, &UpdateParams);
 			break;
 		}
