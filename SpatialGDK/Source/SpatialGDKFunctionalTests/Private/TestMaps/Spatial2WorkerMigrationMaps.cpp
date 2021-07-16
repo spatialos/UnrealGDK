@@ -10,6 +10,7 @@
 USpatial2WorkerFullInterestMigrationMap::USpatial2WorkerFullInterestMigrationMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("Spatial2WorkerFullInterestMigrationMap"))
 {
+	SetNumberOfClients(2);
 }
 
 void USpatial2WorkerFullInterestMigrationMap::CreateCustomContentForMap()
@@ -35,6 +36,7 @@ void USpatial2WorkerFullInterestMigrationMap::CreateCustomContentForMap()
 USpatial2WorkerNoInterestMigrationMap::USpatial2WorkerNoInterestMigrationMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("Spatial2WorkerNoInterestMigrationMap"))
 {
+	SetNumberOfClients(2);
 }
 
 void USpatial2WorkerNoInterestMigrationMap::CreateCustomContentForMap()
