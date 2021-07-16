@@ -46,6 +46,7 @@ ATestMovementCharacter::ATestMovementCharacter()
 	// Increase MaxSimulationIterations to 14 so that we do not get warnings inside UCharacterMovementComponent::GetSimulationTimeStep
 	UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement();
 	CharacterMovementComponent->MaxSimulationIterations = 14;
+	CharacterMovementComponent->MaxWalkSpeed = 400;
 }
 
 void ATestMovementCharacter::BeginPlay()

@@ -5,6 +5,7 @@
 #include "Components/BoxComponent.h"
 #include "Engine/TriggerBox.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
@@ -97,7 +98,9 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			if (Character->IsLocallyControlled())
 			{
 				Character->AddMovementInput(FVector(1.0f, 0.0f, 0.0f), 10.0f, true);
-				AssertValue_Float(Character->Speed, EComparisonMethod::Less_Than, 650.0f, TEXT("Actor not speeding"));
+
+				const float MaxExpectedSpeed = Character->GetCharacterMovement()->MaxWalkSpeed + 10.0f;
+				AssertValue_Float(Character->Speed, EComparisonMethod::Less_Than, MaxExpectedSpeed, TEXT("Actor not speeding"));
 			}
 
 			bool bShouldRunRequires = true;
@@ -148,7 +151,9 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			if (Character->IsLocallyControlled())
 			{
 				Character->AddMovementInput(FVector(-1.0f, 0.0f, 0.0f), 10.0f, true);
-				AssertValue_Float(Character->Speed, EComparisonMethod::Less_Than, 650.0f, TEXT("Actor not speeding"));
+
+				const float MaxExpectedSpeed = Character->GetCharacterMovement()->MaxWalkSpeed + 10.0f;
+				AssertValue_Float(Character->Speed, EComparisonMethod::Less_Than, MaxExpectedSpeed, TEXT("Actor not speeding"));
 			}
 
 			bool bShouldRunRequires = true;
