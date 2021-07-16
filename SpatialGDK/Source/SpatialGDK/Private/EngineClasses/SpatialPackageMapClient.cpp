@@ -183,11 +183,11 @@ void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealOb
 	}
 	else
 	{
-		// TODO UNR-5785 - Remove this once fixed, as really SpatialGuidCache and Native's GuidCache should be in sync
+		// Sanity check consistency between SpatialGuidCache and native's GuidCache, as it would be pretty bad if they were out of sync.
 		const FNetworkGUID ObjectNetGUID = GetNetGUIDFromObject(Object);
 		if (!ObjectNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialPackageMap, Log,
+			UE_LOG(LogSpatialPackageMap, Warning,
 				   TEXT("SpatialGuidCache has a NetGUID mapping which native's GuidCache does not have for object: %s with NetGUID: %u. "
 						"Removing existing mapping from SpatialGuidCache and recreating."),
 				   *Object->GetName(), NetGUID.Value);
@@ -598,29 +598,13 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 				{
 					// bNoLoadOnClient is set to a fixed value because it does not affect equality
 					UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPair.Value->SubobjectName.ToString(),
-																	 StablyNamedRefOption.GetValue(), /*bNoLoadOnClient*/ false));
+																	StablyNamedRefOption.GetValue(), /*bNoLoadOnClient*/ false));
 				}
 			}
 		}
 	}
 
-	// Remove dynamically attached subobjects
-	if (USpatialActorChannel* Channel = SpatialNetDriver->GetActorChannelByEntityId(EntityId))
-	{
-		for (UObject* DynamicSubobject : Channel->CreateSubObjects)
-		{
-			if (FNetworkGUID* SubobjectNetGUID = NetGUIDLookup.Find(DynamicSubobject))
-			{
-				if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*SubobjectNetGUID))
-				{
-					UnrealObjectRefToNetGUID.Remove(*SubobjectRef);
-					NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
-				}
-			}
-		}
-	}
-
-	// Remove actor.
+	// Remove actor mappings.
 	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
 	// TODO: Figure out why NetGUIDToUnrealObjectRef might not have this GUID. UNR-989
 	if (FUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID))
@@ -632,6 +616,28 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	{
 		UnrealObjectRefToNetGUID.Remove(StablyNamedRefOption.GetValue());
 	}
+
+	// Remove dynamic subobjects.
+	if (USpatialActorChannel* Channel = SpatialNetDriver->GetActorChannelByEntityId(EntityId))
+	{
+		for (auto& ObjReplicatorPair : Channel->ReplicationMap)
+		{
+			TWeakObjectPtr<UObject> WeakObjectPtr = ObjReplicatorPair.Value->GetWeakObjectPtr();
+			if (WeakObjectPtr.IsValid())
+			{
+				if (FNetworkGUID* SubobjectNetGUID = NetGUIDLookup.Find(WeakObjectPtr))
+				{
+					// TODO: Figure out why NetGUIDToUnrealObjectRef might not have this GUID. UNR-989
+					if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*SubobjectNetGUID))
+					{
+						UnrealObjectRefToNetGUID.Remove(*SubobjectRef);
+					}
+					NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
+				}
+			}
+		}
+	}
+
 }
 
 void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& SubobjectRef)
