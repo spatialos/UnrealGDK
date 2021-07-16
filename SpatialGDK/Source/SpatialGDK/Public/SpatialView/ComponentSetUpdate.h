@@ -9,7 +9,7 @@
 namespace SpatialGDK
 {
 // An owning wrapper for a component-set-update.
-class SPATIALGDK_API FComponentSetUpdate
+class FComponentSetUpdate
 {
 public:
 	// Creates a new component-set-update.
@@ -54,7 +54,10 @@ public:
 	// Adds an update to the component-set-update.
 	void AddUpdate(ComponentUpdate Update) { Updates.Add(MoveTemp(Update)); }
 
-	Worker_ComponentId GetComponentSetId() const;
+	Worker_ComponentId GetComponentSetId() const
+	{
+		return ComponentSetId;
+	}
 
 private:
 	Worker_ComponentSetId ComponentSetId;

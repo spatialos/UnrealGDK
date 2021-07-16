@@ -65,9 +65,9 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunc
 	Writer->WriteObjectStart(TEXT("permissions"));
 	Writer->WriteValue(TEXT("entity_creation"), WorkerConfig.WorkerPermissions.bAllowEntityCreation);
 	Writer->WriteValue(TEXT("entity_deletion"), WorkerConfig.WorkerPermissions.bAllowEntityDeletion);
-	Writer->WriteValue(TEXT("disconnect_worker"), WorkerConfig.WorkerPermissions.bDisconnectWorker);
 	Writer->WriteValue(TEXT("reserve_entity_id"), WorkerConfig.WorkerPermissions.bReserveEntityID);
 	Writer->WriteValue(TEXT("entity_query"), WorkerConfig.WorkerPermissions.bAllowEntityQuery);
+	Writer->WriteValue(TEXT("system_entity_command"), WorkerConfig.WorkerPermissions.bAllowSystemEntityCommands);
 	Writer->WriteObjectEnd();
 
 	if (WorkerConfig.NumEditorInstances > 0)
@@ -130,6 +130,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 		ClientWorker.WorkerPermissions.bDisconnectWorker = false;
 		ClientWorker.WorkerPermissions.bReserveEntityID = false;
 		ClientWorker.WorkerPermissions.bAllowEntityQuery = true;
+		ClientWorker.WorkerPermissions.bAllowSystemEntityCommands = false;
 		WriteWorkerSection(Writer, ClientWorker);
 
 		// For cloud configs we always add the SimulatedPlayerCoordinator and DeploymentManager.
@@ -176,6 +177,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 		Writer->WriteValue(TEXT("z_size"), LaunchConfigDescription.World.Dimensions.Y);
 		Writer->WriteObjectEnd(); // World section end
 
+		Writer->WriteValue(TEXT("enable_per_entity_qbi_frequency_update_flushing"), LaunchConfigDescription.bEnablePerEntityQBIF);
 		Writer->WriteValue(TEXT("max_concurrent_workers"), LaunchConfigDescription.MaxConcurrentWorkers);
 
 		// Event tracing
