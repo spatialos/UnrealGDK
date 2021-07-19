@@ -2,18 +2,21 @@
 
 #include "Utils/ComponentReader.h"
 
+#include <algorithm>
+#include <iterator>
+
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Net/DataReplication.h"
 #include "Net/RepLayout.h"
 #include "UObject/TextProperty.h"
 
+#include "Algo/Unique.h"
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
-#include "Algo/Unique.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaUtils.h"
@@ -99,6 +102,49 @@ ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver,
 {
 }
 
+template<typename T>
+void ForEachUnique(const TArray<T>& ArrayA, const TArray<T>& ArrayB, TFunction<void(const T Value)> Func)
+{
+	auto UpdateIt = ArrayA.CreateConstIterator();
+	auto ListIt = ArrayB.CreateConstIterator();
+	while (true)
+	{
+		if (UpdateIt)
+		{
+			if (ListIt)
+			{
+				const T UpdateValue = *UpdateIt;
+				const T ListValue = *ListIt;
+				const bool SameValue = UpdateValue == ListValue;
+				const bool UpdateHighest = SameValue || UpdateValue > ListValue;
+				Func(UpdateHighest ? UpdateValue : ListValue);
+				if (UpdateHighest)
+				{
+					++UpdateIt;
+				}
+				if (SameValue || UpdateValue < ListValue)
+				{
+					++ListIt;
+				}
+			}
+			else
+			{
+				Func(*UpdateIt);
+				++UpdateIt;
+			}
+		}
+		else if (ListIt)
+		{
+			Func(*ListIt);
+			++ListIt;
+		}
+		else
+		{
+			break;
+		}
+	}
+}
+
 void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object,
 										 USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut,
 										 bool& bOutReferencesChanged)
@@ -118,8 +164,8 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
 	UpdatedIds.Append(ListIDs);
 	// Eliminate any duplicates
+	UpdatedIds.Sort();
 	UpdatedIds.SetNum(Algo::Unique(UpdatedIds));
-
 	ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentId, ObjectRepNotifiesOut, bOutReferencesChanged);
 }
 
