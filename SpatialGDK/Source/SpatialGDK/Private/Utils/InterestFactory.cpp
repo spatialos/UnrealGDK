@@ -530,11 +530,15 @@ void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor,
 
 	if (InterestProvidingComponents.Num() == 1)
 	{
-		Cast<ISpatialInterestProvider>(InterestProvidingComponents[0])->PopulateFrequencyToConstraintsMap(*ClassInfoManager, OutFrequencyToConstraints);
+		Cast<ISpatialInterestProvider>(InterestProvidingComponents[0])
+			->PopulateFrequencyToConstraintsMap(*ClassInfoManager, OutFrequencyToConstraints);
 	}
 	else if (InterestProvidingComponents.Num() > 1)
 	{
-		UE_LOG(LogInterestFactory, Error, TEXT("USpatialActorChannel::ReplicateActor(): Actor %s has more than 1 component that implements ISpatialInterestProvider, this is not supported!"), *GetNameSafe(InActor));
+		UE_LOG(LogInterestFactory, Error,
+			   TEXT("USpatialActorChannel::ReplicateActor(): Actor %s has more than 1 component that implements ISpatialInterestProvider, "
+					"this is not supported!"),
+			   *GetNameSafe(InActor));
 		checkNoEntry()
 	}
 

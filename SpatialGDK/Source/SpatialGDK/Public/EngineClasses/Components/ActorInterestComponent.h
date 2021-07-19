@@ -24,7 +24,7 @@ public:
 	UActorInterestComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	virtual void PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager,
-										   SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const override;
+												   SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const override;
 	/**
 	 * The Queries associated with this component.
 	 */
