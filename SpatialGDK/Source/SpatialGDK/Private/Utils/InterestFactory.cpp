@@ -528,18 +528,10 @@ void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor,
 	// Any ActorComponent implementing ISpatialInterestProvider can populate the frequency to constraints map with the user defined queries.
 	TArray<UActorComponent*> InterestProvidingComponents = InActor->GetComponentsByInterface(USpatialInterestProvider::StaticClass());
 
-	if (InterestProvidingComponents.Num() == 1)
+	for (const auto InterestProvidingComponent : InterestProvidingComponents)
 	{
-		Cast<ISpatialInterestProvider>(InterestProvidingComponents[0])
-			->PopulateFrequencyToConstraintsMap(*ClassInfoManager, OutFrequencyToConstraints);
-	}
-	else if (InterestProvidingComponents.Num() > 1)
-	{
-		UE_LOG(LogInterestFactory, Error,
-			   TEXT("USpatialActorChannel::ReplicateActor(): Actor %s has more than 1 component that implements ISpatialInterestProvider, "
-					"this is not supported!"),
-			   *GetNameSafe(InActor));
-		checkNoEntry()
+		const ISpatialInterestProvider* InterestProvider = Cast<ISpatialInterestProvider>(InterestProvidingComponent);
+		InterestProvider->PopulateFrequencyToConstraintsMap(*ClassInfoManager, OutFrequencyToConstraints);
 	}
 
 	if (bRecurseChildren)
@@ -611,22 +603,29 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 
 bool InterestFactory::ShouldAddNetCullDistanceInterest(const AActor* InActor) const
 {
-	// If the actor has a component to specify interest and that indicates that we shouldn't add
-	// constraints based on NetCullDistanceSquared, abort. There is a check elsewhere to ensure that
-	// there is at most one USpatialInterestProvider.
+	// The NCD flag should not be set per InterestProviding component, but rather per actor that has a set of InterestProviding components.
+	// That change requires some more thought, so the below approach should be considered temporary.
+	//
+	// If we have no InterestProvidingComponents, we will enable NCD by default.
+	// Otherwise, we will enable NCD if we encounter any InterestProvidingComponent that requests NCD, otherwise disable NCD.
 	TArray<UActorComponent*> InterestProvidingComponents = InActor->GetComponentsByInterface(USpatialInterestProvider::StaticClass());
 
-	if (InterestProvidingComponents.Num() == 1)
+	if (InterestProvidingComponents.Num() == 0)
 	{
-		const ISpatialInterestProvider* InterestProvider = Cast<ISpatialInterestProvider>(InterestProvidingComponents[0]);
+		return true;
+	}
+
+	for (const auto InterestProvidingComponent : InterestProvidingComponents)
+	{
+		const ISpatialInterestProvider* InterestProvider = Cast<ISpatialInterestProvider>(InterestProvidingComponent);
 		check(InterestProvider != nullptr);
-		if (!InterestProvider->GetUseNetCullDistanceSquaredForCheckoutRadius())
+		if (InterestProvider->GetUseNetCullDistanceSquaredForCheckoutRadius())
 		{
-			return false;
+			return true;
 		}
 	}
 
-	return true;
+	return false;
 }
 
 QueryConstraint UnrealServerInterestFactory::CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const
