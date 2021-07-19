@@ -183,6 +183,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static FName GetLayerName(const UObject* WorldContextObject);
 
+	static void GetEntityIdsInHierarchy(const AActor* RootActor, TArray<int64>& OutEntityIds);
+
 	/**
 	 * Returns the Max Dynamically Attached Subobjects Per Class as per Spatial GDK settings
 	 */

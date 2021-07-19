@@ -374,6 +374,21 @@ FName USpatialStatics::GetLayerName(const UObject* WorldContextObject)
 	return LBStrategy->GetLocalLayerName();
 }
 
+void USpatialStatics::GetEntityIdsInHierarchy(const AActor* RootActor, TArray<int64>& OutEntityIds)
+{
+	const int64 EntityId = USpatialStatics::GetActorEntityId(RootActor);
+
+	if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		OutEntityIds.Add(EntityId);
+	}
+
+	for (const auto& Child : RootActor->Children)
+	{
+		GetEntityIdsInHierarchy(Child, OutEntityIds);
+	}
+}
+
 int64 USpatialStatics::GetMaxDynamicallyAttachedSubobjectsPerClass()
 {
 	return GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
