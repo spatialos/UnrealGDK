@@ -501,6 +501,22 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 			}
 			if (!bUnresolved)
 			{
+				// IMP-CHANGE
+				UObject* OldObject = ObjectProperty->GetObjectPropertyValue(Data);
+				if (AActor* OldActor = Cast<AActor>(OldObject))
+				{
+					if (!OldActor->GetIsReplicated() && OldObject != ObjectValue)
+					{
+						UE_LOG(LogSpatialComponentReader, Warning,
+							TEXT("ComponentReader::ApplyProperty: Reference to non replicated object has been changed due to an update received from"
+								" Runtime. Field: %d, Property name: %s, Old reference value: %s New reference value: %s"),
+							FieldId, Property ? *Property->GetFullName() : TEXT("null"),
+							OldObject ? *OldObject->GetName() : TEXT("null"),
+							ObjectValue ? *ObjectValue->GetName() : TEXT("null"));
+					}
+				}
+				// IMP-END
+
 				ObjectProperty->SetObjectPropertyValue(Data, ObjectValue);
 				if (ObjectValue != nullptr)
 				{
