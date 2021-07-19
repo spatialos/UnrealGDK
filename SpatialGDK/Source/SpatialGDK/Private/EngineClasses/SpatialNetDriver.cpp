@@ -3568,7 +3568,7 @@ void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkO
 	}
 }
 
-void USpatialNetDriver::CheckUnauthorisedDataChanges(AActor* Actor)
+void USpatialNetDriver::CheckUnauthorisedDataChanges(const AActor* Actor)
 {
 	if (!IsServer())
 	{
@@ -3587,7 +3587,7 @@ void USpatialNetDriver::CheckUnauthorisedDataChanges(AActor* Actor)
 	(*SpatialShadowActor)->CheckUnauthorisedDataChanges(EntityId, Actor);
 }
 
-void USpatialNetDriver::AddSpatialShadowActor(Worker_EntityId_Key EntityId)
+void USpatialNetDriver::AddSpatialShadowActor(const Worker_EntityId_Key EntityId)
 {
 	const bool bEnableSpatialDataDebugger = GetDefault<UGeneralProjectSettings>()->IsSpatialDataDebuggerEnabled();
 
@@ -3611,11 +3611,11 @@ void USpatialNetDriver::AddSpatialShadowActor(Worker_EntityId_Key EntityId)
 	{
 		USpatialShadowActor* SpatialShadowActor(NewObject<USpatialShadowActor>());
 		SpatialShadowActor->Init(EntityId, Actor);
-		SpatialShadowActors.Add(EntityId, SpatialShadowActor);
+		SpatialShadowActors.Emplace(EntityId, SpatialShadowActor);
 	}
 }
 
-void USpatialNetDriver::RemoveSpatialShadowActor(Worker_EntityId_Key EntityId)
+void USpatialNetDriver::RemoveSpatialShadowActor(const Worker_EntityId_Key EntityId)
 {
 	const bool bEnableSpatialDataDebugger = GetDefault<UGeneralProjectSettings>()->IsSpatialDataDebuggerEnabled();
 
@@ -3627,7 +3627,7 @@ void USpatialNetDriver::RemoveSpatialShadowActor(Worker_EntityId_Key EntityId)
 	SpatialShadowActors.Remove(EntityId);
 }
 
-void USpatialNetDriver::UpdateSpatialShadowActor(Worker_EntityId_Key EntityId)
+void USpatialNetDriver::UpdateSpatialShadowActor(const Worker_EntityId_Key EntityId)
 {
 	const bool bEnableSpatialDataDebugger = GetDefault<UGeneralProjectSettings>()->IsSpatialDataDebuggerEnabled();
 

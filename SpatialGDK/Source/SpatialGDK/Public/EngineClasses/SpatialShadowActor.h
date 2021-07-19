@@ -16,7 +16,7 @@ public:
 
 	void Init(const Worker_EntityId InEntityId, AActor* InActor);
 
-	void CheckUnauthorisedDataChanges(const Worker_EntityId InEntityId, AActor* InActor);
+	void CheckUnauthorisedDataChanges(const Worker_EntityId InEntityId, const AActor* InActor);
 
 	void Update(const Worker_EntityId InEntityId, AActor* InActor);
 
@@ -24,7 +24,7 @@ private:
 	Worker_EntityId EntityId;
 	AActor* Actor;
 	FString ReplicatedPropertyHash;
-	FString CreateHash(AActor* InActor);
+	FString CreateHash(const AActor* InActor);
 
 	// Store a list of actors class names that currently violate the non-auth changes so that the user is not spammed.
 	// TODO: link PR to investigate these cases

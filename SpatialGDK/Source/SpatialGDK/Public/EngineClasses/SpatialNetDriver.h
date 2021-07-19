@@ -4,7 +4,6 @@
 
 #include "Interop/CrossServerRPCHandler.h"
 #include "Engine/EngineBaseTypes.h"
-#include "EngineClasses/SpatialShadowActor.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/CrossServerRPCSender.h"
 #include "Interop/EntityQueryHandler.h"
@@ -51,6 +50,7 @@ class USpatialReceiver;
 class USpatialSender;
 class USpatialWorkerConnection;
 class USpatialWorkerFlags;
+class USpatialShadowActor;
 
 DECLARE_DELEGATE(PostWorldWipeDelegate);
 DECLARE_MULTICAST_DELEGATE(FShutdownEvent);
@@ -284,9 +284,9 @@ public:
 
 	virtual int64 GetActorEntityId(const AActor& Actor) const override;
 
-	void AddSpatialShadowActor(Worker_EntityId_Key EntityId);
-	void RemoveSpatialShadowActor(Worker_EntityId_Key EntityId);
-	void UpdateSpatialShadowActor(Worker_EntityId_Key EntityId);
+	void AddSpatialShadowActor(const Worker_EntityId_Key EntityId);
+	void RemoveSpatialShadowActor(const Worker_EntityId_Key EntityId);
+	void UpdateSpatialShadowActor(const Worker_EntityId_Key EntityId);
 
 	FShutdownEvent OnShutdown;
 
@@ -403,7 +403,7 @@ private:
 
 	void ProcessOwnershipChanges();
 
-	void CheckUnauthorisedDataChanges(AActor* Actor);
+	void CheckUnauthorisedDataChanges(const AActor* Actor);
 
 	// Has a certain interval (in seconds) been passed since the previous timestamp
 	bool HasTimedOut(const float Interval, uint64& TimeStamp);

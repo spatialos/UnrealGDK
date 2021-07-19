@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma optimize("", off)
 #include "EngineClasses/SpatialShadowActor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialShadowActor);
@@ -41,7 +40,7 @@ void USpatialShadowActor::Update(const Worker_EntityId InEntityId, AActor* InAct
 	Actor = InActor;
 }
 
-FString USpatialShadowActor::CreateHash(AActor* InActor)
+FString USpatialShadowActor::CreateHash(const AActor* InActor)
 {
 	FString LatestReplicatedPropertyHash;
 
@@ -67,7 +66,7 @@ FString USpatialShadowActor::CreateHash(AActor* InActor)
 	return LatestReplicatedPropertyHash;
 }
 
-void USpatialShadowActor::CheckUnauthorisedDataChanges(const Worker_EntityId InEntityId, AActor* InActor)
+void USpatialShadowActor::CheckUnauthorisedDataChanges(const Worker_EntityId InEntityId, const AActor* InActor)
 {
 	check(InActor == Actor);
 
@@ -101,5 +100,3 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges(const Worker_EntityId InE
 
 	return;
 }
-
-#pragma optimize("", on)
