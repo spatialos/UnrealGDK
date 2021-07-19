@@ -5,6 +5,13 @@
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
 
+UActorInterestComponent::UActorInterestComponent(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	PrimaryComponentTick.bCanEverTick = false;
+	SetIsUpdateRequired(false);
+}
+
 void UActorInterestComponent::PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager,
 																SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const
 {

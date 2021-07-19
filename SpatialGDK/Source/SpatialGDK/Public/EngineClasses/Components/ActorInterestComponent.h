@@ -4,6 +4,7 @@
 
 #include "Components/ActorComponent.h"
 #include "CoreMinimal.h"
+#include "EngineClasses/Components/AbstractInterestComponent.h"
 #include "Interop/SpatialInterestConstraints.h"
 #include "Schema/Interest.h"
 
@@ -15,23 +16,15 @@ class USpatialClassInfoManager;
  * Creates a set of SpatialOS Queries for describing interest that this actor has in other entities.
  */
 UCLASS(ClassGroup = (SpatialGDK), NotSpatialType, Meta = (BlueprintSpawnableComponent))
-class SPATIALGDK_API UActorInterestComponent final : public UActorComponent
+class SPATIALGDK_API UActorInterestComponent final : public UAbstractInterestComponent
 {
 	GENERATED_BODY()
 
 public:
-	UActorInterestComponent() = default;
-	~UActorInterestComponent() = default;
+	UActorInterestComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-	void PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager,
-										   SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const;
-
-	/**
-	 * Whether to use NetCullDistanceSquared to generate constraints relative to the Actor that this component is attached to.
-	 */
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Interest")
-	bool bUseNetCullDistanceSquaredForCheckoutRadius = true;
-
+	virtual void PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager,
+										   SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const override;
 	/**
 	 * The Queries associated with this component.
 	 */

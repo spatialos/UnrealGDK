@@ -525,16 +525,16 @@ void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor,
 		return;
 	}
 
-	// The defined actor interest component populates the frequency to constraints map with the user defined queries.
-	TArray<UActorInterestComponent*> ActorInterestComponents;
-	InActor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
-	if (ActorInterestComponents.Num() == 1)
+	// Any ActorComponent implementing ISpatialInterestProvider can populate the frequency to constraints map with the user defined queries.
+	TArray<UActorComponent*> InterestProvidingComponents = InActor->GetComponentsByInterface(USpatialInterestProvider::StaticClass());
+
+	if (InterestProvidingComponents.Num() == 1)
 	{
-		ActorInterestComponents[0]->PopulateFrequencyToConstraintsMap(*ClassInfoManager, OutFrequencyToConstraints);
+		Cast<ISpatialInterestProvider>(InterestProvidingComponents[0])->PopulateFrequencyToConstraintsMap(*ClassInfoManager, OutFrequencyToConstraints);
 	}
-	else if (ActorInterestComponents.Num() > 1)
+	else if (InterestProvidingComponents.Num() > 1)
 	{
-		UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestComponent"), *InActor->GetPathName());
+		UE_LOG(LogInterestFactory, Error, TEXT("USpatialActorChannel::ReplicateActor(): Actor %s has more than 1 component that implements ISpatialInterestProvider, this is not supported!"), *GetNameSafe(InActor));
 		checkNoEntry()
 	}
 
@@ -609,13 +609,14 @@ bool InterestFactory::ShouldAddNetCullDistanceInterest(const AActor* InActor) co
 {
 	// If the actor has a component to specify interest and that indicates that we shouldn't add
 	// constraints based on NetCullDistanceSquared, abort. There is a check elsewhere to ensure that
-	// there is at most one ActorInterestQueryComponent.
-	TArray<UActorInterestComponent*> ActorInterestComponents;
-	InActor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
-	if (ActorInterestComponents.Num() == 1)
+	// there is at most one USpatialInterestProvider.
+	TArray<UActorComponent*> InterestProvidingComponents = InActor->GetComponentsByInterface(USpatialInterestProvider::StaticClass());
+
+	if (InterestProvidingComponents.Num() == 1)
 	{
-		const UActorInterestComponent* ActorInterest = ActorInterestComponents[0];
-		if (!ActorInterest->bUseNetCullDistanceSquaredForCheckoutRadius)
+		const ISpatialInterestProvider* InterestProvider = Cast<ISpatialInterestProvider>(InterestProvidingComponents[0]);
+		check(InterestProvider != nullptr);
+		if (!InterestProvider->GetUseNetCullDistanceSquaredForCheckoutRadius())
 		{
 			return false;
 		}
