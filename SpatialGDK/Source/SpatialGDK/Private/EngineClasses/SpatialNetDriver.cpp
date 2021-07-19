@@ -3535,29 +3535,36 @@ bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
 
 void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkObjectInfo*>& OutConsiderList, const float ServerTickTime)
 {
+	const UGeneralProjectSettings& ProjectSettings = *GetDefault<UGeneralProjectSettings>();
+	const bool bSpatialNetworking = ProjectSettings.UsesSpatialNetworking();
+	const bool bEnableSpatialDataDebugger = ProjectSettings.IsSpatialDataDebuggerEnabled();
+
+	if (!bEnableSpatialDataDebugger || !bSpatialNetworking)
+	{
+		// Default case to only consider auth actors for replication
+		Super::ServerReplicateActors_BuildConsiderList(OutConsiderList, ServerTickTime);
+		return;
+	}
+
+	// Spatial data debug case to check non-auth actors for invalid changes and then only consider auth actors for replication
 	TArray<FNetworkObjectInfo*> TmpConsiderList;
 	TmpConsiderList.Reserve(GetNetworkObjectList().GetActiveObjects().Num());
-
 	Super::ServerReplicateActors_BuildConsiderList(TmpConsiderList, ServerTickTime);
-
-	// Cache if we are running with Spatial Networking to avoid getting the settings in every iteration of the loop.
-	const bool bSpatialNetworking = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
-	const bool bEnableSpatialDataDebugger = GetDefault<USpatialGDKSettings>()->IsSpatialDataDebuggerEnabled();
-
+	
 	for (FNetworkObjectInfo* const& ActorInfo : TmpConsiderList)
 	{
 		AActor* Actor = ActorInfo->Actor;
 		check(Actor != nullptr);
 
-		Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
-
-		// Check for unauthorised data changes no non-auth actors and add auth actors only to the consider list
-		if (bSpatialNetworking && Actor->HasAuthority())
+		if (Actor->HasAuthority())
 		{
+			//  Only add auth actors only to the consider list
 			OutConsiderList.Add(ActorInfo);
 		}
-		else if (bSpatialNetworking && bEnableSpatialDataDebugger)
+		else
 		{
+			// Check for unauthorised data changes to non-auth actors
+			Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 			CheckUnauthorisedDataChanges(EntityId, Actor);
 		}
 	}
@@ -3565,9 +3572,7 @@ void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkO
 
 void USpatialNetDriver::CheckUnauthorisedDataChanges(Worker_EntityId_Key EntityId, AActor* Actor)
 {
-	const bool bEnableSpatialDataDebugger = GetDefault<USpatialGDKSettings>()->IsSpatialDataDebuggerEnabled();
-
-	if (!bEnableSpatialDataDebugger || !IsServer() || !SpatialShadowActors.Contains(EntityId))
+	if (!IsServer() || !SpatialShadowActors.Contains(EntityId))
 	{
 		return;
 	}
@@ -3585,7 +3590,7 @@ void USpatialNetDriver::CheckUnauthorisedDataChanges(Worker_EntityId_Key EntityI
 
 void USpatialNetDriver::AddSpatialShadowActor(Worker_EntityId_Key EntityId)
 {
-	const bool bEnableSpatialDataDebugger = GetDefault<USpatialGDKSettings>()->IsSpatialDataDebuggerEnabled();
+	const bool bEnableSpatialDataDebugger = GetDefault<UGeneralProjectSettings>()->IsSpatialDataDebuggerEnabled();
 
 	if (!bEnableSpatialDataDebugger || !IsServer())
 	{
@@ -3613,7 +3618,7 @@ void USpatialNetDriver::AddSpatialShadowActor(Worker_EntityId_Key EntityId)
 
 void USpatialNetDriver::RemoveSpatialShadowActor(Worker_EntityId_Key EntityId)
 {
-	const bool bEnableSpatialDataDebugger = GetDefault<USpatialGDKSettings>()->IsSpatialDataDebuggerEnabled();
+	const bool bEnableSpatialDataDebugger = GetDefault<UGeneralProjectSettings>()->IsSpatialDataDebuggerEnabled();
 
 	if (!bEnableSpatialDataDebugger || !IsServer() || !SpatialShadowActors.Contains(EntityId))
 	{
@@ -3626,7 +3631,7 @@ void USpatialNetDriver::RemoveSpatialShadowActor(Worker_EntityId_Key EntityId)
 
 void USpatialNetDriver::UpdateSpatialShadowActor(Worker_EntityId_Key EntityId)
 {
-	const bool bEnableSpatialDataDebugger = GetDefault<USpatialGDKSettings>()->IsSpatialDataDebuggerEnabled();
+	const bool bEnableSpatialDataDebugger = GetDefault<UGeneralProjectSettings>()->IsSpatialDataDebuggerEnabled();
 
 	if (!bEnableSpatialDataDebugger || !IsServer())
 	{

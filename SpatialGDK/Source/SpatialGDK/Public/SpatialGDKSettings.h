@@ -294,11 +294,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
-	/** Toggle to allow debug checking of invalid data modification on non-auth workers */
-	UPROPERTY(EditAnywhere, config, Category = "Debug")
-	bool bEnableSpatialDataDebugger;
-	FORCEINLINE bool IsSpatialDataDebuggerEnabled() const { return bEnableSpatialDataDebugger; }
-
 	/** Enables multi-worker, if false uses single worker strategy in the editor.  */
 	UPROPERTY(EditAnywhere, config, Category = "Load Balancing", meta = (DisplayName = "Enable multi-worker in editor"))
 	bool bEnableMultiWorker;

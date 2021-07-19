@@ -284,7 +284,6 @@ public:
 
 	virtual int64 GetActorEntityId(const AActor& Actor) const override;
 
-	void CheckUnauthorisedDataChanges(Worker_EntityId_Key EntityId, AActor* Actor);
 	void AddSpatialShadowActor(Worker_EntityId_Key EntityId);
 	void RemoveSpatialShadowActor(Worker_EntityId_Key EntityId);
 	void UpdateSpatialShadowActor(Worker_EntityId_Key EntityId);
@@ -403,6 +402,8 @@ private:
 	bool ClientCanSendPlayerSpawnRequests() const;
 
 	void ProcessOwnershipChanges();
+
+	void CheckUnauthorisedDataChanges(Worker_EntityId_Key EntityId, AActor* Actor);
 
 	// Has a certain interval (in seconds) been passed since the previous timestamp
 	bool HasTimedOut(const float Interval, uint64& TimeStamp);
