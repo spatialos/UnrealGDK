@@ -102,49 +102,6 @@ ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver,
 {
 }
 
-template<typename T>
-void ForEachUnique(const TArray<T>& ArrayA, const TArray<T>& ArrayB, TFunction<void(const T Value)> Func)
-{
-	auto UpdateIt = ArrayA.CreateConstIterator();
-	auto ListIt = ArrayB.CreateConstIterator();
-	while (true)
-	{
-		if (UpdateIt)
-		{
-			if (ListIt)
-			{
-				const T UpdateValue = *UpdateIt;
-				const T ListValue = *ListIt;
-				const bool SameValue = UpdateValue == ListValue;
-				const bool UpdateHighest = SameValue || UpdateValue > ListValue;
-				Func(UpdateHighest ? UpdateValue : ListValue);
-				if (UpdateHighest)
-				{
-					++UpdateIt;
-				}
-				if (SameValue || UpdateValue < ListValue)
-				{
-					++ListIt;
-				}
-			}
-			else
-			{
-				Func(*UpdateIt);
-				++UpdateIt;
-			}
-		}
-		else if (ListIt)
-		{
-			Func(*ListIt);
-			++ListIt;
-		}
-		else
-		{
-			break;
-		}
-	}
-}
-
 void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object,
 										 USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut,
 										 bool& bOutReferencesChanged)
