@@ -112,17 +112,28 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 	}
 
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
+	// ComponentData will be missing fields if they are clearable (options, lists, and maps).
+	// However, we still want to apply this empty data, so we need clearable field IDs for
+	// that component type (Data, OwnerOnly, Handover, etc.).
+	// Additionally only currently being replicated properties should have their data applied.
+	// Replicated properties can be made not to replicate by use of
+	// DOREPLIFETIME_ACTIVE_OVERRIDE / SetCustomIsActiveOverride on a given replicated property.
 
-	// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
-	// Additional they may be empty if they are currently not active and not being replicated.
-	TArray<Schema_FieldId> UpdatedIds;
+	// Retrieve all the fields that are clearable.
 	const TArray<Schema_FieldId>& ListIDs = ClassInfoManager->GetListIdsByComponentId(ComponentId);
+
+	// Retrieve all the fields that are currently Active and being replicated.
+	TArray<Schema_FieldId> UpdatedIds;
 	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject) + ListIDs.Num());
 	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
+
+	// Add clearable fields and other updated fields together.
 	UpdatedIds.Append(ListIDs);
 	// Eliminate any duplicates
 	UpdatedIds.Sort();
-	UpdatedIds.SetNum(Algo::Unique(UpdatedIds));
+	const int NewUniqueLength = Algo::Unique(UpdatedIds);
+	UpdatedIds.SetNum(NewUniqueLength);
+
 	ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentId, ObjectRepNotifiesOut, bOutReferencesChanged);
 }
 

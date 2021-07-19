@@ -437,7 +437,7 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 		// Need special case here because Unreal has special handling of ReplicatedMovement, see AActor::OnRep_ReplicatedMovement
 		const bool RepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
 
-		if (Parent.Active == 0 && !RepActorMovement)
+		if (!Parent.Active && !RepActorMovement)
 		{
 			continue;
 		}
