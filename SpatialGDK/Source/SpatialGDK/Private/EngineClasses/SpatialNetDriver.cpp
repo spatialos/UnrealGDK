@@ -3607,7 +3607,7 @@ void USpatialNetDriver::AddSpatialShadowActor(Worker_EntityId_Key EntityId)
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Should only be adding a SpatialShadowActor once for each entity, EntityID %i"),
 			   EntityId);
 	}
-	else 
+	else
 	{
 		USpatialShadowActor* SpatialShadowActor(NewObject<USpatialShadowActor>());
 		SpatialShadowActor->Init(EntityId, Actor);
@@ -3652,7 +3652,7 @@ void USpatialNetDriver::UpdateSpatialShadowActor(Worker_EntityId_Key EntityId)
 	}
 
 	(*SpatialShadowActor)->Update(EntityId, Actor);
-	
+
 	return;
 }
 
