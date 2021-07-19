@@ -28,11 +28,17 @@ struct TraceQueryDeleter
 };
 typedef TUniquePtr<Trace_Query, TraceQueryDeleter> TraceQueryPtr;
 
+struct TraceQueries
+{
+	FString EventPreFilter;
+	FString EventPostFilter;
+};
+
 // SpatialEventTracer wraps Trace_EventTracer related functionality
 class SPATIALGDK_API SpatialEventTracer
 {
 public:
-	explicit SpatialEventTracer(const FString& WorkerId);
+	explicit SpatialEventTracer(const FString& WorkerId, const TraceQueries& Queries);
 	~SpatialEventTracer();
 
 	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; }

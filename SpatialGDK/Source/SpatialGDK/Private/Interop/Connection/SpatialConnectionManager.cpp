@@ -626,5 +626,9 @@ TSharedPtr<SpatialGDK::SpatialEventTracer> USpatialConnectionManager::CreateEven
 		return nullptr;
 	}
 
-	return MakeShared<SpatialGDK::SpatialEventTracer>(WorkerId);
+	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
+	TraceQueries Queries;
+	Queries.EventPreFilter = SamplingSettings->GDKEventPreFilter;
+	Queries.EventPostFilter = SamplingSettings->GDKEventPostFilter;
+	return MakeShared<SpatialGDK::SpatialEventTracer>(WorkerId, Queries);
 };
