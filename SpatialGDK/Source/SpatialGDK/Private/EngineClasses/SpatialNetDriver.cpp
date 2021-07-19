@@ -3554,7 +3554,6 @@ void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkO
 	for (FNetworkObjectInfo* const& ActorInfo : TmpConsiderList)
 	{
 		AActor* Actor = ActorInfo->Actor;
-		check(Actor != nullptr);
 
 		if (Actor->HasAuthority())
 		{
@@ -3564,28 +3563,28 @@ void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkO
 		else
 		{
 			// Check for unauthorised data changes to non-auth actors
-			Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
-			CheckUnauthorisedDataChanges(EntityId, Actor);
+			CheckUnauthorisedDataChanges(Actor);
 		}
 	}
 }
 
-void USpatialNetDriver::CheckUnauthorisedDataChanges(Worker_EntityId_Key EntityId, AActor* Actor)
+void USpatialNetDriver::CheckUnauthorisedDataChanges(AActor* Actor)
 {
-	if (!IsServer() || !SpatialShadowActors.Contains(EntityId))
+	if (!IsServer())
 	{
 		return;
 	}
 
-	if (SpatialShadowActors[EntityId] != nullptr)
+	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+
+	USpatialShadowActor** SpatialShadowActor = SpatialShadowActors.Find(EntityId);
+
+	if (SpatialShadowActor == nullptr)
 	{
-		SpatialShadowActors[EntityId]->CheckUnauthorisedDataChanges(EntityId, Actor);
-	}
-	else
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Trying to check SpatialShadowActor which is invalid, EntityID %i"), EntityId);
 		return;
 	}
+
+	(*SpatialShadowActor)->CheckUnauthorisedDataChanges(EntityId, Actor);
 }
 
 void USpatialNetDriver::AddSpatialShadowActor(Worker_EntityId_Key EntityId)
@@ -3608,7 +3607,7 @@ void USpatialNetDriver::AddSpatialShadowActor(Worker_EntityId_Key EntityId)
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Should only be adding a SpatialShadowActor once for each entity, EntityID %i"),
 			   EntityId);
 	}
-	else // if (!HasServerAuthority(EntityId))
+	else 
 	{
 		USpatialShadowActor* SpatialShadowActor(NewObject<USpatialShadowActor>());
 		SpatialShadowActor->Init(EntityId, Actor);
@@ -3620,12 +3619,11 @@ void USpatialNetDriver::RemoveSpatialShadowActor(Worker_EntityId_Key EntityId)
 {
 	const bool bEnableSpatialDataDebugger = GetDefault<UGeneralProjectSettings>()->IsSpatialDataDebuggerEnabled();
 
-	if (!bEnableSpatialDataDebugger || !IsServer() || !SpatialShadowActors.Contains(EntityId))
+	if (!bEnableSpatialDataDebugger || !IsServer())
 	{
 		return;
 	}
 
-	USpatialShadowActor* SpatialShadowActor = SpatialShadowActors[EntityId];
 	SpatialShadowActors.Remove(EntityId);
 }
 
@@ -3638,30 +3636,23 @@ void USpatialNetDriver::UpdateSpatialShadowActor(Worker_EntityId_Key EntityId)
 		return;
 	}
 
-	AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
-	if (Actor == nullptr || !IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
-	{
-		return;
-	}
+	USpatialShadowActor** SpatialShadowActor = SpatialShadowActors.Find(EntityId);
 
-	if (!SpatialShadowActors.Contains(EntityId))
+	if (SpatialShadowActor == nullptr)
 	{
 		// We can receive updates without receiving adds - in this case create the SpatialShadowActor
 		AddSpatialShadowActor(EntityId);
 		return;
 	}
 
-	USpatialShadowActor* SpatialShadowActor = SpatialShadowActors[EntityId];
-	if (SpatialShadowActor == nullptr)
+	AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
+	if (!IsValid(Actor))
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Trying to update SpatialShadowActor with invalid actor with EntityID %i"), EntityId);
 		return;
 	}
-	else
-	{
-		SpatialShadowActor->Update(EntityId, Actor);
-	}
 
+	(*SpatialShadowActor)->Update(EntityId, Actor);
+	
 	return;
 }
 

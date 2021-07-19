@@ -403,7 +403,7 @@ private:
 
 	void ProcessOwnershipChanges();
 
-	void CheckUnauthorisedDataChanges(Worker_EntityId_Key EntityId, AActor* Actor);
+	void CheckUnauthorisedDataChanges(AActor* Actor);
 
 	// Has a certain interval (in seconds) been passed since the previous timestamp
 	bool HasTimedOut(const float Interval, uint64& TimeStamp);

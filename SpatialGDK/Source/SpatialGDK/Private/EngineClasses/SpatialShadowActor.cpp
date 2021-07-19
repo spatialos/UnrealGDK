@@ -15,6 +15,7 @@ USpatialShadowActor::USpatialShadowActor(const FObjectInitializer& ObjectInitial
 	SuppressedActors.Add("PlayerState");
 	SuppressedActors.Add("SpatialFunctionalTestFlowController");
 	SuppressedActors.Add("GameplayDebuggerCategoryReplicator");
+	SuppressedActors.Add("SpatialTestPropertyReplicationMultiworker");
 }
 
 void USpatialShadowActor::Init(const Worker_EntityId InEntityId, AActor* InActor)
@@ -84,12 +85,6 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges(const Worker_EntityId InE
 	if (ReplicatedPropertyHash.IsEmpty())
 	{
 		// Have not received the first update yet for this actor
-		return;
-	}
-
-	if (Actor->IsPendingKillOrUnreachable())
-	{
-		// Don't need to do anything, because it should have already been logged.
 		return;
 	}
 
