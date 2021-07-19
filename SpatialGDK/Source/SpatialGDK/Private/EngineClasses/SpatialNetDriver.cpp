@@ -3550,7 +3550,7 @@ void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkO
 	TArray<FNetworkObjectInfo*> TmpConsiderList;
 	TmpConsiderList.Reserve(GetNetworkObjectList().GetActiveObjects().Num());
 	Super::ServerReplicateActors_BuildConsiderList(TmpConsiderList, ServerTickTime);
-	
+
 	for (FNetworkObjectInfo* const& ActorInfo : TmpConsiderList)
 	{
 		AActor* Actor = ActorInfo->Actor;
