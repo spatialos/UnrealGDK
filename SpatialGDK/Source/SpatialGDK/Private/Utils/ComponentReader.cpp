@@ -124,7 +124,7 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 
 	// Retrieve all the fields that are currently Active and being replicated.
 	TArray<Schema_FieldId> UpdatedIds;
-	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject) + ListIDs.Num());
+	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
 	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
 
 	// Add clearable fields and other updated fields together.
