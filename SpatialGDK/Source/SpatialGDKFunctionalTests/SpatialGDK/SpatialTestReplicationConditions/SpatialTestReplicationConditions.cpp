@@ -94,15 +94,12 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessCustomActorProperties(TestActor_CustomEnabled, bWrite, bEnabled);
 		}
 
-		if (!bSpatialEnabled) // TODO: UNR-5212 - fix DOREPLIFETIME_ACTIVE_OVERRIDE replication
+		if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
+					   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
 		{
-			if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
-						   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
-			{
-				const bool bWrite = false;
-				const bool bEnabled = false;
-				ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
-			}
+			const bool bWrite = false;
+			const bool bEnabled = false;
+			ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
 		}
 
 		if (AssertTrue(TestActor_AutonomousOnly->AreAllDynamicComponentsValid(),
@@ -173,15 +170,12 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessCustomActorProperties(TestActor_CustomEnabled, bWrite, bEnabled);
 		}
 
-		if (!bSpatialEnabled) // TODO: UNR-5212 - fix DOREPLIFETIME_ACTIVE_OVERRIDE replication
+		if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
+					   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
 		{
-			if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
-						   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
-			{
-				const bool bWrite = false;
-				const bool bEnabled = false;
-				ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
-			}
+			const bool bWrite = false;
+			const bool bEnabled = false;
+			ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
 		}
 
 		if (AssertTrue(TestActor_AutonomousOnly->AreAllDynamicComponentsValid(),
@@ -256,15 +250,12 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessCustomActorProperties(TestActor_CustomEnabled, bWrite, bEnabled);
 		}
 
-		if (!bSpatialEnabled) // TODO: UNR-5212 - fix DOREPLIFETIME_ACTIVE_OVERRIDE replication
+		if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
+					   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
 		{
-			if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
-						   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
-			{
-				const bool bWrite = false;
-				const bool bEnabled = false;
-				ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
-			}
+			const bool bWrite = false;
+			const bool bEnabled = false;
+			ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
 		}
 
 		if (AssertTrue(TestActor_AutonomousOnly->AreAllDynamicComponentsValid(),

@@ -98,34 +98,74 @@ void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, co
 
 } // namespace
 
+FString UEventTracingSamplingSettings::DefaultFilter = "false";
+
+UEventTracingSamplingSettings::UEventTracingSamplingSettings()
+	: SamplingProbability(1.0)
+	, GDKEventPreFilter(DefaultFilter)
+	, GDKEventPostFilter(DefaultFilter)
+	, RuntimeEventPreFilter(DefaultFilter)
+	, RuntimeEventPostFilter(DefaultFilter)
+{
+}
+
+UEventTracingSamplingSettings::TraceQueryPtr UEventTracingSamplingSettings::ParseOrDefault(const FString& Str, const TCHAR* FilterForLog)
+{
+	TraceQueryPtr Ptr;
+	if (!Str.IsEmpty())
+	{
+		Ptr.Reset(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*Str)));
+	}
+
+	if (!Ptr.IsValid())
+	{
+		UE_LOG(LogSpatialGDKSettings, Warning, TEXT("The specified query \"%s\" is invalid; defaulting to \"false\" query. %s"),
+			   FilterForLog, Trace_GetLastError());
+		Ptr.Reset(Trace_ParseSimpleQuery("false"));
+	}
+
+	return Ptr;
+}
+
+bool UEventTracingSamplingSettings::IsFilterValid(const FString& Str)
+{
+	return !Str.IsEmpty() && TraceQueryPtr(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*Str))).Get() != nullptr;
+}
+
+const FString& UEventTracingSamplingSettings::GetFilterString(const FString& Filter)
+{
+	return IsFilterValid(Filter) ? Filter : DefaultFilter;
+}
+
 #if WITH_EDITOR
 void UEventTracingSamplingSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
-	auto CheckQueryValid = [](const char* QueryStr) {
-		if (strlen(QueryStr) > 0 && SpatialGDK::TraceQueryPtr(Trace_ParseSimpleQuery(QueryStr)).Get() == nullptr)
+	auto CheckQueryValid = [](const FString& QueryStr) {
+		if (!IsFilterValid(QueryStr))
 		{
 			FMessageDialog::Open(EAppMsgType::Ok,
 								 FText::Format(LOCTEXT("EventTracingSamplingSetting_QueryInvalid", "The query entered is not valid. {0}"),
 											   FText::FromString(ANSI_TO_TCHAR(Trace_GetLastError()))));
 		}
 	};
+
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 	if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, GDKEventPreFilter))
 	{
-		CheckQueryValid(TCHAR_TO_ANSI(*GDKEventPreFilter));
+		CheckQueryValid(GDKEventPreFilter);
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, RuntimeEventPreFilter))
 	{
-		CheckQueryValid(TCHAR_TO_ANSI(*RuntimeEventPreFilter));
+		CheckQueryValid(RuntimeEventPreFilter);
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, GDKEventPostFilter))
 	{
-		CheckQueryValid(TCHAR_TO_ANSI(*GDKEventPostFilter));
+		CheckQueryValid(GDKEventPostFilter);
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, RuntimeEventPostFilter))
 	{
-		CheckQueryValid(TCHAR_TO_ANSI(*RuntimeEventPostFilter));
+		CheckQueryValid(RuntimeEventPostFilter);
 	}
 }
 #endif
