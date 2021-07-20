@@ -492,6 +492,11 @@ const TArray<Schema_FieldId>& USpatialClassInfoManager::GetFieldIdsByComponentId
 	return SchemaDatabase->FieldIdsArray[SchemaDatabase->ComponentIdToFieldIdsIndex[ComponentId]].FieldIds;
 }
 
+const TArray<Schema_FieldId>& USpatialClassInfoManager::GetListIdsByComponentId(Worker_ComponentId ComponentId)
+{
+	return SchemaDatabase->ListIdsArray[SchemaDatabase->ComponentIdToFieldIdsIndex[ComponentId]].FieldIds;
+}
+
 const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction* Function)
 {
 	check(Object != nullptr && Function != nullptr);

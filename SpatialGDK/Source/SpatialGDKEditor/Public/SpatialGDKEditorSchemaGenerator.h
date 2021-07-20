@@ -67,7 +67,7 @@ SPATIALGDKEDITOR_API bool RunSchemaCompiler(FString& SchemaJsonPath, FString Sch
 
 SPATIALGDKEDITOR_API bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,
 														   TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex,
-														   TArray<FFieldIDs>& OutFieldIdsArray);
+														   TArray<FFieldIDs>& OutFieldIdsArray, TArray<FFieldIDs>& OutClearabledsArray);
 
 SPATIALGDKEDITOR_API void WriteComponentSetFiles(const USchemaDatabase* SchemaDatabase, FString SchemaOutputPath = "");
 
