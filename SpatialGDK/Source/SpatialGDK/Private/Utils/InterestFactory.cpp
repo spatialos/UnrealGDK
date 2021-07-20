@@ -3,6 +3,7 @@
 #include "Utils/InterestFactory.h"
 
 #include "EngineClasses/Components/ActorInterestComponent.h"
+#include "EngineClasses/Components/InterestSettingsComponent.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -603,29 +604,15 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 
 bool InterestFactory::ShouldAddNetCullDistanceInterest(const AActor* InActor) const
 {
-	// The NCD flag should not be set per InterestProviding component, but rather per actor that has a set of InterestProviding components.
-	// That change requires some more thought, so the below approach should be considered temporary.
-	//
-	// If we have no InterestProvidingComponents, we will enable NCD by default.
-	// Otherwise, we will enable NCD if we encounter any InterestProvidingComponent that requests NCD, otherwise disable NCD.
-	TArray<UActorComponent*> InterestProvidingComponents = InActor->GetComponentsByInterface(USpatialInterestProvider::StaticClass());
+	TArray<UInterestSettingsComponent*> SettingsComponents;
+	InActor->GetComponents<UInterestSettingsComponent>(SettingsComponents);
 
-	if (InterestProvidingComponents.Num() == 0)
+	if (SettingsComponents.Num() == 0)
 	{
 		return true;
 	}
 
-	for (const auto InterestProvidingComponent : InterestProvidingComponents)
-	{
-		const ISpatialInterestProvider* InterestProvider = Cast<ISpatialInterestProvider>(InterestProvidingComponent);
-		check(InterestProvider != nullptr);
-		if (InterestProvider->GetUseNetCullDistanceSquaredForCheckoutRadius())
-		{
-			return true;
-		}
-	}
-
-	return false;
+	return SettingsComponents[0]->bUseNetCullDistanceSquaredForCheckoutRadius;
 }
 
 QueryConstraint UnrealServerInterestFactory::CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const

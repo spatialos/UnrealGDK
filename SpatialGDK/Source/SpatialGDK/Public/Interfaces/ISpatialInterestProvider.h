@@ -24,7 +24,4 @@ public:
 
 	virtual void SetIsUpdateRequired(const bool bUpdateRequired) PURE_VIRTUAL(, );
 	virtual bool IsUpdateRequired() const PURE_VIRTUAL(ISpatialInterestProvider::IsUpdateRequired, return false;);
-
-	virtual bool GetUseNetCullDistanceSquaredForCheckoutRadius() const
-		PURE_VIRTUAL(ISpatialInterestProvider::GetUseNetCullDistanceSquaredForCheckoutRadius, return false;);
 };
