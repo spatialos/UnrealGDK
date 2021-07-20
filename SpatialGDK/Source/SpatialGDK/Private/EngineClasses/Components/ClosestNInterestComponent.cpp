@@ -78,7 +78,7 @@ void UClosestNInterestComponent::UpdateQuery()
 
 	if (TargetEntityIds != PreviousTargetEntityIds)
 	{
-		SetIsUpdateRequired(true);
+		NotifyChannelUpdateRequired();
 	}
 
 	PreviousTargetEntityIds.Reset();

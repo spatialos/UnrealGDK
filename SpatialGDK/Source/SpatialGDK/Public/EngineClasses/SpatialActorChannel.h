@@ -278,6 +278,9 @@ public:
 
 	bool NeedOwnerInterestUpdate() const { return bNeedOwnerInterestUpdate; }
 
+	inline void SetIsInterestUpdateRequired(const bool bUpdateRequired) { bIsInterestUpdateRequired = bUpdateRequired; }
+	inline bool IsInterestUpdateRequired() const { return bIsInterestUpdateRequired; }
+
 	const FVector& GetLastUpdatedSpatialPosition() const { return LastPositionSinceUpdate; }
 
 protected:
@@ -356,6 +359,7 @@ private:
 	// In case the actor's owner did not have an entity ID when trying to set interest to it
 	// We set this flag in order to try to add interest as soon as possible.
 	bool bNeedOwnerInterestUpdate;
+	bool bIsInterestUpdateRequired = false;
 
 	// Track whether an Actor should have its Role upgrade to AutonomousProxy when it gains authority
 	uint8 bIsAutonomousProxyOnAuthority : 1;

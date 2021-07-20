@@ -686,30 +686,10 @@ int64 USpatialActorChannel::ReplicateActor()
 			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
 			SetNeedOwnerInterestUpdate(false);
 		}
-		else
+		else if (IsInterestUpdateRequired())
 		{
-			TArray<UActorComponent*> InterestProvidingComponents = Actor->GetComponentsByInterface(USpatialInterestProvider::StaticClass());
-
-			// Here we send at most 1 update regardless of the # of InterestProviders that have an update ready.
-			// The InterestFactory will gather updates from all InterestProviders on the Actor.
-			// TODO: Remove the need to check each provider here.
-			bool bInterestUpdated = false;
-			for (const auto InterestProvidingComponent : InterestProvidingComponents)
-			{
-				ISpatialInterestProvider* InterestProvider = Cast<ISpatialInterestProvider>(InterestProvidingComponent);
-				check(InterestProvider != nullptr);
-
-				if (InterestProvider->IsUpdateRequired())
-				{
-					if (!bInterestUpdated)
-					{
-						NetDriver->ActorSystem->UpdateInterestComponent(Actor);
-						bInterestUpdated = true;
-					}
-
-					InterestProvider->SetIsUpdateRequired(false);
-				}
-			}
+			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
+			SetIsInterestUpdateRequired(false);
 		}
 	}
 

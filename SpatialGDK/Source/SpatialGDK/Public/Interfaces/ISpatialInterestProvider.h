@@ -21,7 +21,4 @@ public:
 	virtual void PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager,
 												   SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const
 		PURE_VIRTUAL(, );
-
-	virtual void SetIsUpdateRequired(const bool bUpdateRequired) PURE_VIRTUAL(, );
-	virtual bool IsUpdateRequired() const PURE_VIRTUAL(ISpatialInterestProvider::IsUpdateRequired, return false;);
 };

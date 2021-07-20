@@ -11,16 +11,6 @@ class SPATIALGDK_API UAbstractInterestComponent : public UActorComponent, public
 {
 	GENERATED_BODY()
 
-public:
-	UAbstractInterestComponent(const FObjectInitializer& ObjectInitializer)
-		: Super(ObjectInitializer)
-	{
-		bIsUpdateRequired = false;
-	}
-
-	virtual void SetIsUpdateRequired(const bool bUpdateRequired) override { bIsUpdateRequired = bUpdateRequired; }
-	virtual bool IsUpdateRequired() const override { return bIsUpdateRequired; }
-
-private:
-	bool bIsUpdateRequired;
+protected:
+	void NotifyChannelUpdateRequired();
 };
