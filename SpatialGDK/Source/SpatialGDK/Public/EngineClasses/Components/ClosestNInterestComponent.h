@@ -35,8 +35,7 @@ public:
 	float RuntimeUpdateFrequency = 1.0f;
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Interest",
-			  meta = (ToolTip = "Maximum range that a target actor can be away from the owning client's PlayerController or currently "
-								"possessed Pawn and still be considered for Interest (cm)."))
+			  meta = (ToolTip = "Maximum range that a target actor can be away from the owning client's PlayerController or currently possessed Pawn and still be considered for Interest (cm)."))
 	float MaxInterestRange = 15000.0f;
 	float MaxInterestRangeSqr;
 
@@ -45,14 +44,12 @@ public:
 	bool bIncludeHierarchy = false;
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Advanced",
-			  meta = (ToolTip = "Reduce dynamic memory allocations from this component by setting this to the max expected # of target "
-								"actors on the UnrealServer."))
+			  meta = (ToolTip = "Reduce dynamic memory allocations from this component by setting this to the max expected # of target actors on the UnrealServer."))
 	int32 SoftMaxTargetActorsOnServerCount = 16;
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Advanced",
 			  meta = (EditCondition = "bIncludeHierarchy",
-					  ToolTip = "Reduce dynamic memory allocations from this component by setting this to the max expected # of "
-								"replicating attached actors in the target actor's hierarchy on the UnrealServer."))
+					  ToolTip = "Reduce dynamic memory allocations from this component by setting this to the max expected # of replicating attached actors in the target actor's hierarchy on the UnrealServer."))
 	int32 SoftMaxAttachedActorsPerTargetActorCount = 24;
 
 	// ISpatialInterestProvider
