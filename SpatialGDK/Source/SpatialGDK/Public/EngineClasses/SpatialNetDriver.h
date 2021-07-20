@@ -50,6 +50,8 @@ class USpatialReceiver;
 class USpatialSender;
 class USpatialWorkerConnection;
 class USpatialWorkerFlags;
+class USpatialShadowActor;
+class USpatialNetDriverAuthorityDebugger;
 
 DECLARE_DELEGATE(PostWorldWipeDelegate);
 DECLARE_MULTICAST_DELEGATE(FShutdownEvent);
@@ -225,6 +227,8 @@ public:
 	USpatialNetDriverGameplayDebuggerContext* GameplayDebuggerCtx;
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
+	UPROPERTY()
+	USpatialNetDriverAuthorityDebugger* AuthorityDebugger;
 
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
 	TOptional<SpatialGDK::FOwnershipCompletenessHandler> OwnershipCompletenessHandler;
@@ -282,6 +286,10 @@ public:
 	virtual int64 GetClientID() const override;
 
 	virtual int64 GetActorEntityId(const AActor& Actor) const override;
+
+	void AddSpatialShadowActor(const Worker_EntityId_Key EntityId);
+	void RemoveSpatialShadowActor(const Worker_EntityId_Key EntityId);
+	void UpdateSpatialShadowActor(const Worker_EntityId_Key EntityId);
 
 	FShutdownEvent OnShutdown;
 
@@ -407,4 +415,10 @@ private:
 
 	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
+
+	virtual void ServerReplicateActors_BuildConsiderList(TArray<FNetworkObjectInfo*>& OutConsiderList, const float ServerTickTime) override;
+
+	// Store the last received state of the actor over the network by Entity ID so that we can check for non-auth changes.
+	UPROPERTY()
+	TMap<int64, USpatialShadowActor*> SpatialShadowActors;
 };

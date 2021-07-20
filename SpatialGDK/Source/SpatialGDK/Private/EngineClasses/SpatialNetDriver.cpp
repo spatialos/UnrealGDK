@@ -20,12 +20,14 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialHandoverManager.h"
 #include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriverAuthorityDebugger.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialNetDriverGameplayDebuggerContext.h"
 #include "EngineClasses/SpatialNetDriverRPC.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
+#include "EngineClasses/SpatialShadowActor.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSubviews.h"
@@ -112,6 +114,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, LoadBalanceStrategy(nullptr)
 	, DebugCtx(nullptr)
 	, GameplayDebuggerCtx(nullptr)
+	, AuthorityDebugger(nullptr)
 	, LoadBalanceEnforcer(nullptr)
 	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
@@ -137,6 +140,12 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 #endif
 
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
+
+	if (GetDefault<UGeneralProjectSettings>()->bSpatialAuthorityDebugger)
+	{
+		AuthorityDebugger = NewObject<USpatialNetDriverAuthorityDebugger>();
+		AuthorityDebugger->Init(*this);
+	}
 }
 
 USpatialNetDriver::~USpatialNetDriver() = default;
@@ -1760,6 +1769,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 					}
 
 					Channel = GetOrCreateSpatialActorChannel(Actor);
+
 					if ((Channel == nullptr) && (Actor->NetUpdateFrequency < 1.0f))
 					{
 						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
@@ -3529,6 +3539,64 @@ bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
 		return true;
 	}
 	return false;
+}
+
+void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkObjectInfo*>& OutConsiderList, const float ServerTickTime)
+{
+	const bool bSpatialNetworking = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+
+	if (!bSpatialNetworking || AuthorityDebugger == nullptr)
+	{
+		// Default case to only consider auth actors for replication
+		Super::ServerReplicateActors_BuildConsiderList(OutConsiderList, ServerTickTime);
+		return;
+	}
+
+	// Spatial authority debugger case to check non-auth actors for invalid changes and then add auth actors to the consider list for
+	// replication
+	TArray<FNetworkObjectInfo*> TmpConsiderList;
+	TmpConsiderList.Reserve(GetNetworkObjectList().GetActiveObjects().Num());
+	Super::ServerReplicateActors_BuildConsiderList(TmpConsiderList, ServerTickTime);
+
+	for (FNetworkObjectInfo* const& ActorInfo : TmpConsiderList)
+	{
+		AActor* Actor = ActorInfo->Actor;
+
+		if (Actor->HasAuthority())
+		{
+			//  Only add auth actors only to the consider list
+			OutConsiderList.Add(ActorInfo);
+		}
+		else
+		{
+			// Check for unauthorised data changes to non-auth actors
+			AuthorityDebugger->CheckUnauthorisedDataChanges(Actor);
+		}
+	}
+}
+
+void USpatialNetDriver::AddSpatialShadowActor(const Worker_EntityId_Key EntityId)
+{
+	if (AuthorityDebugger != nullptr)
+	{
+		AuthorityDebugger->AddSpatialShadowActor(EntityId);
+	}
+}
+
+void USpatialNetDriver::RemoveSpatialShadowActor(const Worker_EntityId_Key EntityId)
+{
+	if (AuthorityDebugger != nullptr)
+	{
+		AuthorityDebugger->RemoveSpatialShadowActor(EntityId);
+	}
+}
+
+void USpatialNetDriver::UpdateSpatialShadowActor(const Worker_EntityId_Key EntityId)
+{
+	if (AuthorityDebugger != nullptr)
+	{
+		AuthorityDebugger->UpdateSpatialShadowActor(EntityId);
+	}
 }
 
 // This should only be called once on each client, in the SpatialDebugger constructor after the class is replicated to each client.

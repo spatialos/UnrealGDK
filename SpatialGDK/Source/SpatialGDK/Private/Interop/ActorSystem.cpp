@@ -165,6 +165,7 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 			{
 				ComponentRemoved(Delta.EntityId, Change.ComponentId);
 			}
+			NetDriver->UpdateSpatialShadowActor(Delta.EntityId);
 		}
 	}
 }
@@ -242,7 +243,6 @@ void ActorSystem::ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate)
 				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
 																		? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
 																		: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
-
 				AuthorityLost(EntityId, AuthorityComponentSet);
 			}
 		}
@@ -738,6 +738,7 @@ void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
 {
 	PopulateDataStore(EntityId);
 	ReceiveActor(EntityId);
+	NetDriver->AddSpatialShadowActor(EntityId);
 }
 
 void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
@@ -762,6 +763,8 @@ void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 	}
 
 	ActorDataStore.Remove(EntityId);
+
+	NetDriver->RemoveSpatialShadowActor(EntityId);
 }
 
 bool ActorSystem::HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const
