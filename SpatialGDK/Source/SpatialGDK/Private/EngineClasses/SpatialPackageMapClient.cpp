@@ -607,7 +607,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	// Remove dynamic subobjects and objects replicated on the actorchannel.
 	if (USpatialActorChannel* Channel = SpatialNetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		for (auto& ObjReplicatorPair : Channel->ReplicationMap)
+		for (const auto& ObjReplicatorPair : Channel->ReplicationMap)
 		{
 			TWeakObjectPtr<UObject> WeakObjectPtr = ObjReplicatorPair.Value->GetWeakObjectPtr();
 			if (WeakObjectPtr.IsValid())
