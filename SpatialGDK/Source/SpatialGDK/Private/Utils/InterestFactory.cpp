@@ -3,6 +3,7 @@
 #include "Utils/InterestFactory.h"
 
 #include "EngineClasses/Components/ActorInterestComponent.h"
+#include "EngineClasses/Components/InterestSettingsComponent.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -525,17 +526,13 @@ void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor,
 		return;
 	}
 
-	// The defined actor interest component populates the frequency to constraints map with the user defined queries.
-	TArray<UActorInterestComponent*> ActorInterestComponents;
-	InActor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
-	if (ActorInterestComponents.Num() == 1)
+	// Any ActorComponent implementing ISpatialInterestProvider can populate the frequency to constraints map with the user defined queries.
+	TArray<UActorComponent*> InterestProvidingComponents = InActor->GetComponentsByInterface(USpatialInterestProvider::StaticClass());
+
+	for (const auto InterestProvidingComponent : InterestProvidingComponents)
 	{
-		ActorInterestComponents[0]->PopulateFrequencyToConstraintsMap(*ClassInfoManager, OutFrequencyToConstraints);
-	}
-	else if (ActorInterestComponents.Num() > 1)
-	{
-		UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestComponent"), *InActor->GetPathName());
-		checkNoEntry()
+		const ISpatialInterestProvider* InterestProvider = Cast<ISpatialInterestProvider>(InterestProvidingComponent);
+		InterestProvider->PopulateFrequencyToConstraintsMap(*ClassInfoManager, OutFrequencyToConstraints);
 	}
 
 	if (bRecurseChildren)
@@ -607,21 +604,15 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 
 bool InterestFactory::ShouldAddNetCullDistanceInterest(const AActor* InActor) const
 {
-	// If the actor has a component to specify interest and that indicates that we shouldn't add
-	// constraints based on NetCullDistanceSquared, abort. There is a check elsewhere to ensure that
-	// there is at most one ActorInterestQueryComponent.
-	TArray<UActorInterestComponent*> ActorInterestComponents;
-	InActor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
-	if (ActorInterestComponents.Num() == 1)
+	TArray<UInterestSettingsComponent*> SettingsComponents;
+	InActor->GetComponents<UInterestSettingsComponent>(SettingsComponents);
+
+	if (SettingsComponents.Num() == 0)
 	{
-		const UActorInterestComponent* ActorInterest = ActorInterestComponents[0];
-		if (!ActorInterest->bUseNetCullDistanceSquaredForCheckoutRadius)
-		{
-			return false;
-		}
+		return true;
 	}
 
-	return true;
+	return SettingsComponents[0]->bUseNetCullDistanceSquaredForCheckoutRadius;
 }
 
 QueryConstraint UnrealServerInterestFactory::CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const

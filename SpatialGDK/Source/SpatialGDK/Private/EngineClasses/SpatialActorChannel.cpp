@@ -18,6 +18,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineStats.h"
+#include "Interfaces/ISpatialInterestProvider.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/GlobalStateManager.h"
@@ -686,10 +687,19 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	ReplicationBytesWritten = 0;
 
-	if (!bCreatingNewEntity && NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
+	if (!bCreatingNewEntity)
 	{
-		NetDriver->ActorSystem->UpdateInterestComponent(Actor);
-		SetNeedOwnerInterestUpdate(false);
+		TRACE_CPUPROFILER_EVENT_SCOPE(USpatialActorChannel::UpdateInterest);
+		if (NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
+		{
+			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
+			SetNeedOwnerInterestUpdate(false);
+		}
+		else if (IsInterestUpdateRequired())
+		{
+			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
+			SetIsInterestUpdateRequired(false);
+		}
 	}
 
 	// If any properties have changed, send a component update.
