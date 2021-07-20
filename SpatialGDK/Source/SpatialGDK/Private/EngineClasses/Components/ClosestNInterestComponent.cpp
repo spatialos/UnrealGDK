@@ -57,6 +57,8 @@ void UClosestNInterestComponent::BeginPlay()
 
 void UClosestNInterestComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	Super::EndPlay(EndPlayReason);
+
 	const UWorld* World = GetWorld();
 	if (World != nullptr && UpdateQueryTimerHandle.IsValid())
 	{
@@ -224,5 +226,6 @@ void UClosestNInterestComponent::ConstructQuery()
 void UClosestNInterestComponent::PopulateFrequencyToConstraintsMap(
 	const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const
 {
-	OutFrequencyToQueryConstraints.Add(RuntimeUpdateFrequency, ConstraintList);
+	TArray<SpatialGDK::QueryConstraint>& Constraints = OutFrequencyToQueryConstraints.FindOrAdd(RuntimeUpdateFrequency);
+	Constraints.Append(ConstraintList);
 }
