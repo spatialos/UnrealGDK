@@ -12,7 +12,7 @@ class SPATIALGDK_API USpatialShadowActor : public UObject
 	GENERATED_BODY()
 
 public:
-	USpatialShadowActor(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	USpatialShadowActor() = default;
 
 	void Init(const Worker_EntityId InEntityId, AActor* InActor);
 
@@ -20,14 +20,10 @@ public:
 
 	void Update(const Worker_EntityId InEntityId, AActor* InActor);
 
-private:
+protected:
 	Worker_EntityId EntityId;
+	UPROPERTY()
 	AActor* Actor;
 	FString ReplicatedPropertyHash;
 	FString CreateHash(const AActor* InActor);
-
-	// Store a list of actors class names that currently violate the non-auth changes so that the user is not spammed.
-	// TODO: link PR to investigate these cases
-	UPROPERTY()
-	TArray<FString> SuppressedActors;
 };

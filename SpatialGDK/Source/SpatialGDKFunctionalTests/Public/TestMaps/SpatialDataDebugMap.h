@@ -7,7 +7,7 @@
 
 /**
  * This map is a simple 2-server-worker map, where both workers see everything in the world.
- * It has the bEnableSpatialDataDebugger flag set to check for non-auth modification of data
+ * It has the bSpatialAuthorityDebugger flag set to check for non-auth modification of data
  */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API USpatialDataDebugMap : public UGeneratedTestMap

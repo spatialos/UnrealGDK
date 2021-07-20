@@ -1,21 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #include "EngineClasses/SpatialShadowActor.h"
+#include "EngineClasses/SpatialNetDriverAuthorityDebugger.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialShadowActor);
-
-USpatialShadowActor::USpatialShadowActor(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
-	: Super(ObjectInitializer)
-	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
-	, ReplicatedPropertyHash("")
-
-{
-	SuppressedActors.Add("GameStateBase");
-	SuppressedActors.Add("DefaultPawn");
-	SuppressedActors.Add("PlayerState");
-	SuppressedActors.Add("SpatialFunctionalTestFlowController");
-	SuppressedActors.Add("GameplayDebuggerCategoryReplicator");
-	SuppressedActors.Add("SpatialTestPropertyReplicationMultiworker");
-}
 
 void USpatialShadowActor::Init(const Worker_EntityId InEntityId, AActor* InActor)
 {
@@ -44,11 +31,6 @@ FString USpatialShadowActor::CreateHash(const AActor* InActor)
 {
 	FString LatestReplicatedPropertyHash;
 
-	if (InActor->GetName().Contains(TEXT("ReplicatedTestActor")))
-	{
-		UE_LOG(LogSpatialShadowActor, Display, TEXT("ReplicatedTestActor %s"), *InActor->GetName());
-	}
-
 	for (TFieldIterator<FProperty> PropIt(InActor->GetClass()); PropIt; ++PropIt)
 	{
 		FProperty* Property = *PropIt;
@@ -75,7 +57,7 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges(const Worker_EntityId InE
 	check(InActor != nullptr);
 	check(!InActor->HasAuthority());
 
-	if (SuppressedActors.Contains(InActor->GetClass()->GetName()))
+	if (USpatialNetDriverAuthorityDebugger::IsSuppressedActor(InActor))
 	{
 		// We are suppressing warnings about some actor classes to avoid spamming the user
 		return;

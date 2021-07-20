@@ -51,6 +51,7 @@ class USpatialSender;
 class USpatialWorkerConnection;
 class USpatialWorkerFlags;
 class USpatialShadowActor;
+class USpatialNetDriverAuthorityDebugger;
 
 DECLARE_DELEGATE(PostWorldWipeDelegate);
 DECLARE_MULTICAST_DELEGATE(FShutdownEvent);
@@ -226,6 +227,8 @@ public:
 	USpatialNetDriverGameplayDebuggerContext* GameplayDebuggerCtx;
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
+	UPROPERTY()
+	USpatialNetDriverAuthorityDebugger* AuthorityDebugger;
 
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
 	TOptional<SpatialGDK::FOwnershipCompletenessHandler> OwnershipCompletenessHandler;
@@ -402,8 +405,6 @@ private:
 	bool ClientCanSendPlayerSpawnRequests() const;
 
 	void ProcessOwnershipChanges();
-
-	void CheckUnauthorisedDataChanges(const AActor* Actor);
 
 	// Has a certain interval (in seconds) been passed since the previous timestamp
 	bool HasTimedOut(const float Interval, uint64& TimeStamp);

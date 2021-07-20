@@ -12,7 +12,7 @@ USpatialDataDebugMap::USpatialDataDebugMap()
 
 	// clang-format off
 	SetCustomConfig(TEXT("[/Script/EngineSettings.GeneralProjectSettings]") LINE_TERMINATOR
-					TEXT("bEnableSpatialDataDebugger=True"));
+					TEXT("bSpatialAuthorityDebugger=True"));
 	// clang-format on
 }
 
