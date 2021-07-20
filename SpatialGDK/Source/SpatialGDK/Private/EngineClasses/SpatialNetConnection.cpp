@@ -98,10 +98,13 @@ void USpatialNetConnection::UpdateLevelVisibility(const struct FUpdateLevelVisib
 	UNetConnection::UpdateLevelVisibility(LevelVisibility);
 #endif
 
-	// We want to update our interest as fast as possible
-	// So we send an Interest update immediately.
-	SpatialGDK::ActorSystem* ActorSystem = Cast<USpatialNetDriver>(Driver)->ActorSystem.Get();
-	ActorSystem->UpdateInterestComponent(Cast<AActor>(PlayerController));
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
+	check(SpatialNetDriver != nullptr);
+
+	USpatialActorChannel* Channel = SpatialNetDriver->GetOrCreateSpatialActorChannel(PlayerController);
+	check(Channel != nullptr);
+
+	Channel->SetIsInterestUpdateRequired(true);
 }
 
 void USpatialNetConnection::FlushDormancy(AActor* Actor)
