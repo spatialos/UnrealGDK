@@ -90,6 +90,7 @@ class CrossServerRPCSender;
 class CrossServerRPCHandler;
 class FSpatialStrategySystem;
 class FSkeletonEntityCreationStartupStep;
+class FPartitionSystemImpl;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -236,6 +237,7 @@ public:
 
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
 	TUniquePtr<SpatialGDK::FSpatialStrategySystem> StrategySystem;
+	TUniquePtr<SpatialGDK::FPartitionSystemImpl> PartitionSystemImpl;
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialGDK::FSpatialHandoverManager> HandoverManager;
 	TUniquePtr<SpatialGDK::UnrealServerInterestFactory> InterestFactory;
