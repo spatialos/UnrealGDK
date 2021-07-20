@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - Gameplay Debugger now supports multi-worker environments.
+- Add support DOREPLIFETIME_ACTIVE_OVERRIDE for replication conditions, with the exception of TArray's this should now work the same as in native.
 
 ### Bug fixes:
 - Fix `A functional test is already running error` that would sometimes occur when re-running multi-server functional tests.

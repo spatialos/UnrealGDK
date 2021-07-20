@@ -431,7 +431,16 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 	const int32 CmdCount = Replicator.RepLayout->Cmds.Num();
 	for (uint16 CmdIdx = 0; CmdIdx < CmdCount; ++CmdIdx)
 	{
-		const auto& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
+		const FRepLayoutCmd& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
+		const FRepChangedParent& Parent = Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
+
+		// Need special case here because Unreal has special handling of ReplicatedMovement, see AActor::OnRep_ReplicatedMovement
+		const bool RepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
+
+		if (!Parent.Active && !RepActorMovement)
+		{
+			continue;
+		}
 
 		InitialRepChanged.Add(Cmd.RelativeHandle);
 
