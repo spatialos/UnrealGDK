@@ -12,7 +12,11 @@ class SPATIALGDK_API UAbstractInterestComponent : public UActorComponent, public
 	GENERATED_BODY()
 
 public:
-	UAbstractInterestComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) { bIsUpdateRequired = false; }
+	UAbstractInterestComponent(const FObjectInitializer& ObjectInitializer)
+		: Super(ObjectInitializer)
+	{
+		bIsUpdateRequired = false;
+	}
 
 	virtual void SetIsUpdateRequired(const bool bUpdateRequired) override { bIsUpdateRequired = bUpdateRequired; }
 	virtual bool IsUpdateRequired() const override { return bIsUpdateRequired; }
@@ -22,7 +26,7 @@ public:
 public:
 	/**
 	 * Whether to use NetCullDistanceSquared to generate constraints relative to the Actor that this component is attached to.
-	*/
+	 */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Interest")
 	bool bUseNetCullDistanceSquaredForCheckoutRadius = true;
 

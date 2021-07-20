@@ -50,7 +50,8 @@ void UClosestNInterestComponent::BeginPlay()
 		const UWorld* World = GetWorld();
 		check(World != nullptr);
 
-		World->GetTimerManager().SetTimer(UpdateQueryTimerHandle, this, &UClosestNInterestComponent::UpdateQuery, UpdateInterval, true, FMath::FRand() * UpdateInterval);
+		World->GetTimerManager().SetTimer(UpdateQueryTimerHandle, this, &UClosestNInterestComponent::UpdateQuery, UpdateInterval, true,
+										  FMath::FRand() * UpdateInterval);
 	}
 }
 
@@ -111,8 +112,9 @@ void UClosestNInterestComponent::FindTargetActors()
 	if (TargetActorCount > SoftMaxTargetActorsOnServerCount && !bSoftTargetActorLimitExceededWarningShown)
 	{
 		UE_LOG(LogClosestNInterestComponent, Warning,
-			TEXT("UClosestNInterestComponent::FindTargetActors() found more target actors (%d) than expected max (%d) and will perform dynamic allocations, consider increasing SoftMaxTargetActorsOnServerCount."),
-			TargetActorCount, SoftMaxTargetActorsOnServerCount);
+			   TEXT("UClosestNInterestComponent::FindTargetActors() found more target actors (%d) than expected max (%d) and will perform "
+					"dynamic allocations, consider increasing SoftMaxTargetActorsOnServerCount."),
+			   TargetActorCount, SoftMaxTargetActorsOnServerCount);
 		bSoftTargetActorLimitExceededWarningShown = true;
 	}
 
@@ -154,7 +156,9 @@ void UClosestNInterestComponent::FindTargetActors()
 
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(UClosestNInterestComponent::FindTargetActors_SortActors);
-		TargetActorsSorted.Sort([](const FActorSortData& LHS, const FActorSortData& RHS) { return LHS.DistanceSqr < RHS.DistanceSqr; });
+		TargetActorsSorted.Sort([](const FActorSortData& LHS, const FActorSortData& RHS) {
+			return LHS.DistanceSqr < RHS.DistanceSqr;
+		});
 	}
 
 	{
@@ -195,12 +199,13 @@ void UClosestNInterestComponent::ConstructQuery()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UClosestNInterestComponent::ConstructDynamicQuery);
 	const int32 TargetEntityIdCount = TargetEntityIds.Num();
-	
+
 	if (TargetEntityIdCount > SoftMaxEntityCount && !bSoftTargetEntityLimitExceededWarningShown)
 	{
 		UE_LOG(LogClosestNInterestComponent, Warning,
-			TEXT("UClosestNInterestComponent::ConstructQuery() found more entities (%d) than estimated max (%d) and will perform dynamic allocations, consider increasing SoftMaxAttachedActorsPerTargetActorCount."),
-			TargetEntityIdCount, SoftMaxEntityCount);
+			   TEXT("UClosestNInterestComponent::ConstructQuery() found more entities (%d) than estimated max (%d) and will perform "
+					"dynamic allocations, consider increasing SoftMaxAttachedActorsPerTargetActorCount."),
+			   TargetEntityIdCount, SoftMaxEntityCount);
 		bSoftTargetEntityLimitExceededWarningShown = true;
 	}
 
@@ -216,8 +221,8 @@ void UClosestNInterestComponent::ConstructQuery()
 	}
 }
 
-void UClosestNInterestComponent::PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager,
-	SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const
+void UClosestNInterestComponent::PopulateFrequencyToConstraintsMap(
+	const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const
 {
 	OutFrequencyToQueryConstraints.Add(RuntimeUpdateFrequency, ConstraintList);
 }
