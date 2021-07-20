@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - Gameplay Debugger now supports multi-worker environments.
+- Add support DOREPLIFETIME_ACTIVE_OVERRIDE for replication conditions, with the exception of TArray's this should now work the same as in native.
 
 ### Bug fixes:
 - Fix `A functional test is already running error` that would sometimes occur when re-running multi-server functional tests.
@@ -42,9 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added NetWriteFence UFUNCTION Tag. This tag is used when Network writes to an actor should be ordered with regard to updates to another actor. This is relevant in worker recovery/snapshot reloading to get some ordering guarantees when SpatialOS can write updates to entities in any order.
 - Inspector process is automatically started when starting PIE. This means you can re-use existing inspector browser sessions.
 - Visual Logger now supports multi-worker environments.
+- Gameplay Debugger now supports multi-worker environments.
 - Added `StopInsights` command to `SpatialExecServerCmd`, which takes no additional parameters and disables any Insight capturing on the target worker
   - Example usage: "SpatialExecServerCmd local StopInsights
 - Renamed `StartInsights` command args - `trace` -> `channel` and `tracefile` -> `file`
+- Added bEventTracingEnabledWithEditor setting to separate out the ability to enable Event Tracing in Editor builds from non-Editor builds.
 
 ### Bug fixes:
 - An issue with `AActor::SetAutonomousProxy` has been fixed, where actors that were manually set as `AutonomousProxy` could get downgraded to `SimulatedProxy`. The functions `SetAutonomousProxyOnAuthority` and `IsAutonomousProxyOnAuthority` have been added to USpatialActorChannel, along with a change to `ActorSystem::HandleActorAuthority` which will upgrade an actor's role from `SimulatedProxy` to `AutonomousProxy` if the actor gains Authority when `IsAutonomousProxyOnAuthority` is true.
