@@ -126,9 +126,14 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	SkeletonEntityManifestsQuery.ResultComponentIds = { SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID };
 	SkeletonEntityManifestsQuery.Constraint.ComponentConstraint = SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID;
 
+	Query WorkerPartitionEntitiesQuery = {};
+	WorkerPartitionEntitiesQuery.ResultComponentIds = { SpatialConstants::WORKER_PARTITION_TAG_COMPONENT_ID };
+	WorkerPartitionEntitiesQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_PARTITION_TAG_COMPONENT_ID;
+
 	TArray<Query>& Queries = SelfInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID).Queries;
 	Queries.Add(AuthoritySelfQuery);
 	Queries.Add(SkeletonEntityManifestsQuery);
+	Queries.Add(WorkerPartitionEntitiesQuery);
 
 	TArray<FWorkerComponentData> Components;
 
