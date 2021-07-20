@@ -17,7 +17,6 @@ class SPATIALGDKFUNCTIONALTESTS_API AUnresolvedReferenceGymTestActor : public AR
 	GENERATED_BODY()
 
 public:
-
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(Replicated)

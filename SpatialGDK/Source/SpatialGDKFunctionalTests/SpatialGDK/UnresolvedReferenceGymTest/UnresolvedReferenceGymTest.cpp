@@ -30,9 +30,7 @@ void AUnresolvedReferenceGymTest::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(
-		TEXT("CheckNoNullReferences"), FWorkerDefinition::AllClients, nullptr, nullptr,
-		[this](float deltaTime) {
+	AddStep(TEXT("CheckNoNullReferences"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float deltaTime) {
 		for (TActorIterator<AUnresolvedReferenceGymTestActor> Iter(GetWorld()); Iter; ++Iter)
 		{
 			int maxAllowedRepNotifies = 15;
@@ -53,7 +51,6 @@ void AUnresolvedReferenceGymTest::PrepareTest()
 
 			RequireEqual_Bool(bNoNullReferences, true, TEXT("There are no null references in ActorRefs"));
 		}
-		
 
 		FinishStep();
 	});

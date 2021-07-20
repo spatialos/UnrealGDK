@@ -21,9 +21,9 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/UNR-3066/OwnerOnlyPropertyReplication.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/UNR-3157/RPCInInterfaceTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/UNR-3761/SpatialTestMultipleOwnership/SpatialTestMultipleOwnership.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/UnresolvedReferenceGymTest/UnresolvedReferenceGymTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/VisibilityTest/ReplicatedVisibilityTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/VisibilityTest/VisibilityTest.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/UnresolvedReferenceGymTest/UnresolvedReferenceGymTest.h"
 
 USpatialNetworkingMap::USpatialNetworkingMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialNetworkingMap"))
