@@ -23,6 +23,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/UNR-3761/SpatialTestMultipleOwnership/SpatialTestMultipleOwnership.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/VisibilityTest/ReplicatedVisibilityTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/VisibilityTest/VisibilityTest.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/UnresolvedReferenceGymTest/UnresolvedReferenceGymTest.h"
 
 USpatialNetworkingMap::USpatialNetworkingMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialNetworkingMap"))
@@ -55,6 +56,7 @@ void USpatialNetworkingMap::CreateCustomContentForMap()
 	// TODO: This test can be uncommented when UNR-5790 is fixed.
 	// AddActorToLevel<ADynamicActorAwakeAfterDormantChangePropertyTest>(CurrentLevel, FTransform::Identity);
 
+	AddActorToLevel<AUnresolvedReferenceGymTest>(CurrentLevel, FTransform::Identity);
 	// Add test helpers
 	// Unfortunately, the nature of some tests requires them to have actors placed in the level, to trigger some Unreal behavior
 	AddActorToLevel<AReplicatedVisibilityTestActor>(CurrentLevel, FTransform::Identity);
