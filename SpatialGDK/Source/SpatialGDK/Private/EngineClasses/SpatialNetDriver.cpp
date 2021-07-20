@@ -20,9 +20,9 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialHandoverManager.h"
 #include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriverAuthorityDebugger.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialNetDriverGameplayDebuggerContext.h"
-#include "EngineClasses/SpatialNetDriverAuthorityDebugger.h"
 #include "EngineClasses/SpatialNetDriverRPC.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
@@ -140,7 +140,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 #endif
 
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
-	
+
 	if (GetDefault<UGeneralProjectSettings>()->bSpatialAuthorityDebugger)
 	{
 		AuthorityDebugger = NewObject<USpatialNetDriverAuthorityDebugger>();
@@ -3552,7 +3552,8 @@ void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkO
 		return;
 	}
 
-	// Spatial authority debugger case to check non-auth actors for invalid changes and then add auth actors to the consider list for replication
+	// Spatial authority debugger case to check non-auth actors for invalid changes and then add auth actors to the consider list for
+	// replication
 	TArray<FNetworkObjectInfo*> TmpConsiderList;
 	TmpConsiderList.Reserve(GetNetworkObjectList().GetActiveObjects().Num());
 	Super::ServerReplicateActors_BuildConsiderList(TmpConsiderList, ServerTickTime);

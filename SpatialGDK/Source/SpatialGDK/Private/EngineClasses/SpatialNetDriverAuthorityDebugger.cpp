@@ -9,12 +9,11 @@
 DEFINE_LOG_CATEGORY(LogSpatialNetDriverAuthorityDebugger);
 
 const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedActors = { TEXT("GameStateBase"),
-																			   TEXT("DefaultPawn"),
-																			   TEXT("PlayerState"),
-																			   TEXT("SpatialFunctionalTestFlowController"),
-																			   TEXT("GameplayDebuggerCategoryReplicator"),
-																			   TEXT("SpatialTestPropertyReplicationMultiworker") };
-
+																			 TEXT("DefaultPawn"),
+																			 TEXT("PlayerState"),
+																			 TEXT("SpatialFunctionalTestFlowController"),
+																			 TEXT("GameplayDebuggerCategoryReplicator"),
+																			 TEXT("SpatialTestPropertyReplicationMultiworker") };
 
 void USpatialNetDriverAuthorityDebugger::Init(USpatialNetDriver& InNetDriver)
 {
@@ -56,8 +55,7 @@ void USpatialNetDriverAuthorityDebugger::AddSpatialShadowActor(const Worker_Enti
 	if (SpatialShadowActors.Contains(EntityId))
 	{
 		UE_LOG(LogSpatialNetDriverAuthorityDebugger, Error,
-			   TEXT("Should only be adding a SpatialShadowActor once for each entity, EntityID %i"),
-			   EntityId);
+			   TEXT("Should only be adding a SpatialShadowActor once for each entity, EntityID %i"), EntityId);
 	}
 	else
 	{
