@@ -46,4 +46,5 @@ public:
 	TSharedPtr<FUICommandInfo> ToggleMultiWorkerEditor;
 
 	TSharedPtr<FUICommandInfo> GenerateTestMaps;
+	TSharedPtr<FUICommandInfo> LaunchCodegenTool;
 };

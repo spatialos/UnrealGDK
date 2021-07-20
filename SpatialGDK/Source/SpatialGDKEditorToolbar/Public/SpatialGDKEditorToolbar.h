@@ -141,6 +141,7 @@ private:
 	void AddDeploymentTagIfMissing(const FString& TagToAdd);
 
 	void GenerateTestMaps();
+	void LaunchCodegenTool();
 
 	void StartInspectorProcess(TFunction<void()> OnReady);
 
