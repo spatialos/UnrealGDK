@@ -609,16 +609,12 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	{
 		for (const auto& ObjReplicatorPair : Channel->ReplicationMap)
 		{
-			TWeakObjectPtr<UObject> WeakObjectPtr = ObjReplicatorPair.Value->GetWeakObjectPtr();
-			if (WeakObjectPtr.IsValid())
+			if (FNetworkGUID* ObjectNetGUID = NetGUIDLookup.Find(ObjReplicatorPair.Value->GetWeakObjectPtr()))
 			{
-				if (FNetworkGUID* ObjectNetGUID = NetGUIDLookup.Find(WeakObjectPtr))
+				if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*ObjectNetGUID))
 				{
-					if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*ObjectNetGUID))
-					{
-						UnrealObjectRefToNetGUID.Remove(*SubobjectRef);
-						NetGUIDToUnrealObjectRef.Remove(*ObjectNetGUID);
-					}
+					UnrealObjectRefToNetGUID.Remove(*SubobjectRef);
+					NetGUIDToUnrealObjectRef.Remove(*ObjectNetGUID);
 				}
 			}
 		}
