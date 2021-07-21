@@ -88,9 +88,10 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges(const Worker_EntityId InE
 		{
 			uint32 LatestPropertyHash = Property->GetValueTypeHash(Property->ContainerPtrToValuePtr<void>(InActor, 0));
 
-			if (ReplicatedPropertyHashes[i] != LatestPropertyHash)
+			if (ReplicatedPropertyHashes[i] != LatestPropertyHash && !USpatialNetDriverAuthorityDebugger::IsSuppressedProperty(Property))
 			{
-				UE_LOG(LogSpatialShadowActor, Error, TEXT("Changed actor without authority with name %s of type %s, property changed without authority was %s!"),
+				UE_LOG(LogSpatialShadowActor, Error,
+					   TEXT("Changed actor without authority with name %s of type %s, property changed without authority was %s!"),
 					   *Actor->GetName(), *InActor->GetClass()->GetName(), *Property->GetName());
 
 				// Store hash to avoid generating a duplicate error message

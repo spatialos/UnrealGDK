@@ -10,10 +10,14 @@ DEFINE_LOG_CATEGORY(LogSpatialNetDriverAuthorityDebugger);
 
 const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedActors = { TEXT("GameStateBase"),
 																			 TEXT("DefaultPawn"),
-																			 TEXT("PlayerState"),
-																			 TEXT("SpatialFunctionalTestFlowController"),
-																			 TEXT("GameplayDebuggerCategoryReplicator"),
-																			 TEXT("SpatialTestPropertyReplicationMultiworker") };
+																			 TEXT("PlayerState") };
+
+const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedProperties = { TEXT("Role"),
+																			 TEXT("RemoteRole"),
+	TEXT("Owner"),
+	TEXT("OwnerPC"),
+	TEXT("CurrentStepIndex")
+};
 
 void USpatialNetDriverAuthorityDebugger::Init(USpatialNetDriver& InNetDriver)
 {
@@ -103,4 +107,9 @@ void USpatialNetDriverAuthorityDebugger::UpdateSpatialShadowActor(const Worker_E
 bool USpatialNetDriverAuthorityDebugger::IsSuppressedActor(const AActor* InActor)
 {
 	return SuppressedActors.Contains(*InActor->GetClass()->GetName());
+}
+
+bool USpatialNetDriverAuthorityDebugger::IsSuppressedProperty(const FProperty* InProperty)
+{
+	return SuppressedProperties.Contains(*InProperty->GetName());
 }

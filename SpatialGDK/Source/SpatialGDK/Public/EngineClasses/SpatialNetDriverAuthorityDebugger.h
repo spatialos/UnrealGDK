@@ -30,6 +30,7 @@ public:
 	void CheckUnauthorisedDataChanges(const AActor* InActor);
 
 	static bool IsSuppressedActor(const AActor* InActor);
+	static bool IsSuppressedProperty(const FProperty* InProperty);
 
 protected:
 	UPROPERTY()
@@ -41,4 +42,5 @@ protected:
 	// Store a list of actors class names that currently violate the non-auth changes so that the user is not spammed.
 	// TODO: link PR to investigate these cases
 	const static TArray<FName> SuppressedActors;
+	const static TArray<FName> SuppressedProperties;
 };

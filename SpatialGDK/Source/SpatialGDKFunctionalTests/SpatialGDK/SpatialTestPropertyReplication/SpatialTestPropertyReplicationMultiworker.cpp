@@ -34,7 +34,9 @@ void ASpatialTestPropertyReplicationMultiworker::PrepareTest()
 
 	if (HasAuthority())
 	{
-		AddExpectedLogError(TEXT("Changed actor without authority with name ReplicatedTestActor_0 of type ReplicatedTestActor, property changed without authority was TestReplicatedProperty!"), 1, true);
+		AddExpectedLogError(TEXT("Changed actor without authority with name ReplicatedTestActor_0 of type ReplicatedTestActor, property "
+								 "changed without authority was TestReplicatedProperty!"),
+							1, true);
 	}
 
 	AddStep(
