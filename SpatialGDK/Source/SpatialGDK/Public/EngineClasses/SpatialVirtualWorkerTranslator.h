@@ -46,9 +46,6 @@ public:
 	Worker_PartitionId GetPartitionEntityForVirtualWorker(VirtualWorkerId Id) const;
 	Worker_EntityId GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const;
 
-	// On receiving a version of the translation state, apply that to the internal mapping.
-	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);
-
 	TWeakObjectPtr<UAbstractLBStrategy> LoadBalanceStrategy;
 
 	static void ApplyMappingFromSchema(TMap<VirtualWorkerId, WorkerInformation>& VirtualToPhysicalWorkerMapping,

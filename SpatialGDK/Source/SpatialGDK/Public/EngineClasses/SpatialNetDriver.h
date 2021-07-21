@@ -156,11 +156,6 @@ public:
 	// You can check if we connected by calling GetSpatialOS()->IsConnected()
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
-	// When the AcceptingPlayers/SessionID state on the GSM has changed this method will be called.
-	void ClientOnGSMQuerySuccess();
-	void RetryQueryGSM();
-	void GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op);
-
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
 						 const Worker_EntityId& ClientSystemEntityId);
@@ -401,10 +396,6 @@ private:
 	void MakePlayerSpawnRequest();
 
 	FUnrealObjectRef GetCurrentPlayerControllerRef();
-
-	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
-	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.
-	bool ClientCanSendPlayerSpawnRequests() const;
 
 	void ProcessOwnershipChanges();
 
