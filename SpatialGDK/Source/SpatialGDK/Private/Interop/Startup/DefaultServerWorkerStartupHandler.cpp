@@ -16,27 +16,90 @@ DEFINE_LOG_CATEGORY_STATIC(LogSpatialStartupHandler, Log, All);
 
 namespace SpatialGDK
 {
+FStartupExecutor::FStartupExecutor(TArray<FStartupStep> InSteps)
+	: Steps(MoveTemp(InSteps))
+{
+	if (Steps.Num() > 0)
+	{
+		Steps[0].OnStepStarted();
+	}
+}
+
+bool FStartupExecutor::TryFinishStartup()
+{
+	while (Steps.Num() > 0)
+	{
+		const FStartupStep& CurrentStep = Steps[0];
+		if (CurrentStep.TryFinishStep())
+		{
+			Steps.RemoveAt(0);
+			if (Steps.Num() > 0)
+			{
+				Steps[0].OnStepStarted();
+			}
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup,
+															   TOptional<Worker_EntityId>& WorkerEntityIdAddress, EStage& StageRef)
+{
+	TUniquePtr<TUniquePtr<ServerWorkerEntityCreator>> EntityCreatorPtrPtr = MakeUnique<TUniquePtr<ServerWorkerEntityCreator>>();
+	TUniquePtr<ServerWorkerEntityCreator>* EntityCreatorRawPtr = EntityCreatorPtrPtr.Get();
+	FStartupStep CreateWorkerEntityStep{ [EntityCreatorPtr = MoveTemp(EntityCreatorPtrPtr), NetDriver = &InNetDriver] {
+											(*EntityCreatorPtr.Get()) =
+												MakeUnique<ServerWorkerEntityCreator>(*NetDriver, *NetDriver->Connection);
+										},
+										 [EntityCreatorRawPtr, NetDriver = &InNetDriver, WorkerEntityIdAddress = &WorkerEntityIdAddress] {
+											 check(EntityCreatorRawPtr != nullptr);
+											 check(EntityCreatorRawPtr->IsValid());
+
+											 EntityCreatorRawPtr->Get()->ProcessOps(NetDriver->Connection->GetWorkerMessages());
+
+											 if (EntityCreatorRawPtr->Get()->IsFinished())
+											 {
+												 *WorkerEntityIdAddress = EntityCreatorRawPtr->Get()->GetWorkerEntityId();
+												 return true;
+											 }
+
+											 return false;
+										 } };
+
+	FStartupStep Dummy{ [] {},
+						[] {
+							return true;
+						} };
+	FStartupStep SetNextLegacyStep{ [] {},
+									[&StageRef] {
+										StageRef = EStage::WaitForWorkerEntities;
+										return true;
+									} };
+
+	TArray<FStartupStep> Steps;
+	Steps.Emplace(MoveTemp(Dummy));
+	Steps.Emplace(MoveTemp(CreateWorkerEntityStep));
+	Steps.Emplace(MoveTemp(SetNextLegacyStep));
+	return MoveTemp(Steps);
+}
+
 FSpatialServerStartupHandler::FSpatialServerStartupHandler(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup)
-	: Setup(InSetup)
+	: Executor(CreateSteps(InNetDriver, InSetup, WorkerEntityId, Stage))
+	, Setup(InSetup)
 	, NetDriver(&InNetDriver)
 {
 }
 
 bool FSpatialServerStartupHandler::TryFinishStartup()
 {
-	if (Stage == EStage::CreateWorkerEntity)
+	if (!Executor.TryFinishStartup())
 	{
-		if (!bCalledCreateEntity)
-		{
-			bCalledCreateEntity = true;
-			WorkerEntityCreator.Emplace(*NetDriver, *NetDriver->Connection);
-		}
-		WorkerEntityCreator->ProcessOps(GetOps());
-		if (WorkerEntityCreator->IsFinished())
-		{
-			WorkerEntityId = WorkerEntityCreator->GetWorkerEntityId();
-			Stage = EStage::WaitForWorkerEntities;
-		}
+		return false;
 	}
 
 	if (Stage == EStage::WaitForWorkerEntities)

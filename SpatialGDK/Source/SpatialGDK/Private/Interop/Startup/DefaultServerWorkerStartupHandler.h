@@ -14,6 +14,25 @@ namespace SpatialGDK
 {
 class ViewCoordinator;
 
+struct FStartupStep
+{
+	using FOnStepStarted = TUniqueFunction<void()>;
+	using FTryFinishStep = TUniqueFunction<bool()>;
+
+	FOnStepStarted OnStepStarted;
+	FTryFinishStep TryFinishStep;
+};
+
+class FStartupExecutor
+{
+public:
+	explicit FStartupExecutor(TArray<FStartupStep> InSteps);
+	bool TryFinishStartup();
+
+private:
+	TArray<FStartupStep> Steps;
+};
+
 class FSpatialServerStartupHandler
 {
 public:
@@ -26,6 +45,7 @@ public:
 	FString GetStartupStateDescription() const;
 
 private:
+	FStartupExecutor Executor;
 	void SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorkerId);
 	bool TryClaimingStartupPartition();
 
@@ -83,6 +103,9 @@ private:
 		Finished,
 		Initial = CreateWorkerEntity,
 	};
+
+	static TArray<FStartupStep> CreateSteps(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup,
+											TOptional<Worker_EntityId>& WorkerEntityIdAddress, EStage& StageRef);
 
 	EStage Stage = EStage::Initial;
 
