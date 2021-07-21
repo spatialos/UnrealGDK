@@ -34,7 +34,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 		else if (BytesWritten == 0)
 		{
 			UE_LOG(LogSpatialEventTracer, Error,
-				   TEXT("Failed to serialize due to file stream having insufficient capacity. This shouldn't happen with file streams."));
+				   TEXT("Failed to serialize due to file stream having insufficient capacity."));
 		}
 		else if (bTrackFileSize)
 		{
@@ -43,7 +43,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 
 		if (FPlatformAtomics::AtomicRead_Relaxed(&EventTracer->FlushOnWriteAtomic))
 		{
-			if (Io_Stream_Flush(Stream) == -1)
+			if (Io_Stream_Flush(Stream) == WORKER_RESULT_FAILURE)
 			{
 				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to flush stream with error code %lld (%s)"), BytesWritten,
 					   ANSI_TO_TCHAR(Io_Stream_GetLastError(Stream)));
