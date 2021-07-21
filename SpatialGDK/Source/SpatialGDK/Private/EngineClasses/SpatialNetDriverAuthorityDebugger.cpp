@@ -19,14 +19,14 @@ void USpatialNetDriverAuthorityDebugger::Init(USpatialNetDriver& InNetDriver)
 	NetDriver = &InNetDriver;
 }
 
-void USpatialNetDriverAuthorityDebugger::CheckUnauthorisedDataChanges(const AActor* Actor)
+void USpatialNetDriverAuthorityDebugger::CheckUnauthorisedDataChanges(const AActor& InActor)
 {
 	if (!NetDriver->IsServer())
 	{
 		return;
 	}
 
-	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(&InActor);
 
 	USpatialShadowActor** SpatialShadowActor = SpatialShadowActors.Find(EntityId);
 
@@ -35,7 +35,7 @@ void USpatialNetDriverAuthorityDebugger::CheckUnauthorisedDataChanges(const AAct
 		return;
 	}
 
-	(*SpatialShadowActor)->CheckUnauthorisedDataChanges(EntityId, Actor);
+	(*SpatialShadowActor)->CheckUnauthorisedDataChanges(EntityId, InActor);
 }
 
 void USpatialNetDriverAuthorityDebugger::AddSpatialShadowActor(const Worker_EntityId_Key EntityId)
@@ -59,7 +59,7 @@ void USpatialNetDriverAuthorityDebugger::AddSpatialShadowActor(const Worker_Enti
 	else
 	{
 		USpatialShadowActor* SpatialShadowActor(NewObject<USpatialShadowActor>());
-		SpatialShadowActor->Init(EntityId, Actor);
+		SpatialShadowActor->Init(EntityId, *Actor);
 		SpatialShadowActors.Emplace(EntityId, SpatialShadowActor);
 	}
 }
@@ -96,15 +96,15 @@ void USpatialNetDriverAuthorityDebugger::UpdateSpatialShadowActor(const Worker_E
 		return;
 	}
 
-	(*SpatialShadowActor)->Update(EntityId, Actor);
+	(*SpatialShadowActor)->Update(EntityId, *Actor);
 }
 
-bool USpatialNetDriverAuthorityDebugger::IsSuppressedActor(const AActor* InActor)
+bool USpatialNetDriverAuthorityDebugger::IsSuppressedActor(const AActor& InActor)
 {
-	return SuppressedActors.Contains(*InActor->GetClass()->GetName());
+	return SuppressedActors.Contains(*InActor.GetClass()->GetName());
 }
 
-bool USpatialNetDriverAuthorityDebugger::IsSuppressedProperty(const FProperty* InProperty)
+bool USpatialNetDriverAuthorityDebugger::IsSuppressedProperty(const FProperty& InProperty)
 {
-	return SuppressedProperties.Contains(*InProperty->GetName());
+	return SuppressedProperties.Contains(*InProperty.GetName());
 }

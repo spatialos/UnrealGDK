@@ -1769,7 +1769,6 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 					}
 
 					Channel = GetOrCreateSpatialActorChannel(Actor);
-
 					if ((Channel == nullptr) && (Actor->NetUpdateFrequency < 1.0f))
 					{
 						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
@@ -3570,7 +3569,7 @@ void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkO
 		else
 		{
 			// Check for unauthorised data changes to non-auth actors
-			AuthorityDebugger->CheckUnauthorisedDataChanges(Actor);
+			AuthorityDebugger->CheckUnauthorisedDataChanges(*Actor);
 		}
 	}
 }
