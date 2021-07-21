@@ -449,4 +449,47 @@ UGlobalStateManager& FSpatialServerStartupHandler::GetGSM()
 {
 	return *NetDriver->GlobalStateManager;
 }
+
+FString FSpatialServerStartupHandler::GetStartupStateDescription() const
+{
+	switch (Stage)
+	{
+	case EStage::CreateWorkerEntity:
+		return TEXT("Creating a worker entity");
+	case EStage::WaitForWorkerEntities:
+		return TEXT("Waiting for all worker entities to be visible");
+	case EStage::WaitForGSMEntity:
+		return TEXT("Waiting for GSM entity to become visible");
+	case EStage::DeriveDeploymentRecoveryState:
+		return TEXT("Deriving deployment recovery state");
+	case EStage::TryClaimingGSMEntityAuthority:
+		return TEXT("Electing GSM auth worker");
+	case EStage::WaitForGSMEntityAuthority:
+		return TEXT("Waiting to receive GSM entity authority");
+	case EStage::GsmAuthFillWorkerTranslationState:
+		return TEXT("Filling virtual worker translation state");
+	case EStage::GsmAuthCreatePartitions:
+		return TEXT("Creating partitions for workers");
+	case EStage::GsmAuthWaitForPartitionsVisibility:
+		return TEXT("Waiting for partitions to be created");
+	case EStage::GsmAuthAssignPartitionsToVirtualWorkers:
+		return TEXT("Assigning worker partitions to virtual workers");
+	case EStage::GetVirtualWorkerTranslationState:
+		return TEXT("Waiting for virtual worker ID to physical worker and worker partition mapping");
+	case EStage::WaitForAssignedPartition:
+		return TEXT("Waiting to see the assgned partition");
+	case EStage::CreateSkeletonEntities:
+		return TEXT("Creating skeleton entities");
+	case EStage::GsmAuthDispatchGSMStartPlay:
+		return TEXT("Waiting for all workers to confirm receipt of worker partitions");
+	case EStage::GsmNonAuthWaitForGSMStartPlay:
+		return TEXT("Waiting for the GSM worker to allow start play");
+	case EStage::Finished:
+		return TEXT("Finished");
+	default:
+		checkNoEntry();
+	}
+	return TEXT("Invalid state");
+}
+
 } // namespace SpatialGDK

@@ -40,6 +40,7 @@ bool FSpatialClientStartupHandler::TryFinishStartup()
 	}
 
 	TOptional<USpatialNetDriver::FPendingNetworkFailure> PendingNetworkFailure;
+	ClientStartupExtraState.Reset();
 
 	QueryHandler.ProcessOps(GetOps());
 
@@ -57,6 +58,9 @@ bool FSpatialClientStartupHandler::TryFinishStartup()
 				UE_LOG(LogSpatialClientWorkerStartupHandler, VeryVerbose,
 					   TEXT("GlobalStateManager session id mismatch - got (%d) expected (%d)."), GSMData->DeploymentSessionId,
 					   LocalSessionId);
+
+				ClientStartupExtraState = FString::Printf(TEXT("GlobalStateManager session id mismatch - got (%d) expected (%d)."),
+														  GSMData->DeploymentSessionId, LocalSessionId);
 			}
 			else if (SpatialConstants::SPATIAL_SNAPSHOT_VERSION != ServerSnapshotVersion)
 			{
@@ -307,4 +311,22 @@ bool FSpatialClientStartupHandler::GetFromComponentData(const Worker_ComponentDa
 
 	return FieldsFound == 1;
 }
+
+FString FSpatialClientStartupHandler::GetStartupStateDescription() const
+{
+	switch (Stage)
+	{
+	case EStage::QueryGSM:
+		return FString::Printf(TEXT("Querying GSM entity for the initial deployment data: %s"),
+							   *ClientStartupExtraState.Get(/*DefaultValue =*/TEXT("Nominal")));
+	case EStage::WaitForMapLoad:
+		return TEXT("Waiting for the map to be loaded");
+	case EStage::SendPlayerSpawnRequest:
+		return TEXT("Sending player spawn request");
+	case EStage::Finished:
+		return TEXT("Finished");
+	}
+	return TEXT("Invalid state");
+}
+
 } // namespace SpatialGDK

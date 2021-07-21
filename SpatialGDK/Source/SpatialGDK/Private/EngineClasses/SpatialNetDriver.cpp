@@ -3239,7 +3239,8 @@ void USpatialNetDriver::TryFinishStartup()
 			}
 			else if (!StartupHandler->TryFinishStartup())
 			{
-				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the new startup handler."));
+				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for startup: %s."),
+						*StartupHandler->GetStartupStateDescription());
 			}
 			else
 			{
@@ -3266,7 +3267,7 @@ void USpatialNetDriver::TryFinishStartup()
 		else
 		{
 			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the deployment to be ready : %s"),
-					StartupClientDebugString.IsEmpty() ? TEXT("Waiting for connection.") : *StartupClientDebugString)
+					*ClientStartupHandler->GetStartupStateDescription());
 		}
 	}
 }
