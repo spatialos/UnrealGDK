@@ -151,6 +151,8 @@ void AEventTracingTest::GatherData()
 	int FoundClient = 0;
 	int FoundWorker = 0;
 
+	bool FoundAllEventTraceLogs = false;
+
 	for (const FileCreationTime& FileCreation : FileCreationTimes)
 	{
 		if (FoundClient != RequiredClients && FileCreation.FilePath.Contains(TEXT("client")))
@@ -173,14 +175,14 @@ void AEventTracingTest::GatherData()
 
 		if (FoundClient == RequiredClients && FoundWorker == RequiredWorkers && FoundRuntime == RequiredRuntime)
 		{
+			FoundAllEventTraceLogs = true;
 			break;
 		}
 	}
 
-	if (FoundClient != RequiredClients || FoundWorker != RequiredWorkers)
+	if (!FoundAllEventTraceLogs)
 	{
 		UE_LOG(LogEventTracingTest, Error, TEXT("Could not find all required event tracing files"));
-		return;
 	}
 }
 
