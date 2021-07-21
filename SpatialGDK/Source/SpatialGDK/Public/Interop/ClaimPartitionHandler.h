@@ -13,8 +13,8 @@ class ISpatialOSWorker;
 class FClaimPartitionHandler
 {
 public:
-	void ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim);
-	void ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim,
+	Worker_RequestId ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim);
+	Worker_RequestId ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim,
 						FSystemEntityCommandDelegate Delegate);
 
 	void ProcessOps(const TArray<Worker_Op>& Ops);
