@@ -33,8 +33,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 		}
 		else if (BytesWritten == 0)
 		{
-			UE_LOG(LogSpatialEventTracer, Error,
-				   TEXT("Failed to serialize due to file stream having insufficient capacity."));
+			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize due to file stream having insufficient capacity."));
 		}
 		else if (bTrackFileSize)
 		{
