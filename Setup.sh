@@ -96,6 +96,7 @@ spatial package retrieve tools       schema_compiler-x86_64-macos            "${
 spatial package retrieve schema      standard_library                        "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/schema/standard_library.zip
 spatial package retrieve worker_sdk  c_headers                               "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip
 spatial package retrieve worker_sdk  c-dynamic-x86_64-clang-macos            "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip
+spatial package retrieve internal    etlog-x86_64-macos                      "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/tools/etlog-macos.zip
 
 if [[ -n "${DOWNLOAD_MOBILE}" ]];
 then
@@ -111,6 +112,7 @@ unzip -oq "${CORE_SDK_DIR}"/tools/schema_compiler-x86_64-macos.zip              
 unzip -oq "${CORE_SDK_DIR}"/schema/standard_library.zip                            -d "${BINARIES_DIR}"/Programs/schema/
 unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip                               -d "${BINARIES_DIR}"/Headers/
 unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip            -d "${BINARIES_DIR}"/Mac/
+unzip -oq "${CORE_SDK_DIR}"/tools/etlog-macos.zip                                  -d "${BINARIES_DIR}"/Programs/
 
 if [[ -n "${DOWNLOAD_MOBILE}" ]];
 then

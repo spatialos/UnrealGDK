@@ -122,6 +122,7 @@ call :MarkStartOfBlock "Retrieve dependencies"
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c_headers                                  %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c_headers.zip"
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-x86_64-vc141_md-win32            %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc141_md-win32.zip"
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-x86_64-clang1000-linux           %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang1000-linux.zip"
+    call :ExecuteAndCheck spatial package retrieve internal      etlog-x86_64-win32                         %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\tools\etlog-win32.zip"
 if defined DOWNLOAD_MOBILE (
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c-static-fullylinked-arm-clang-ios         %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip"
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-arm64v8a-clang_ndk21d-android    %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64v8a-clang_clang_ndk21-android.zip"
@@ -142,7 +143,8 @@ call :MarkStartOfBlock "Unpack dependencies"
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\csharp_cinterop.zip\"                     -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\csharp_cinterop\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"             -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\snapshot_converter-x86_64-win32.zip\"          -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                        -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                        -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\etlog-win32.zip\"                               -DestinationPath \"%BINARIES_DIR%\Programs\" -Force;"
 
     if defined DOWNLOAD_MOBILE (
         powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip\"              -DestinationPath \"%BINARIES_DIR%\IOS\" -Force;"^
