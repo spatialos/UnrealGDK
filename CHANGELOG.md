@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified startup flow to only create ActorSystem, RPCService and some others after startup has otherwise finished; removed initial op reordering.
 - Unused worker types will no longer generate worker configuration files.
 - Fixed an issue that could cause SpatialNetGuidCache and native's NetGuidCache to become out of sync.
+- Refactored startup to be all in a couple classes, `FSpatialServerStartupHandler` and `FSpatialClientStartupHandler`.
 
 ## [`0.14.0-rc`] - Unreleased
 
