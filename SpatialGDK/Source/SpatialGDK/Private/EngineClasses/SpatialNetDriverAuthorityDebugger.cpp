@@ -8,16 +8,11 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialNetDriverAuthorityDebugger);
 
-const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedActors = { TEXT("GameStateBase"),
-																			 TEXT("DefaultPawn"),
+const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedActors = { TEXT("GameStateBase"), TEXT("DefaultPawn"),
 																			 TEXT("PlayerState") };
 
-const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedProperties = { TEXT("Role"),
-																			 TEXT("RemoteRole"),
-	TEXT("Owner"),
-	TEXT("OwnerPC"),
-	TEXT("CurrentStepIndex")
-};
+const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedProperties = { TEXT("Role"), TEXT("RemoteRole"), TEXT("Owner"),
+																				 TEXT("OwnerPC"), TEXT("CurrentStepIndex") };
 
 void USpatialNetDriverAuthorityDebugger::Init(USpatialNetDriver& InNetDriver)
 {
