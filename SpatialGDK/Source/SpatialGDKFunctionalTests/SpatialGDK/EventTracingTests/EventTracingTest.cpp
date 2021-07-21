@@ -199,7 +199,7 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 		if (BytesRead == WORKER_RESULT_FAILURE)
 		{
 			UE_LOG(LogEventTracingTest, Error, TEXT("Failed to deserialize with error code %lld (%s)"), BytesRead,
-				ANSI_TO_TCHAR(Trace_GetLastError()));
+				   ANSI_TO_TCHAR(Trace_GetLastError()));
 			break;
 		}
 
