@@ -30,9 +30,7 @@ AEventTracingSettingsOverride::AEventTracingSettingsOverride()
 	Description = TEXT("Event Tracing - Settings Override");
 }
 
-void AEventTracingSettingsOverride::FinishEventTraceTest()
-{
-}
+void AEventTracingSettingsOverride::FinishEventTraceTest() {}
 
 void AEventTracingSettingsOverride::PrepareTest()
 {

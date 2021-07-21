@@ -12,6 +12,5 @@ class AEventTracingTestGameMode : public AGameModeBase
 	GENERATED_UCLASS_BODY()
 
 public:
-
 	AEventTracingTestGameMode();
 };

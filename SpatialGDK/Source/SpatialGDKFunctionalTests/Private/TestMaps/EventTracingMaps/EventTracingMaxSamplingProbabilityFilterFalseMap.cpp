@@ -19,5 +19,7 @@ void UEventTracingMaxSamplingProbabilityFilterFalseMap::CreateCustomContentForMa
 
 	ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->DefaultGameMode = AEventTracingTestGameMode::StaticClass();
-	WorldSettings->SettingsOverride = { "../../../Engine/Plugins/UnrealGDK/SpatialGDK/Config/MapSettingsOverrides/TestOverridesMaxSamplingProbabilityFilterFalse.ini" };
+	WorldSettings->SettingsOverride = {
+		"../../../Engine/Plugins/UnrealGDK/SpatialGDK/Config/MapSettingsOverrides/TestOverridesMaxSamplingProbabilityFilterFalse.ini"
+	};
 }

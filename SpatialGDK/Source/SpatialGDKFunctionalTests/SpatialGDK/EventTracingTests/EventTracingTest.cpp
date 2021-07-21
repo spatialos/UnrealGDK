@@ -102,9 +102,7 @@ void AEventTracingTest::WaitForTestToEnd()
 	RequireEqual_Bool(bTimeElapsed, true, TEXT("Waiting for test to end."));
 }
 
-void AEventTracingTest::FinishEventTraceTest()
-{
-}
+void AEventTracingTest::FinishEventTraceTest() {}
 
 void AEventTracingTest::GatherData()
 {
@@ -274,7 +272,6 @@ int32 AEventTracingTest::GetTraceEventCount(const TraceItemCountCategory ItemCou
 	}
 	return TotalCount;
 }
-
 
 int32 AEventTracingTest::GetTraceEventCount(const TraceItemCountCategory ItemCountCategory, const FName TraceEventType) const
 {

@@ -19,5 +19,7 @@ void UEventTracingCustomGDKFilterMap::CreateCustomContentForMap()
 
 	ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->DefaultGameMode = AEventTracingTestGameMode::StaticClass();
-	WorldSettings->SettingsOverride = { "../../../Engine/Plugins/UnrealGDK/SpatialGDK/Config/MapSettingsOverrides/TestOverridesCustomGDKFilter.ini" };
+	WorldSettings->SettingsOverride = {
+		"../../../Engine/Plugins/UnrealGDK/SpatialGDK/Config/MapSettingsOverrides/TestOverridesCustomGDKFilter.ini"
+	};
 }

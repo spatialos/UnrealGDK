@@ -31,7 +31,7 @@ void AEventTracingCharacter::BeginPlay()
 		{
 			GetWorld()->GetTimerManager().SetTimer(ToggleTestIntTimerHandle, this, &AEventTracingCharacter::ToggleTestInt, 1.0f, true);
 		}
-		else if(IsLocallyControlled())
+		else if (IsLocallyControlled())
 		{
 			GetWorld()->GetTimerManager().SetTimer(MoveCharacterTimerHandle, this, &AEventTracingCharacter::SendRPC, 1.0f, true);
 		}

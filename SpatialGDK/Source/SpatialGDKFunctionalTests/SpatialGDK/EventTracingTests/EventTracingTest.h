@@ -93,7 +93,6 @@ protected:
 	CheckResult CheckCauses(FName From, FName To) const;
 
 private:
-
 	struct TraceItemCount
 	{
 		int32 SpanCount;

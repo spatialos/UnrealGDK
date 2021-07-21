@@ -21,7 +21,6 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
-
 	UPROPERTY(ReplicatedUsing = OnRepTestInt)
 	int32 TestInt;
 

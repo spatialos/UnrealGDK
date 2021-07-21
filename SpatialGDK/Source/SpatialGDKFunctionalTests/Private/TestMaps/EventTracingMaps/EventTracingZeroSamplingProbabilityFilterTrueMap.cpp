@@ -19,5 +19,7 @@ void UEventTracingZeroSamplingProbabilityFilterTrueMap::CreateCustomContentForMa
 
 	ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->DefaultGameMode = AEventTracingTestGameMode::StaticClass();
-	WorldSettings->SettingsOverride = { "../../../Engine/Plugins/UnrealGDK/SpatialGDK/Config/MapSettingsOverrides/TestOverridesZeroSamplingProbabilityFilterTrue.ini" };
+	WorldSettings->SettingsOverride = {
+		"../../../Engine/Plugins/UnrealGDK/SpatialGDK/Config/MapSettingsOverrides/TestOverridesZeroSamplingProbabilityFilterTrue.ini"
+	};
 }

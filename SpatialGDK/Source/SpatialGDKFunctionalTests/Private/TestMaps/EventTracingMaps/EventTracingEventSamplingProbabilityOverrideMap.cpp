@@ -19,5 +19,7 @@ void UEventTracingEventSamplingProbabilityOverrideMap::CreateCustomContentForMap
 
 	ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->DefaultGameMode = AEventTracingTestGameMode::StaticClass();
-	WorldSettings->SettingsOverride = { "../../../Engine/Plugins/UnrealGDK/SpatialGDK/Config/MapSettingsOverrides/TestOverridesEventSamplingProbabilityOverride.ini" };
+	WorldSettings->SettingsOverride = {
+		"../../../Engine/Plugins/UnrealGDK/SpatialGDK/Config/MapSettingsOverrides/TestOverridesEventSamplingProbabilityOverride.ini"
+	};
 }

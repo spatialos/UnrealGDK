@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "CoreMinimal.h"
 #include "EventTracerComponent.generated.h"
 
 UCLASS()
@@ -21,7 +21,6 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
-
 	UPROPERTY(ReplicatedUsing = OnRepTestInt)
 	int32 TestInt;
 
@@ -37,5 +36,4 @@ private:
 	void OnRepTestInt();
 
 	bool OwnerHasAuthority() const;
-
 };
