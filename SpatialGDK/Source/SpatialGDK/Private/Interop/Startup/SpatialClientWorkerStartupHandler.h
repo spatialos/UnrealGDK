@@ -33,6 +33,7 @@ private:
 
 	bool bQueriedGSM = false;
 	bool bStartedRetrying = false;
+	TOptional<FString> StartupClientExtraState;
 	FTimerHandle GSMQueryRetryTimer;
 	FEntityQueryHandler QueryHandler;
 	struct FDeploymentMapData
