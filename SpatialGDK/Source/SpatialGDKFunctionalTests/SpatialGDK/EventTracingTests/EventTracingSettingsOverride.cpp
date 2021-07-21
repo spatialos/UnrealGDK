@@ -32,7 +32,6 @@ AEventTracingSettingsOverride::AEventTracingSettingsOverride()
 
 void AEventTracingSettingsOverride::FinishEventTraceTest()
 {
-	FinishStep();
 }
 
 void AEventTracingSettingsOverride::PrepareTest()

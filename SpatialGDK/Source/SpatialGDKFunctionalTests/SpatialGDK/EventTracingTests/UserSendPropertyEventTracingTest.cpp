@@ -16,7 +16,7 @@ void AUserSendPropertyEventTracingTest::FinishEventTraceTest()
 	TArray<FString> UserEventSpanIds;
 	TArray<FString> SendPropertyUpdatesCauseSpanIds;
 
-	for (const auto& Pair : TraceEvents)
+	for (const auto& Pair : SpanEvents)
 	{
 		const FString& SpanIdString = Pair.Key;
 		const FName& EventName = Pair.Value;
@@ -47,6 +47,4 @@ void AUserSendPropertyEventTracingTest::FinishEventTraceTest()
 	AssertTrue(bSuccess, FString::Printf(
 							 TEXT("User event have caused the expected send property update events. Events Tested: %d, Events Failed: %d"),
 							 EventsTested, EventsFailed));
-
-	FinishStep();
 }

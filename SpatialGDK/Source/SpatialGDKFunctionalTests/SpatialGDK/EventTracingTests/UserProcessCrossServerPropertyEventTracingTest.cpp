@@ -21,6 +21,4 @@ void AUserProcessCrossServerPropertyEventTracingTest::FinishEventTraceTest()
 		FString::Printf(
 			TEXT("User events have been caused by the expected receive property update events. Events Tested: %d, Events Failed: %d"),
 			Test.NumTested, Test.NumFailed));
-
-	FinishStep();
 }

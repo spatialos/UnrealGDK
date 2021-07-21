@@ -33,6 +33,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EventTracingConfig)
 	int32 MinRequiredWorkers = 1;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EventTracingConfig)
+	float TestTime = 4.0f;
+
 protected:
 	const static FName ReceiveOpEventName;
 	const static FName PropertyChangedEventName;
@@ -62,11 +65,19 @@ protected:
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;
 
-	float TestTime = 8.0f;
-
-	TMap<FString, FName> TraceEvents;
+	TMap<FString, FName> SpanEvents;
 	TMap<FString, TArray<FString>> TraceSpans;
 
+	enum TraceItemCountCategory
+	{
+		Runtime,
+		Worker,
+		Client
+	};
+
+	int32 GetTraceSpanCount(const TraceItemCountCategory ItemCountCategory) const;
+	int32 GetTraceEventCount(const TraceItemCountCategory ItemCountCategory) const;
+	int32 GetTraceEventCount(const TraceItemCountCategory ItemCountCategory, const FName TraceEventType) const;
 	bool CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames, int MinimumCauses = 1) const;
 
 	virtual void FinishEventTraceTest();
@@ -82,10 +93,18 @@ protected:
 	CheckResult CheckCauses(FName From, FName To) const;
 
 private:
+
+	struct TraceItemCount
+	{
+		int32 SpanCount;
+		TMap<FName, int32> EventCount;
+	};
+
+	TMap<TraceItemCountCategory, TraceItemCount> TraceItemsCounts;
 	FDateTime TestStartTime;
 
 	void StartEventTracingTest();
 	void WaitForTestToEnd();
 	void GatherData();
-	void GatherDataFromFile(const FString& FilePath);
+	void GatherDataFromFile(const FString& FilePath, const TraceItemCountCategory ItemCountCategory);
 };

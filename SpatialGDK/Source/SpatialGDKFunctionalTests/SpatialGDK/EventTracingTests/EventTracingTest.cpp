@@ -51,6 +51,7 @@ void AEventTracingTest::PrepareTest()
 		TEXT("StartEventTracingTest"), WorkerDefinition, nullptr,
 		[this]() {
 			StartEventTracingTest();
+			FinishStep();
 		},
 		nullptr);
 
@@ -70,12 +71,14 @@ void AEventTracingTest::PrepareTest()
 
 	AddStep(TEXT("WaitForTestToEnd"), WorkerDefinition, nullptr, nullptr, [this](float DeltaTime) {
 		WaitForTestToEnd();
+		FinishStep();
 	});
 
 	AddStep(
 		TEXT("GatherData"), WorkerDefinition, nullptr,
 		[this]() {
 			GatherData();
+			FinishStep();
 		},
 		nullptr);
 
@@ -83,6 +86,7 @@ void AEventTracingTest::PrepareTest()
 		TEXT("FinishEventTraceTest"), WorkerDefinition, nullptr,
 		[this]() {
 			FinishEventTraceTest();
+			FinishStep();
 		},
 		nullptr);
 }
@@ -90,22 +94,16 @@ void AEventTracingTest::PrepareTest()
 void AEventTracingTest::StartEventTracingTest()
 {
 	TestStartTime = FDateTime::Now();
-	FinishStep();
 }
 
 void AEventTracingTest::WaitForTestToEnd()
 {
-	if (TestStartTime + FTimespan::FromSeconds(TestTime) > FDateTime::Now())
-	{
-		return;
-	}
-
-	FinishStep();
+	bool bTimeElapsed = FDateTime::Now() > TestStartTime + FTimespan::FromSeconds(TestTime);
+	RequireEqual_Bool(bTimeElapsed, true, TEXT("Waiting for test to end."));
 }
 
 void AEventTracingTest::FinishEventTraceTest()
 {
-	FinishStep();
 }
 
 void AEventTracingTest::GatherData()
@@ -147,25 +145,35 @@ void AEventTracingTest::GatherData()
 		return A.CreationTime > B.CreationTime;
 	});
 
+	int RequiredRuntime = 1;
 	int RequiredClients = GetRequiredClients();
 	int RequiredWorkers = GetRequiredWorkers();
+
+	int FoundRuntime = 0;
 	int FoundClient = 0;
 	int FoundWorker = 0;
+
 	for (const FileCreationTime& FileCreation : FileCreationTimes)
 	{
-		if (FoundClient != RequiredClients && FileCreation.FilePath.Contains("client"))
+		if (FoundClient != RequiredClients && FileCreation.FilePath.Contains(TEXT("client")))
 		{
-			GatherDataFromFile(FileCreation.FilePath);
+			GatherDataFromFile(FileCreation.FilePath, TraceItemCountCategory::Client);
 			FoundClient++;
 		}
 
-		if (FoundWorker != RequiredWorkers && FileCreation.FilePath.Contains("worker"))
+		if (FoundWorker != RequiredWorkers && FileCreation.FilePath.Contains(TEXT("worker")))
 		{
-			GatherDataFromFile(FileCreation.FilePath);
+			GatherDataFromFile(FileCreation.FilePath, TraceItemCountCategory::Worker);
 			FoundWorker++;
 		}
 
-		if (FoundClient == RequiredClients && FoundWorker == RequiredWorkers)
+		if (FoundRuntime != RequiredRuntime && FileCreation.FilePath.Contains(TEXT("runtime")))
+		{
+			GatherDataFromFile(FileCreation.FilePath, TraceItemCountCategory::Runtime);
+			FoundRuntime++;
+		}
+
+		if (FoundClient == RequiredClients && FoundWorker == RequiredWorkers && FoundRuntime == RequiredRuntime)
 		{
 			break;
 		}
@@ -176,11 +184,9 @@ void AEventTracingTest::GatherData()
 		UE_LOG(LogEventTracingTest, Error, TEXT("Could not find all required event tracing files"));
 		return;
 	}
-
-	FinishStep();
 }
 
-void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
+void AEventTracingTest::GatherDataFromFile(const FString& FilePath, const TraceItemCountCategory ItemCountCategory)
 {
 	struct StreamDeleter
 	{
@@ -189,6 +195,8 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 
 	TUniquePtr<Io_Stream, StreamDeleter> Stream;
 	Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_READ));
+
+	TraceItemCount& ItemCount = TraceItemsCounts.FindOrAdd(ItemCountCategory);
 
 	uint32_t BytesToRead = 1;
 	int8_t ReturnCode = 1;
@@ -216,8 +224,10 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 				if (FilterEventNames.Num() == 0 || FilterEventNames.Contains(EventName))
 				{
 					FString SpanIdString = FSpatialGDKSpanId::ToString(Event.span_id);
-					FName& CachedEventName = TraceEvents.FindOrAdd(SpanIdString);
+					FName& CachedEventName = SpanEvents.FindOrAdd(SpanIdString);
 					CachedEventName = EventName;
+
+					ItemCount.EventCount.FindOrAdd(EventName)++;
 				}
 			}
 			else if (Item->item_type == TRACE_ITEM_TYPE_SPAN)
@@ -235,11 +245,47 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 						Causes.Add(FSpatialGDKSpanId::ToString(SpanId.GetId()));
 					}
 				}
+				ItemCount.SpanCount++;
 			}
 		}
 	}
 
 	Stream = nullptr;
+}
+
+int32 AEventTracingTest::GetTraceSpanCount(const TraceItemCountCategory ItemCountCategory) const
+{
+	const TraceItemCount* ItemCount = TraceItemsCounts.Find(ItemCountCategory);
+	return ItemCount != nullptr ? ItemCount->SpanCount : 0;
+}
+
+int32 AEventTracingTest::GetTraceEventCount(const TraceItemCountCategory ItemCountCategory) const
+{
+	const TraceItemCount* ItemCount = TraceItemsCounts.Find(ItemCountCategory);
+	if (ItemCount == nullptr)
+	{
+		return 0;
+	}
+
+	int32 TotalCount = 0;
+	for (const auto& Pair : ItemCount->EventCount)
+	{
+		TotalCount += Pair.Value;
+	}
+	return TotalCount;
+}
+
+
+int32 AEventTracingTest::GetTraceEventCount(const TraceItemCountCategory ItemCountCategory, const FName TraceEventType) const
+{
+	const TraceItemCount* ItemCount = TraceItemsCounts.Find(ItemCountCategory);
+	if (ItemCount == nullptr)
+	{
+		return 0;
+	}
+
+	const int32* Count = ItemCount->EventCount.Find(TraceEventType);
+	return Count != nullptr ? *Count : 0;
 }
 
 bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames,
@@ -253,7 +299,7 @@ bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const 
 
 	for (const FString& CauseSpanIdString : *Causes)
 	{
-		const FName* CauseEventName = TraceEvents.Find(CauseSpanIdString);
+		const FName* CauseEventName = SpanEvents.Find(CauseSpanIdString);
 		if (CauseEventName == nullptr)
 		{
 			return false;
@@ -271,7 +317,7 @@ AEventTracingTest::CheckResult AEventTracingTest::CheckCauses(FName From, FName 
 {
 	int EventsTested = 0;
 	int EventsFailed = 0;
-	for (const auto& Pair : TraceEvents)
+	for (const auto& Pair : SpanEvents)
 	{
 		const FString& SpanIdString = Pair.Key;
 		const FName& EventName = Pair.Value;

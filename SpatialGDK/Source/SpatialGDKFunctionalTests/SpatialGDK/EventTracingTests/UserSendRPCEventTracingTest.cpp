@@ -16,7 +16,7 @@ void AUserSendRPCEventTracingTest::FinishEventTraceTest()
 	TArray<FString> UserEventSpanIds;
 	TArray<FString> SendRPCCauseSpanIds;
 
-	for (const auto& Pair : TraceEvents)
+	for (const auto& Pair : SpanEvents)
 	{
 		const FString& SpanIdString = Pair.Key;
 		const FName& EventName = Pair.Value;
@@ -46,6 +46,4 @@ void AUserSendRPCEventTracingTest::FinishEventTraceTest()
 	bool bSuccess = EventsTested > 0 && EventsFailed == 0;
 	AssertTrue(bSuccess, FString::Printf(TEXT("User event have caused the expected send RPC events. Events Tested: %d, Events Failed: %d"),
 										 EventsTested, EventsFailed));
-
-	FinishStep();
 }
