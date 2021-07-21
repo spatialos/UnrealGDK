@@ -10,8 +10,27 @@ void USpatialShadowActor::Init(const Worker_EntityId InEntityId, AActor* InActor
 	check(InActor != nullptr);
 	check(IsValid(InActor));
 
+	NumReplicatedProperties = 0;
+
+	for (TFieldIterator<FProperty> PropIt(InActor->GetClass()); PropIt; ++PropIt)
+	{
+		FProperty* Property = *PropIt;
+
+		if (Property->HasAnyPropertyFlags(CPF_Net) && Property->HasAnyPropertyFlags(CPF_HasGetValueTypeHash))
+		{
+			NumReplicatedProperties++;
+		}
+	}
+
+	// Intialise the array
+	ReplicatedPropertyHashes.Reserve(NumReplicatedProperties);
+	for (int32 i = 0; i < NumReplicatedProperties; i++)
+	{
+		ReplicatedPropertyHashes.Add(0);
+	}
+
 	EntityId = InEntityId;
-	ReplicatedPropertyHash = CreateHash(InActor);
+	CreateHash(InActor);
 	Actor = InActor;
 }
 
@@ -23,29 +42,24 @@ void USpatialShadowActor::Update(const Worker_EntityId InEntityId, AActor* InAct
 	check(InEntityId == EntityId);
 	check(InActor != nullptr);
 
-	ReplicatedPropertyHash = CreateHash(InActor);
+	CreateHash(InActor);
 	Actor = InActor;
 }
 
-FString USpatialShadowActor::CreateHash(const AActor* InActor)
+void USpatialShadowActor::CreateHash(const AActor* InActor)
 {
-	FString LatestReplicatedPropertyHash;
-
+	int32 i = 0;
+	// Store a hashed value for each replicated property
 	for (TFieldIterator<FProperty> PropIt(InActor->GetClass()); PropIt; ++PropIt)
 	{
 		FProperty* Property = *PropIt;
 
-		if (Property->HasAnyPropertyFlags(CPF_Net))
+		if (Property->HasAnyPropertyFlags(CPF_Net) && Property->HasAnyPropertyFlags(CPF_HasGetValueTypeHash))
 		{
-			if (Property->HasAnyPropertyFlags(CPF_HasGetValueTypeHash))
-			{
-				LatestReplicatedPropertyHash +=
-					FString::FromInt(Property->GetValueTypeHash(Property->ContainerPtrToValuePtr<void>(InActor, 0)));
-			}
+			ReplicatedPropertyHashes[i] = Property->GetValueTypeHash(Property->ContainerPtrToValuePtr<void>(InActor, 0));
+			i++;
 		}
 	}
-
-	return LatestReplicatedPropertyHash;
 }
 
 void USpatialShadowActor::CheckUnauthorisedDataChanges(const Worker_EntityId InEntityId, const AActor* InActor)
@@ -63,22 +77,27 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges(const Worker_EntityId InE
 		return;
 	}
 
-	if (ReplicatedPropertyHash.IsEmpty())
+	// Compare hashed properties
+	int32 i = 0;
+
+	for (TFieldIterator<FProperty> PropIt(InActor->GetClass()); PropIt; ++PropIt)
 	{
-		// Have not received the first update yet for this actor
-		return;
+		FProperty* Property = *PropIt;
+
+		if (Property->HasAnyPropertyFlags(CPF_Net) && Property->HasAnyPropertyFlags(CPF_HasGetValueTypeHash))
+		{
+			uint32 LatestPropertyHash = Property->GetValueTypeHash(Property->ContainerPtrToValuePtr<void>(InActor, 0));
+
+			if (ReplicatedPropertyHashes[i] != LatestPropertyHash)
+			{
+				UE_LOG(LogSpatialShadowActor, Error, TEXT("Changed actor without authority with name %s of type %s, property changed without authority was %s!"),
+					   *Actor->GetName(), *InActor->GetClass()->GetName(), *Property->GetName());
+
+				// Store hash to avoid generating a duplicate error message
+				ReplicatedPropertyHashes[i] = LatestPropertyHash;
+			}
+
+			i++;
+		}
 	}
-
-	FString LocalReplicatedPropertyHash = CreateHash(InActor);
-
-	if (LocalReplicatedPropertyHash != ReplicatedPropertyHash)
-	{
-		UE_LOG(LogSpatialShadowActor, Error, TEXT("Changed actor without authority! %s %s"), *Actor->GetName(),
-			   *InActor->GetClass()->GetName());
-
-		// Store hash to avoid generating a duplicate error message
-		ReplicatedPropertyHash = LocalReplicatedPropertyHash;
-	}
-
-	return;
 }

@@ -24,6 +24,8 @@ protected:
 	Worker_EntityId EntityId;
 	UPROPERTY()
 	AActor* Actor;
-	FString ReplicatedPropertyHash;
-	FString CreateHash(const AActor* InActor);
+
+	int32 NumReplicatedProperties;
+	TArray<uint32> ReplicatedPropertyHashes;
+	void CreateHash(const AActor* InActor);
 };
