@@ -7,7 +7,7 @@
 #include "SpatialFunctionalTest.h"
 #include "SpatialTestPropertyReplicationMultiworker.generated.h"
 
-class AReplicatedTestActor;
+class AReplicatedTestActorBasic;
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestPropertyReplicationMultiworker : public ASpatialFunctionalTest
@@ -20,5 +20,5 @@ public:
 
 private:
 	UPROPERTY()
-	AReplicatedTestActor* TestActor;
+	AReplicatedTestActorBasic* TestActor;
 };
