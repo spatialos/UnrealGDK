@@ -33,44 +33,7 @@ FLegacyLoadBalancing::~FLegacyLoadBalancing() {}
 
 void FLegacyLoadBalancing::Advance(ISpatialOSWorker& Connection)
 {
-	const TArray<Worker_Op>& Messages = Connection.GetWorkerMessages();
-
-	for (const auto& Message : Messages)
-	{
-		switch (Message.op_type)
-		{
-		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
-		{
-			const Worker_EntityQueryResponseOp& Op = Message.op.entity_query_response;
-			if (WorkerTranslationRequest.IsSet() && Op.request_id == WorkerTranslationRequest.GetValue())
-			{
-				if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
-				{
-					for (uint32_t i = 0; i < Op.results[0].component_count; i++)
-					{
-						Worker_ComponentData Data = Op.results[0].components[i];
-						if (Data.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
-						{
-							Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-							Translator.ApplyVirtualWorkerManagerData(ComponentObject);
-							bTranslatorIsReady = true;
-							for (uint32 VirtualWorker = 0; VirtualWorker < ExpectedWorkers; ++VirtualWorker)
-							{
-								if (Translator.GetServerWorkerEntityForVirtualWorker(VirtualWorker + 1)
-									== SpatialConstants::INVALID_ENTITY_ID)
-								{
-									bTranslatorIsReady = false;
-								}
-							}
-						}
-					}
-				}
-
-				WorkerTranslationRequest.Reset();
-			}
-		}
-		}
-	}
+	CommandsHandler.ProcessOps(Connection.GetWorkerMessages());
 }
 
 void FLegacyLoadBalancing::QueryTranslation(ISpatialOSWorker& Connection)
@@ -92,6 +55,33 @@ void FLegacyLoadBalancing::QueryTranslation(ISpatialOSWorker& Connection)
 	TranslationQuery.constraint = TranslationConstraint;
 
 	WorkerTranslationRequest = Connection.SendEntityQueryRequest(EntityQuery(TranslationQuery), RETRY_UNTIL_COMPLETE);
+	CommandsHandler.AddRequest(*WorkerTranslationRequest, [this](const Worker_EntityQueryResponseOp& Op)
+	{
+		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+		{
+			return;
+		}
+		WorkerTranslationRequest.Reset();
+
+		for (uint32_t i = 0; i < Op.results[0].component_count; i++)
+		{
+			Worker_ComponentData Data = Op.results[0].components[i];
+			if (Data.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
+			{
+				Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+				Translator.ApplyVirtualWorkerManagerData(ComponentObject);
+				bTranslatorIsReady = true;
+				for (uint32 VirtualWorker = 0; VirtualWorker < ExpectedWorkers; ++VirtualWorker)
+				{
+					if (Translator.GetServerWorkerEntityForVirtualWorker(VirtualWorker + 1)
+						== SpatialConstants::INVALID_ENTITY_ID)
+					{
+						bTranslatorIsReady = false;
+					}
+				}
+			}
+		}
+	});
 }
 
 void FLegacyLoadBalancing::Flush(ISpatialOSWorker& Connection)

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Interop/SpatialCommandsHandler.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/LoadBalancingStrategy.h"
 
@@ -44,6 +45,7 @@ protected:
 	TArray<FLBWorkerHandle> VirtualWorkerIdToHandle;
 	TSet<FLBWorkerHandle> ConnectedWorkers;
 	SpatialVirtualWorkerTranslator& Translator;
+	FCommandsHandler CommandsHandler;
 	TOptional<Worker_RequestId> WorkerTranslationRequest;
 	uint32 ExpectedWorkers = 0;
 	bool bCreatedPartitions = false;

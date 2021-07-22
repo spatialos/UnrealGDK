@@ -18,21 +18,6 @@ public:
 
 	virtual void PrepareTest() override;
 
-	FVector Origin;
-	FVector Destination;
-
-	bool bCharacterReachedDestination;
-	bool bCharacterReachedOrigin;
-};
-
-UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API USpatialTestCharacterMigrationMap : public UGeneratedTestMap
-{
-	GENERATED_BODY()
-
-public:
-	USpatialTestCharacterMigrationMap();
-
-protected:
-	virtual void CreateCustomContentForMap() override;
+	FVector PositionOnServerOne;
+	FVector PositionOnServerTwo;
 };

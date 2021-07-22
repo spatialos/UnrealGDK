@@ -431,7 +431,16 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 	const int32 CmdCount = Replicator.RepLayout->Cmds.Num();
 	for (uint16 CmdIdx = 0; CmdIdx < CmdCount; ++CmdIdx)
 	{
-		const auto& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
+		const FRepLayoutCmd& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
+		const FRepChangedParent& Parent = Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
+
+		// Need special case here because Unreal has special handling of ReplicatedMovement, see AActor::OnRep_ReplicatedMovement
+		const bool RepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
+
+		if (!Parent.Active && !RepActorMovement)
+		{
+			continue;
+		}
 
 		InitialRepChanged.Add(Cmd.RelativeHandle);
 
@@ -751,13 +760,8 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		FOutBunch DummyOutBunch;
 
-		// Actor::ReplicateSubobjects is overridable and enables the Actor to replicate any subobjects directly, via a
-		// call back into SpatialActorChannel::ReplicateSubobject, as well as issues a call to UActorComponent::ReplicateSubobjects
-		// on any of its replicating actor components. This allows the component to replicate any of its subobjects directly via
-		// the same SpatialActorChannel::ReplicateSubobject.
-		Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
-
-		// Look for deleted subobjects
+		// Look for deleted subobjects before trying to replicate existing ones; this will free the removed Unreal components' bound Spatial
+		// components for reuse.
 		for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
 		{
 			if (!RepComp.Value()->GetWeakObjectPtr().IsValid())
@@ -776,6 +780,12 @@ int64 USpatialActorChannel::ReplicateActor()
 				RepComp.RemoveCurrent();
 			}
 		}
+
+		// Actor::ReplicateSubobjects is overridable and enables the Actor to replicate any subobjects directly, via a
+		// call back into SpatialActorChannel::ReplicateSubobject, as well as issues a call to UActorComponent::ReplicateSubobjects
+		// on any of its replicating actor components. This allows the component to replicate any of its subobjects directly via
+		// the same SpatialActorChannel::ReplicateSubobject.
+		Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 	}
 
 #if USE_NETWORK_PROFILER

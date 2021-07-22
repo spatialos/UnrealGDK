@@ -10,25 +10,6 @@ DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
 namespace SpatialGDK
 {
-TraceQueryPtr ParseOrDefault(const FString& Str, const TCHAR* FilterForLog)
-{
-	TraceQueryPtr Ptr;
-	if (Str.Len() > 0)
-	{
-		Ptr.Reset(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*Str)));
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Applied %s query: %s"), FilterForLog, *Str);
-	}
-
-	if (!Ptr.IsValid())
-	{
-		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified query \"%s\" is invalid; defaulting to \"false\" query. %s"),
-			   FilterForLog, Trace_GetLastError());
-		Ptr.Reset(Trace_ParseSimpleQuery("false"));
-	}
-
-	return Ptr;
-}
-
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
 	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
@@ -44,7 +25,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	const bool bTrackFileSize = EventTracer->MaxFileSize != 0;
 	if (!bTrackFileSize || (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize))
 	{
-		if (bTrackFileSize) 
+		if (bTrackFileSize)
 		{
 			EventTracer->BytesWrittenToStream += ItemSize;
 		}
@@ -130,8 +111,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	Parameters.span_sampling_parameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
 
 	// Filters
-	TraceQueryPtr PreFilter = ParseOrDefault(SamplingSettings->GDKEventPreFilter, TEXT("pre-filter"));
-	TraceQueryPtr PostFilter = ParseOrDefault(SamplingSettings->GDKEventPostFilter, TEXT("post-filter"));
+	UEventTracingSamplingSettings::TraceQueryPtr PreFilter = SamplingSettings->GetGDKEventPreFilter();
+	UEventTracingSamplingSettings::TraceQueryPtr PostFilter = SamplingSettings->GetGDKEventPostFilter();
 
 	checkf(PreFilter.Get() != nullptr, TEXT("Pre-filter is invalid."));
 	checkf(PostFilter.Get() != nullptr, TEXT("Post-filter is invalid."));
