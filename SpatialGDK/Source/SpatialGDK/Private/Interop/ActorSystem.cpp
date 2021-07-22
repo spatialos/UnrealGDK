@@ -165,6 +165,8 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 			{
 				ComponentRemoved(Delta.EntityId, Change.ComponentId);
 			}
+
+			InvokePostNetReceives(Delta.EntityId);
 		}
 	}
 }
@@ -185,17 +187,19 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 				continue;
 			}
 
-			if (!PresentEntities.Contains(Delta.EntityId))
+			if (!PresentEntities.Contains(EntityId))
 			{
 				// Create new actor for the entity.
-				EntityAdded(Delta.EntityId);
+				EntityAdded(EntityId);
 
-				PresentEntities.Emplace(Delta.EntityId);
+				PresentEntities.Emplace(EntityId);
 			}
 			else
 			{
-				RefreshEntity(Delta.EntityId);
+				RefreshEntity(EntityId);
 			}
+
+			InvokePostNetReceives(EntityId);
 		}
 	}
 }
@@ -221,6 +225,7 @@ void ActorSystem::ProcessAuthorityGains(const FEntitySubViewUpdate& SubViewUpdat
 																	? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
 																	: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
 			AuthorityGained(EntityId, AuthorityComponentSet);
+			InvokePostNetReceives(EntityId);
 		}
 	}
 }
@@ -1712,6 +1717,35 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 	return Channel;
 }
 
+void ActorSystem::InvokePostNetReceives(const Worker_EntityId EntityId) const
+{
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	if (!IsValid(Channel))
+	{
+		UE_LOG(LogActorSystem, Error,
+			TEXT("Tried to send PostNetReceives but channel was invalid, EntityId: %lld"), EntityId);
+		return;
+	}
+
+	for (auto ObjRepPair = Channel->ReplicationMap.CreateIterator(); ObjRepPair; ++ObjRepPair)
+	{
+		TSharedRef<FObjectReplicator>& ObjectReplicator = ObjRepPair->Value;
+		if (ObjectReplicator->GetObject() == nullptr)
+		{
+			ObjRepPair.RemoveCurrent();
+			continue;
+		}
+
+		if (ObjectReplicator->bHasReplicatedProperties)
+		{
+			UE_LOG(LogActorSystem, Warning,
+					TEXT("Sending postnetreceive, entityid: %lld, object: %s"), EntityId, *ObjectReplicator->GetObject()->GetName());
+			ObjectReplicator->PostNetReceive();
+			ObjectReplicator->bHasReplicatedProperties = false;
+		}
+	}
+}
+
 FObjectRepNotifies& ActorSystem::GetObjectRepNotifies(UObject& Object)
 {
 	return Object.IsA<AActor>() ? ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&Object))
@@ -1739,11 +1773,6 @@ void ActorSystem::InvokeRepNotifies()
 
 void ActorSystem::TryInvokeRepNotifiesForObject(FWeakObjectPtr& WeakObjectPtr, FObjectRepNotifies& ObjectRepNotifies) const
 {
-	if (ObjectRepNotifies.RepNotifies.Num() == 0)
-	{
-		return;
-	}
-
 	// Object could have been killed during a RepNotify
 	UObject* Object = WeakObjectPtr.Get();
 	if (!Object)

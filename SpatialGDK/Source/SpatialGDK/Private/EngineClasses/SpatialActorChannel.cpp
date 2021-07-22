@@ -1042,7 +1042,15 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	}
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
-	TargetObject->PreNetReceive();
+
+	if (!Replicator.bHasReplicatedProperties)
+	{
+		UE_LOG(LogActorSystem, Warning,
+				TEXT("Sending PREnetreceive, entityId: %lld, object: %s yes this works very good"), EntityId, *TargetObject->GetName());
+
+		Replicator.bHasReplicatedProperties = true;
+		TargetObject->PreNetReceive();
+	}
 
 	return &Replicator;
 }

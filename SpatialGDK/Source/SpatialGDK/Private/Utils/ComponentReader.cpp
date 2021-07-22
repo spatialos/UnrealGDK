@@ -407,9 +407,6 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 			}
 		}
 	}
-
-	// PostReceiveSpatialUpdate is called later when sending RepNotifies in ActorSystem
-	Object.PostNetReceive();
 }
 
 void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap,

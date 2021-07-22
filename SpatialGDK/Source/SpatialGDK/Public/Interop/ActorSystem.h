@@ -171,6 +171,7 @@ private:
 										   USpatialActorChannel& Channel, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 
 	USpatialActorChannel* TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, Worker_EntityId EntityId);
+	void InvokePostNetReceives(Worker_EntityId EntityId) const;
 	FObjectRepNotifies& GetObjectRepNotifies(UObject& Object);
 
 	// Entity remove
