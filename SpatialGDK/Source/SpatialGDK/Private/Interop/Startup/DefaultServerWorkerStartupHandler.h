@@ -53,7 +53,7 @@ private:
 	TOptional<ServerWorkerEntityCreator> WorkerEntityCreator;
 	TOptional<Worker_EntityId> WorkerEntityId;
 
-	TArray<Worker_EntityId_Key> WorkerEntityIds;
+	TArray<Worker_EntityId> WorkerEntityIds;
 
 	bool bHasGSMAuth = false;
 
@@ -104,8 +104,7 @@ private:
 		Initial = CreateWorkerEntity,
 	};
 
-	static TArray<FStartupStep> CreateSteps(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup,
-											TOptional<Worker_EntityId>& WorkerEntityIdAddress, EStage& StageRef);
+	TArray<FStartupStep> CreateSteps(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup);
 
 	EStage Stage = EStage::Initial;
 

@@ -5,6 +5,7 @@
 #include "Algo/Transform.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "HAL/MallocStomp.h"
 #include "Interop/GlobalStateManager.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ServerWorker.h"
@@ -47,49 +48,152 @@ bool FStartupExecutor::TryFinishStartup()
 	return true;
 }
 
-TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup,
-															   TOptional<Worker_EntityId>& WorkerEntityIdAddress, EStage& StageRef)
+template <typename TStep>
+struct TStartupStep : public TStep
 {
-	TUniquePtr<TUniquePtr<ServerWorkerEntityCreator>> EntityCreatorPtrPtr = MakeUnique<TUniquePtr<ServerWorkerEntityCreator>>();
-	TUniquePtr<ServerWorkerEntityCreator>* EntityCreatorRawPtr = EntityCreatorPtrPtr.Get();
-	FStartupStep CreateWorkerEntityStep{ [EntityCreatorPtr = MoveTemp(EntityCreatorPtrPtr), NetDriver = &InNetDriver] {
-											(*EntityCreatorPtr.Get()) =
-												MakeUnique<ServerWorkerEntityCreator>(*NetDriver, *NetDriver->Connection);
-										},
-										 [EntityCreatorRawPtr, NetDriver = &InNetDriver, WorkerEntityIdAddress = &WorkerEntityIdAddress] {
-											 check(EntityCreatorRawPtr != nullptr);
-											 check(EntityCreatorRawPtr->IsValid());
+	explicit TStartupStep(TStep Step)
+		: TStep(MoveTemp(Step))
+	{
+	}
 
-											 EntityCreatorRawPtr->Get()->ProcessOps(NetDriver->Connection->GetWorkerMessages());
+	operator FStartupStep() &&
+	{
+		auto UniqueStep = MakeUnique<TStartupStep<TStep>>(*this);
+		auto RawStep = UniqueStep.Get();
+		return FStartupStep{ [Step = MoveTemp(UniqueStep)] {
+								Step->OnStart();
+							},
+							 [RawStep] {
+								 return RawStep->TryFinish();
+							 } };
+	}
+};
 
-											 if (EntityCreatorRawPtr->Get()->IsFinished())
-											 {
-												 *WorkerEntityIdAddress = EntityCreatorRawPtr->Get()->GetWorkerEntityId();
-												 return true;
-											 }
+TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup)
+{
+	struct FCreateServerWorkerEntityStep
+	{
+		void OnStart() { EntityCreator.Emplace(*NetDriver, *NetDriver->Connection); }
 
-											 return false;
-										 } };
+		bool TryFinish()
+		{
+			EntityCreator->ProcessOps(NetDriver->Connection->GetWorkerMessages());
+			if (EntityCreator->IsFinished())
+			{
+				*WorkerEntityIdAddress = EntityCreator->GetWorkerEntityId();
+				return true;
+			}
+			return false;
+		}
+
+		USpatialNetDriver* NetDriver;
+		TOptional<Worker_EntityId>* WorkerEntityIdAddress;
+		TOptional<ServerWorkerEntityCreator> EntityCreator;
+	};
+
+	struct FWaitForServerWorkerEntitiesStep
+	{
+		void OnStart() {}
+
+		bool TryFinish()
+		{
+			TMap<Worker_EntityId_Key, const ComponentData*> WorkerComponents;
+
+			for (const auto& EntityData : Worker->GetView())
+			{
+				const ComponentData* WorkerComponent =
+					EntityData.Value.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID });
+				if (WorkerComponent != nullptr)
+				{
+					WorkerComponents.Emplace(EntityData.Key, WorkerComponent);
+				}
+			}
+			if (WorkerComponents.Num() >= Setup.ExpectedServerWorkersCount)
+			{
+				ensureMsgf(WorkerComponents.Num() == Setup.ExpectedServerWorkersCount,
+						   TEXT("There should never be more server workers connected than we expect. Expected %d, actually have %d"),
+						   Setup.ExpectedServerWorkersCount, WorkerComponents.Num());
+				WorkerComponents.GetKeys(*WorkerEntityIdsAddress);
+				return true;
+			}
+			return false;
+		}
+
+		ISpatialOSWorker* Worker;
+		FInitialSetup Setup;
+
+		TArray<Worker_EntityId>* WorkerEntityIdsAddress;
+	};
+
+	struct FWaitForGsmEntityStep
+	{
+		void OnStart() {}
+		bool TryFinish() { return Worker->HasEntity(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID); }
+
+		ISpatialOSWorker* Worker;
+	};
+
+	struct FDeriveDeploymentRecoveryStateStep
+	{
+		void OnStart() {}
+		bool TryFinish()
+		{
+			const EntityViewElement& GlobalStateManagerEntity =
+				Worker->GetView().FindChecked(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID);
+			const ComponentData* StartupActorManagerData = GlobalStateManagerEntity.Components.FindByPredicate(
+				ComponentIdEquality{ SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID });
+			if (StartupActorManagerData != nullptr)
+			{
+				if (Schema_GetBoolCount(StartupActorManagerData->GetFields(), SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID)
+					!= 0)
+				{
+					// StartupActorManager's CAN_BEGIN_PLAY is raised after startup is finished, and is false in the initial snapshot.
+					// If it's true at this point, then this worker is either recovering or loading from a non-initial snapshot.
+					const bool bIsRecoveringOrSnapshot =
+						GetBoolFromSchema(StartupActorManagerData->GetFields(), SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
+
+					*bIsRecoveringOrSnapshotPtr = bIsRecoveringOrSnapshot;
+
+					// We should only call BeginPlay on actors if this is a fresh deployment; otherwise, we assume that
+					// BeginPlay has already been called on them before.
+					NetDriver->GlobalStateManager->bCanSpawnWithAuthority = !bIsRecoveringOrSnapshot;
+
+					return true;
+				}
+			}
+			return false;
+		}
+
+		USpatialNetDriver* NetDriver;
+		ISpatialOSWorker* Worker;
+		bool* bIsRecoveringOrSnapshotPtr;
+	};
 
 	FStartupStep Dummy{ [] {},
 						[] {
 							return true;
 						} };
 	FStartupStep SetNextLegacyStep{ [] {},
-									[&StageRef] {
-										StageRef = EStage::WaitForWorkerEntities;
+									[StagePtr = &Stage] {
+										*StagePtr = EStage::TryClaimingGSMEntityAuthority;
 										return true;
 									} };
 
 	TArray<FStartupStep> Steps;
 	Steps.Emplace(MoveTemp(Dummy));
-	Steps.Emplace(MoveTemp(CreateWorkerEntityStep));
+
+	Steps.Emplace(TStartupStep<FCreateServerWorkerEntityStep>({ &InNetDriver, &WorkerEntityId }));
+	Steps.Emplace(TStartupStep<FWaitForServerWorkerEntitiesStep>({ &InNetDriver.Connection->GetCoordinator(), InSetup, &WorkerEntityIds }));
+	Steps.Emplace(TStartupStep<FWaitForGsmEntityStep>({ &InNetDriver.Connection->GetCoordinator() }));
+	Steps.Emplace(TStartupStep<FDeriveDeploymentRecoveryStateStep>(
+		{ &InNetDriver, &InNetDriver.Connection->GetCoordinator(), &bIsRecoveringOrSnapshot }));
+
 	Steps.Emplace(MoveTemp(SetNextLegacyStep));
 	return MoveTemp(Steps);
 }
 
 FSpatialServerStartupHandler::FSpatialServerStartupHandler(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup)
-	: Executor(CreateSteps(InNetDriver, InSetup, WorkerEntityId, Stage))
+	: Executor(CreateSteps(InNetDriver, InSetup))
 	, Setup(InSetup)
 	, NetDriver(&InNetDriver)
 {
@@ -102,37 +206,9 @@ bool FSpatialServerStartupHandler::TryFinishStartup()
 		return false;
 	}
 
-	if (Stage == EStage::WaitForWorkerEntities)
-	{
-		TMap<Worker_EntityId_Key, const ComponentData*> WorkerComponents;
+	if (Stage == EStage::WaitForWorkerEntities) {}
 
-		for (const auto& EntityData : GetCoordinator().GetView())
-		{
-			const ComponentData* WorkerComponent =
-				EntityData.Value.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID });
-			if (WorkerComponent != nullptr)
-			{
-				WorkerComponents.Emplace(EntityData.Key, WorkerComponent);
-			}
-		}
-		if (WorkerComponents.Num() >= Setup.ExpectedServerWorkersCount)
-		{
-			ensureMsgf(WorkerComponents.Num() == Setup.ExpectedServerWorkersCount,
-					   TEXT("There should never be more server workers connected than we expect. Expected %d, actually have %d"),
-					   Setup.ExpectedServerWorkersCount, WorkerComponents.Num());
-			WorkerComponents.GetKeys(WorkerEntityIds);
-			Stage = EStage::WaitForGSMEntity;
-		}
-	}
-
-	if (Stage == EStage::WaitForGSMEntity)
-	{
-		const EntityViewElement* GlobalStateManagerEntity = GetCoordinator().GetView().Find(GetGSM().GlobalStateManagerEntityId);
-		if (GlobalStateManagerEntity != nullptr)
-		{
-			Stage = EStage::DeriveDeploymentRecoveryState;
-		}
-	}
+	if (Stage == EStage::WaitForGSMEntity) {}
 
 	if (Stage == EStage::DeriveDeploymentRecoveryState)
 	{
