@@ -4,10 +4,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialShadowActor);
 
-void USpatialShadowActor::Init(const Worker_EntityId InEntityId, AActor& InActor)
+void USpatialShadowActor::Init(AActor& InActor)
 {
-	check(InEntityId != SpatialConstants::INVALID_ENTITY_ID);
-
 	NumReplicatedProperties = 0;
 
 	for (TFieldIterator<FProperty> PropIt(InActor.GetClass()); PropIt; ++PropIt)
@@ -27,20 +25,12 @@ void USpatialShadowActor::Init(const Worker_EntityId InEntityId, AActor& InActor
 		ReplicatedPropertyHashes.Add(0);
 	}
 
-	EntityId = InEntityId;
 	CreateHash(InActor);
-	Actor = &InActor;
 }
 
-void USpatialShadowActor::Update(const Worker_EntityId InEntityId, AActor& InActor)
+void USpatialShadowActor::Update(AActor& InActor)
 {
-	check(&InActor == Actor);
-
-	check(InEntityId != SpatialConstants::INVALID_ENTITY_ID);
-	check(InEntityId == EntityId);
-
 	CreateHash(InActor);
-	Actor = &InActor;
 }
 
 void USpatialShadowActor::CreateHash(const AActor& InActor)
@@ -59,12 +49,8 @@ void USpatialShadowActor::CreateHash(const AActor& InActor)
 	}
 }
 
-void USpatialShadowActor::CheckUnauthorisedDataChanges(const Worker_EntityId InEntityId, const AActor& InActor)
+void USpatialShadowActor::CheckUnauthorisedDataChanges(const AActor& InActor)
 {
-	check(&InActor == Actor);
-
-	check(InEntityId != SpatialConstants::INVALID_ENTITY_ID);
-	check(InEntityId == EntityId);
 	check(!InActor.HasAuthority());
 
 	if (USpatialNetDriverAuthorityDebugger::IsSuppressedActor(InActor))
@@ -88,12 +74,11 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges(const Worker_EntityId InE
 			{
 				UE_LOG(LogSpatialShadowActor, Error,
 					   TEXT("Changed actor without authority with name %s of type %s, property changed without authority was %s!"),
-					   *Actor->GetName(), *InActor.GetClass()->GetName(), *Property->GetName());
+					   *InActor.GetName(), *InActor.GetClass()->GetName(), *Property->GetName());
 
 				// Store hash to avoid generating a duplicate error message
 				ReplicatedPropertyHashes[i] = LatestPropertyHash;
 			}
-
 			i++;
 		}
 	}

@@ -14,18 +14,15 @@ class SPATIALGDK_API USpatialShadowActor : public UObject
 public:
 	USpatialShadowActor() = default;
 
-	void Init(const Worker_EntityId InEntityId, AActor& InActor);
+	void Init(AActor& InActor);
 
-	void CheckUnauthorisedDataChanges(const Worker_EntityId InEntityId, const AActor& InActor);
+	void CheckUnauthorisedDataChanges(const AActor& InActor);
 
-	void Update(const Worker_EntityId InEntityId, AActor& InActor);
+	void Update(AActor& InActor);
 
 protected:
-	Worker_EntityId EntityId;
-	UPROPERTY()
-	AActor* Actor;
-
 	int32 NumReplicatedProperties;
 	TArray<uint32> ReplicatedPropertyHashes;
+
 	void CreateHash(const AActor& InActor);
 };

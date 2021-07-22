@@ -35,7 +35,7 @@ void USpatialNetDriverAuthorityDebugger::CheckUnauthorisedDataChanges(const AAct
 		return;
 	}
 
-	(*SpatialShadowActor)->CheckUnauthorisedDataChanges(EntityId, InActor);
+	(*SpatialShadowActor)->CheckUnauthorisedDataChanges(InActor);
 }
 
 void USpatialNetDriverAuthorityDebugger::AddSpatialShadowActor(const Worker_EntityId_Key EntityId)
@@ -46,7 +46,7 @@ void USpatialNetDriverAuthorityDebugger::AddSpatialShadowActor(const Worker_Enti
 	}
 
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
-	if (Actor == nullptr || !IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
+	if (!IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
 	{
 		return;
 	}
@@ -59,7 +59,7 @@ void USpatialNetDriverAuthorityDebugger::AddSpatialShadowActor(const Worker_Enti
 	else
 	{
 		USpatialShadowActor* SpatialShadowActor(NewObject<USpatialShadowActor>());
-		SpatialShadowActor->Init(EntityId, *Actor);
+		SpatialShadowActor->Init(*Actor);
 		SpatialShadowActors.Emplace(EntityId, SpatialShadowActor);
 	}
 }
@@ -91,12 +91,13 @@ void USpatialNetDriverAuthorityDebugger::UpdateSpatialShadowActor(const Worker_E
 	}
 
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
-	if (!IsValid(Actor))
+	if (!IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
 	{
+		RemoveSpatialShadowActor(EntityId);
 		return;
 	}
 
-	(*SpatialShadowActor)->Update(EntityId, *Actor);
+	(*SpatialShadowActor)->Update(*Actor);
 }
 
 bool USpatialNetDriverAuthorityDebugger::IsSuppressedActor(const AActor& InActor)
