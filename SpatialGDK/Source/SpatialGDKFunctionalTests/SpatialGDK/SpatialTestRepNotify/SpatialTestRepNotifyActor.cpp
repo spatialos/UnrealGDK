@@ -12,17 +12,19 @@ ASpatialTestRepNotifyActor::ASpatialTestRepNotifyActor()
 	TestSubobject = CreateDefaultSubobject<USpatialTestRepNotifySubobject>(TEXT("USpatialTestRepNotifySubobject"));
 	TestSubobject->SetIsReplicated(true);
 
-	SetUpTestProperties();
-}
-
-void ASpatialTestRepNotifyActor::SetUpTestProperties()
-{
 	AlwaysRepNotifyInt1 = 0;
 	OnChangedRepNotifyInt2 = 0;
 	AlwaysRepNotifyInt2 = 0;
 
 	TestSubobject->ExpectedParentInt1Property = 350;
 	ExpectedSubobjectIntProperty = 400;
+
+	bOnRepOnChangedRepNotifyInt1Called = false;
+	bOnRepAlwaysRepNotifyInt1Called = false;
+
+	bOnRepOnChangedInt1CalledBeforeInt2 = false;
+
+	bSubobjectIntPropertyWasExpectedProperty = false;
 }
 
 void ASpatialTestRepNotifyActor::OnRep_OnChangedRepNotifyInt1(int32 OldOnChangedRepNotifyInt1)
@@ -41,6 +43,7 @@ void ASpatialTestRepNotifyActor::OnRep_AlwaysRepNotifyInt1(int32 OldAlwaysRepNot
 void ASpatialTestRepNotifyActor::OnRep_OnChangedRepNotifyInt2(int32 InOldOnChangedRepNotifyInt2)
 {
 	OldOnChangedRepNotifyInt2 = InOldOnChangedRepNotifyInt2;
+	bOnRepOnChangedInt1CalledBeforeInt2 = bOnRepOnChangedRepNotifyInt1Called;
 }
 
 void ASpatialTestRepNotifyActor::OnRep_AlwaysRepNotifyInt2(int32 InOldAlwaysRepNotifyInt2)

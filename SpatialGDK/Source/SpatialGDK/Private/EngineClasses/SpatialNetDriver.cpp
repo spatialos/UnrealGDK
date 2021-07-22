@@ -40,6 +40,8 @@
 #include "Interop/MigrationDiagnosticsSystem.h"
 #include "Interop/OwnershipCompletenessHandler.h"
 #include "Interop/RPCExecutor.h"
+#include "Interop/SkeletonEntities.h"
+#include "Interop/SkeletonEntityCreationStep.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialNetDriverLoadBalancingHandler.h"
@@ -445,6 +447,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		Sender = NewObject<USpatialSender>();
 		Receiver = NewObject<USpatialReceiver>();
 
+		if (IsServer() && GetDefault<USpatialGDKSettings>()->bEnableSkeletonEntityCreation)
+		{
+			SkeletonEntityCreationStep = MakeUnique<SpatialGDK::FSkeletonEntityCreationStartupStep>(*this);
+		}
+
 		// TODO: UNR-2452
 		// Ideally the GlobalStateManager and StaticComponentView would be created as part of USpatialWorkerConnection::Init
 		// however, this causes a crash upon the second instance of running PIE due to a destroyed USpatialNetDriver still being reference.
@@ -610,7 +617,11 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
 	const SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+		SpatialConstants::LB_TAG_COMPONENT_ID,
+		[](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
+			return SpatialGDK::SkeletonEntityFunctions::IsCompleteSkeleton(Element);
+		},
+		SpatialGDK::SkeletonEntityFunctions::GetSkeletonEntityRefreshCallbacks(Connection->GetCoordinator()));
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (!SpatialSettings->bRunStrategyWorker)
@@ -1189,15 +1200,6 @@ void USpatialNetDriver::Shutdown()
 
 	if (Connection != nullptr)
 	{
-		// Delete all load-balancing partition entities if we're translator authoritative.
-		if (VirtualWorkerTranslationManager != nullptr)
-		{
-			for (const auto& Partition : VirtualWorkerTranslationManager->GetAllPartitions())
-			{
-				Connection->SendDeleteEntityRequest(Partition.PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
-			}
-		}
-
 		if (RoutingSystem)
 		{
 			RoutingSystem->Destroy(Connection);
@@ -3353,14 +3355,18 @@ void USpatialNetDriver::TryFinishStartup()
 			{
 				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the EntityPool to be ready."));
 			}
+			else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
+			{
+				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the load balancing system to be ready."));
+			}
+			else if (SkeletonEntityCreationStep.IsValid() && !SkeletonEntityCreationStep->TryFinish())
+			{
+				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for skeleton entities to be created and populated"));
+			}
 			else if (!GlobalStateManager->IsReady())
 			{
 				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log,
 						TEXT("Waiting for the GSM to be ready (this includes waiting for the expected number of servers to be connected)"));
-			}
-			else if (VirtualWorkerTranslator.IsValid() && !VirtualWorkerTranslator->IsReady())
-			{
-				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the load balancing system to be ready."));
 			}
 			else if (!Connection->GetCoordinator().HasEntity(VirtualWorkerTranslator->GetClaimedPartitionId()))
 			{
@@ -3536,8 +3542,7 @@ void USpatialNetDriver::RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebug
 
 		if (IsServer())
 		{
-			DebuggerSubViewPtr = &Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
-																			 FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
+			DebuggerSubViewPtr = &SpatialGDK::ActorSubviews::CreateActorAuthSubView(*this);
 		}
 		else
 		{

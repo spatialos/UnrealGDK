@@ -621,7 +621,7 @@ void USpatialConnectionManager::OnConnectionFailure(uint8_t ConnectionStatusCode
 TSharedPtr<SpatialGDK::SpatialEventTracer> USpatialConnectionManager::CreateEventTracer(const FString& WorkerId)
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	if (Settings == nullptr || !Settings->bEventTracingEnabled)
+	if (Settings == nullptr || !Settings->GetEventTracingEnabled())
 	{
 		return nullptr;
 	}

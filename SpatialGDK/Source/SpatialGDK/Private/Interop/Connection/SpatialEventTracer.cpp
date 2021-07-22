@@ -10,25 +10,6 @@ DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
 namespace SpatialGDK
 {
-TraceQueryPtr ParseOrDefault(const FString& Str, const TCHAR* FilterForLog)
-{
-	TraceQueryPtr Ptr;
-	if (Str.Len() > 0)
-	{
-		Ptr.Reset(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*Str)));
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Applied %s query: %s"), FilterForLog, *Str);
-	}
-
-	if (!Ptr.IsValid())
-	{
-		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified query \"%s\" is invalid; defaulting to \"false\" query. %s"),
-			   FilterForLog, Trace_GetLastError());
-		Ptr.Reset(Trace_ParseSimpleQuery("false"));
-	}
-
-	return Ptr;
-}
-
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
 	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);

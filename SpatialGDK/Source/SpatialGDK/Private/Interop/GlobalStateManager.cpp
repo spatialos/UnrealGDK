@@ -282,6 +282,12 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(Schema_ComponentUpdate*
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 }
 
+bool UGlobalStateManager::HasAuthority() const
+{
+	check(ViewCoordinator->HasEntity(GlobalStateManagerEntityId));
+	return ViewCoordinator->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
+}
+
 void UGlobalStateManager::SetDeploymentState()
 {
 	check(ViewCoordinator->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID));
@@ -412,7 +418,7 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 		return;
 	}
 
-	if (USpatialStatics::IsSpatialOffloadingEnabled(GetWorld()) && !USpatialStatics::IsActorGroupOwnerForActor(Actor)
+	if (USpatialStatics::IsSpatialOffloadingEnabled(Actor->GetWorld()) && !USpatialStatics::IsActorGroupOwnerForActor(Actor)
 		&& !Actor->bNetLoadOnNonAuthServer)
 	{
 		Actor->Destroy(true);

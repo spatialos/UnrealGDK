@@ -21,6 +21,13 @@ private:
 public:
 	ATestMovementCharacter();
 
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+
+	FVector PreviousLocation;
+
+	float Speed;
+
 	UFUNCTION(Client, Reliable)
 	void UpdateCameraLocationAndRotation(FVector Location, FRotator NewRotation);
 };

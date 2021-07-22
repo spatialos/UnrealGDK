@@ -20,6 +20,8 @@ public:
 
 	bool bParentPropertyWasExpectedProperty;
 
+	bool bParentRepNotifyWasCalledBeforeChild;
+
 	UPROPERTY(ReplicatedUsing = OnRep_OnChangedRepNotifyInt)
 	int32 OnChangedRepNotifyInt;
 
