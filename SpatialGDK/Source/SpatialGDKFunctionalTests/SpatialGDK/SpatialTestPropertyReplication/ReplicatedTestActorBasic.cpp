@@ -24,5 +24,4 @@ void AReplicatedTestActorBasic::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 	DOREPLIFETIME(AReplicatedTestActorBasic, ReplicatedFloatProperty);
 	DOREPLIFETIME(AReplicatedTestActorBasic, bReplicatedBoolProperty);
 	DOREPLIFETIME(AReplicatedTestActorBasic, ReplicatedStringProperty);
-	
 }

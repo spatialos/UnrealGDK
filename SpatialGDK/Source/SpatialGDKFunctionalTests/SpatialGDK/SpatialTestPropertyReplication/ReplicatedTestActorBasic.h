@@ -6,7 +6,6 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
 #include "ReplicatedTestActorBasic.generated.h"
 
-
 UCLASS()
 class AReplicatedTestActorBasic : public AReplicatedTestActorBase
 {

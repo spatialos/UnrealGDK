@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
 #include "ReplicatedTestActor.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
 #include "ReplicatedTestActorSubobject.generated.h"
 
 class AReplicatedTestActor;

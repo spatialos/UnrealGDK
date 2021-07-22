@@ -12,7 +12,7 @@ void AReplicatedTestActorSubobject::GetLifetimeReplicatedProps(TArray<FLifetimeP
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AReplicatedTestActorSubobject, ReplicatedSubActor);	
+	DOREPLIFETIME(AReplicatedTestActorSubobject, ReplicatedSubActor);
 }
 
 void AReplicatedTestActorSubobject::OnAuthorityGained()

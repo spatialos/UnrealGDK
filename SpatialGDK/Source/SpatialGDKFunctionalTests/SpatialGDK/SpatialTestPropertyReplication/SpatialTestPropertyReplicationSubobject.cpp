@@ -10,7 +10,8 @@
  *
  * The flow is as follows:
  * - Setup:
- *  - The authorative server spawns one ReplicatedTestActorSubobject (in it's OnAuthorityGained it will spawn a subobject of type ReplicatedTestActor )
+ *  - The authorative server spawns one ReplicatedTestActorSubobject (in it's OnAuthorityGained it will spawn a subobject of type
+ * ReplicatedTestActor )
  * - Test:
  *  - All workers check that they can see exactly 1 ReplicatedTestActor and 1 ReplicatedTestActorSubobject.
  *  - The authorative server changes the replicated property of the replicated subobject.
@@ -35,19 +36,20 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 	if (HasAuthority())
 	{
 		// Subobject property change - expect an actor level error and a property level error
-		AddExpectedLogError(
-			TEXT("Changed actor without authority with name ReplicatedTestActorSubobject_0 of type ReplicatedTestActorSubobject, property changed without authority was ReplicatedSubActor!"),
-			1, true);
+		AddExpectedLogError(TEXT("Changed actor without authority with name ReplicatedTestActorSubobject_0 of type "
+								 "ReplicatedTestActorSubobject, property changed without authority was ReplicatedSubActor!"),
+							1, true);
 
-		AddExpectedLogError(TEXT("Changed actor without authority with name ReplicatedTestActor_0 of type ReplicatedTestActor, property changed without authority was TestReplicatedProperty!"),
+		AddExpectedLogError(TEXT("Changed actor without authority with name ReplicatedTestActor_0 of type ReplicatedTestActor, property "
+								 "changed without authority was TestReplicatedProperty!"),
 							1, true);
 	}
 
 	AddStep(
 		TEXT("The auth server spawns one ReplicatedTestActorSubobject"), FWorkerDefinition::Server(1), nullptr,
 		[this]() {
-			TestActor =
-				GetWorld()->SpawnActor<AReplicatedTestActorSubobject>(FVector(0.0f, 0.0f, 50.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+			TestActor = GetWorld()->SpawnActor<AReplicatedTestActorSubobject>(FVector(0.0f, 0.0f, 50.0f), FRotator::ZeroRotator,
+																			  FActorSpawnParameters());
 			RegisterAutoDestroyActor(TestActor);
 
 			FinishStep();
@@ -86,12 +88,10 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 			return IsValid(TestActor);
 		},
 		[this]() {
-
 			TestActor->ReplicatedSubActor->TestReplicatedProperty = 999;
 
 			FinishStep();
 		});
-
 
 	AddStep(
 		TEXT("All workers check that the replicated properties have changed"), FWorkerDefinition::AllWorkers,
@@ -100,8 +100,8 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 		},
 		nullptr,
 		[this](float DeltaTime) {
-
-			RequireEqual_Int(TestActor->ReplicatedSubActor->TestReplicatedProperty, 999, TEXT("The ReplicatedIntProperty on subobject should equal 999."));
+			RequireEqual_Int(TestActor->ReplicatedSubActor->TestReplicatedProperty, 999,
+							 TEXT("The ReplicatedIntProperty on subobject should equal 999."));
 			FinishStep();
 		},
 		5.0f);
@@ -113,7 +113,6 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 			return IsValid(TestActor);
 		},
 		[this]() {
-
 			// Subobject property
 			TestActor->ReplicatedSubActor->TestReplicatedProperty = 555;
 
@@ -127,7 +126,6 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 		},
 		nullptr,
 		[this](float DeltaTime) {
-
 			RequireEqual_Int(TestActor->ReplicatedSubActor->TestReplicatedProperty, 999,
 							 TEXT("The ReplicatedIntProperty on subobject should equal 999."));
 			FinishStep();
