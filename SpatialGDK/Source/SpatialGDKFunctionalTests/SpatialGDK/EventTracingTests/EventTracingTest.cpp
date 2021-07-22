@@ -323,34 +323,36 @@ void AEventTracingTest::ForEachTraceSource(TFunctionRef<bool(const TraceItemsDat
 	}
 }
 
-
 bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames,
 											 int MinimumCauses /*= 1*/) const
 {
 	bool bSuccess = true;
-	ForEachTraceSource([&SpanIdString, &MinimumCauses, &CauseEventNames, &bSuccess](const TraceItemsData& SourceTraceItems) {
+	ForEachTraceSource([this, &SpanIdString, &MinimumCauses, &CauseEventNames, &bSuccess](const TraceItemsData& SourceTraceItems) {
 		const TArray<FString>* Causes = SourceTraceItems.Spans.Find(SpanIdString);
-		if (Causes == nullptr || Causes->Num() < MinimumCauses)
+		if (Causes == nullptr)
+		{
+			return false;
+		}
+
+		if (Causes->Num() < MinimumCauses)
 		{
 			bSuccess = false;
-			return false;
+			return true;
 		}
 
 		for (const FString& CauseSpanIdString : *Causes)
 		{
-			const FName* CauseEventName = SourceTraceItems.SpanEvents.Find(CauseSpanIdString);
-			if (CauseEventName == nullptr)
-			{
-				bSuccess = false;
-				return false;
-			}
-			if (!CauseEventNames.Contains(*CauseEventName))
-			{
-				bSuccess = false;
-				return false;
-			}
+			ForEachTraceSource([&CauseEventNames, &bSuccess, &CauseSpanIdString](const TraceItemsData& SubSourceTraceItems) {
+				const FName* CauseEventName = SubSourceTraceItems.SpanEvents.Find(CauseSpanIdString);
+				if (CauseEventName == nullptr)
+				{
+					return false;
+				}
+				bSuccess &= CauseEventNames.Contains(*CauseEventName);
+				return true;
+			});
 		}
-		return false;
+		return true;
 	});
 
 	return bSuccess;

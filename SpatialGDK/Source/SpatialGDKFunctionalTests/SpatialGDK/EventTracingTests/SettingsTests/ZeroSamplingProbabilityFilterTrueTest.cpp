@@ -18,8 +18,7 @@ void AZeroSamplingProbabilityFilterTrueTest::FinishEventTraceTest()
 	// The following logic handles this by look for root spanId and ignore those that start in the runtime.
 
 	const TraceItemsData* RuntimeTraceItems = TraceItems.Find(TraceSource::Runtime);
-	auto CountSpansWithNonRuntimeRoots = [this, RuntimeTraceItems](const TraceItemsData* SourceTraceItems, int32& OutCount)
-	{
+	auto CountSpansWithNonRuntimeRoots = [this, RuntimeTraceItems](const TraceItemsData* SourceTraceItems, int32& OutCount) {
 		OutCount = 0;
 		if (SourceTraceItems != nullptr && RuntimeTraceItems != nullptr)
 		{
@@ -47,10 +46,7 @@ void AZeroSamplingProbabilityFilterTrueTest::FinishEventTraceTest()
 	AssertValue_Int(ClientSpans, EComparisonMethod::Equal_To, 0, TEXT("Test produced zero client spans."));
 	AssertValue_Int(WorkerSpans, EComparisonMethod::Equal_To, 0, TEXT("Test produced zero worker spans."));
 	AssertValue_Int(RuntimeSpans, EComparisonMethod::Equal_To, 0, TEXT("Test produced zero runtime spans."));
-	AssertValue_Int(GetTraceEventCount(TraceSource::Client), EComparisonMethod::Greater_Than, 0,
-					TEXT("Test produced client events."));
-	AssertValue_Int(GetTraceEventCount(TraceSource::Worker), EComparisonMethod::Greater_Than, 0,
-					TEXT("Test produced worker events."));
-	AssertValue_Int(GetTraceEventCount(TraceSource::Runtime), EComparisonMethod::Greater_Than, 0,
-					TEXT("Test produced runtime events."));
+	AssertValue_Int(GetTraceEventCount(TraceSource::Client), EComparisonMethod::Greater_Than, 0, TEXT("Test produced client events."));
+	AssertValue_Int(GetTraceEventCount(TraceSource::Worker), EComparisonMethod::Greater_Than, 0, TEXT("Test produced worker events."));
+	AssertValue_Int(GetTraceEventCount(TraceSource::Runtime), EComparisonMethod::Greater_Than, 0, TEXT("Test produced runtime events."));
 }

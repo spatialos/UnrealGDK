@@ -18,8 +18,7 @@ void AMaxSamplingProbabilityFilterFalseTest::FinishEventTraceTest()
 	// The following logic handles this by look for root spanId and ignore those that start in the runtime.
 
 	const TraceItemsData* RuntimeTraceItems = TraceItems.Find(TraceSource::Runtime);
-	auto CountSpansWithNonRuntimeRoots = [this, RuntimeTraceItems](const TraceItemsData* SourceTraceItems, int32& OutCount)
-	{
+	auto CountSpansWithNonRuntimeRoots = [this, RuntimeTraceItems](const TraceItemsData* SourceTraceItems, int32& OutCount) {
 		OutCount = 0;
 		if (SourceTraceItems != nullptr && RuntimeTraceItems != nullptr)
 		{
@@ -47,10 +46,7 @@ void AMaxSamplingProbabilityFilterFalseTest::FinishEventTraceTest()
 	AssertValue_Int(ClientSpans, EComparisonMethod::Greater_Than, 0, TEXT("Test produced client spans."));
 	AssertValue_Int(WorkerSpans, EComparisonMethod::Greater_Than, 0, TEXT("Test produced worker spans."));
 	AssertValue_Int(RuntimeSpans, EComparisonMethod::Greater_Than, 0, TEXT("Test produced runtime spans."));
-	AssertValue_Int(GetTraceEventCount(TraceSource::Client), EComparisonMethod::Equal_To, 0,
-					TEXT("Test produced zero client events."));
-	AssertValue_Int(GetTraceEventCount(TraceSource::Worker), EComparisonMethod::Equal_To, 0,
-					TEXT("Test produced zero worker events."));
-	AssertValue_Int(GetTraceEventCount(TraceSource::Runtime), EComparisonMethod::Equal_To, 0,
-					TEXT("Test produced zero runtime events."));
+	AssertValue_Int(GetTraceEventCount(TraceSource::Client), EComparisonMethod::Equal_To, 0, TEXT("Test produced zero client events."));
+	AssertValue_Int(GetTraceEventCount(TraceSource::Worker), EComparisonMethod::Equal_To, 0, TEXT("Test produced zero worker events."));
+	AssertValue_Int(GetTraceEventCount(TraceSource::Runtime), EComparisonMethod::Equal_To, 0, TEXT("Test produced zero runtime events."));
 }

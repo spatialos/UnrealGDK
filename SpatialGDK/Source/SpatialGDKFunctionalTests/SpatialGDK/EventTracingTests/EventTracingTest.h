@@ -104,7 +104,6 @@ protected:
 	CheckResult CheckCauses(FName From, FName To) const;
 
 private:
-
 	FDateTime TestStartTime;
 
 	void StartEventTracingTest();
