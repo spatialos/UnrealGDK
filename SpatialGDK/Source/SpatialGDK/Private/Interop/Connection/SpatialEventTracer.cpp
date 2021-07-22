@@ -74,7 +74,7 @@ SpatialScopedActiveSpanId::~SpatialScopedActiveSpanId()
 	}
 }
 
-SpatialEventTracer::SpatialEventTracer(const FString& WorkerId, const TraceQueries& Queries)
+SpatialEventTracer::SpatialEventTracer(const FString& WorkerId, const UEventTracingSamplingSettings* SamplingSettings)
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	MaxFileSize = Settings->bEnableEventTracingRotatingLogs ? 0 : Settings->EventTracingSingleLogMaxFileSizeBytes; // 0 indicates unbounded.
@@ -84,7 +84,6 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId, const TraceQueri
 	Parameters.callback = &SpatialEventTracer::TraceCallback;
 	Parameters.enabled = true;
 
-	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
 
 	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
@@ -110,8 +109,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId, const TraceQueri
 	Parameters.span_sampling_parameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
 
 	// Filters
-	TraceQueryPtr PreFilter = ParseOrDefault(Queries.EventPreFilter, TEXT("pre-filter"));
-	TraceQueryPtr PostFilter = ParseOrDefault(Queries.EventPostFilter, TEXT("post-filter"));
+	UEventTracingSamplingSettings::TraceQueryPtr PreFilter = SamplingSettings->GetGDKEventPreFilter();
+	UEventTracingSamplingSettings::TraceQueryPtr PostFilter = SamplingSettings->GetGDKEventPostFilter();
 
 	checkf(PreFilter.Get() != nullptr, TEXT("Pre-filter is invalid."));
 	checkf(PostFilter.Get() != nullptr, TEXT("Post-filter is invalid."));
