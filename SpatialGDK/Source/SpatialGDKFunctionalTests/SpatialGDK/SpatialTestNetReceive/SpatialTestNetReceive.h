@@ -18,14 +18,14 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestNetReceive : public ASpatialFunc
 public:
 	ASpatialTestNetReceive();
 
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+
 	virtual void PrepareTest() override;
 
 	UPROPERTY(Replicated)
-	ASpatialTestNetReceiveActor* TestActor = nullptr;
+	ASpatialTestNetReceiveActor* TestActor;
 
 	FVector Server1Pos = FVector(100, -100, 300);
-
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 };
 
 UCLASS()
@@ -36,10 +36,10 @@ class ASpatialTestNetReceiveActor : public AReplicatedTestActorBase
 public:
 	ASpatialTestNetReceiveActor();
 
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	UPROPERTY(Replicated)
 	USpatialTestNetReceiveSubobject* Subobject;
-
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
 
 UCLASS()
@@ -49,6 +49,8 @@ class SPATIALGDKFUNCTIONALTESTS_API USpatialTestNetReceiveSubobject : public UAc
 
 public:
 	USpatialTestNetReceiveSubobject();
+
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void PreNetReceive() override;
 	void PostNetReceive() override;
@@ -79,6 +81,4 @@ public:
 
 	UFUNCTION()
 	void OnRep_TestInt1(int32 OldTestInt1);
-
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
