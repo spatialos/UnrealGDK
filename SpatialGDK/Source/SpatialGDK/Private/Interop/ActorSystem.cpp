@@ -1722,8 +1722,7 @@ void ActorSystem::InvokePostNetReceives(const Worker_EntityId EntityId) const
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
 	if (!IsValid(Channel))
 	{
-		UE_LOG(LogActorSystem, Error,
-			TEXT("Tried to send PostNetReceives but channel was invalid, EntityId: %lld"), EntityId);
+		UE_LOG(LogActorSystem, Error, TEXT("Tried to send PostNetReceives but channel was invalid, EntityId: %lld"), EntityId);
 		return;
 	}
 
@@ -1738,8 +1737,8 @@ void ActorSystem::InvokePostNetReceives(const Worker_EntityId EntityId) const
 
 		if (ObjectReplicator->bHasReplicatedProperties)
 		{
-			UE_LOG(LogActorSystem, Warning,
-					TEXT("Sending postnetreceive, entityid: %lld, object: %s"), EntityId, *ObjectReplicator->GetObject()->GetName());
+			UE_LOG(LogActorSystem, Warning, TEXT("Sending postnetreceive, entityid: %lld, object: %s"), EntityId,
+				   *ObjectReplicator->GetObject()->GetName());
 			ObjectReplicator->PostNetReceive();
 			ObjectReplicator->bHasReplicatedProperties = false;
 		}
