@@ -65,19 +65,30 @@ protected:
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;
 
-	TMap<FString, FName> SpanEvents;
-	TMap<FString, TArray<FString>> TraceSpans;
-
-	enum TraceItemCountCategory
+	enum TraceSource
 	{
 		Runtime,
 		Worker,
-		Client
+		Client,
+		Count
 	};
 
-	int32 GetTraceSpanCount(const TraceItemCountCategory ItemCountCategory) const;
-	int32 GetTraceEventCount(const TraceItemCountCategory ItemCountCategory) const;
-	int32 GetTraceEventCount(const TraceItemCountCategory ItemCountCategory, const FName TraceEventType) const;
+	struct TraceItemsData
+	{
+		TMap<FString, TArray<FString>> Spans;
+		TMap<FString, FName> SpanEvents;
+		TMap<FName, int32> EventCount;
+	};
+
+	TMap<TraceSource, TraceItemsData> TraceItems;
+
+	int32 GetTraceSpanCount(const TraceSource Source) const;
+	int32 GetTraceEventCount(const TraceSource Source) const;
+	int32 GetTraceEventCount(const TraceSource Source, const FName TraceEventType) const;
+	FString FindRootSpanId(const FString& SpanId) const;
+
+	void ForEachTraceSource(TFunctionRef<bool(const TraceItemsData& SourceTraceItems)> Predicate) const;
+
 	bool CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames, int MinimumCauses = 1) const;
 
 	virtual void FinishEventTraceTest();
@@ -93,17 +104,11 @@ protected:
 	CheckResult CheckCauses(FName From, FName To) const;
 
 private:
-	struct TraceItemCount
-	{
-		int32 SpanCount;
-		TMap<FName, int32> EventCount;
-	};
 
-	TMap<TraceItemCountCategory, TraceItemCount> TraceItemsCounts;
 	FDateTime TestStartTime;
 
 	void StartEventTracingTest();
 	void WaitForTestToEnd();
 	void GatherData();
-	void GatherDataFromFile(const FString& FilePath, const TraceItemCountCategory ItemCountCategory);
+	void GatherDataFromFile(const FString& FilePath, const TraceSource Source);
 };

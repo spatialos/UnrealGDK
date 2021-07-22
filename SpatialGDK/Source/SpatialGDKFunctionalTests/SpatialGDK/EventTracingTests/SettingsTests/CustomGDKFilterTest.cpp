@@ -12,8 +12,8 @@ ACustomGDKFilterTest::ACustomGDKFilterTest()
 
 void ACustomGDKFilterTest::FinishEventTraceTest()
 {
-	const int32 EventCount = GetTraceEventCount(TraceItemCountCategory::Client);
-	const int32 EventTypeCount = GetTraceEventCount(TraceItemCountCategory::Client, { "user.send_rpc" });
+	const int32 EventCount = GetTraceEventCount(TraceSource::Client);
+	const int32 EventTypeCount = GetTraceEventCount(TraceSource::Client, { "user.send_rpc" });
 
 	bool bTestSuccess = EventTypeCount > 0 && EventTypeCount == EventCount;
 	AssertTrue(bTestSuccess, TEXT("Test produced client event of only one type."));

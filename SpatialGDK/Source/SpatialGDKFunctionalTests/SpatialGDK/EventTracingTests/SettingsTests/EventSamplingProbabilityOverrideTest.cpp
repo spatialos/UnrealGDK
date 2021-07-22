@@ -15,16 +15,20 @@ AEventSamplingProbabilityOverrideTest::AEventSamplingProbabilityOverrideTest()
 void AEventSamplingProbabilityOverrideTest::FinishEventTraceTest()
 {
 	bool bAllSpansForOverridenEventLogged = true;
-	for (const auto& Pair : SpanEvents)
-	{
-		const FString& SpanIdString = Pair.Key;
-		const FName& EventName = Pair.Value;
 
-		if (EventName == UEventSamplingProbabilityOverrideSettings::OverridenEventType)
+	ForEachTraceSource([&bAllSpansForOverridenEventLogged](const TraceItemsData& SourceTraceItems) {
+		for (const auto& Pair : SourceTraceItems.SpanEvents)
 		{
-			bAllSpansForOverridenEventLogged &= TraceSpans.Contains(SpanIdString);
+			const FString& SpanIdString = Pair.Key;
+			const FName& EventName = Pair.Value;
+
+			if (EventName == UEventSamplingProbabilityOverrideSettings::OverridenEventType)
+			{
+				bAllSpansForOverridenEventLogged &= SourceTraceItems.Spans.Contains(SpanIdString);
+			}
 		}
-	}
+		return false;
+	});
 
 	AssertTrue(bAllSpansForOverridenEventLogged, TEXT("Test produced spans for overriden event."));
 }
