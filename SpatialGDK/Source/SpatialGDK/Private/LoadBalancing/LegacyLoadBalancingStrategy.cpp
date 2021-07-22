@@ -55,8 +55,7 @@ void FLegacyLoadBalancing::QueryTranslation(ISpatialOSWorker& Connection)
 	TranslationQuery.constraint = TranslationConstraint;
 
 	WorkerTranslationRequest = Connection.SendEntityQueryRequest(EntityQuery(TranslationQuery), RETRY_UNTIL_COMPLETE);
-	CommandsHandler.AddRequest(*WorkerTranslationRequest, [this](const Worker_EntityQueryResponseOp& Op)
-	{
+	CommandsHandler.AddRequest(*WorkerTranslationRequest, [this](const Worker_EntityQueryResponseOp& Op) {
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			return;
@@ -73,8 +72,7 @@ void FLegacyLoadBalancing::QueryTranslation(ISpatialOSWorker& Connection)
 				bTranslatorIsReady = true;
 				for (uint32 VirtualWorker = 0; VirtualWorker < ExpectedWorkers; ++VirtualWorker)
 				{
-					if (Translator.GetServerWorkerEntityForVirtualWorker(VirtualWorker + 1)
-						== SpatialConstants::INVALID_ENTITY_ID)
+					if (Translator.GetServerWorkerEntityForVirtualWorker(VirtualWorker + 1) == SpatialConstants::INVALID_ENTITY_ID)
 					{
 						bTranslatorIsReady = false;
 					}

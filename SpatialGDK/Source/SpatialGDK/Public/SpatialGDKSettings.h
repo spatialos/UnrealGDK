@@ -316,6 +316,7 @@ private:
 	bool bEventTracingEnabledWithEditor;
 
 	friend class AEventTracingSettingsOverride;
+
 public:
 	bool GetPreventClientCloudDeploymentAutoConnect() const;
 
