@@ -65,7 +65,7 @@ protected:
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;
 
-	enum TraceSource
+	enum TraceSource : uint8
 	{
 		Runtime,
 		Worker,
@@ -91,7 +91,7 @@ protected:
 
 	bool CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames, int MinimumCauses = 1) const;
 
-	virtual void FinishEventTraceTest();
+	virtual void FinishEventTraceTest() {};
 
 	virtual int GetRequiredClients() { return MinRequiredClients; }
 	virtual int GetRequiredWorkers() { return MinRequiredWorkers; }
@@ -104,6 +104,7 @@ protected:
 	CheckResult CheckCauses(FName From, FName To) const;
 
 private:
+
 	FDateTime TestStartTime;
 
 	void StartEventTracingTest();

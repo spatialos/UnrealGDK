@@ -1,4 +1,4 @@
-
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma once
 
 #include "Interop/Connection/SpatialGDKSpanId.h"

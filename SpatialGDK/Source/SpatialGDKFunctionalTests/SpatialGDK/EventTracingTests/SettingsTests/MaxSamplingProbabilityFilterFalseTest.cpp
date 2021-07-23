@@ -6,7 +6,7 @@ AMaxSamplingProbabilityFilterFalseTest::AMaxSamplingProbabilityFilterFalseTest()
 {
 	Author = "Matthew Sandford";
 	Description =
-		TEXT("Test checking that spans are created with max sampling probability and not events are created with all filters to \"false\"");
+		TEXT("Test checking that spans are created with max sampling probability and no events are created with all filters to \"false\"");
 
 	WorkerDefinition = FWorkerDefinition::Client(1);
 
@@ -19,7 +19,7 @@ void AMaxSamplingProbabilityFilterFalseTest::FinishEventTraceTest()
 {
 	// Runtime creates some root spans itself which will be unaffected by changing the sampling probability.
 	// We want to disregard these spans when running this test and ensure other spans are produced.
-	// The following logic handles this by look for root spanId and ignore those that start in the runtime.
+	// The following logic handles this by looking for root spanIds of traces and ignore those that start in the runtime.
 
 	const TraceItemsData* RuntimeTraceItems = TraceItems.Find(TraceSource::Runtime);
 	auto CountSpansWithNonRuntimeRoots = [this, RuntimeTraceItems](const TraceItemsData* SourceTraceItems, int32& OutCount) {

@@ -73,6 +73,6 @@ void UEventTracerComponent::RunOnClient_Implementation()
 
 bool UEventTracerComponent::OwnerHasAuthority() const
 {
-	AActor* Owner = GetOwner();
+	const AActor* Owner = GetOwner();
 	return Owner != nullptr && Owner->HasAuthority();
 }

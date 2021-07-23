@@ -98,11 +98,9 @@ void AEventTracingTest::StartEventTracingTest()
 
 void AEventTracingTest::WaitForTestToEnd()
 {
-	bool bTimeElapsed = FDateTime::Now() > TestStartTime + FTimespan::FromSeconds(TestTime);
-	RequireEqual_Bool(bTimeElapsed, true, TEXT("Waiting for test to end."));
+	const bool bTimerFinished = FDateTime::Now() > TestStartTime + FTimespan::FromSeconds(TestTime);
+	RequireEqual_Bool(bTimerFinished, true, TEXT("Waiting for test to end."));
 }
-
-void AEventTracingTest::FinishEventTraceTest() {}
 
 void AEventTracingTest::GatherData()
 {
@@ -286,32 +284,42 @@ int32 AEventTracingTest::GetTraceEventCount(const TraceSource Source, const FNam
 	return Count != nullptr ? *Count : 0;
 }
 
-FString AEventTracingTest::FindRootSpanId(const FString& SpanId) const
+FString AEventTracingTest::FindRootSpanId(const FString& InputSpanId) const
 {
-	FString Cause = SpanId;
-	ForEachTraceSource([&SpanId, &Cause](const TraceItemsData& SourceTraceItems) {
-		const TArray<FString>* Causes = SourceTraceItems.Spans.Find(SpanId);
-		if (Causes != nullptr && Causes->Num() > 0)
+	FString Cause = InputSpanId;
+
+	// Get the cause SpanId of the InputSpanId
+	ForEachTraceSource([&InputSpanId, &Cause](const TraceItemsData& SourceTraceItems) {
+		const TArray<FString>* Causes = SourceTraceItems.Spans.Find(InputSpanId);
+		if (Causes != nullptr)
 		{
-			Cause = (*Causes)[0];
-			return true;
+			for (const FString& CauseSpanId : *Causes)
+			{
+				if (!CauseSpanId.IsEmpty())
+				{
+					Cause = CauseSpanId;
+					return true;
+				}
+			}
 		}
 		return false;
 	});
 
-	if (Cause != SpanId)
+	// If Cause equals SpanId then the SpanId is a root SpanId
+	// If not we will keep going down the span chain
+	if (Cause != InputSpanId)
 	{
 		const FString NextCause = FindRootSpanId(Cause);
 		return NextCause == Cause ? Cause : NextCause;
 	}
-	return SpanId;
+	return InputSpanId;
 }
 
 void AEventTracingTest::ForEachTraceSource(TFunctionRef<bool(const TraceItemsData& SourceTraceItems)> Predicate) const
 {
 	for (int32 i = 0; i < TraceSource::Count; ++i)
 	{
-		TraceSource Source = static_cast<TraceSource>(i);
+		const TraceSource Source = static_cast<TraceSource>(i);
 		const TraceItemsData* SourceTraceItems = TraceItems.Find(Source);
 		if (SourceTraceItems != nullptr)
 		{

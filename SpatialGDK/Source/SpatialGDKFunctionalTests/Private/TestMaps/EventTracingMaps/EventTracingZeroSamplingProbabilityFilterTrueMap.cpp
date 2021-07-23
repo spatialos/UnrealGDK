@@ -4,7 +4,7 @@
 
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/EventTracingTests/SettingsTests/ZeroSamplingProbabilityFilterTrueTest.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestCharacterMovement/EventTracingTestGameMode.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/EventTracingTests/EventTracingTestGameMode.h"
 
 UEventTracingZeroSamplingProbabilityFilterTrueMap::UEventTracingZeroSamplingProbabilityFilterTrueMap()
 	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("EventTracingZeroSamplingProbabilityFilterTrueMap"))

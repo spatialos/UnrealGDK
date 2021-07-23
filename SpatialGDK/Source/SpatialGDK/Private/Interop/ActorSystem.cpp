@@ -2026,18 +2026,17 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 	{
 		const bool bStackEmpty = EventTracer->IsObjectStackEmpty();
 		const int32 NumCauses = bStackEmpty ? 0 : 1;
-		const Trace_SpanIdType* Causes = bStackEmpty ? nullptr : EventTracer->PopLatentPropertyUpdateSpanId().GetConstId();
+		const Trace_SpanIdType* Causes = bStackEmpty ? nullptr : EventTracer->PopLatentPropertyUpdateSpanId(Object).GetConstId();
 		for (FChangeListPropertyIterator Itr(RepChanges); Itr; ++Itr)
 		{
-			FSpatialGDKSpanId PropertySpan =
-				EventTracer->TraceEvent(PROPERTY_CHANGED_EVENT_NAME, "", Causes, NumCauses,
-					[Object, EntityId, Itr](FSpatialTraceEventDataBuilder& EventBuilder) {
-				GDK_PROPERTY(Property)* Property = *Itr;
-				EventBuilder.AddObject(Object);
-				EventBuilder.AddEntityId(EntityId);
-				EventBuilder.AddKeyValue("property_name", Property->GetName());
-				EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForProperty(EntityId, Property));
-			});
+			FSpatialGDKSpanId PropertySpan = EventTracer->TraceEvent(
+				PROPERTY_CHANGED_EVENT_NAME, "", Causes, NumCauses, [Object, EntityId, Itr](FSpatialTraceEventDataBuilder& EventBuilder) {
+					GDK_PROPERTY(Property)* Property = *Itr;
+					EventBuilder.AddObject(Object);
+					EventBuilder.AddEntityId(EntityId);
+					EventBuilder.AddKeyValue("property_name", Property->GetName());
+					EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForProperty(EntityId, Property));
+				});
 			PropertySpans.Push(PropertySpan);
 		}
 	}

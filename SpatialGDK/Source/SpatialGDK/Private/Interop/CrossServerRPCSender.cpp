@@ -33,7 +33,7 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef InTargetObjectRef,
 									InPayload.PayloadData.GetData(), InPayload.PayloadData.Num());
 
 	FSpatialGDKSpanId SpanId;
-	if (EventTracer)
+	if (EventTracer != nullptr)
 	{
 		const bool bStackEmpty = EventTracer->IsStackEmpty();
 		const int32 NumCauses = bStackEmpty ? 0 : 1;
