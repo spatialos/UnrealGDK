@@ -14,5 +14,5 @@ class SPATIALGDKFUNCTIONALTESTS_API AUnresolvedReferenceTest : public ASpatialFu
 public:
 	AUnresolvedReferenceTest();
 
-	virtual void PrepareTest() override;
+	void PrepareTest() final;
 };
