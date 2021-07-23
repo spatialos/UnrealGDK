@@ -390,8 +390,40 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 
 				if (bAreAllPartitionsInView)
 				{
-					Stage = EStage::Finished;
+					Stage = EStage::AssignPartitionsToWorkers;
 				}
+			}
+
+			if (Stage == EStage::AssignPartitionsToWorkers)
+			{
+				TMap<Worker_EntityId_Key, const ComponentData*> WorkerComponents;
+				Algo::Transform(State->WorkerEntityIds, WorkerComponents, [this](const Worker_EntityId EntityId) {
+					return TPair<Worker_EntityId_Key, const ComponentData*>{
+						EntityId, Worker->GetView()[EntityId].Components.FindByPredicate(
+									  ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID })
+					};
+				});
+
+				ComponentUpdate Update(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
+				for (const auto& Entry : State->WorkersToPartitions)
+				{
+					// Assign the worker's partition to its system entity.
+					const ComponentData* ServerWorkerComponentData = WorkerComponents.FindChecked(Entry.Value.ServerWorkerEntityId);
+					const ServerWorker ServerWorkerData(ServerWorkerComponentData->GetUnderlying());
+					State->ClaimHandler.ClaimPartition(*Worker, ServerWorkerData.SystemEntityId, Entry.Value.PartitionEntityId);
+
+					// Reflect the partition assignment in the translator object.
+					Schema_Object* EntryObject =
+						Schema_AddObject(Update.GetFields(), SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
+					Schema_AddUint32(EntryObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID, Entry.Key);
+					AddStringToSchema(EntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID, Entry.Value.WorkerName);
+					Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID, Entry.Value.ServerWorkerEntityId);
+					Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_PARTITION_ID, Entry.Value.PartitionEntityId);
+				}
+
+				Worker->SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, MoveTemp(Update));
+
+				Stage = EStage::Finished;
 			}
 
 			return Stage == EStage::Finished;
@@ -431,7 +463,7 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 			DiscoveringExistingState,
 			SpawningPartitions,
 			WaitForPartitionVisibility,
-
+			AssignPartitionsToWorkers,
 			Finished,
 
 			Initial = DiscoveringExistingState,
@@ -483,32 +515,6 @@ bool FSpatialServerStartupHandler::TryFinishStartup()
 
 	if (Stage == EStage::GsmAuthAssignPartitionsToVirtualWorkers)
 	{
-		TMap<Worker_EntityId_Key, const ComponentData*> WorkerComponents;
-		Algo::Transform(State->WorkerEntityIds, WorkerComponents, [this](const Worker_EntityId EntityId) {
-			return TPair<Worker_EntityId_Key, const ComponentData*>{
-				EntityId, GetCoordinator().GetView()[EntityId].Components.FindByPredicate(
-							  ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID })
-			};
-		});
-
-		ComponentUpdate Update(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
-		for (const auto& Entry : State->WorkersToPartitions)
-		{
-			// Assign the worker's partition to its system entity.
-			const ComponentData* ServerWorkerComponentData = WorkerComponents.FindChecked(Entry.Value.ServerWorkerEntityId);
-			const ServerWorker ServerWorkerData(ServerWorkerComponentData->GetUnderlying());
-			State->ClaimHandler.ClaimPartition(GetCoordinator(), ServerWorkerData.SystemEntityId, Entry.Value.PartitionEntityId);
-
-			// Reflect the partition assignment in the translator object.
-			Schema_Object* EntryObject = Schema_AddObject(Update.GetFields(), SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
-			Schema_AddUint32(EntryObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID, Entry.Key);
-			AddStringToSchema(EntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID, Entry.Value.WorkerName);
-			Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID, Entry.Value.ServerWorkerEntityId);
-			Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_PARTITION_ID, Entry.Value.PartitionEntityId);
-		}
-
-		GetCoordinator().SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, MoveTemp(Update));
-
 		Stage = EStage::GetVirtualWorkerTranslationState;
 	}
 
