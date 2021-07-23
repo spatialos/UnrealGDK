@@ -3,8 +3,8 @@
 #include "TestMaps/EventTracingMaps/EventTracingEventSamplingProbabilityOverrideMap.h"
 
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/EventTracingTests/SettingsTests/EventSamplingProbabilityOverrideTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/EventTracingTests/EventTracingTestGameMode.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/EventTracingTests/SettingsTests/EventSamplingProbabilityOverrideTest.h"
 
 UEventTracingEventSamplingProbabilityOverrideMap::UEventTracingEventSamplingProbabilityOverrideMap()
 	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("EventTracingEventSamplingProbabilityOverrideMap"))

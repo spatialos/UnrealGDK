@@ -3,8 +3,8 @@
 #include "TestMaps/EventTracingMaps/EventTracingCustomGDKFilterMap.h"
 
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/EventTracingTests/SettingsTests/CustomGDKFilterTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/EventTracingTests/EventTracingTestGameMode.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/EventTracingTests/SettingsTests/CustomGDKFilterTest.h"
 
 UEventTracingCustomGDKFilterMap::UEventTracingCustomGDKFilterMap()
 	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("EventTracingCustomGDKFilterMap"))

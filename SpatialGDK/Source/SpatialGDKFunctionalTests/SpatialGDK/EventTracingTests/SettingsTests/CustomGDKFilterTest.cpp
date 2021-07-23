@@ -16,5 +16,5 @@ void ACustomGDKFilterTest::FinishEventTraceTest()
 	const int32 EventTypeCount = GetTraceEventCount(TraceSource::Client, { "user.send_rpc" });
 
 	AssertValue_Int(EventTypeCount, EComparisonMethod::Greater_Than, 0, TEXT("Test produced client event of only specific type."));
-	AssertValue_Int(EventTypeCount, EComparisonMethod::Equal_To, EventCount, , TEXT("Test produced client event of only one type."));
+	AssertValue_Int(EventTypeCount, EComparisonMethod::Equal_To, EventCount, TEXT("Test produced client event of only one type."));
 }
