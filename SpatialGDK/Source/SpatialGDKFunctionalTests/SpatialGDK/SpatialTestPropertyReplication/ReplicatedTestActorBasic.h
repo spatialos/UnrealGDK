@@ -18,7 +18,7 @@ public:
 
 	// Basic replicated property types
 	UPROPERTY(Replicated)
-	int ReplicatedIntProperty;
+	int32 ReplicatedIntProperty;
 
 	UPROPERTY(Replicated)
 	double ReplicatedFloatProperty;
@@ -31,7 +31,7 @@ public:
 
 	// Basic non-replicated property types
 	UPROPERTY()
-	int IntProperty;
+	int32 IntProperty;
 
 	UPROPERTY()
 	double FloatProperty;

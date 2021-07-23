@@ -72,22 +72,15 @@ void USpatialNetDriverAuthorityDebugger::UpdateSpatialShadowActor(const Worker_E
 		return;
 	}
 
-	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
-	if (!IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
-	{
-		RemoveSpatialShadowActor(EntityId);
-		return;
-	}
-
-	(*SpatialShadowActor)->Update(*Actor);
+	(*SpatialShadowActor)->Update();
 }
 
 bool USpatialNetDriverAuthorityDebugger::IsSuppressedActor(const AActor& InActor)
 {
-	return SuppressedActors.Contains(*InActor.GetClass()->GetName());
+	return SuppressedActors.Contains(InActor.GetClass()->GetFName());
 }
 
 bool USpatialNetDriverAuthorityDebugger::IsSuppressedProperty(const FProperty& InProperty)
 {
-	return SuppressedProperties.Contains(*InProperty.GetName());
+	return SuppressedProperties.Contains(InProperty.GetFName());
 }

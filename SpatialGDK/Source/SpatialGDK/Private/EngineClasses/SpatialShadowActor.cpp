@@ -25,27 +25,32 @@ void USpatialShadowActor::Init(AActor& InActor)
 		ReplicatedPropertyHashes.Add(0);
 	}
 
-	CreateHash(InActor);
 	Actor = &InActor;
+	CreateHash();
+
 }
 
-void USpatialShadowActor::Update(AActor& InActor)
+void USpatialShadowActor::Update()
 {
-	CreateHash(InActor);
-	Actor = &InActor;
+	if (!IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
+	{
+		return;
+	}
+
+	CreateHash();
 }
 
-void USpatialShadowActor::CreateHash(const AActor& InActor)
+void USpatialShadowActor::CreateHash()
 {
 	int32 i = 0;
 	// Store a hashed value for each replicated property
-	for (TFieldIterator<FProperty> PropIt(InActor.GetClass()); PropIt; ++PropIt)
+	for (TFieldIterator<FProperty> PropIt(Actor->GetClass()); PropIt; ++PropIt)
 	{
 		FProperty* Property = *PropIt;
 
 		if (Property->HasAnyPropertyFlags(CPF_Net) && Property->HasAnyPropertyFlags(CPF_HasGetValueTypeHash))
 		{
-			ReplicatedPropertyHashes[i] = Property->GetValueTypeHash(Property->ContainerPtrToValuePtr<void>(&InActor, 0));
+			ReplicatedPropertyHashes[i] = Property->GetValueTypeHash(Property->ContainerPtrToValuePtr<void>(Actor, 0));
 			i++;
 		}
 	}
@@ -67,13 +72,13 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges()
 	// Compare hashed properties
 	int32 i = 0;
 
-	for (TFieldIterator<FProperty> PropIt(Actor->GetClass()); PropIt; ++PropIt)
+	for (TFieldIterator<const FProperty> PropIt(Actor->GetClass()); PropIt; ++PropIt) 
 	{
-		FProperty* Property = *PropIt;
+		const FProperty* Property = *PropIt;
 
 		if (Property->HasAnyPropertyFlags(CPF_Net) && Property->HasAnyPropertyFlags(CPF_HasGetValueTypeHash))
 		{
-			uint32 LatestPropertyHash = Property->GetValueTypeHash(Property->ContainerPtrToValuePtr<void>(Actor, 0));
+			const uint32 LatestPropertyHash = Property->GetValueTypeHash(Property->ContainerPtrToValuePtr<void>(Actor, 0));
 
 			if (ReplicatedPropertyHashes[i] != LatestPropertyHash && !USpatialNetDriverAuthorityDebugger::IsSuppressedProperty(*Property))
 			{

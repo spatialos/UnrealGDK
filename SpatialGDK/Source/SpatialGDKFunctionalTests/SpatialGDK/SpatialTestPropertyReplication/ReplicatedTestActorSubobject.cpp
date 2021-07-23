@@ -21,6 +21,6 @@ void AReplicatedTestActorSubobject::OnAuthorityGained()
 
 	// Spawn sub-actor
 	ReplicatedSubActor =
-		GetWorld()->SpawnActor<AReplicatedTestActor>(FVector(0.0f, 0.0f, 0.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+		GetWorld()->SpawnActor<AReplicatedTestActor>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters());
 	ReplicatedSubActor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 }
