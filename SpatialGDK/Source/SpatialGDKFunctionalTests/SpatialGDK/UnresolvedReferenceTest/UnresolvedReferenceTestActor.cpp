@@ -10,5 +10,5 @@ void AUnresolvedReferenceTestActor::GetLifetimeReplicatedProps(TArray<FLifetimeP
 
 void AUnresolvedReferenceTestActor::OnRep_ActorRefs()
 {
-	RepNotifyCount++;
+	++RepNotifyCount;
 }
