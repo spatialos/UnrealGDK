@@ -28,19 +28,18 @@ void AUnresolvedReferenceTest::PrepareTest()
 	});
 
 	// Wait for actor which will hold references to replicate to the clients
-	AddStep(
-		TEXT("ClientWaitForReplication"), FWorkerDefinition::AllClients, nullptr,
-		[this]() {
-			FTimerHandle DelayTimerHandle;
-			FTimerManager& TimerManager = GetWorld()->GetTimerManager();
-			TimerManager.SetTimer(
-				DelayTimerHandle,
-				[this]() {
-					FinishStep();
-				},
-				0.5f, false);
-		},
-		nullptr, 5.0f);
+	AddStep(TEXT("ClientWaitForReplication"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		[this](float DeltaTime) {
+			int NumRefActor = 0;
+
+			for (const AUnresolvedReferenceTestActor* RefsActor : TActorRange<AUnresolvedReferenceTestActor>(GetWorld()))
+			{
+				++NumRefActor;
+			}
+
+			RequireEqual_Int(NumRefActor, 1, TEXT("There should be 1 RefActor"));
+			FinishStep();
+		});
 
 	// Add actor references to actor holding references
 	AddStep(TEXT("MakeActorReferences"), FWorkerDefinition::Server(1), nullptr, [this]() {
@@ -50,7 +49,7 @@ void AUnresolvedReferenceTest::PrepareTest()
 			for (int i = 0; i < 3; i++)
 			{
 				AReplicatedTestActorBase* Actor =
-					GetWorld()->SpawnActor<AReplicatedTestActorBase>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters());
+					GetWorld()->SpawnActor<AReplicatedTestActorBase>(FVector::ZeroVector, FRotator::ZeroRotator);
 				RefsActor->ActorRefs.Add(Actor);
 				RegisterAutoDestroyActor(Actor);
 			}
@@ -61,7 +60,7 @@ void AUnresolvedReferenceTest::PrepareTest()
 	// Check that none of the actor references are null - step will timeout after 5 seconds
 	AddStep(
 		TEXT("CheckNoNullReferences"), FWorkerDefinition::AllClients, nullptr, nullptr,
-		[this](float deltaTime) {
+		[this](float DeltaTime) {
 			for (const AUnresolvedReferenceTestActor* RefsActor : TActorRange<AUnresolvedReferenceTestActor>(GetWorld()))
 			{
 				RequireCompare_Int(RefsActor->ActorRefs.Num(), EComparisonMethod::Greater_Than, 0,

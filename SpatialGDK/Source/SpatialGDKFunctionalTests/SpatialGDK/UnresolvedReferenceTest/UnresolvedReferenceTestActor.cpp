@@ -7,8 +7,3 @@ void AUnresolvedReferenceTestActor::GetLifetimeReplicatedProps(TArray<FLifetimeP
 
 	DOREPLIFETIME(AUnresolvedReferenceTestActor, ActorRefs);
 }
-
-void AUnresolvedReferenceTestActor::OnRep_ActorRefs()
-{
-	++RepNotifyCount;
-}

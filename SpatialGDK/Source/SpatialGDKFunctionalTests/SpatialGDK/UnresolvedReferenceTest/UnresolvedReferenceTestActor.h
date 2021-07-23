@@ -14,11 +14,6 @@ class SPATIALGDKFUNCTIONALTESTS_API AUnresolvedReferenceTestActor : public ARepl
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	int RepNotifyCount;
-
-	UPROPERTY(ReplicatedUsing = OnRep_ActorRefs)
+	UPROPERTY(Replicated)
 	TArray<AReplicatedTestActorBase*> ActorRefs;
-
-	UFUNCTION()
-	void OnRep_ActorRefs();
 };
