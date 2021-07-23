@@ -26,11 +26,13 @@ void USpatialShadowActor::Init(AActor& InActor)
 	}
 
 	CreateHash(InActor);
+	Actor = &InActor;
 }
 
 void USpatialShadowActor::Update(AActor& InActor)
 {
 	CreateHash(InActor);
+	Actor = &InActor;
 }
 
 void USpatialShadowActor::CreateHash(const AActor& InActor)
@@ -49,11 +51,14 @@ void USpatialShadowActor::CreateHash(const AActor& InActor)
 	}
 }
 
-void USpatialShadowActor::CheckUnauthorisedDataChanges(const AActor& InActor)
+void USpatialShadowActor::CheckUnauthorisedDataChanges()
 {
-	check(!InActor.HasAuthority());
+	if (!IsValid(Actor) || Actor->IsPendingKillOrUnreachable() || !Actor->HasAuthority())
+	{
+		return;
+	}
 
-	if (USpatialNetDriverAuthorityDebugger::IsSuppressedActor(InActor))
+	if (USpatialNetDriverAuthorityDebugger::IsSuppressedActor(*Actor))
 	{
 		// We are suppressing warnings about some actor classes to avoid spamming the user
 		return;
@@ -62,19 +67,19 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges(const AActor& InActor)
 	// Compare hashed properties
 	int32 i = 0;
 
-	for (TFieldIterator<FProperty> PropIt(InActor.GetClass()); PropIt; ++PropIt)
+	for (TFieldIterator<FProperty> PropIt(Actor->GetClass()); PropIt; ++PropIt)
 	{
 		FProperty* Property = *PropIt;
 
 		if (Property->HasAnyPropertyFlags(CPF_Net) && Property->HasAnyPropertyFlags(CPF_HasGetValueTypeHash))
 		{
-			uint32 LatestPropertyHash = Property->GetValueTypeHash(Property->ContainerPtrToValuePtr<void>(&InActor, 0));
+			uint32 LatestPropertyHash = Property->GetValueTypeHash(Property->ContainerPtrToValuePtr<void>(Actor, 0));
 
 			if (ReplicatedPropertyHashes[i] != LatestPropertyHash && !USpatialNetDriverAuthorityDebugger::IsSuppressedProperty(*Property))
 			{
 				UE_LOG(LogSpatialShadowActor, Error,
 					   TEXT("Changed actor without authority with name %s of type %s, property changed without authority was %s!"),
-					   *InActor.GetName(), *InActor.GetClass()->GetName(), *Property->GetName());
+					   *Actor->GetName(), *Actor->GetClass()->GetName(), *Property->GetName());
 
 				// Store hash to avoid generating a duplicate error message
 				ReplicatedPropertyHashes[i] = LatestPropertyHash;

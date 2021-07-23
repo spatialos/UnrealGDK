@@ -27,7 +27,7 @@ public:
 	void AddSpatialShadowActor(const Worker_EntityId_Key EntityId);
 	void RemoveSpatialShadowActor(const Worker_EntityId_Key EntityId);
 	void UpdateSpatialShadowActor(const Worker_EntityId_Key EntityId);
-	void CheckUnauthorisedDataChanges(const AActor& InActor);
+	void CheckUnauthorisedDataChanges();
 
 	static bool IsSuppressedActor(const AActor& InActor);
 	static bool IsSuppressedProperty(const FProperty& InProperty);

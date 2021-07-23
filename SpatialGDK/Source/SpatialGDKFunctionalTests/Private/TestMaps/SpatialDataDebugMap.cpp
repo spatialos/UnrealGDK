@@ -12,7 +12,7 @@ USpatialDataDebugMap::USpatialDataDebugMap()
 	SetNumberOfClients(2);
 
 	// clang-format off
-	SetCustomConfig(TEXT("[/Script/EngineSettings.GeneralProjectSettings]") LINE_TERMINATOR
+	SetCustomConfig(TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR
 					TEXT("bSpatialAuthorityDebugger=True"));
 	// clang-format on
 }

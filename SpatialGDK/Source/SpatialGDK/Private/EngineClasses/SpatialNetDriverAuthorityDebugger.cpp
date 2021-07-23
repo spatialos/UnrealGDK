@@ -9,33 +9,33 @@
 DEFINE_LOG_CATEGORY(LogSpatialNetDriverAuthorityDebugger);
 
 const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedActors = { TEXT("GameStateBase"), TEXT("DefaultPawn"),
-																			 TEXT("PlayerState") };
+																			 TEXT("PlayerState"),
+																			 TEXT("SpatialFunctionalTestFlowController"),
+																			 TEXT("LockingPlayerController_C") };
 
-const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedProperties = { TEXT("Role"), TEXT("RemoteRole"), TEXT("Owner"),
-																				 TEXT("OwnerPC"), TEXT("CurrentStepIndex") };
+const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedProperties = {
+	TEXT("Role"),		   TEXT("RemoteRole"),	  TEXT("Owner"),		TEXT("OwnerPC"), TEXT("CurrentStepIndex"),
+	TEXT("bPreparedTest"), TEXT("bFinishedTest"), TEXT("bReadyToSpawnServerControllers")
+};
+
+
 
 void USpatialNetDriverAuthorityDebugger::Init(USpatialNetDriver& InNetDriver)
 {
 	NetDriver = &InNetDriver;
 }
 
-void USpatialNetDriverAuthorityDebugger::CheckUnauthorisedDataChanges(const AActor& InActor)
+void USpatialNetDriverAuthorityDebugger::CheckUnauthorisedDataChanges()
 {
 	if (!NetDriver->IsServer())
 	{
 		return;
 	}
-
-	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(&InActor);
-
-	USpatialShadowActor** SpatialShadowActor = SpatialShadowActors.Find(EntityId);
-
-	if (SpatialShadowActor == nullptr)
+	
+	for (auto It = SpatialShadowActors.CreateIterator(); It; ++It)
 	{
-		return;
+		It.Value()->CheckUnauthorisedDataChanges();
 	}
-
-	(*SpatialShadowActor)->CheckUnauthorisedDataChanges(InActor);
 }
 
 void USpatialNetDriverAuthorityDebugger::AddSpatialShadowActor(const Worker_EntityId_Key EntityId)

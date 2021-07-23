@@ -15,12 +15,14 @@ public:
 	USpatialShadowActor() = default;
 
 	void Init(AActor& InActor);
-
-	void CheckUnauthorisedDataChanges(const AActor& InActor);
-
 	void Update(AActor& InActor);
 
+	void CheckUnauthorisedDataChanges();
+
 protected:
+	UPROPERTY()
+	AActor* Actor;
+
 	int32 NumReplicatedProperties;
 	TArray<uint32> ReplicatedPropertyHashes;
 

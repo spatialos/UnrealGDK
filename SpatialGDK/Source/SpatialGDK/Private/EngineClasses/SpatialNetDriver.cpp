@@ -141,7 +141,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
 
-	if (GetDefault<UGeneralProjectSettings>()->bSpatialAuthorityDebugger)
+	if (GetDefault<USpatialGDKSettings>()->bSpatialAuthorityDebugger)
 	{
 		AuthorityDebugger = NewObject<USpatialNetDriverAuthorityDebugger>();
 		AuthorityDebugger->Init(*this);
@@ -2512,6 +2512,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			SpatialMetrics->TickMetrics(GetElapsedTime());
 		}
 
+		if (AuthorityDebugger != nullptr)
+		{
+			AuthorityDebugger->CheckUnauthorisedDataChanges();
+		}
+
 		if (AsyncPackageLoadFilter != nullptr)
 		{
 			AsyncPackageLoadFilter->ProcessActorsFromAsyncLoading();
@@ -3538,40 +3543,6 @@ bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
 		return true;
 	}
 	return false;
-}
-
-void USpatialNetDriver::ServerReplicateActors_BuildConsiderList(TArray<FNetworkObjectInfo*>& OutConsiderList, const float ServerTickTime)
-{
-	const bool bSpatialNetworking = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
-
-	if (!bSpatialNetworking || AuthorityDebugger == nullptr)
-	{
-		// Default case to only consider auth actors for replication
-		Super::ServerReplicateActors_BuildConsiderList(OutConsiderList, ServerTickTime);
-		return;
-	}
-
-	// Spatial authority debugger case to check non-auth actors for invalid changes and then add auth actors to the consider list for
-	// replication
-	TArray<FNetworkObjectInfo*> TmpConsiderList;
-	TmpConsiderList.Reserve(GetNetworkObjectList().GetActiveObjects().Num());
-	Super::ServerReplicateActors_BuildConsiderList(TmpConsiderList, ServerTickTime);
-
-	for (FNetworkObjectInfo* const& ActorInfo : TmpConsiderList)
-	{
-		AActor* Actor = ActorInfo->Actor;
-
-		if (Actor->HasAuthority())
-		{
-			//  Only add auth actors only to the consider list
-			OutConsiderList.Add(ActorInfo);
-		}
-		else
-		{
-			// Check for unauthorised data changes to non-auth actors
-			AuthorityDebugger->CheckUnauthorisedDataChanges(*Actor);
-		}
-	}
 }
 
 void USpatialNetDriver::AddSpatialShadowActor(const Worker_EntityId_Key EntityId)
