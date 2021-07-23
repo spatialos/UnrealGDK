@@ -25,7 +25,7 @@ public:
 	UPROPERTY(Replicated)
 	ASpatialTestNetReceiveActor* TestActor;
 
-	FVector Server1Pos = FVector(100, -100, 300);
+	FVector Server1Pos = FVector(250, -250, 0);
 };
 
 UCLASS()
@@ -60,10 +60,10 @@ public:
 	bool bPreNetReceiveCalled;
 	bool bPostNetReceiveCalled;
 
-	UPROPERTY(ReplicatedUsing = OnRep_TestInt1)
+	UPROPERTY(ReplicatedUsing = OnRep_TestInt)
 	int32 TestInt;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_ServerOnlyTestInt)
 	int32 ServerOnlyTestInt;
 
 	bool bPostNetCalledBeforePreNet;
@@ -80,5 +80,8 @@ public:
 	int32 RepNotifyNumTimesCalled;
 
 	UFUNCTION()
-	void OnRep_TestInt1(int32 OldTestInt1);
+	void OnRep_TestInt(int32 OldTestInt);
+	UFUNCTION()
+	void OnRep_ServerOnlyTestInt(int32 OldTestInt1);
+	FString GetWorkerId();
 };

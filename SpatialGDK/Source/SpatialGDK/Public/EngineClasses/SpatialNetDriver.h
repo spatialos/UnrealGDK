@@ -285,6 +285,8 @@ public:
 
 	FShutdownEvent OnShutdown;
 
+	class USpatialGameInstance* GetGameInstance() const;
+
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
@@ -319,8 +321,6 @@ private:
 	// Client variable which stores the SessionId given to us by the server in the URL options.
 	// Used to compare against the GSM SessionId to ensure the the server is ready to spawn players.
 	int32 SessionId;
-
-	class USpatialGameInstance* GetGameInstance() const;
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 

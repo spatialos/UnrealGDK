@@ -147,10 +147,11 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 	{
 		if (Delta.Type == EntityDelta::UPDATE)
 		{
+			TArray<Worker_ComponentId> ToResolveOps;
 			for (const ComponentChange& Change : Delta.ComponentsAdded)
 			{
 				ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.Data);
-				ComponentAdded(Delta.EntityId, Change.ComponentId, Change.Data);
+				ComponentAdded(Delta.EntityId, Change.ComponentId, Change.Data, ToResolveOps);
 			}
 			for (const ComponentChange& Change : Delta.ComponentUpdates)
 			{
@@ -159,7 +160,7 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
 			{
 				ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
-				ComponentAdded(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
+				ComponentAdded(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data, ToResolveOps);
 			}
 			for (const ComponentChange& Change : Delta.ComponentsRemoved)
 			{
@@ -167,6 +168,7 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 			}
 
 			InvokePostNetReceives(Delta.EntityId);
+			ResolvePendingOpsFromEntityUpdate(Delta.EntityId, ToResolveOps);
 		}
 	}
 }
@@ -198,8 +200,6 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 			{
 				RefreshEntity(EntityId);
 			}
-
-			InvokePostNetReceives(EntityId);
 		}
 	}
 }
@@ -550,7 +550,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 	}
 }
 
-void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data)
+void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data, TArray<Worker_ComponentId>& OutToResolveOps)
 {
 	if (ComponentId == SpatialConstants::DORMANT_COMPONENT_ID)
 	{
@@ -592,7 +592,7 @@ void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_Co
 		return;
 	}
 
-	HandleIndividualAddComponent(EntityId, ComponentId, Data);
+	HandleIndividualAddComponent(EntityId, ComponentId, Data, OutToResolveOps);
 }
 
 void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update)
@@ -820,7 +820,7 @@ void ActorSystem::HandleDormantComponentAdded(const Worker_EntityId EntityId) co
 }
 
 void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-											   Schema_ComponentData* Data)
+											   Schema_ComponentData* Data, TArray<Worker_ComponentId>& OutToResolveOps)
 {
 	uint32 Offset = 0;
 	bool bFoundOffset = NetDriver->ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset);
@@ -900,11 +900,11 @@ void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, c
 
 	if (bComponentsComplete)
 	{
-		AttachDynamicSubobject(Actor, EntityId, Info);
+		AttachDynamicSubobject(Actor, EntityId, Info, OutToResolveOps);
 	}
 }
 
-void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info)
+void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info, TArray<Worker_ComponentId>& OutToResolveOps)
 {
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
 	if (Channel == nullptr)
@@ -944,8 +944,8 @@ void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId
 		Components.Remove(ComponentId);
 	});
 
-	// Resolve things like RepNotify or RPCs after applying component data.
-	ResolvePendingOperations(Subobject, SubobjectRef);
+	// Resolve things like RPCs and user object references after we have applied all other component updates for the entity.
+	OutToResolveOps.Add(Info.SchemaComponents[SCHEMA_Data]);
 }
 
 void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentId ComponentId,
@@ -981,6 +981,29 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 	{
 		UE_LOG(LogActorSystem, Verbose, TEXT("Entity: %d Component: %d - Skipping because RPC components don't have actual data."),
 			   Channel.GetEntityId(), ComponentId);
+	}
+}
+
+void ActorSystem::ResolvePendingOpsFromEntityUpdate(Worker_EntityId EntityId, TArray<Worker_ComponentId> ToResolveOps)
+{
+	// This should be called after all component updates and adds have been completed, and PostNetReceives have been called to avoid user code from seeing inconsistent state
+	for (const Worker_ComponentId ComponentId : ToResolveOps)
+	{
+		ObjectOffset Offset;
+		const bool bDidFindOffset = NetDriver->ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset);
+		if (!bDidFindOffset)
+		{
+			UE_LOG(LogActorSystem, Error, TEXT("ResolvePendingOpsFromEntityUpdate: Could not find offset for ComponentId %u on Entity %lld"), ComponentId, EntityId);
+			continue;
+		}
+		const FUnrealObjectRef ObjectRef(EntityId, Offset);
+		UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
+		if (!Object)
+		{
+			UE_LOG(LogActorSystem, Error, TEXT("ResolvePendingOpsFromEntityUpdate: Could not find valid object to resolve ops for. EntityId: %lld, Offset: %u"), EntityId, Offset);
+			continue;
+		}
+		ResolvePendingOperations(Object, ObjectRef);
 	}
 }
 
@@ -1427,6 +1450,8 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 		ClientNetLoadActorHelper.RemoveRuntimeRemovedComponents(EntityId, EntityComponents, EntityActor);
 	}
 
+	InvokePostNetReceives(EntityId);
+
 	// Resolve things like RepNotify or RPCs after applying component data.
 	for (const ObjectPtrRefPair& ObjectToResolve : ObjectsToResolvePendingOpsFor)
 	{
@@ -1737,7 +1762,7 @@ void ActorSystem::InvokePostNetReceives(const Worker_EntityId EntityId) const
 
 		if (ObjectReplicator->bHasReplicatedProperties)
 		{
-			UE_LOG(LogActorSystem, Warning, TEXT("Sending postnetreceive, entityid: %lld, object: %s"), EntityId,
+			UE_LOG(LogActorSystem, Log, TEXT("Sending postnetreceive, entityid: %lld, object: %s"), EntityId,
 				   *ObjectReplicator->GetObject()->GetName());
 			ObjectReplicator->PostNetReceive();
 			ObjectReplicator->bHasReplicatedProperties = false;

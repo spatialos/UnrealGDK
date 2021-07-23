@@ -2,6 +2,7 @@
 
 #include "SpatialTestNetReceive.h"
 
+#include "EngineClasses/SpatialGameInstance.h"
 #include "SpatialGDK/Public/EngineClasses/SpatialNetDriver.h"
 
 #include "Net/UnrealNetwork.h"
@@ -27,7 +28,7 @@
  *	- None.
  */
 
-static constexpr float StepTimeLimit = 15.0f;
+static constexpr float StepTimeLimit = 2.0f;
 ASpatialTestNetReceive::ASpatialTestNetReceive()
 	: Super()
 {
@@ -41,17 +42,17 @@ void ASpatialTestNetReceive::PrepareTest()
 
 	AddStep(TEXT("SpatialTestNetReceiveInitialise"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		TestActor = GetWorld()->SpawnActor<ASpatialTestNetReceiveActor>(Server1Pos, FRotator::ZeroRotator, FActorSpawnParameters());
-		TestActor->SetReplicates(true);
+		RegisterAutoDestroyActor(TestActor);
 
 		if (!AssertIsValid(TestActor, TEXT("Failed to spawn TestActor")))
 		{
 			return;
 		}
 
-		RegisterAutoDestroyActor(TestActor);
-
 		TestActor->Subobject->TestInt = 5;
 		TestActor->Subobject->ServerOnlyTestInt = 6;
+
+		UE_LOG(LogTemp, Warning, TEXT("Setup on server 1: %s"), *TestActor->Subobject->GetWorkerId());
 
 		FinishStep();
 	});
@@ -67,6 +68,8 @@ void ASpatialTestNetReceive::PrepareTest()
 			{
 				return;
 			}
+
+			UE_LOG(LogTemp, Warning, TEXT("Checking allok pre: %d post: %d rep: %d server: %s"), TestActor->Subobject->PreNetNumTimesCalled, TestActor->Subobject->PostNetNumTimesCalled, TestActor->Subobject->RepNotifyNumTimesCalled, *TestActor->Subobject->GetWorkerId());
 
 			RequireEqual_Int(TestActor->Subobject->TestInt, 5, TEXT("TestInt property should be updated"));
 			RequireEqual_Int(TestActor->Subobject->ServerOnlyTestInt, 6, TEXT("ServerOnlyTestInt property should be updated"));
@@ -108,8 +111,6 @@ void ASpatialTestNetReceive::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 
 ASpatialTestNetReceiveActor::ASpatialTestNetReceiveActor()
 {
-	bReplicates = true;
-
 	Subobject = CreateDefaultSubobject<USpatialTestNetReceiveSubobject>(TEXT("USpatialTestNetReceiveSubobject"));
 	Subobject->SetIsReplicated(true);
 }
@@ -125,8 +126,6 @@ USpatialTestNetReceiveSubobject::USpatialTestNetReceiveSubobject()
 	: Super()
 {
 	SetIsReplicatedByDefault(true);
-
-	TestInt = 0;
 	bOnRepTestInt1Called = false;
 
 	bPreNetReceiveCalled = false;
@@ -144,6 +143,8 @@ USpatialTestNetReceiveSubobject::USpatialTestNetReceiveSubobject()
 	PreNetNumTimesCalled = 0;
 	PostNetNumTimesCalled = 0;
 	RepNotifyNumTimesCalled = 0;
+
+	UE_LOG(LogTemp, Warning, TEXT("CONSTRUCTING SUBOBJECT ON %s"), *GetWorkerId());
 }
 
 void USpatialTestNetReceiveSubobject::PreNetReceive()
@@ -152,8 +153,9 @@ void USpatialTestNetReceiveSubobject::PreNetReceive()
 
 	bPostNetCalledBeforePreNet = bPostNetReceiveCalled;
 	bRepNotifyCalledBeforePreNet = bOnRepTestInt1Called;
-
 	++PreNetNumTimesCalled;
+
+	UE_LOG(LogTemp, Warning, TEXT("MyPreNetReceive, times: %d workerId: %s"), PreNetNumTimesCalled, *GetWorkerId());
 }
 
 void USpatialTestNetReceiveSubobject::PostNetReceive()
@@ -162,18 +164,41 @@ void USpatialTestNetReceiveSubobject::PostNetReceive()
 
 	bPreNetCalledBeforePostNet = bPreNetReceiveCalled;
 	bRepNotifyCalledBeforePostNet = bOnRepTestInt1Called;
-
 	++PostNetNumTimesCalled;
+
+	UE_LOG(LogTemp, Warning, TEXT("MyPostNetReceive, times: %d workerId: %s"), PostNetNumTimesCalled, *GetWorkerId());
+
 }
 
-void USpatialTestNetReceiveSubobject::OnRep_TestInt1(int32 OldTestInt1)
+void USpatialTestNetReceiveSubobject::OnRep_TestInt(int32 OldTestInt)
 {
 	bOnRepTestInt1Called = true;
 
 	bPreNetCalledBeforeRepNotify = bPreNetReceiveCalled;
 	bPostNetCalledBeforeRepNotify = bPostNetReceiveCalled;
-
 	++RepNotifyNumTimesCalled;
+
+	UE_LOG(LogTemp, Warning, TEXT("MyTestInt1, times: %d, workerId: %s"), RepNotifyNumTimesCalled, *GetWorkerId());
+
+}
+
+void USpatialTestNetReceiveSubobject::OnRep_ServerOnlyTestInt(int32 OldTestInt1)
+{
+
+	UE_LOG(LogTemp, Warning, TEXT("MyServerOnlyTestInt, workerId: %s"), *GetWorkerId());
+}
+
+FString USpatialTestNetReceiveSubobject::GetWorkerId()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return TEXT("");
+	}
+
+	USpatialNetDriver* Nd = Cast<USpatialNetDriver>(World->GetNetDriver());
+
+	return Nd->GetGameInstance()->SpatialWorkerId;
 }
 
 void USpatialTestNetReceiveSubobject::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
