@@ -6,7 +6,6 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
 #include "UnresolvedReferenceTestActor.generated.h"
 
-
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API AUnresolvedReferenceTestActor : public AReplicatedTestActorBase
 {

@@ -9,7 +9,8 @@ AUnresolvedReferenceTest::AUnresolvedReferenceTest()
 	: Super()
 {
 	Author = TEXT("Ajanth");
-	Description = TEXT("Tests what happens when structs with references to actors whose entity have not been created yet are replicated. \
+	Description = TEXT(
+		"Tests what happens when structs with references to actors whose entity have not been created yet are replicated. \
 						The unresolved references should evenetually be resolved");
 }
 
@@ -58,15 +59,18 @@ void AUnresolvedReferenceTest::PrepareTest()
 	});
 
 	// Check that none of the actor references are null - step will timeout after 5 seconds
-	AddStep(TEXT("CheckNoNullReferences"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float deltaTime) {
+	AddStep(
+		TEXT("CheckNoNullReferences"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		[this](float deltaTime) {
 			for (const AUnresolvedReferenceTestActor* RefsActor : TActorRange<AUnresolvedReferenceTestActor>(GetWorld()))
-		{
-			RequireCompare_Int(RefsActor->ActorRefs.Num(), EComparisonMethod::Greater_Than, 0,
-							   TEXT("ActorRefs array length should be non-zero"));
+			{
+				RequireCompare_Int(RefsActor->ActorRefs.Num(), EComparisonMethod::Greater_Than, 0,
+								   TEXT("ActorRefs array length should be non-zero"));
 
-			RequireEqual_Int(Algo::Count(RefsActor->ActorRefs, nullptr), 0, TEXT("There are no unresolved actors in ActorRefs"));
-		}
+				RequireEqual_Int(Algo::Count(RefsActor->ActorRefs, nullptr), 0, TEXT("There are no unresolved actors in ActorRefs"));
+			}
 
-		FinishStep();
-	}, 5.0f);
+			FinishStep();
+		},
+		5.0f);
 }
