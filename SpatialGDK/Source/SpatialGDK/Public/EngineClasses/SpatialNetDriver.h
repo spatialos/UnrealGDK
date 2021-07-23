@@ -416,8 +416,6 @@ private:
 	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
 
-	virtual void ServerReplicateActors_BuildConsiderList(TArray<FNetworkObjectInfo*>& OutConsiderList, const float ServerTickTime) override;
-
 	// Store the last received state of the actor over the network by Entity ID so that we can check for non-auth changes.
 	UPROPERTY()
 	TMap<int64, USpatialShadowActor*> SpatialShadowActors;

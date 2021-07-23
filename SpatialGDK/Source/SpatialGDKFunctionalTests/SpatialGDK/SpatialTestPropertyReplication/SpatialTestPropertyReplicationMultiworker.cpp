@@ -130,6 +130,28 @@ void ASpatialTestPropertyReplicationMultiworker::PrepareTest()
 			FinishStep();
 		});
 
+	// Changes on the client go undetected and do not cause errors
+	AddStep(
+		TEXT("The client changes the properties"), FWorkerDefinition::Client(1),
+		[this]() -> bool {
+			return IsValid(TestActor);
+		},
+		[this]() {
+			// Replicated properties
+			TestActor->ReplicatedIntProperty = 55;
+			TestActor->ReplicatedFloatProperty = 0.55;
+			TestActor->bReplicatedBoolProperty = false;
+			TestActor->ReplicatedStringProperty = TEXT("world");
+
+			// Non-replicated properties
+			TestActor->IntProperty = 55;
+			TestActor->FloatProperty = 0.55;
+			TestActor->bBoolProperty = false;
+			TestActor->StringProperty = TEXT("world");
+
+			FinishStep();
+		});
+
 	AddStep(
 		TEXT("Auth server check that the properties still have their original values"), FWorkerDefinition::Server(1),
 		[this]() -> bool {

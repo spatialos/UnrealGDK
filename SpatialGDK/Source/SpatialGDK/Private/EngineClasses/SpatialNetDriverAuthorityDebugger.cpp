@@ -29,11 +29,6 @@ void USpatialNetDriverAuthorityDebugger::Init(USpatialNetDriver& InNetDriver)
 
 void USpatialNetDriverAuthorityDebugger::CheckUnauthorisedDataChanges()
 {
-	if (!NetDriver->IsServer())
-	{
-		return;
-	}
-
 	for (auto It = SpatialShadowActors.CreateIterator(); It; ++It)
 	{
 		It.Value()->CheckUnauthorisedDataChanges();
@@ -42,11 +37,6 @@ void USpatialNetDriverAuthorityDebugger::CheckUnauthorisedDataChanges()
 
 void USpatialNetDriverAuthorityDebugger::AddSpatialShadowActor(const Worker_EntityId_Key EntityId)
 {
-	if (!NetDriver->IsServer())
-	{
-		return;
-	}
-
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
 	if (!IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
 	{
@@ -68,21 +58,11 @@ void USpatialNetDriverAuthorityDebugger::AddSpatialShadowActor(const Worker_Enti
 
 void USpatialNetDriverAuthorityDebugger::RemoveSpatialShadowActor(const Worker_EntityId_Key EntityId)
 {
-	if (!NetDriver->IsServer())
-	{
-		return;
-	}
-
 	SpatialShadowActors.Remove(EntityId);
 }
 
 void USpatialNetDriverAuthorityDebugger::UpdateSpatialShadowActor(const Worker_EntityId_Key EntityId)
 {
-	if (!NetDriver->IsServer())
-	{
-		return;
-	}
-
 	USpatialShadowActor** SpatialShadowActor = SpatialShadowActors.Find(EntityId);
 
 	if (SpatialShadowActor == nullptr)
