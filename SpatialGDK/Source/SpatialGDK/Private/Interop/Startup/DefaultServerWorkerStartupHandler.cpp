@@ -58,7 +58,7 @@ struct TStartupStep : public TStep
 
 	operator FStartupStep() &&
 	{
-		auto UniqueStep = MakeUnique<TStartupStep<TStep>>(*this);
+		auto UniqueStep = MakeUnique<TStartupStep<TStep>>(MoveTemp(*this));
 		auto RawStep = UniqueStep.Get();
 		return FStartupStep{ [Step = MoveTemp(UniqueStep)] {
 								Step->OnStart();
@@ -309,9 +309,9 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 		UGlobalStateManager* Gsm;
 	};
 
-	struct FAuthCreatePartitions : public FCustomStepBase
+	struct FAuthCreateAndAssignPartitions : public FCustomStepBase
 	{
-		FAuthCreatePartitions(FInternalState& InState, const FInitialSetup& Setup, USpatialNetDriver& InNetDriver)
+		FAuthCreateAndAssignPartitions(FInternalState& InState, const FInitialSetup& Setup, USpatialNetDriver& InNetDriver)
 			: FCustomStepBase(InState)
 			, Setup(Setup)
 			, NetDriver(&InNetDriver)
@@ -471,14 +471,206 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 		EStage Stage = EStage::Initial;
 	};
 
+	struct FGetAssignedPartitionStep : public FCustomStepBase
+	{
+		TArray<FStartupStep> CreateSteps()
+		{
+			struct FReadVirtualWorkerTranslatorStep : public FCustomStepBase
+			{
+				FReadVirtualWorkerTranslatorStep(FInternalState& InState, ISpatialOSWorker& InWorker,
+												 UGlobalStateManager& InGlobalStateManager)
+					: FCustomStepBase(InState)
+					, Worker(&InWorker)
+					, GlobalStateManager(&InGlobalStateManager)
+				{
+				}
+
+				void OnStart() {}
+				bool TryFinish()
+				{
+					const ComponentData* DeploymentMapComponent =
+						Worker->GetView()[SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID].Components.FindByPredicate(
+							ComponentIdEquality{ SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID });
+					if (ensure(DeploymentMapComponent != nullptr))
+					{
+						const int32 ExistingSessionId =
+							Schema_GetInt32(DeploymentMapComponent->GetFields(), SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
+
+						GlobalStateManager->ApplySessionId(ExistingSessionId);
+					}
+
+					const EntityViewElement* VirtualWorkerTranslatorEntity =
+						Worker->GetView().Find(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID);
+					if (VirtualWorkerTranslatorEntity != nullptr)
+					{
+						const ComponentData* WorkerTranslatorComponentData = VirtualWorkerTranslatorEntity->Components.FindByPredicate(
+							ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID });
+						if (WorkerTranslatorComponentData != nullptr)
+						{
+							// We've received worker translation data.
+							TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation> VirtualWorkerMapping;
+							SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(VirtualWorkerMapping,
+																				   *WorkerTranslatorComponentData->GetFields());
+							for (const auto& Mapping : VirtualWorkerMapping)
+							{
+								if (Mapping.Value.ServerWorkerEntityId == State->WorkerEntityId)
+								{
+									// We've received a virtual worker mapping that mentions our worker entity ID.
+									State->LocalVirtualWorkerId = Mapping.Key;
+									State->LocalPartitionId = Mapping.Value.PartitionEntityId;
+									return true;
+								}
+							}
+						}
+					}
+
+					return false;
+				}
+
+				ISpatialOSWorker* Worker;
+				UGlobalStateManager* GlobalStateManager;
+			};
+
+			struct FWaitForAssignedPartition : public FCustomStepBase
+			{
+				FWaitForAssignedPartition(FInternalState& InState, USpatialNetDriver& InNetDriver, ISpatialOSWorker& InWorker)
+					: FCustomStepBase(InState)
+					, NetDriver(&InNetDriver)
+					, Worker(&InWorker)
+				{
+				}
+
+				void OnStart() {}
+				bool TryFinish()
+				{
+					const EntityViewElement* AssignedPartitionEntity = Worker->GetView().Find(*State->LocalPartitionId);
+					if (AssignedPartitionEntity != nullptr)
+					{
+						const EntityViewElement& VirtualWorkerTranslatorEntity =
+							Worker->GetView().FindChecked(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID);
+						const ComponentData* WorkerTranslatorComponentData = VirtualWorkerTranslatorEntity.Components.FindByPredicate(
+							ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID });
+						if (ensure(WorkerTranslatorComponentData != nullptr))
+						{
+							NetDriver->VirtualWorkerTranslator->ApplyMappingFromSchema(WorkerTranslatorComponentData->GetFields());
+
+							// NOTE: Consider if waiting for partition should be a separate step from sending ReadyToBeginPlay.
+							ComponentUpdate MarkAsReady(SpatialConstants::SERVER_WORKER_COMPONENT_ID);
+							Schema_AddBool(MarkAsReady.GetFields(), SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, true);
+							Worker->SendComponentUpdate(*State->WorkerEntityId, MoveTemp(MarkAsReady));
+							return true;
+						}
+					}
+					return false;
+				}
+
+				USpatialNetDriver* NetDriver;
+				ISpatialOSWorker* Worker;
+			};
+
+			TArray<FStartupStep> Steps;
+
+			Steps.Emplace(CreateStartupStep(
+				FReadVirtualWorkerTranslatorStep(*State, NetDriver->Connection->GetCoordinator(), *NetDriver->GlobalStateManager)));
+			Steps.Emplace(CreateStartupStep(FWaitForAssignedPartition(*State, *NetDriver, NetDriver->Connection->GetCoordinator())));
+
+			return MoveTemp(Steps);
+		}
+
+		void OnStart() {}
+		bool TryFinish() { return Executor.TryFinishStartup(); }
+		FGetAssignedPartitionStep(FInternalState& InState, USpatialNetDriver& InNetDriver)
+			: FCustomStepBase(InState)
+			, NetDriver(&InNetDriver)
+			, Executor(CreateSteps())
+		{
+		}
+		USpatialNetDriver* NetDriver;
+		FStartupExecutor Executor;
+	};
+
+	struct FCreateSkeletonEntities
+	{
+		FCreateSkeletonEntities(USpatialNetDriver& InNetDriver)
+			: Implementation(InNetDriver)
+		{
+		}
+		void OnStart() {}
+		bool TryFinish() { return Implementation.TryFinish(); }
+
+		FSkeletonEntityCreationStartupStep Implementation;
+	};
+
+	struct FHandleBeginPlayStep : public FCustomStepBase
+	{
+		FHandleBeginPlayStep(FInternalState& InState, USpatialNetDriver& InNetDriver, ISpatialOSWorker& InWorker)
+			: FCustomStepBase(InState)
+			, NetDriver(&InNetDriver)
+			, Worker(&InWorker)
+		{
+		}
+
+		void OnStart() {}
+
+		bool TryFinish()
+		{
+			if (State->bHasGSMAuth)
+			{
+				const bool bAreAllWorkerEntitiesReady =
+					Algo::AllOf(State->WorkerEntityIds, [this](const Worker_EntityId ServerWorkerEntityId) -> bool {
+						const EntityViewElement& ServerWorkerEntity = GetCoordinator().GetView().FindChecked(ServerWorkerEntityId);
+						const ComponentData* ServerWorkerComponent = ServerWorkerEntity.Components.FindByPredicate(
+							ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID });
+						return GetBoolFromSchema(ServerWorkerComponent->GetFields(),
+												 SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
+					});
+
+				if (bAreAllWorkerEntitiesReady)
+				{
+					GetGSM().SendCanBeginPlayUpdate(true);
+
+					NetDriver->CreateAndInitializeCoreClassesAfterStartup();
+
+					GetGSM().TriggerBeginPlay();
+
+					GetGSM().SetAcceptingPlayers(true);
+
+					return true;
+				}
+			}
+			else
+			{
+				const EntityViewElement& GlobalStateManagerEntity =
+					GetCoordinator().GetView().FindChecked(GetGSM().GlobalStateManagerEntityId);
+				const ComponentData* StartupActorManagerData = GlobalStateManagerEntity.Components.FindByPredicate(
+					ComponentIdEquality{ SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID });
+				if (ensure(StartupActorManagerData != nullptr)
+					&& Schema_GetBool(StartupActorManagerData->GetFields(), SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID))
+				{
+					NetDriver->CreateAndInitializeCoreClassesAfterStartup();
+
+					GetGSM().TriggerBeginPlay();
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		UGlobalStateManager& GetGSM() { return *NetDriver->GlobalStateManager; }
+		ISpatialOSWorker& GetCoordinator() { return *Worker; }
+		USpatialNetDriver* NetDriver;
+		ISpatialOSWorker* Worker;
+	};
+
 	FStartupStep Dummy{ [] {},
 						[] {
 							return true;
 						} };
 	FStartupStep SetNextLegacyStep{ [] {},
 									[StagePtr = &Stage, State = &State.Get()] {
-										*StagePtr = State->bHasGSMAuth ? EStage::GsmAuthAssignPartitionsToVirtualWorkers
-																	   : EStage::GetVirtualWorkerTranslationState;
+										*StagePtr = State->bHasGSMAuth ? EStage::GsmAuthDispatchGSMStartPlay
+																	   : EStage::GsmNonAuthWaitForGSMStartPlay;
 										return true;
 									} };
 
@@ -491,7 +683,13 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 	Steps.Emplace(CreateStartupStep(FDeriveDeploymentRecoveryStateStep(State.Get(), GetGSM(), GetCoordinator())));
 	Steps.Emplace(CreateStartupStep(FTryClaimingGsmEntityStep(State.Get(), GetGSM())));
 	Steps.Emplace(CreateStartupStep(FWaitForGsmAuthority(State.Get(), GetGSM())));
-	Steps.Emplace(CreateStartupStep(FAuthCreatePartitions(State.Get(), Setup, *NetDriver)));
+	Steps.Emplace(CreateStartupStep(FAuthCreateAndAssignPartitions(State.Get(), Setup, *NetDriver)));
+	Steps.Emplace(CreateStartupStep(FGetAssignedPartitionStep(State.Get(), *NetDriver)));
+	if (GetDefault<USpatialGDKSettings>()->bEnableSkeletonEntityCreation)
+	{
+		Steps.Emplace(CreateStartupStep(FCreateSkeletonEntities(*NetDriver)));
+	}
+	Steps.Emplace(CreateStartupStep(FHandleBeginPlayStep(State.Get(), *NetDriver, GetCoordinator())));
 
 	Steps.Emplace(MoveTemp(SetNextLegacyStep));
 	return MoveTemp(Steps);
@@ -508,134 +706,7 @@ FSpatialServerStartupHandler::~FSpatialServerStartupHandler() = default;
 
 bool FSpatialServerStartupHandler::TryFinishStartup()
 {
-	if (!Executor.TryFinishStartup())
-	{
-		return false;
-	}
-
-	if (Stage == EStage::GsmAuthAssignPartitionsToVirtualWorkers)
-	{
-		Stage = EStage::GetVirtualWorkerTranslationState;
-	}
-
-	if (Stage == EStage::GetVirtualWorkerTranslationState)
-	{
-		const ComponentData* DeploymentMapComponent =
-			GetCoordinator().GetView()[SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID].Components.FindByPredicate(
-				ComponentIdEquality{ SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID });
-		if (ensure(DeploymentMapComponent != nullptr))
-		{
-			const int32 ExistingSessionId =
-				Schema_GetInt32(DeploymentMapComponent->GetFields(), SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
-
-			GetGSM().ApplySessionId(ExistingSessionId);
-		}
-
-		const EntityViewElement* VirtualWorkerTranslatorEntity =
-			GetCoordinator().GetView().Find(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID);
-		if (VirtualWorkerTranslatorEntity != nullptr)
-		{
-			const ComponentData* WorkerTranslatorComponentData = VirtualWorkerTranslatorEntity->Components.FindByPredicate(
-				ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID });
-			if (WorkerTranslatorComponentData != nullptr)
-			{
-				// We've received worker translation data.
-				TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation> VirtualWorkerMapping;
-				SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(VirtualWorkerMapping, *WorkerTranslatorComponentData->GetFields());
-				for (const auto& Mapping : VirtualWorkerMapping)
-				{
-					if (Mapping.Value.ServerWorkerEntityId == State->WorkerEntityId)
-					{
-						// We've received a virtual worker mapping that mentions our worker entity ID.
-						State->LocalVirtualWorkerId = Mapping.Key;
-						State->LocalPartitionId = Mapping.Value.PartitionEntityId;
-						Stage = EStage::WaitForAssignedPartition;
-					}
-				}
-			}
-		}
-	}
-
-	if (Stage == EStage::WaitForAssignedPartition)
-	{
-		const EntityViewElement* AssignedPartitionEntity = GetCoordinator().GetView().Find(*State->LocalPartitionId);
-		if (AssignedPartitionEntity != nullptr)
-		{
-			const EntityViewElement& VirtualWorkerTranslatorEntity =
-				GetCoordinator().GetView().FindChecked(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID);
-			const ComponentData* WorkerTranslatorComponentData = VirtualWorkerTranslatorEntity.Components.FindByPredicate(
-				ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID });
-			if (ensure(WorkerTranslatorComponentData != nullptr))
-			{
-				NetDriver->VirtualWorkerTranslator->ApplyMappingFromSchema(WorkerTranslatorComponentData->GetFields());
-
-				// NOTE: Consider if waiting for partition should be a separate step from sending ReadyToBeginPlay.
-				ComponentUpdate MarkAsReady(SpatialConstants::SERVER_WORKER_COMPONENT_ID);
-				Schema_AddBool(MarkAsReady.GetFields(), SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, true);
-				GetCoordinator().SendComponentUpdate(*State->WorkerEntityId, MoveTemp(MarkAsReady));
-
-				if (GetDefault<USpatialGDKSettings>()->bEnableSkeletonEntityCreation)
-				{
-					State->SkeletonEntityStep.Emplace(*NetDriver);
-					Stage = EStage::CreateSkeletonEntities;
-				}
-				else
-				{
-					Stage = State->bHasGSMAuth ? EStage::GsmAuthDispatchGSMStartPlay : EStage::GsmNonAuthWaitForGSMStartPlay;
-				}
-			}
-		}
-	}
-
-	if (Stage == EStage::CreateSkeletonEntities)
-	{
-		if (State->SkeletonEntityStep->TryFinish())
-		{
-			Stage = State->bHasGSMAuth ? EStage::GsmAuthDispatchGSMStartPlay : EStage::GsmNonAuthWaitForGSMStartPlay;
-		}
-	}
-
-	if (Stage == EStage::GsmAuthDispatchGSMStartPlay)
-	{
-		const bool bAreAllWorkerEntitiesReady =
-			Algo::AllOf(State->WorkerEntityIds, [this](const Worker_EntityId ServerWorkerEntityId) -> bool {
-				const EntityViewElement& ServerWorkerEntity = GetCoordinator().GetView().FindChecked(ServerWorkerEntityId);
-				const ComponentData* ServerWorkerComponent =
-					ServerWorkerEntity.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID });
-				return GetBoolFromSchema(ServerWorkerComponent->GetFields(), SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
-			});
-
-		if (bAreAllWorkerEntitiesReady)
-		{
-			GetGSM().SendCanBeginPlayUpdate(true);
-
-			NetDriver->CreateAndInitializeCoreClassesAfterStartup();
-
-			GetGSM().TriggerBeginPlay();
-
-			GetGSM().SetAcceptingPlayers(true);
-
-			Stage = EStage::Finished;
-		}
-	}
-
-	if (Stage == EStage::GsmNonAuthWaitForGSMStartPlay)
-	{
-		const EntityViewElement& GlobalStateManagerEntity = GetCoordinator().GetView().FindChecked(GetGSM().GlobalStateManagerEntityId);
-		const ComponentData* StartupActorManagerData = GlobalStateManagerEntity.Components.FindByPredicate(
-			ComponentIdEquality{ SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID });
-		if (ensure(StartupActorManagerData != nullptr)
-			&& Schema_GetBool(StartupActorManagerData->GetFields(), SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID))
-		{
-			NetDriver->CreateAndInitializeCoreClassesAfterStartup();
-
-			GetGSM().TriggerBeginPlay();
-
-			Stage = EStage::Finished;
-		}
-	}
-
-	return Stage == EStage::Finished;
+	return Executor.TryFinishStartup();
 }
 
 ViewCoordinator& FSpatialServerStartupHandler::GetCoordinator()
