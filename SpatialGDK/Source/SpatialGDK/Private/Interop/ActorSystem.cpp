@@ -2024,6 +2024,8 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 	if (EventTracer != nullptr && RepChanges != nullptr
 		&& RepChanges->RepChanged.Num() > 0) // Only need to add these if they are actively being traced
 	{
+		// If the stack is empty we want to create a trace event such that it is a root event. This means giving it no causes.
+	    // If the stack has an item, an event was created in project space and should be used as the cause of these "send property" events.
 		const bool bStackEmpty = EventTracer->IsObjectStackEmpty();
 		const int32 NumCauses = bStackEmpty ? 0 : 1;
 		const Trace_SpanIdType* Causes = bStackEmpty ? nullptr : EventTracer->PopLatentPropertyUpdateSpanId(Object).GetConstId();

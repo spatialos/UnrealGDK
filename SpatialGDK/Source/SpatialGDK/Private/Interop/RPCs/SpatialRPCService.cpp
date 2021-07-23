@@ -802,6 +802,8 @@ void SpatialRPCService::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTarg
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
+		// If the stack is empty we want to create a trace event such that it is a root event. This means giving it no causes.
+	    // If the stack has an item, an event was created in project space and should be used as the cause of this "push RPC" events.
 		const bool bStackEmpty = EventTracer->IsStackEmpty();
 		const int32 NumCauses = bStackEmpty ? 0 : 1;
 		const Trace_SpanIdType* Causes = bStackEmpty ? nullptr : EventTracer->GetFromStack().GetConstId();

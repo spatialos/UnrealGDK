@@ -9,6 +9,10 @@
 UEventTracingZeroSamplingProbabilityFilterTrueMap::UEventTracingZeroSamplingProbabilityFilterTrueMap()
 	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("EventTracingZeroSamplingProbabilityFilterTrueMap"))
 {
+	SetCustomConfig(TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR
+		TEXT("bEventTracingEnabled=True") LINE_TERMINATOR
+		TEXT("bEventTracingEnabledWithEditor=True") LINE_TERMINATOR
+		TEXT("EventTracingSamplingSettingsClass=/Script/SpatialGDKFunctionalTests.ZeroSamplingProbabilityFilterTrueSettings"));
 }
 
 void UEventTracingZeroSamplingProbabilityFilterTrueMap::CreateCustomContentForMap()
@@ -19,7 +23,4 @@ void UEventTracingZeroSamplingProbabilityFilterTrueMap::CreateCustomContentForMa
 
 	ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->DefaultGameMode = AEventTracingTestGameMode::StaticClass();
-	WorldSettings->SettingsOverride = {
-		"../../../Engine/Plugins/UnrealGDK/SpatialGDK/Config/MapSettingsOverrides/TestOverridesZeroSamplingProbabilityFilterTrue.ini"
-	};
 }

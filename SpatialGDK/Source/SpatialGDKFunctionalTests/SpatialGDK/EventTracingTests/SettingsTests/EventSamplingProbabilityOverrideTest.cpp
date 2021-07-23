@@ -2,7 +2,7 @@
 
 #include "EventSamplingProbabilityOverrideTest.h"
 
-#include "SpatialGDKFunctionalTests/SpatialGDK/Config/EventSamplingProbabilityOverrideSettings.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/ConfigurationAssets/EventSamplingProbabilityOverrideSettings.h"
 
 AEventSamplingProbabilityOverrideTest::AEventSamplingProbabilityOverrideTest()
 {
