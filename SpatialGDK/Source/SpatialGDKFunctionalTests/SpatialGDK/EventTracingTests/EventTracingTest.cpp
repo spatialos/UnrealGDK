@@ -291,7 +291,7 @@ FString AEventTracingTest::FindRootSpanId(const FString& SpanId) const
 	FString Cause = SpanId;
 	ForEachTraceSource([&SpanId, &Cause](const TraceItemsData& SourceTraceItems) {
 		const TArray<FString>* Causes = SourceTraceItems.Spans.Find(SpanId);
-		if (Causes != nullptr && Causes->Num() == 1)
+		if (Causes != nullptr && Causes->Num() > 0)
 		{
 			Cause = (*Causes)[0];
 			return true;

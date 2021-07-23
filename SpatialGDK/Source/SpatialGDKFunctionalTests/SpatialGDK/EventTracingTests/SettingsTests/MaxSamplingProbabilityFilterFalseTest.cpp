@@ -9,6 +9,10 @@ AMaxSamplingProbabilityFilterFalseTest::AMaxSamplingProbabilityFilterFalseTest()
 		TEXT("Test checking that spans are created with max sampling probability and not events are created with all filters to \"false\"");
 
 	WorkerDefinition = FWorkerDefinition::Client(1);
+
+	// TODO: Remove this when runtime allow us to flush ET stream on write.
+	// We need this currently so the enough ET data is accrue to cause the runtime stream to push to file.
+	TestTime = 15.0f;
 }
 
 void AMaxSamplingProbabilityFilterFalseTest::FinishEventTraceTest()
