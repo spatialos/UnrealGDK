@@ -33,7 +33,7 @@ private:
 	TArray<FStartupStep> Steps;
 };
 
-class FSpatialServerStartupHandler
+class FSpatialServerStartupHandler final
 {
 public:
 	struct FInitialSetup
@@ -41,37 +41,13 @@ public:
 		int32 ExpectedServerWorkersCount;
 	};
 	explicit FSpatialServerStartupHandler(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup);
+	~FSpatialServerStartupHandler();
 	bool TryFinishStartup();
 	FString GetStartupStateDescription() const;
 
 private:
-	FStartupExecutor Executor;
 	void SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorkerId);
 	bool TryClaimingStartupPartition();
-
-	bool bCalledCreateEntity = false;
-	TOptional<ServerWorkerEntityCreator> WorkerEntityCreator;
-	TOptional<Worker_EntityId> WorkerEntityId;
-
-	TArray<Worker_EntityId> WorkerEntityIds;
-
-	bool bHasGSMAuth = false;
-
-	bool bIsRecoveringOrSnapshot = false;
-
-	bool bHasCalledPartitionEntityCreate = false;
-	FCreateEntityHandler EntityHandler;
-	TArray<Worker_PartitionId> WorkerPartitions;
-
-	TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation> WorkersToPartitions;
-	TSet<Worker_PartitionId> PartitionsToCreate;
-
-	TOptional<VirtualWorkerId> LocalVirtualWorkerId;
-	TOptional<Worker_PartitionId> LocalPartitionId;
-
-	FClaimPartitionHandler ClaimHandler;
-
-	TOptional<FSkeletonEntityCreationStartupStep> SkeletonEntityStep;
 
 	ViewCoordinator& GetCoordinator();
 	const ViewCoordinator& GetCoordinator() const;
@@ -109,7 +85,11 @@ private:
 	EStage Stage = EStage::Initial;
 
 	FInitialSetup Setup;
+	struct FInternalState;
+	TUniqueObj<FInternalState> State;
 
 	USpatialNetDriver* NetDriver;
+
+	FStartupExecutor Executor;
 };
 } // namespace SpatialGDK
