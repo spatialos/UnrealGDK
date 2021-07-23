@@ -285,7 +285,10 @@ FSpatialGDKSpanId FSpatialNetDriverRPC::CreatePushRPCEvent(UObject* TargetObject
 
 	if (EventTracer != nullptr)
 	{
-		SpanId = EventTracer->TraceEvent(PUSH_RPC_EVENT_NAME, "", EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1,
+		const bool bStackEmpty = EventTracer->IsStackEmpty();
+		const int32 NumCauses = bStackEmpty ? 0 : 1;
+		const Trace_SpanIdType* Causes = bStackEmpty ? nullptr : EventTracer->GetFromStack().GetConstId();
+		SpanId = EventTracer->TraceEvent(PUSH_RPC_EVENT_NAME, "", Causes, NumCauses,
 										 [TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
 											 EventBuilder.AddObject(TargetObject);
 											 EventBuilder.AddFunction(Function);

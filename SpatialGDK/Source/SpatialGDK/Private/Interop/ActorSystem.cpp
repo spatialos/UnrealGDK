@@ -2024,24 +2024,20 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 	if (EventTracer != nullptr && RepChanges != nullptr
 		&& RepChanges->RepChanged.Num() > 0) // Only need to add these if they are actively being traced
 	{
-		FSpatialGDKSpanId CauseSpanId;
-		if (EventTracer != nullptr)
-		{
-			CauseSpanId = EventTracer->PopLatentPropertyUpdateSpanId(Object);
-		}
-
+		const bool bStackEmpty = EventTracer->IsObjectStackEmpty();
+		const int32 NumCauses = bStackEmpty ? 0 : 1;
+		const Trace_SpanIdType* Causes = bStackEmpty ? nullptr : EventTracer->PopLatentPropertyUpdateSpanId().GetConstId();
 		for (FChangeListPropertyIterator Itr(RepChanges); Itr; ++Itr)
 		{
 			FSpatialGDKSpanId PropertySpan =
-				EventTracer->TraceEvent(PROPERTY_CHANGED_EVENT_NAME, "", CauseSpanId.GetConstId(), /* NumCauses */ 1,
-										[Object, EntityId, Itr](FSpatialTraceEventDataBuilder& EventBuilder) {
-											GDK_PROPERTY(Property)* Property = *Itr;
-											EventBuilder.AddObject(Object);
-											EventBuilder.AddEntityId(EntityId);
-											EventBuilder.AddKeyValue("property_name", Property->GetName());
-											EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForProperty(EntityId, Property));
-										});
-
+				EventTracer->TraceEvent(PROPERTY_CHANGED_EVENT_NAME, "", Causes, NumCauses,
+					[Object, EntityId, Itr](FSpatialTraceEventDataBuilder& EventBuilder) {
+				GDK_PROPERTY(Property)* Property = *Itr;
+				EventBuilder.AddObject(Object);
+				EventBuilder.AddEntityId(EntityId);
+				EventBuilder.AddKeyValue("property_name", Property->GetName());
+				EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForProperty(EntityId, Property));
+			});
 			PropertySpans.Push(PropertySpan);
 		}
 	}

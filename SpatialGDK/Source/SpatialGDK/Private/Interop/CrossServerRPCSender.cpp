@@ -35,8 +35,11 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef InTargetObjectRef,
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer)
 	{
+		const bool bStackEmpty = EventTracer->IsStackEmpty();
+		const int32 NumCauses = bStackEmpty ? 0 : 1;
+		const Trace_SpanIdType* Causes = bStackEmpty ? nullptr : EventTracer->GetFromStack().GetConstId();
 		SpanId = EventTracer->TraceEvent(
-			SEND_CROSS_SERVER_RPC_EVENT_NAME, "", EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1,
+			SEND_CROSS_SERVER_RPC_EVENT_NAME, "", Causes, NumCauses,
 			[TargetObject, Function, InTargetObjectRef, UniqueRPCId](FSpatialTraceEventDataBuilder& EventBuilder) {
 				EventBuilder.AddObject(TargetObject);
 				EventBuilder.AddFunction(Function);
