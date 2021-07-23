@@ -4,23 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
-#include "UnresolvedReferenceGymTestActor.generated.h"
+#include "UnresolvedReferenceTestActor.generated.h"
 
-/**
- * A Helper actor for the dormancy tests.
- * Has a TestIntProp to see if it replicates when it should/shouldn't.
- */
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API AUnresolvedReferenceGymTestActor : public AReplicatedTestActorBase
+class SPATIALGDKFUNCTIONALTESTS_API AUnresolvedReferenceTestActor : public AReplicatedTestActorBase
 {
 	GENERATED_BODY()
 
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UPROPERTY(Replicated)
-	int numRepNotify;
+	int RepNotifyCount;
 
 	UPROPERTY(ReplicatedUsing = OnRep_ActorRefs)
 	TArray<AReplicatedTestActorBase*> ActorRefs;
