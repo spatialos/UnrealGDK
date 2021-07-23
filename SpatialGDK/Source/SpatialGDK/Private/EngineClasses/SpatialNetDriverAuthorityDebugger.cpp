@@ -13,12 +13,14 @@ const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedActors = { TEX
 																			 TEXT("SpatialFunctionalTestFlowController"),
 																			 TEXT("LockingPlayerController_C") };
 
-const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedProperties = {
-	TEXT("Role"),		   TEXT("RemoteRole"),	  TEXT("Owner"),		TEXT("OwnerPC"), TEXT("CurrentStepIndex"),
-	TEXT("bPreparedTest"), TEXT("bFinishedTest"), TEXT("bReadyToSpawnServerControllers")
-};
-
-
+const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedProperties = { TEXT("Role"),
+																				 TEXT("RemoteRole"),
+																				 TEXT("Owner"),
+																				 TEXT("OwnerPC"),
+																				 TEXT("CurrentStepIndex"),
+																				 TEXT("bPreparedTest"),
+																				 TEXT("bFinishedTest"),
+																				 TEXT("bReadyToSpawnServerControllers") };
 
 void USpatialNetDriverAuthorityDebugger::Init(USpatialNetDriver& InNetDriver)
 {
@@ -31,7 +33,7 @@ void USpatialNetDriverAuthorityDebugger::CheckUnauthorisedDataChanges()
 	{
 		return;
 	}
-	
+
 	for (auto It = SpatialShadowActors.CreateIterator(); It; ++It)
 	{
 		It.Value()->CheckUnauthorisedDataChanges();

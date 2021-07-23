@@ -36,11 +36,9 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 	if (HasAuthority())
 	{
 		// Subobject property change - expect an actor level error and a property level error
-		AddExpectedLogError(TEXT("ReplicatedTestActorSubobject, property changed without authority was ReplicatedSubActor!"),
-							1);
+		AddExpectedLogError(TEXT("ReplicatedTestActorSubobject, property changed without authority was ReplicatedSubActor!"), 1);
 
-		AddExpectedLogError(TEXT("ReplicatedTestActor, property changed without authority was TestReplicatedProperty!"),
-							1);
+		AddExpectedLogError(TEXT("ReplicatedTestActor, property changed without authority was TestReplicatedProperty!"), 1);
 	}
 
 	AddStep(

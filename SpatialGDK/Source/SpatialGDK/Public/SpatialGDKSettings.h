@@ -316,6 +316,7 @@ private:
 	bool bEventTracingEnabledWithEditor;
 
 	friend class AEventTracingSettingsOverride;
+
 public:
 	bool GetPreventClientCloudDeploymentAutoConnect() const;
 
@@ -339,7 +340,7 @@ public:
 
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
-	
+
 	/** Toggle to allow debug checking of invalid data modification on non-auth workers when using Spatial Networking */
 	UPROPERTY(config, EditAnywhere, Category = "Debug", meta = (DisplayName = "SpatialOS Networking Authority Debugger"))
 	bool bSpatialAuthorityDebugger;
