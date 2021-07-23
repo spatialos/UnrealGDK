@@ -27,7 +27,6 @@ void USpatialShadowActor::Init(AActor& InActor)
 
 	Actor = &InActor;
 	CreateHash();
-
 }
 
 void USpatialShadowActor::Update()
@@ -72,7 +71,7 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges()
 	// Compare hashed properties
 	int32 i = 0;
 
-	for (TFieldIterator<const FProperty> PropIt(Actor->GetClass()); PropIt; ++PropIt) 
+	for (TFieldIterator<const FProperty> PropIt(Actor->GetClass()); PropIt; ++PropIt)
 	{
 		const FProperty* Property = *PropIt;
 
