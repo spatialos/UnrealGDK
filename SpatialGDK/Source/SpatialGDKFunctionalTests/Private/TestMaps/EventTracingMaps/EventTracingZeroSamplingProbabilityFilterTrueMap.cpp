@@ -9,10 +9,10 @@
 UEventTracingZeroSamplingProbabilityFilterTrueMap::UEventTracingZeroSamplingProbabilityFilterTrueMap()
 	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("EventTracingZeroSamplingProbabilityFilterTrueMap"))
 {
-	SetCustomConfig(TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR
-		TEXT("bEventTracingEnabled=True") LINE_TERMINATOR
-		TEXT("bEventTracingEnabledWithEditor=True") LINE_TERMINATOR
-		TEXT("EventTracingSamplingSettingsClass=/Script/SpatialGDKFunctionalTests.ZeroSamplingProbabilityFilterTrueSettings"));
+	SetCustomConfig(
+		TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR TEXT("bEventTracingEnabled=True")
+			LINE_TERMINATOR TEXT("bEventTracingEnabledWithEditor=True") LINE_TERMINATOR TEXT(
+				"EventTracingSamplingSettingsClass=/Script/SpatialGDKFunctionalTests.ZeroSamplingProbabilityFilterTrueSettings"));
 }
 
 void UEventTracingZeroSamplingProbabilityFilterTrueMap::CreateCustomContentForMap()

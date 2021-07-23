@@ -9,10 +9,9 @@
 UEventTracingCustomGDKFilterMap::UEventTracingCustomGDKFilterMap()
 	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("EventTracingCustomGDKFilterMap"))
 {
-	SetCustomConfig(TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR
-		TEXT("bEventTracingEnabled=True") LINE_TERMINATOR
-		TEXT("bEventTracingEnabledWithEditor=True") LINE_TERMINATOR
-		TEXT("EventTracingSamplingSettingsClass=/Script/SpatialGDKFunctionalTests.CustomGDKFilterSettings"));
+	SetCustomConfig(TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR TEXT("bEventTracingEnabled=True")
+						LINE_TERMINATOR TEXT("bEventTracingEnabledWithEditor=True") LINE_TERMINATOR TEXT(
+							"EventTracingSamplingSettingsClass=/Script/SpatialGDKFunctionalTests.CustomGDKFilterSettings"));
 }
 
 void UEventTracingCustomGDKFilterMap::CreateCustomContentForMap()

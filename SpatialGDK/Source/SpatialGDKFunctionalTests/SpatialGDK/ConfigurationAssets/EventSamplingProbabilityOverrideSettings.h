@@ -12,9 +12,7 @@ class UEventSamplingProbabilityOverrideSettings : public UEventTracingSamplingSe
 	GENERATED_BODY()
 
 public:
-
 	UEventSamplingProbabilityOverrideSettings();
 
 	static FName OverridenEventType;
-
 };
