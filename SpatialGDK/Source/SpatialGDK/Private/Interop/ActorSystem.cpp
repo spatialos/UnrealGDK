@@ -550,7 +550,8 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 	}
 }
 
-void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data, TArray<Worker_ComponentId>& OutToResolveOps)
+void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data,
+								 TArray<Worker_ComponentId>& OutToResolveOps)
 {
 	if (ComponentId == SpatialConstants::DORMANT_COMPONENT_ID)
 	{
@@ -904,7 +905,8 @@ void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, c
 	}
 }
 
-void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info, TArray<Worker_ComponentId>& OutToResolveOps)
+void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info,
+										 TArray<Worker_ComponentId>& OutToResolveOps)
 {
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
 	if (Channel == nullptr)
@@ -986,21 +988,26 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 
 void ActorSystem::ResolvePendingOpsFromEntityUpdate(Worker_EntityId EntityId, TArray<Worker_ComponentId> ToResolveOps)
 {
-	// This should be called after all component updates and adds have been completed, and PostNetReceives have been called to avoid user code from seeing inconsistent state
+	// This should be called after all component updates and adds have been completed, and PostNetReceives have been called to avoid user
+	// code from seeing inconsistent state
 	for (const Worker_ComponentId ComponentId : ToResolveOps)
 	{
 		ObjectOffset Offset;
 		const bool bDidFindOffset = NetDriver->ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset);
 		if (!bDidFindOffset)
 		{
-			UE_LOG(LogActorSystem, Error, TEXT("ResolvePendingOpsFromEntityUpdate: Could not find offset for ComponentId %u on Entity %lld"), ComponentId, EntityId);
+			UE_LOG(LogActorSystem, Error,
+				   TEXT("ResolvePendingOpsFromEntityUpdate: Could not find offset for ComponentId %u on Entity %lld"), ComponentId,
+				   EntityId);
 			continue;
 		}
 		const FUnrealObjectRef ObjectRef(EntityId, Offset);
 		UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
 		if (!Object)
 		{
-			UE_LOG(LogActorSystem, Error, TEXT("ResolvePendingOpsFromEntityUpdate: Could not find valid object to resolve ops for. EntityId: %lld, Offset: %u"), EntityId, Offset);
+			UE_LOG(LogActorSystem, Error,
+				   TEXT("ResolvePendingOpsFromEntityUpdate: Could not find valid object to resolve ops for. EntityId: %lld, Offset: %u"),
+				   EntityId, Offset);
 			continue;
 		}
 		ResolvePendingOperations(Object, ObjectRef);

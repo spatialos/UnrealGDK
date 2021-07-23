@@ -69,7 +69,9 @@ void ASpatialTestNetReceive::PrepareTest()
 				return;
 			}
 
-			UE_LOG(LogTemp, Warning, TEXT("Checking allok pre: %d post: %d rep: %d server: %s"), TestActor->Subobject->PreNetNumTimesCalled, TestActor->Subobject->PostNetNumTimesCalled, TestActor->Subobject->RepNotifyNumTimesCalled, *TestActor->Subobject->GetWorkerId());
+			UE_LOG(LogTemp, Warning, TEXT("Checking allok pre: %d post: %d rep: %d server: %s"), TestActor->Subobject->PreNetNumTimesCalled,
+				   TestActor->Subobject->PostNetNumTimesCalled, TestActor->Subobject->RepNotifyNumTimesCalled,
+				   *TestActor->Subobject->GetWorkerId());
 
 			RequireEqual_Int(TestActor->Subobject->TestInt, 5, TEXT("TestInt property should be updated"));
 			RequireEqual_Int(TestActor->Subobject->ServerOnlyTestInt, 6, TEXT("ServerOnlyTestInt property should be updated"));
@@ -167,7 +169,6 @@ void USpatialTestNetReceiveSubobject::PostNetReceive()
 	++PostNetNumTimesCalled;
 
 	UE_LOG(LogTemp, Warning, TEXT("MyPostNetReceive, times: %d workerId: %s"), PostNetNumTimesCalled, *GetWorkerId());
-
 }
 
 void USpatialTestNetReceiveSubobject::OnRep_TestInt(int32 OldTestInt)
@@ -179,12 +180,10 @@ void USpatialTestNetReceiveSubobject::OnRep_TestInt(int32 OldTestInt)
 	++RepNotifyNumTimesCalled;
 
 	UE_LOG(LogTemp, Warning, TEXT("MyTestInt1, times: %d, workerId: %s"), RepNotifyNumTimesCalled, *GetWorkerId());
-
 }
 
 void USpatialTestNetReceiveSubobject::OnRep_ServerOnlyTestInt(int32 OldTestInt1)
 {
-
 	UE_LOG(LogTemp, Warning, TEXT("MyServerOnlyTestInt, workerId: %s"), *GetWorkerId());
 }
 
