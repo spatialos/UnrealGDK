@@ -1769,8 +1769,6 @@ void ActorSystem::InvokePostNetReceives(const Worker_EntityId EntityId) const
 
 		if (ObjectReplicator->bHasReplicatedProperties)
 		{
-			UE_LOG(LogActorSystem, Log, TEXT("Sending postnetreceive, entityid: %lld, object: %s"), EntityId,
-				   *ObjectReplicator->GetObject()->GetName());
 			ObjectReplicator->PostNetReceive();
 			ObjectReplicator->bHasReplicatedProperties = false;
 		}
