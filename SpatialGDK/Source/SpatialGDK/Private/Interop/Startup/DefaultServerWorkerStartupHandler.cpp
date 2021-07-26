@@ -519,6 +519,53 @@ static FStartupStepCreator CreateServerWorkerStepCreator(USpatialNetDriver& InNe
 	};
 }
 
+struct FStronglyTypedStartupStep
+{
+	virtual ~FStronglyTypedStartupStep() = default;
+	virtual bool TryFinish() { return true; }
+
+	FString StepName;
+};
+
+struct FWaitForServerWorkersStep final : public FStronglyTypedStartupStep
+{
+	FWaitForServerWorkersStep(ISpatialOSWorker& InWorker, FSpatialServerStartupHandler::FInitialSetup InSetup, FInternalState& InState)
+		: Worker(&InWorker)
+		, Setup(InSetup)
+		, State(&InState)
+	{
+	}
+
+	virtual bool TryFinish() override
+	{
+		TMap<Worker_EntityId_Key, const ComponentData*> WorkerComponents;
+
+		for (const auto& EntityData : Worker->GetView())
+		{
+			const ComponentData* WorkerComponent =
+				EntityData.Value.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID });
+			if (WorkerComponent != nullptr)
+			{
+				WorkerComponents.Emplace(EntityData.Key, WorkerComponent);
+			}
+		}
+		if (WorkerComponents.Num() >= Setup.ExpectedServerWorkersCount)
+		{
+			ensureMsgf(WorkerComponents.Num() == Setup.ExpectedServerWorkersCount,
+					   TEXT("There should never be more server workers connected than we expect. Expected %d, actually have %d"),
+					   Setup.ExpectedServerWorkersCount, WorkerComponents.Num());
+			WorkerComponents.GetKeys(State->WorkerEntityIds);
+			return true;
+		}
+		return false;
+	}
+
+	ISpatialOSWorker* Worker;
+
+	FSpatialServerStartupHandler::FInitialSetup Setup;
+	FInternalState* State;
+};
+
 static FStartupStepCreator CreateWaitForServerWorkersStepCreator(FInternalState& SharedState, ISpatialOSWorker& InWorker,
 																 FSpatialServerStartupHandler::FInitialSetup Setup)
 {
@@ -594,6 +641,131 @@ static FStartupStepCreator CreateDeriveDeploymentStartupStep(ISpatialOSWorker& I
 		return TUniqueObj<FStartupStep>(FStartupStep{ [] {}, MoveTemp(TryFinish) });
 	};
 }
+
+struct FStronglyTypedStartupExecutor
+{
+	FStronglyTypedStartupExecutor(TArray<TUniquePtr<FStronglyTypedStartupStep>> InSteps)
+		: Steps(MoveTemp(InSteps))
+	{
+	}
+
+	bool TryFinish()
+	{
+		while (Steps.Num() > 0)
+		{
+			if (Steps[0]->TryFinish())
+			{
+				Steps.RemoveAt(0);
+			}
+		}
+		return true;
+	}
+
+	TArray<TUniquePtr<FStronglyTypedStartupStep>> Steps;
+};
+
+struct FElectGsmAuthWorkerStep : public FStronglyTypedStartupStep
+{
+	struct FTryClaimingGsmPartitionStep : public FStronglyTypedStartupStep
+	{
+		FTryClaimingGsmPartitionStep(FInternalState& InState, UGlobalStateManager& InGlobalStateManager,
+									 TSharedRef<TOptional<bool>> bInShouldHaveGsmAuthority)
+			: State(&InState)
+			, GlobalStateManager(&InGlobalStateManager)
+			, bShouldHaveGsmAuthority(bInShouldHaveGsmAuthority)
+		{
+		}
+		virtual bool TryFinish() override
+		{
+			const bool bDidClaimStartupPartition = TryClaimingPartition();
+			*bShouldHaveGsmAuthority = bDidClaimStartupPartition;
+			if (!bDidClaimStartupPartition)
+			{
+				State->bHasGSMAuth = false;
+			}
+			return true;
+		}
+
+		bool TryClaimingPartition()
+		{
+			// Perform a naive leader election where we wait for the correct number of server workers to be
+			// present in the deployment, and then whichever server has the lowest server worker entity ID
+			// becomes the leader and claims the snapshot partition.
+			check(State->WorkerEntityId);
+
+			const Worker_EntityId* LowestEntityId = Algo::MinElement(State->WorkerEntityIds);
+
+			check(LowestEntityId != nullptr);
+
+			if (State->WorkerEntityId == *LowestEntityId)
+			{
+				UE_LOG(LogSpatialStartupHandler, Log, TEXT("MaybeClaimSnapshotPartition claiming snapshot partition"));
+				GlobalStateManager->ClaimSnapshotPartition();
+				return true;
+			}
+			UE_LOG(LogSpatialStartupHandler, Log, TEXT("Not claiming snapshot partition"));
+			return false;
+		}
+
+		FInternalState* State;
+		UGlobalStateManager* GlobalStateManager;
+		TSharedRef<TOptional<bool>> bShouldHaveGsmAuthority;
+	};
+
+	struct FWaitForGsmAuthorityStep : public FStronglyTypedStartupStep
+	{
+		FWaitForGsmAuthorityStep(FInternalState& InState, UGlobalStateManager& InGlobalStateManager,
+								 TSharedRef<TOptional<bool>> bInShouldHaveGsmAuthority)
+			: State(&InState)
+			, GlobalStateManager(&InGlobalStateManager)
+			, bShouldHaveGsmAuthority(bInShouldHaveGsmAuthority)
+		{
+		}
+		virtual bool TryFinish() override
+		{
+			if (!(**bShouldHaveGsmAuthority))
+			{
+				return true;
+			}
+
+			if (GlobalStateManager->HasAuthority())
+			{
+				State->bHasGSMAuth = true;
+				GlobalStateManager->SetDeploymentState();
+				return true;
+			}
+
+			return false;
+		}
+
+		FInternalState* State;
+		UGlobalStateManager* GlobalStateManager;
+		TSharedRef<TOptional<bool>> bShouldHaveGsmAuthority;
+	};
+
+	TArray<TUniquePtr<FStronglyTypedStartupStep>> CreateSteps()
+	{
+		TSharedRef<TOptional<bool>> bShouldHaveGsmAuthority = MakeShared<TOptional<bool>>();
+		TArray<TUniquePtr<FStronglyTypedStartupStep>> Steps;
+		Steps.Emplace(MakeUnique<FTryClaimingGsmPartitionStep>(*State, *GlobalStateManager, bShouldHaveGsmAuthority));
+		Steps.Emplace(MakeUnique<FWaitForGsmAuthorityStep>(*State, *GlobalStateManager, bShouldHaveGsmAuthority));
+		return Steps;
+	}
+
+	FElectGsmAuthWorkerStep(FInternalState& InState, UGlobalStateManager& InGlobalStateManager)
+		: State(&InState)
+		, GlobalStateManager(&InGlobalStateManager)
+		, Executor(CreateSteps())
+	{
+	}
+
+	virtual bool TryFinish() override { return Executor.TryFinish(); }
+
+	FInternalState* State;
+	UGlobalStateManager* GlobalStateManager;
+
+	FStronglyTypedStartupExecutor Executor;
+};
 
 static FStartupStepCreator CreateElectGsmAuthWorkerStep(UGlobalStateManager& InGlobalStateManager, FInternalState& InState)
 {
