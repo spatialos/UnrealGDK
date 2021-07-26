@@ -18,14 +18,12 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestNetReceive : public ASpatialFunc
 public:
 	ASpatialTestNetReceive();
 
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	virtual void PrepareTest() override;
+	void PrepareTest() override;
 
 	UPROPERTY(Replicated)
 	ASpatialTestNetReceiveActor* TestActor;
-
-	FVector Server1Pos = FVector(250, -250, 0);
 };
 
 UCLASS()
@@ -42,6 +40,16 @@ public:
 	USpatialTestNetReceiveSubobject* Subobject;
 };
 
+enum class RepStep
+{
+	PreRep,
+	PreNetReceive,
+	PostNetReceive,
+	RepNotify,
+
+	SecondPreNetReceive, // For this test, expected to have RepNotify called before it
+};
+
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API USpatialTestNetReceiveSubobject : public UActorComponent
 {
@@ -55,33 +63,20 @@ public:
 	void PreNetReceive() override;
 	void PostNetReceive() override;
 
-	bool bOnRepTestInt1Called;
-
-	bool bPreNetReceiveCalled;
-	bool bPostNetReceiveCalled;
-
 	UPROPERTY(ReplicatedUsing = OnRep_TestInt)
 	int32 TestInt;
 
-	UPROPERTY(ReplicatedUsing = OnRep_ServerOnlyTestInt)
-	int32 ServerOnlyTestInt;
-
-	bool bPostNetCalledBeforePreNet;
-	bool bRepNotifyCalledBeforePreNet;
-
-	bool bPreNetCalledBeforePostNet;
-	bool bRepNotifyCalledBeforePostNet;
-
-	bool bPreNetCalledBeforeRepNotify;
-	bool bPostNetCalledBeforeRepNotify;
+	// Use an owner only test int to ensure two spatial components are added and updated
+	UPROPERTY(Replicated)
+	int32 OwnerOnlyTestInt;
 
 	int32 PreNetNumTimesCalled;
 	int32 PostNetNumTimesCalled;
 	int32 RepNotifyNumTimesCalled;
 
+	RepStep PreviousReplicationStep = RepStep::PreRep;
+	TMap<RepStep, RepStep> RepStepToPrevRepStep;
+
 	UFUNCTION()
 	void OnRep_TestInt(int32 OldTestInt);
-	UFUNCTION()
-	void OnRep_ServerOnlyTestInt(int32 OldTestInt1);
-	FString GetWorkerId();
 };

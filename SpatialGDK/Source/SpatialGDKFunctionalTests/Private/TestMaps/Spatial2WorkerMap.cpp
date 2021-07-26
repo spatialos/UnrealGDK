@@ -2,7 +2,6 @@
 
 #include "TestMaps/Spatial2WorkerMap.h"
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "SpatialGDK/SpatialTestNetReceive/SpatialTestNetReceive.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/CrossServerAndClientOrchestrationTest/CrossServerAndClientOrchestrationTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RegisterAutoDestroyActorsTest/RegisterAutoDestroyActorsTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RelevancyTest/RelevancyTest.h"
@@ -36,7 +35,6 @@ void USpatial2WorkerMap::CreateCustomContentForMap()
 	AddActorToLevel<ASpatialTestReplicationConditions>(CurrentLevel, Server1Pos);
 
 	AddActorToLevel<ASpatialActorResolutionTest>(CurrentLevel, FTransform::Identity);
-	AddActorToLevel<ASpatialTestNetReceive>(CurrentLevel, Server1Pos);
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2FullInterestWorkerSettings::StaticClass());
