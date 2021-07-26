@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialNetDriverAuthorityDebugger.h"
 #include "GameFramework/PlayerState.h"
 #include "Interop/InitialOnlyFilter.h"
 #include "Interop/SpatialReceiver.h"
@@ -21,7 +22,6 @@
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialActorUtils.h"
-#include "EngineClasses/SpatialNetDriverAuthorityDebugger.h"
 
 DEFINE_LOG_CATEGORY(LogActorSystem);
 

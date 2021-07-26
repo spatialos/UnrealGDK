@@ -142,11 +142,11 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
 
 	if (GetDefault<USpatialGDKSettings>()->bSpatialAuthorityDebugger)
-	if (GetDefault<USpatialGDKSettings>()->bSpatialAuthorityDebugger)
-	{
-		AuthorityDebugger = NewObject<USpatialNetDriverAuthorityDebugger>();
-		AuthorityDebugger->Init(*this);
-	}
+		if (GetDefault<USpatialGDKSettings>()->bSpatialAuthorityDebugger)
+		{
+			AuthorityDebugger = NewObject<USpatialNetDriverAuthorityDebugger>();
+			AuthorityDebugger->Init(*this);
+		}
 }
 
 USpatialNetDriver::~USpatialNetDriver() = default;
