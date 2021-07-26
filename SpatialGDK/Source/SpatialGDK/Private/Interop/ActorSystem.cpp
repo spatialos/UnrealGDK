@@ -996,7 +996,8 @@ void ActorSystem::ResolvePendingOpsFromEntityUpdate(TArray<FWeakObjectPtr> ToRes
 		if (!Object)
 		{
 			UE_LOG(LogActorSystem, Log,
-				TEXT("ResolvePendingOpsFromEntityUpdate: Did not resolve pending ops for object %s as it was no longer valid."), *GetNameSafe(Object));
+				   TEXT("ResolvePendingOpsFromEntityUpdate: Did not resolve pending ops for object %s as it was no longer valid."),
+				   *GetNameSafe(Object));
 			continue;
 		}
 
@@ -1005,7 +1006,8 @@ void ActorSystem::ResolvePendingOpsFromEntityUpdate(TArray<FWeakObjectPtr> ToRes
 		if (!ObjectRef.IsValid())
 		{
 			UE_LOG(LogActorSystem, Error,
-				TEXT("ResolvePendingOpsFromEntityUpdate: Tried to resolve pending ops for %s but object ref was not valid."), *Object->GetName());
+				   TEXT("ResolvePendingOpsFromEntityUpdate: Tried to resolve pending ops for %s but object ref was not valid."),
+				   *Object->GetName());
 		}
 
 		ResolvePendingOperations(Object, ObjectRef);

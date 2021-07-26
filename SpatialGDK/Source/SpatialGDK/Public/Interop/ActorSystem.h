@@ -150,8 +150,7 @@ private:
 	void HandleDormantComponentAdded(Worker_EntityId EntityId) const;
 	void HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data,
 									  TArray<FWeakObjectPtr>& OutToResolveOps);
-	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info,
-								TArray<FWeakObjectPtr>& OutToResolveOps);
+	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info, TArray<FWeakObjectPtr>& OutToResolveOps);
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentId ComponentId,
 							Schema_ComponentData* Data);
 
