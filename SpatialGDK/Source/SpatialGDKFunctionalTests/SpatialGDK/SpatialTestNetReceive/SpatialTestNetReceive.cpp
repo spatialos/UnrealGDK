@@ -13,8 +13,11 @@
  * The test includes 1 Server and 1 Client worker.
  * The flow is as follows:
  * - Test:
- *	- The server spawns a ASpatialTestNetReceiveActor, which has a static subobject. The static subobject is where the properties are stored. We use an subobject instead of storing properties on the actor as the subobject has significantly fewer replicated properties inherited from native.
- *		- The server also sets the values of the replicated int and the replicated OwnerOnly int. The actor's owner is set to the client's PlayerController.
+ *	- The server spawns a ASpatialTestNetReceiveActor, which has a static subobject. The static subobject is where the properties are
+ *stored. We use an subobject instead of storing properties on the actor as the subobject has significantly fewer replicated properties
+ *inherited from native.
+ *		- The server also sets the values of the replicated int and the replicated OwnerOnly int. The actor's owner is set to the client's
+ *PlayerController.
  *	- The client then checks callbacks were called in the right order
  */
 
@@ -62,16 +65,22 @@ void ASpatialTestNetReceive::PrepareTest()
 			RequireEqual_Int(TestActor->Subobject->TestInt, 5, TEXT("TestInt property should be updated"));
 			RequireEqual_Int(TestActor->Subobject->OwnerOnlyTestInt, 6, TEXT("ServerOnlyTestInt property should be updated"));
 
-			RequireTrue(*TestActor->Subobject->RepStepToPrevRepStep.Find(RepStep::PreNetReceive) == RepStep::PreRep, TEXT("Nothing should be called before PreNetReceive"));
-			RequireTrue(*TestActor->Subobject->RepStepToPrevRepStep.Find(RepStep::PostNetReceive) == RepStep::PreNetReceive, TEXT("PreNetReceive should be called before PreNetReceive"));
-			RequireTrue(*TestActor->Subobject->RepStepToPrevRepStep.Find(RepStep::RepNotify) == RepStep::PostNetReceive, TEXT("PostNetReceive should be called before TestInt's RepNotify."));
+			RequireTrue(*TestActor->Subobject->RepStepToPrevRepStep.Find(RepStep::PreNetReceive) == RepStep::PreRep,
+						TEXT("Nothing should be called before PreNetReceive"));
+			RequireTrue(*TestActor->Subobject->RepStepToPrevRepStep.Find(RepStep::PostNetReceive) == RepStep::PreNetReceive,
+						TEXT("PreNetReceive should be called before PreNetReceive"));
+			RequireTrue(*TestActor->Subobject->RepStepToPrevRepStep.Find(RepStep::RepNotify) == RepStep::PostNetReceive,
+						TEXT("PostNetReceive should be called before TestInt's RepNotify."));
 
 			RepStep* SecondPreNetMapping = TestActor->Subobject->RepStepToPrevRepStep.Find(RepStep::SecondPreNetReceive);
-			RequireTrue(SecondPreNetMapping == nullptr || *SecondPreNetMapping == RepStep::RepNotify, TEXT("SecondPreNetReceive should be called after RepNotify or not at all."));
+			RequireTrue(SecondPreNetMapping == nullptr || *SecondPreNetMapping == RepStep::RepNotify,
+						TEXT("SecondPreNetReceive should be called after RepNotify or not at all."));
 
 			// Pre/Post net can be called even when new properties aren't being received. For example, if ownership status changes.
-			RequireCompare_Int(TestActor->Subobject->PreNetNumTimesCalled, EComparisonMethod::Greater_Than_Or_Equal_To, 1, TEXT("PreNetNumTimesCalled should be more than 1."));
-			RequireCompare_Int(TestActor->Subobject->PostNetNumTimesCalled, EComparisonMethod::Greater_Than_Or_Equal_To, 1, TEXT("PostNetNumTimesCalled should be more than 1."));
+			RequireCompare_Int(TestActor->Subobject->PreNetNumTimesCalled, EComparisonMethod::Greater_Than_Or_Equal_To, 1,
+							   TEXT("PreNetNumTimesCalled should be more than 1."));
+			RequireCompare_Int(TestActor->Subobject->PostNetNumTimesCalled, EComparisonMethod::Greater_Than_Or_Equal_To, 1,
+							   TEXT("PostNetNumTimesCalled should be more than 1."));
 
 			RequireEqual_Int(TestActor->Subobject->RepNotifyNumTimesCalled, 1, TEXT("RepNotifyNumTimesCalled should be 1."));
 
