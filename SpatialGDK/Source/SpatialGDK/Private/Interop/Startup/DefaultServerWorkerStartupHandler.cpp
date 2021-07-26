@@ -71,8 +71,6 @@ struct TStartupStep : public TStep
 
 struct FSpatialServerStartupHandler::FInternalState
 {
-	bool bCalledCreateEntity = false;
-	TOptional<ServerWorkerEntityCreator> WorkerEntityCreator;
 	TOptional<Worker_EntityId> WorkerEntityId;
 
 	TArray<Worker_EntityId> WorkerEntityIds;
@@ -82,7 +80,6 @@ struct FSpatialServerStartupHandler::FInternalState
 
 	bool bIsRecoveringOrSnapshot = false;
 
-	bool bHasCalledPartitionEntityCreate = false;
 	FCreateEntityHandler EntityHandler;
 	TArray<Worker_PartitionId> WorkerPartitions;
 
@@ -90,8 +87,6 @@ struct FSpatialServerStartupHandler::FInternalState
 
 	TOptional<VirtualWorkerId> LocalVirtualWorkerId;
 	TOptional<Worker_PartitionId> LocalPartitionId;
-
-	FClaimPartitionHandler ClaimHandler;
 
 	TOptional<FSkeletonEntityCreationStartupStep> SkeletonEntityStep;
 };
@@ -233,80 +228,105 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 		ISpatialOSWorker* Worker;
 	};
 
-	struct FTryClaimingGsmEntityStep : public FCustomStepBase
+	struct FTryClaimingGsmEntityStep123 : public FCustomStepBase
 	{
-		FTryClaimingGsmEntityStep(FInternalState& InState, UGlobalStateManager& InGlobalStateManager)
+		TArray<FStartupStep> CreateSteps()
+		{
+			struct FTryClaimingGsmEntityStep : public FCustomStepBase
+			{
+				FTryClaimingGsmEntityStep(FInternalState& InState, UGlobalStateManager& InGsm)
+					: FCustomStepBase(InState)
+					, GlobalStateManager(&InGsm)
+				{
+				}
+
+				void OnStart() {}
+				bool TryFinish()
+				{
+					const bool bDidClaimStartupPartition = TryClaimingStartupPartition();
+					if (bDidClaimStartupPartition)
+					{
+						State->bShouldHaveGsmAuthority = true;
+					}
+					else
+					{
+						State->bHasGSMAuth = false;
+					}
+					return true;
+				}
+				bool TryClaimingStartupPartition()
+				{
+					// Perform a naive leader election where we wait for the correct number of server workers to be present in the
+					// deployment, and then whichever server has the lowest server worker entity ID becomes the leader and claims the
+					// snapshot partition.
+					check(State->WorkerEntityId);
+
+					const Worker_EntityId* LowestEntityId = Algo::MinElement(State->WorkerEntityIds);
+
+					check(LowestEntityId != nullptr);
+
+					if (State->WorkerEntityId == *LowestEntityId)
+					{
+						UE_LOG(LogSpatialStartupHandler, Log, TEXT("MaybeClaimSnapshotPartition claiming snapshot partition"));
+						GlobalStateManager->ClaimSnapshotPartition();
+						return true;
+					}
+					UE_LOG(LogSpatialStartupHandler, Log, TEXT("Not claiming snapshot partition"));
+					return false;
+				}
+
+				UGlobalStateManager* GlobalStateManager;
+			};
+
+			struct FWaitForGsmAuthority : public FCustomStepBase
+			{
+				FWaitForGsmAuthority(FInternalState& InState, UGlobalStateManager& InGsm)
+					: FCustomStepBase(InState)
+					, GlobalStateManager(&InGsm)
+				{
+				}
+
+				void OnStart() {}
+
+				bool TryFinish()
+				{
+					if (!State->bShouldHaveGsmAuthority)
+					{
+						return true;
+					}
+
+					if (GlobalStateManager->HasAuthority())
+					{
+						State->bHasGSMAuth = true;
+						GlobalStateManager->SetDeploymentState();
+						return true;
+					}
+
+					return false;
+				}
+
+				UGlobalStateManager* GlobalStateManager;
+			};
+
+			TArray<FStartupStep> Steps;
+			Steps.Emplace(CreateStartupStep(FTryClaimingGsmEntityStep(*State, *GlobalStateManager)));
+			Steps.Emplace(CreateStartupStep(FWaitForGsmAuthority(*State, *GlobalStateManager)));
+			return MoveTemp(Steps);
+		}
+
+		FTryClaimingGsmEntityStep123(FInternalState& InState, UGlobalStateManager& InGlobalStateManager)
 			: FCustomStepBase(InState)
 			, GlobalStateManager(&InGlobalStateManager)
+			, Executor(CreateSteps())
 		{
 		}
 
 		void OnStart() {}
 
-		bool TryFinish()
-		{
-			const bool bDidClaimStartupPartition = TryClaimingStartupPartition();
-			if (bDidClaimStartupPartition)
-			{
-				State->bShouldHaveGsmAuthority = true;
-			}
-			else
-			{
-				State->bHasGSMAuth = false;
-			}
-			return true;
-		}
-		bool TryClaimingStartupPartition()
-		{
-			// Perform a naive leader election where we wait for the correct number of server workers to be present in the deployment, and
-			// then whichever server has the lowest server worker entity ID becomes the leader and claims the snapshot partition.
-			check(State->WorkerEntityId);
-
-			const Worker_EntityId* LowestEntityId = Algo::MinElement(State->WorkerEntityIds);
-
-			check(LowestEntityId != nullptr);
-
-			if (State->WorkerEntityId == *LowestEntityId)
-			{
-				UE_LOG(LogSpatialStartupHandler, Log, TEXT("MaybeClaimSnapshotPartition claiming snapshot partition"));
-				GlobalStateManager->ClaimSnapshotPartition();
-				return true;
-			}
-			UE_LOG(LogSpatialStartupHandler, Log, TEXT("Not claiming snapshot partition"));
-			return false;
-		}
+		bool TryFinish() { return Executor.TryFinishStartup(); }
 
 		UGlobalStateManager* GlobalStateManager;
-	};
-
-	struct FWaitForGsmAuthority : public FCustomStepBase
-	{
-		FWaitForGsmAuthority(FInternalState& InState, UGlobalStateManager& InGsm)
-			: FCustomStepBase(InState)
-			, Gsm(&InGsm)
-		{
-		}
-
-		void OnStart() {}
-
-		bool TryFinish()
-		{
-			if (!State->bShouldHaveGsmAuthority)
-			{
-				return true;
-			}
-
-			if (Gsm->HasAuthority())
-			{
-				State->bHasGSMAuth = true;
-				Gsm->SetDeploymentState();
-				return true;
-			}
-
-			return false;
-		}
-
-		UGlobalStateManager* Gsm;
+		FStartupExecutor Executor;
 	};
 
 	struct FAuthCreateAndAssignPartitions : public FCustomStepBase
@@ -410,7 +430,7 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 					// Assign the worker's partition to its system entity.
 					const ComponentData* ServerWorkerComponentData = WorkerComponents.FindChecked(Entry.Value.ServerWorkerEntityId);
 					const ServerWorker ServerWorkerData(ServerWorkerComponentData->GetUnderlying());
-					State->ClaimHandler.ClaimPartition(*Worker, ServerWorkerData.SystemEntityId, Entry.Value.PartitionEntityId);
+					ClaimHandler.ClaimPartition(*Worker, ServerWorkerData.SystemEntityId, Entry.Value.PartitionEntityId);
 
 					// Reflect the partition assignment in the translator object.
 					Schema_Object* EntryObject =
@@ -457,6 +477,8 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 		FInitialSetup Setup;
 		USpatialNetDriver* NetDriver;
 		ISpatialOSWorker* Worker;
+
+		FClaimPartitionHandler ClaimHandler;
 
 		enum class EStage
 		{
@@ -681,8 +703,7 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 	Steps.Emplace(CreateStartupStep(FWaitForServerWorkerEntitiesStep(State.Get(), GetCoordinator(), Setup)));
 	Steps.Emplace(CreateStartupStep(FWaitForGsmEntityStep(GetCoordinator())));
 	Steps.Emplace(CreateStartupStep(FDeriveDeploymentRecoveryStateStep(State.Get(), GetGSM(), GetCoordinator())));
-	Steps.Emplace(CreateStartupStep(FTryClaimingGsmEntityStep(State.Get(), GetGSM())));
-	Steps.Emplace(CreateStartupStep(FWaitForGsmAuthority(State.Get(), GetGSM())));
+	Steps.Emplace(CreateStartupStep(FTryClaimingGsmEntityStep123(State.Get(), GetGSM())));
 	Steps.Emplace(CreateStartupStep(FAuthCreateAndAssignPartitions(State.Get(), Setup, *NetDriver)));
 	Steps.Emplace(CreateStartupStep(FGetAssignedPartitionStep(State.Get(), *NetDriver)));
 	if (GetDefault<USpatialGDKSettings>()->bEnableSkeletonEntityCreation)
