@@ -147,7 +147,7 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 	{
 		if (Delta.Type == EntityDelta::UPDATE)
 		{
-			TArray<Worker_ComponentId> ToResolveOps;
+			TArray<FWeakObjectPtr> ToResolveOps;
 			for (const ComponentChange& Change : Delta.ComponentsAdded)
 			{
 				ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.Data);
@@ -168,7 +168,7 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 			}
 
 			InvokePostNetReceives(Delta.EntityId);
-			ResolvePendingOpsFromEntityUpdate(Delta.EntityId, ToResolveOps);
+			ResolvePendingOpsFromEntityUpdate(ToResolveOps);
 		}
 	}
 }
@@ -551,7 +551,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 }
 
 void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data,
-								 TArray<Worker_ComponentId>& OutToResolveOps)
+								 TArray<FWeakObjectPtr>& OutToResolveOps)
 {
 	if (ComponentId == SpatialConstants::DORMANT_COMPONENT_ID)
 	{
@@ -821,7 +821,7 @@ void ActorSystem::HandleDormantComponentAdded(const Worker_EntityId EntityId) co
 }
 
 void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-											   Schema_ComponentData* Data, TArray<Worker_ComponentId>& OutToResolveOps)
+											   Schema_ComponentData* Data, TArray<FWeakObjectPtr>& OutToResolveOps)
 {
 	uint32 Offset = 0;
 	bool bFoundOffset = NetDriver->ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset);
@@ -906,7 +906,7 @@ void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, c
 }
 
 void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info,
-										 TArray<Worker_ComponentId>& OutToResolveOps)
+										 TArray<FWeakObjectPtr>& OutToResolveOps)
 {
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
 	if (Channel == nullptr)
@@ -947,7 +947,7 @@ void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId
 	});
 
 	// Resolve things like RPCs and user object references after we have applied all other component updates for the entity.
-	OutToResolveOps.Add(Info.SchemaComponents[SCHEMA_Data]);
+	OutToResolveOps.Emplace(FWeakObjectPtr(Subobject));
 }
 
 void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentId ComponentId,
@@ -986,30 +986,28 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 	}
 }
 
-void ActorSystem::ResolvePendingOpsFromEntityUpdate(Worker_EntityId EntityId, TArray<Worker_ComponentId> ToResolveOps)
+void ActorSystem::ResolvePendingOpsFromEntityUpdate(TArray<FWeakObjectPtr> ToResolveOps)
 {
 	// This should be called after all component updates and adds have been completed, and PostNetReceives have been called to avoid user
 	// code from seeing inconsistent state
-	for (const Worker_ComponentId ComponentId : ToResolveOps)
+	for (const FWeakObjectPtr& WeakObjectPtr : ToResolveOps)
 	{
-		ObjectOffset Offset;
-		const bool bDidFindOffset = NetDriver->ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset);
-		if (!bDidFindOffset)
-		{
-			UE_LOG(LogActorSystem, Error,
-				   TEXT("ResolvePendingOpsFromEntityUpdate: Could not find offset for ComponentId %u on Entity %lld"), ComponentId,
-				   EntityId);
-			continue;
-		}
-		const FUnrealObjectRef ObjectRef(EntityId, Offset);
-		UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
+		UObject* Object = WeakObjectPtr.Get();
 		if (!Object)
 		{
-			UE_LOG(LogActorSystem, Error,
-				   TEXT("ResolvePendingOpsFromEntityUpdate: Could not find valid object to resolve ops for. EntityId: %lld, Offset: %u"),
-				   EntityId, Offset);
+			UE_LOG(LogActorSystem, Log,
+				TEXT("ResolvePendingOpsFromEntityUpdate: Did not resolve pending ops for object %s as it was no longer valid."), *GetNameSafe(Object));
 			continue;
 		}
+
+		const FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
+
+		if (!ObjectRef.IsValid())
+		{
+			UE_LOG(LogActorSystem, Error,
+				TEXT("ResolvePendingOpsFromEntityUpdate: Tried to resolve pending ops for %s but object ref was not valid."), *Object->GetName());
+		}
+
 		ResolvePendingOperations(Object, ObjectRef);
 	}
 }

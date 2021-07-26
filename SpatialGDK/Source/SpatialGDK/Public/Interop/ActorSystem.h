@@ -56,7 +56,7 @@ public:
 
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref);
 	void CleanupRepStateMap(FSpatialObjectRepState& RepState);
-	void ResolvePendingOpsFromEntityUpdate(Worker_EntityId EntityId, TArray<Worker_ComponentId> ToResolveOps);
+	void ResolvePendingOpsFromEntityUpdate(TArray<FWeakObjectPtr> ToResolveOps);
 	void ResolveAsyncPendingLoad(UObject* LoadedObject, const FUnrealObjectRef& ObjectRef);
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
@@ -126,7 +126,7 @@ private:
 	void HandleActorAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId, Worker_Authority Authority);
 
 	void ComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data,
-						TArray<Worker_ComponentId>& OutToResolveOps);
+						TArray<FWeakObjectPtr>& OutToResolveOps);
 	void ComponentUpdated(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
 	void ComponentRemoved(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
@@ -149,9 +149,9 @@ private:
 	// Component add
 	void HandleDormantComponentAdded(Worker_EntityId EntityId) const;
 	void HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data,
-									  TArray<Worker_ComponentId>& OutToResolveOps);
+									  TArray<FWeakObjectPtr>& OutToResolveOps);
 	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info,
-								TArray<Worker_ComponentId>& OutToResolveOps);
+								TArray<FWeakObjectPtr>& OutToResolveOps);
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentId ComponentId,
 							Schema_ComponentData* Data);
 
