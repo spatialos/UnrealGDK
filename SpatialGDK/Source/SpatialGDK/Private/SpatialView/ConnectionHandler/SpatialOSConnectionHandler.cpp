@@ -93,14 +93,15 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 		{
 			FComponentSetUpdate SetUpdate = MoveTemp(Message).ReleaseComponentSetUpdate();
 			Worker_ComponentSetId SetId = SetUpdate.GetComponentSetId();
-			TArray<ComponentUpdate> Updates = MoveTemp(SetUpdate).Release();
+			ComponentUpdateHashSet Updates = MoveTemp(SetUpdate).Release();
 			TArray<Worker_ComponentUpdate> WorkerUpdates;
 			WorkerUpdates.Reserve(Updates.Num());
 			for (ComponentUpdate& Update : Updates)
 			{
 				WorkerUpdates.Add({ nullptr, Update.GetComponentId(), MoveTemp(Update).Release(), nullptr });
 			}
-			Worker_ComponentSetUpdate WorkerSetUpdate = { nullptr, SetId, static_cast<uint32>(WorkerUpdates.Num()), WorkerUpdates.GetData() };
+			Worker_ComponentSetUpdate WorkerSetUpdate = { nullptr, SetId, static_cast<uint32>(WorkerUpdates.Num()),
+														  WorkerUpdates.GetData() };
 			Worker_Connection_SendComponentSetUpdate(Connection.Get(), Message.EntityId, &WorkerSetUpdate, &UpdateParams);
 			break;
 		}
