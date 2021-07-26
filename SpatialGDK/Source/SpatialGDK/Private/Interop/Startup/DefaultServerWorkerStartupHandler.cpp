@@ -69,7 +69,7 @@ struct TStartupStep : public TStep
 	}
 };
 
-struct FSpatialServerStartupHandler::FInternalState
+struct FInternalState
 {
 	TOptional<Worker_EntityId> WorkerEntityId;
 
@@ -88,7 +88,7 @@ TStartupStep<TStep> CreateStartupStep(TStep InStep)
 
 PRAGMA_DISABLE_OPTIMIZATION
 
-TArray<TUniqueObj<FStartupStep>> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup)
+FStartupSteps FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup)
 {
 	struct FCustomStepBase
 	{
@@ -98,70 +98,6 @@ TArray<TUniqueObj<FStartupStep>> FSpatialServerStartupHandler::CreateSteps(USpat
 		}
 
 		FInternalState* State;
-	};
-
-	struct FCreateServerWorkerEntityStep : public FCustomStepBase
-	{
-		FCreateServerWorkerEntityStep(FInternalState& InState, USpatialNetDriver& InNetDriver)
-			: FCustomStepBase(InState)
-			, NetDriver(&InNetDriver)
-		{
-		}
-
-		void OnStart() { EntityCreator.Emplace(*NetDriver, *NetDriver->Connection); }
-
-		bool TryFinish()
-		{
-			EntityCreator->ProcessOps(NetDriver->Connection->GetWorkerMessages());
-			if (EntityCreator->IsFinished())
-			{
-				State->WorkerEntityId = EntityCreator->GetWorkerEntityId();
-				return true;
-			}
-			return false;
-		}
-
-		USpatialNetDriver* NetDriver;
-		TOptional<ServerWorkerEntityCreator> EntityCreator;
-	};
-
-	struct FWaitForServerWorkerEntitiesStep : public FCustomStepBase
-	{
-		FWaitForServerWorkerEntitiesStep(FInternalState& InState, ISpatialOSWorker& InWorker, const FInitialSetup& InSetup)
-			: FCustomStepBase(InState)
-			, Worker(&InWorker)
-			, Setup(InSetup)
-		{
-		}
-
-		void OnStart() {}
-
-		bool TryFinish()
-		{
-			TMap<Worker_EntityId_Key, const ComponentData*> WorkerComponents;
-
-			for (const auto& EntityData : Worker->GetView())
-			{
-				const ComponentData* WorkerComponent =
-					EntityData.Value.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID });
-				if (WorkerComponent != nullptr)
-				{
-					WorkerComponents.Emplace(EntityData.Key, WorkerComponent);
-				}
-			}
-			if (WorkerComponents.Num() >= Setup.ExpectedServerWorkersCount)
-			{
-				ensureMsgf(WorkerComponents.Num() == Setup.ExpectedServerWorkersCount,
-						   TEXT("There should never be more server workers connected than we expect. Expected %d, actually have %d"),
-						   Setup.ExpectedServerWorkersCount, WorkerComponents.Num());
-				WorkerComponents.GetKeys(State->WorkerEntityIds);
-				return true;
-			}
-			return false;
-		}
-
-		ISpatialOSWorker* Worker;
-		FInitialSetup Setup;
 	};
 
 	struct FWaitForGsmEntityStep
@@ -699,8 +635,23 @@ TArray<TUniqueObj<FStartupStep>> FSpatialServerStartupHandler::CreateSteps(USpat
 	TArray<TUniqueObj<FStartupStep>> Steps;
 	Steps.Emplace(MoveTemp(Dummy));
 
-	Steps.Emplace(CreateStartupStep(FCreateServerWorkerEntityStep(State.Get(), *NetDriver)));
-	Steps.Emplace(CreateStartupStep(FWaitForServerWorkerEntitiesStep(State.Get(), GetCoordinator(), Setup)));
+	auto StepCreators = CreateStepCreators();
+
+	auto ConvertStepCreatorToStep = [](FStartupStepCreator Creator) -> FStartupStep {
+		TSharedRef<TUniquePtr<FStartupStep2>> StepData = MakeShared<TUniquePtr<FStartupStep2>>();
+		return { [StepData, Creator]() {
+					*StepData = MakeUnique<FStartupStep2>(Invoke(Creator));
+				},
+				 [StepData] {
+					 return StepData->Get()->Get().TryFinishStep();
+				 } };
+	};
+
+	for (FStartupStepCreator& Creator : StepCreators)
+	{
+		Steps.Emplace(ConvertStepCreatorToStep(MoveTemp(Creator)));
+	}
+
 	Steps.Emplace(CreateStartupStep(FWaitForGsmEntityStep(GetCoordinator())));
 	Steps.Emplace(CreateStartupStep(FDeriveDeploymentRecoveryStateStep(State.Get(), GetGSM(), GetCoordinator())));
 	Steps.Emplace(CreateStartupStep(FElectGsmAuthorityStep(State.Get(), GetGSM())));
@@ -712,6 +663,62 @@ TArray<TUniqueObj<FStartupStep>> FSpatialServerStartupHandler::CreateSteps(USpat
 	}
 	Steps.Emplace(CreateStartupStep(FHandleBeginPlayStep(State.Get(), *NetDriver, GetCoordinator())));
 	return MoveTemp(Steps);
+}
+
+static FStartupStepCreator CreateServerWorkerStepCreator(USpatialNetDriver& InNetDriver, ISpatialOSWorker& InWorker,
+														 FInternalState& InState)
+{
+	return [State = &InState, NetDriver = &InNetDriver, Worker = &InWorker] {
+		auto CreateServerWorkerState = MakeShared<ServerWorkerEntityCreator>(*NetDriver, *NetDriver->Connection);
+		auto Update = [CreateServerWorkerState, State, Worker] {
+			CreateServerWorkerState->ProcessOps(Worker->GetWorkerMessages());
+			if (CreateServerWorkerState->IsFinished())
+			{
+				State->WorkerEntityId = CreateServerWorkerState->GetWorkerEntityId();
+				return true;
+			}
+			return false;
+		};
+		return TUniqueObj<FStartupStep>(FStartupStep{ [] {}, MoveTemp(Update) });
+	};
+}
+
+static FStartupStepCreator CreateWaitForServerWorkersStepCreator(FInternalState& SharedState, ISpatialOSWorker& InWorker,
+																 FSpatialServerStartupHandler::FInitialSetup Setup)
+{
+	return [Setup, Worker = &InWorker, State = &SharedState] {
+		auto Update = [Setup, Worker, State]() -> bool {
+			TMap<Worker_EntityId_Key, const ComponentData*> WorkerComponents;
+
+			for (const auto& EntityData : Worker->GetView())
+			{
+				const ComponentData* WorkerComponent =
+					EntityData.Value.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID });
+				if (WorkerComponent != nullptr)
+				{
+					WorkerComponents.Emplace(EntityData.Key, WorkerComponent);
+				}
+			}
+			if (WorkerComponents.Num() >= Setup.ExpectedServerWorkersCount)
+			{
+				ensureMsgf(WorkerComponents.Num() == Setup.ExpectedServerWorkersCount,
+						   TEXT("There should never be more server workers connected than we expect. Expected %d, actually have %d"),
+						   Setup.ExpectedServerWorkersCount, WorkerComponents.Num());
+				WorkerComponents.GetKeys(State->WorkerEntityIds);
+				return true;
+			}
+			return false;
+		};
+		return TUniqueObj<FStartupStep>(FStartupStep{ [] {}, MoveTemp(Update) });
+	};
+}
+
+TArray<FStartupStepCreator> FSpatialServerStartupHandler::CreateStepCreators()
+{
+	TArray<FStartupStepCreator> StepCreators;
+	StepCreators.Emplace(CreateServerWorkerStepCreator(*NetDriver, GetCoordinator(), State.Get()));
+	StepCreators.Emplace(CreateWaitForServerWorkersStepCreator(State.Get(), GetCoordinator(), Setup));
+	return StepCreators;
 }
 
 PRAGMA_ENABLE_OPTIMIZATION

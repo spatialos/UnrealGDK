@@ -25,6 +25,7 @@ struct FStartupStep
 
 using FStartupStep2 = TUniqueObj<FStartupStep>;
 using FStartupSteps = TArray<FStartupStep2>;
+using FStartupStepCreator = TFunction<FStartupStep2()>;
 
 class FStartupExecutor
 {
@@ -35,6 +36,8 @@ public:
 private:
 	FStartupSteps Steps;
 };
+
+struct FInternalState;
 
 class FSpatialServerStartupHandler final
 {
@@ -79,12 +82,12 @@ private:
 		Initial = CreateWorkerEntity,
 	};
 
-	TArray<TUniqueObj<FStartupStep>> CreateSteps(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup);
+	FStartupSteps CreateSteps(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup);
+	TArray<FStartupStepCreator> CreateStepCreators();
 
 	EStage Stage = EStage::Initial;
 
 	FInitialSetup Setup;
-	struct FInternalState;
 	TUniqueObj<FInternalState> State;
 
 	USpatialNetDriver* NetDriver;
