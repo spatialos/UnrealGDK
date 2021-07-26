@@ -22,7 +22,6 @@ void USpatialDataDebugMap::CreateCustomContentForMap()
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 
 	FTransform Server1Pos(FVector(250, -250, 0));
-	FTransform Server2Pos(FVector(-250, 250, 0)); // TODO: keep this for now in case we need it for other tests
 
 	AddActorToLevel<ASpatialTestPropertyReplicationMultiworker>(CurrentLevel, Server1Pos);
 	AddActorToLevel<ASpatialTestPropertyReplicationSubobject>(CurrentLevel, Server1Pos);

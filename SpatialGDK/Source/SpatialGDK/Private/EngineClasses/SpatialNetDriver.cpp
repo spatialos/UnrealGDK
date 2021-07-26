@@ -141,12 +141,13 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
 
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	if (GetDefault<USpatialGDKSettings>()->bSpatialAuthorityDebugger)
-		if (GetDefault<USpatialGDKSettings>()->bSpatialAuthorityDebugger)
-		{
-			AuthorityDebugger = NewObject<USpatialNetDriverAuthorityDebugger>();
-			AuthorityDebugger->Init(*this);
-		}
+	{
+		AuthorityDebugger = NewObject<USpatialNetDriverAuthorityDebugger>();
+		AuthorityDebugger->Init(*this);
+	}
+#endif
 }
 
 USpatialNetDriver::~USpatialNetDriver() = default;
@@ -2512,12 +2513,12 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			SpatialMetrics->TickMetrics(GetElapsedTime());
 		}
-
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 		if (AuthorityDebugger != nullptr)
 		{
 			AuthorityDebugger->CheckUnauthorisedDataChanges();
 		}
-
+#endif
 		if (AsyncPackageLoadFilter != nullptr)
 		{
 			AsyncPackageLoadFilter->ProcessActorsFromAsyncLoading();

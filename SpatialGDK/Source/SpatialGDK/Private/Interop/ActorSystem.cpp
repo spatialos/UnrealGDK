@@ -166,10 +166,12 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 			{
 				ComponentRemoved(Delta.EntityId, Change.ComponentId);
 			}
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 			if (NetDriver->AuthorityDebugger != nullptr)
 			{
 				NetDriver->AuthorityDebugger->UpdateSpatialShadowActor(Delta.EntityId);
 			}
+#endif
 		}
 	}
 }
@@ -742,10 +744,12 @@ void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
 {
 	PopulateDataStore(EntityId);
 	ReceiveActor(EntityId);
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	if (NetDriver->AuthorityDebugger != nullptr)
 	{
 		NetDriver->AuthorityDebugger->AddSpatialShadowActor(EntityId);
 	}
+#endif
 }
 
 void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
@@ -771,10 +775,12 @@ void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 
 	ActorDataStore.Remove(EntityId);
 
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	if (NetDriver->AuthorityDebugger != nullptr)
 	{
 		NetDriver->AuthorityDebugger->RemoveSpatialShadowActor(EntityId);
 	}
+#endif
 }
 
 bool ActorSystem::HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const
