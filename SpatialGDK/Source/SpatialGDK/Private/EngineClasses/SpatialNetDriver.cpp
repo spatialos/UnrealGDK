@@ -142,6 +142,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
 
 	if (GetDefault<USpatialGDKSettings>()->bSpatialAuthorityDebugger)
+	if (GetDefault<USpatialGDKSettings>()->bSpatialAuthorityDebugger)
 	{
 		AuthorityDebugger = NewObject<USpatialNetDriverAuthorityDebugger>();
 		AuthorityDebugger->Init(*this);
@@ -3543,30 +3544,6 @@ bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
 		return true;
 	}
 	return false;
-}
-
-void USpatialNetDriver::AddSpatialShadowActor(const Worker_EntityId_Key EntityId)
-{
-	if (AuthorityDebugger != nullptr)
-	{
-		AuthorityDebugger->AddSpatialShadowActor(EntityId);
-	}
-}
-
-void USpatialNetDriver::RemoveSpatialShadowActor(const Worker_EntityId_Key EntityId)
-{
-	if (AuthorityDebugger != nullptr)
-	{
-		AuthorityDebugger->RemoveSpatialShadowActor(EntityId);
-	}
-}
-
-void USpatialNetDriver::UpdateSpatialShadowActor(const Worker_EntityId_Key EntityId)
-{
-	if (AuthorityDebugger != nullptr)
-	{
-		AuthorityDebugger->UpdateSpatialShadowActor(EntityId);
-	}
 }
 
 // This should only be called once on each client, in the SpatialDebugger constructor after the class is replicated to each client.

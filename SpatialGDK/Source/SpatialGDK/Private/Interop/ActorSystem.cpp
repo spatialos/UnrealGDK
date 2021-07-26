@@ -21,6 +21,7 @@
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialActorUtils.h"
+#include "EngineClasses/SpatialNetDriverAuthorityDebugger.h"
 
 DEFINE_LOG_CATEGORY(LogActorSystem);
 
@@ -165,7 +166,10 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 			{
 				ComponentRemoved(Delta.EntityId, Change.ComponentId);
 			}
-			NetDriver->UpdateSpatialShadowActor(Delta.EntityId);
+			if (NetDriver->AuthorityDebugger != nullptr)
+			{
+				NetDriver->AuthorityDebugger->UpdateSpatialShadowActor(Delta.EntityId);
+			}
 		}
 	}
 }
@@ -738,7 +742,10 @@ void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
 {
 	PopulateDataStore(EntityId);
 	ReceiveActor(EntityId);
-	NetDriver->AddSpatialShadowActor(EntityId);
+	if (NetDriver->AuthorityDebugger != nullptr)
+	{
+		NetDriver->AuthorityDebugger->AddSpatialShadowActor(EntityId);
+	}
 }
 
 void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
@@ -764,7 +771,10 @@ void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 
 	ActorDataStore.Remove(EntityId);
 
-	NetDriver->RemoveSpatialShadowActor(EntityId);
+	if (NetDriver->AuthorityDebugger != nullptr)
+	{
+		NetDriver->AuthorityDebugger->RemoveSpatialShadowActor(EntityId);
+	}
 }
 
 bool ActorSystem::HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const

@@ -287,10 +287,6 @@ public:
 
 	virtual int64 GetActorEntityId(const AActor& Actor) const override;
 
-	void AddSpatialShadowActor(const Worker_EntityId_Key EntityId);
-	void RemoveSpatialShadowActor(const Worker_EntityId_Key EntityId);
-	void UpdateSpatialShadowActor(const Worker_EntityId_Key EntityId);
-
 	FShutdownEvent OnShutdown;
 
 private:
