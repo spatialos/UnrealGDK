@@ -23,14 +23,17 @@ struct FStartupStep
 	FTryFinishStep TryFinishStep;
 };
 
+using FStartupStep2 = TUniqueObj<FStartupStep>;
+using FStartupSteps = TArray<FStartupStep2>;
+
 class FStartupExecutor
 {
 public:
-	explicit FStartupExecutor(TArray<FStartupStep> InSteps);
+	explicit FStartupExecutor(FStartupSteps InSteps);
 	bool TryFinishStartup();
 
 private:
-	TArray<FStartupStep> Steps;
+	FStartupSteps Steps;
 };
 
 class FSpatialServerStartupHandler final
@@ -46,12 +49,8 @@ public:
 	FString GetStartupStateDescription() const;
 
 private:
-	void SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorkerId);
-	bool TryClaimingStartupPartition();
-
-	ViewCoordinator& GetCoordinator();
-	const ViewCoordinator& GetCoordinator() const;
-	const TArray<Worker_Op>& GetOps() const;
+	ISpatialOSWorker& GetCoordinator();
+	const ISpatialOSWorker& GetCoordinator() const;
 	UGlobalStateManager& GetGSM();
 
 	enum class EStage : uint8
@@ -80,7 +79,7 @@ private:
 		Initial = CreateWorkerEntity,
 	};
 
-	TArray<FStartupStep> CreateSteps(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup);
+	TArray<TUniqueObj<FStartupStep>> CreateSteps(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup);
 
 	EStage Stage = EStage::Initial;
 

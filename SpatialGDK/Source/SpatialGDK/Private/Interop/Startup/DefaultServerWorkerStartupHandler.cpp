@@ -17,12 +17,12 @@ DEFINE_LOG_CATEGORY_STATIC(LogSpatialStartupHandler, Log, All);
 
 namespace SpatialGDK
 {
-FStartupExecutor::FStartupExecutor(TArray<FStartupStep> InSteps)
+FStartupExecutor::FStartupExecutor(TArray<TUniqueObj<FStartupStep>> InSteps)
 	: Steps(MoveTemp(InSteps))
 {
 	if (Steps.Num() > 0)
 	{
-		Steps[0].OnStepStarted();
+		Steps[0]->OnStepStarted();
 	}
 }
 
@@ -30,13 +30,13 @@ bool FStartupExecutor::TryFinishStartup()
 {
 	while (Steps.Num() > 0)
 	{
-		const FStartupStep& CurrentStep = Steps[0];
+		const FStartupStep& CurrentStep = *Steps[0];
 		if (CurrentStep.TryFinishStep())
 		{
 			Steps.RemoveAt(0);
 			if (Steps.Num() > 0)
 			{
-				Steps[0].OnStepStarted();
+				Steps[0]->OnStepStarted();
 			}
 		}
 		else
@@ -75,20 +75,9 @@ struct FSpatialServerStartupHandler::FInternalState
 
 	TArray<Worker_EntityId> WorkerEntityIds;
 
-	bool bShouldHaveGsmAuthority = false;
 	bool bHasGSMAuth = false;
 
 	bool bIsRecoveringOrSnapshot = false;
-
-	FCreateEntityHandler EntityHandler;
-	TArray<Worker_PartitionId> WorkerPartitions;
-
-	TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation> WorkersToPartitions;
-
-	TOptional<VirtualWorkerId> LocalVirtualWorkerId;
-	TOptional<Worker_PartitionId> LocalPartitionId;
-
-	TOptional<FSkeletonEntityCreationStartupStep> SkeletonEntityStep;
 };
 
 template <typename TStep>
@@ -97,7 +86,9 @@ TStartupStep<TStep> CreateStartupStep(TStep InStep)
 	return TStartupStep<TStep>(MoveTemp(InStep));
 }
 
-TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup)
+PRAGMA_DISABLE_OPTIMIZATION
+
+TArray<TUniqueObj<FStartupStep>> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup)
 {
 	struct FCustomStepBase
 	{
@@ -228,15 +219,17 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 		ISpatialOSWorker* Worker;
 	};
 
-	struct FTryClaimingGsmEntityStep123 : public FCustomStepBase
+	struct FElectGsmAuthorityStep : public FCustomStepBase
 	{
-		TArray<FStartupStep> CreateSteps()
+		TArray<TUniqueObj<FStartupStep>> CreateSteps()
 		{
 			struct FTryClaimingGsmEntityStep : public FCustomStepBase
 			{
-				FTryClaimingGsmEntityStep(FInternalState& InState, UGlobalStateManager& InGsm)
+				FTryClaimingGsmEntityStep(FInternalState& InState, UGlobalStateManager& InGsm,
+										  TSharedRef<TOptional<bool>> bInOutShouldHaveGsmAuthority)
 					: FCustomStepBase(InState)
 					, GlobalStateManager(&InGsm)
+					, bOutShouldHaveGsmAuthority(bInOutShouldHaveGsmAuthority)
 				{
 				}
 
@@ -244,11 +237,8 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 				bool TryFinish()
 				{
 					const bool bDidClaimStartupPartition = TryClaimingStartupPartition();
-					if (bDidClaimStartupPartition)
-					{
-						State->bShouldHaveGsmAuthority = true;
-					}
-					else
+					*bOutShouldHaveGsmAuthority = bDidClaimStartupPartition;
+					if (!bDidClaimStartupPartition)
 					{
 						State->bHasGSMAuth = false;
 					}
@@ -276,13 +266,16 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 				}
 
 				UGlobalStateManager* GlobalStateManager;
+				TSharedRef<TOptional<bool>> bOutShouldHaveGsmAuthority;
 			};
 
 			struct FWaitForGsmAuthority : public FCustomStepBase
 			{
-				FWaitForGsmAuthority(FInternalState& InState, UGlobalStateManager& InGsm)
+				FWaitForGsmAuthority(FInternalState& InState, UGlobalStateManager& InGsm,
+									 TSharedRef<TOptional<bool>> bInShouldHaveGsmAuthority)
 					: FCustomStepBase(InState)
 					, GlobalStateManager(&InGsm)
+					, bShouldHaveGsmAuthority(bInShouldHaveGsmAuthority)
 				{
 				}
 
@@ -290,7 +283,7 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 
 				bool TryFinish()
 				{
-					if (!State->bShouldHaveGsmAuthority)
+					if (!(**bShouldHaveGsmAuthority))
 					{
 						return true;
 					}
@@ -306,15 +299,17 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 				}
 
 				UGlobalStateManager* GlobalStateManager;
+				const TSharedRef<TOptional<bool>> bShouldHaveGsmAuthority;
 			};
 
-			TArray<FStartupStep> Steps;
-			Steps.Emplace(CreateStartupStep(FTryClaimingGsmEntityStep(*State, *GlobalStateManager)));
-			Steps.Emplace(CreateStartupStep(FWaitForGsmAuthority(*State, *GlobalStateManager)));
+			TSharedRef<TOptional<bool>> bShouldHaveGsmAuthority = MakeShared<TOptional<bool>>();
+			TArray<TUniqueObj<FStartupStep>> Steps;
+			Steps.Emplace(CreateStartupStep(FTryClaimingGsmEntityStep(*State, *GlobalStateManager, bShouldHaveGsmAuthority)));
+			Steps.Emplace(CreateStartupStep(FWaitForGsmAuthority(*State, *GlobalStateManager, bShouldHaveGsmAuthority)));
 			return MoveTemp(Steps);
 		}
 
-		FTryClaimingGsmEntityStep123(FInternalState& InState, UGlobalStateManager& InGlobalStateManager)
+		FElectGsmAuthorityStep(FInternalState& InState, UGlobalStateManager& InGlobalStateManager)
 			: FCustomStepBase(InState)
 			, GlobalStateManager(&InGlobalStateManager)
 			, Executor(CreateSteps())
@@ -353,13 +348,16 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 						ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID });
 					if (ensure(VirtualWorkerTranslatorComponent != nullptr))
 					{
-						SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(State->WorkersToPartitions,
+						SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(WorkersToPartitions,
 																			   *VirtualWorkerTranslatorComponent->GetFields());
-						Algo::Transform(State->WorkersToPartitions, State->WorkerPartitions,
+
+						TArray<Worker_PartitionId> WorkerPartitions;
+
+						Algo::Transform(WorkersToPartitions, WorkerPartitions,
 										[](const TPair<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation>& Pair) {
 											return Pair.Value.PartitionEntityId;
 										});
-						const bool bNeedToCreatePartitions = State->WorkerPartitions.Num() < Setup.ExpectedServerWorkersCount;
+						const bool bNeedToCreatePartitions = WorkerPartitions.Num() < Setup.ExpectedServerWorkersCount;
 
 						Stage = bNeedToCreatePartitions ? EStage::SpawningPartitions : EStage::WaitForPartitionVisibility;
 					}
@@ -373,7 +371,7 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 				for (VirtualWorkerId GeneratedVirtualWorkerId = 1;
 					 GeneratedVirtualWorkerId <= static_cast<VirtualWorkerId>(Setup.ExpectedServerWorkersCount); ++GeneratedVirtualWorkerId)
 				{
-					if (State->WorkersToPartitions.Contains(GeneratedVirtualWorkerId))
+					if (WorkersToPartitions.Contains(GeneratedVirtualWorkerId))
 					{
 						// This virtual worker mapping already exists, no need to create a partition.
 						continue;
@@ -392,10 +390,9 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 					UE_LOG(LogSpatialStartupHandler, Log, TEXT("- Virtual Worker: %d. Entity: %lld. "), GeneratedVirtualWorkerId,
 						   PartitionEntityId);
 					SpawnPartitionEntity(PartitionEntityId, GeneratedVirtualWorkerId);
-					State->WorkersToPartitions.Emplace(
-						GeneratedVirtualWorkerId,
-						SpatialVirtualWorkerTranslator::WorkerInformation{ WorkerName, State->WorkerEntityIds[GeneratedVirtualWorkerId - 1],
-																		   PartitionEntityId });
+					WorkersToPartitions.Emplace(GeneratedVirtualWorkerId,
+												SpatialVirtualWorkerTranslator::WorkerInformation{
+													WorkerName, State->WorkerEntityIds[GeneratedVirtualWorkerId - 1], PartitionEntityId });
 				}
 				Stage = EStage::WaitForPartitionVisibility;
 			}
@@ -403,7 +400,7 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 			if (Stage == EStage::WaitForPartitionVisibility)
 			{
 				const bool bAreAllPartitionsInView = Algo::AllOf(
-					State->WorkersToPartitions,
+					WorkersToPartitions,
 					[View = &Worker->GetView()](const TPair<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation>& Worker) {
 						return View->Contains(Worker.Value.PartitionEntityId);
 					});
@@ -425,7 +422,7 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 				});
 
 				ComponentUpdate Update(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
-				for (const auto& Entry : State->WorkersToPartitions)
+				for (const auto& Entry : WorkersToPartitions)
 				{
 					// Assign the worker's partition to its system entity.
 					const ComponentData* ServerWorkerComponentData = WorkerComponents.FindChecked(Entry.Value.ServerWorkerEntityId);
@@ -480,6 +477,8 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 
 		FClaimPartitionHandler ClaimHandler;
 
+		TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation> WorkersToPartitions;
+
 		enum class EStage
 		{
 			DiscoveringExistingState,
@@ -495,15 +494,17 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 
 	struct FGetAssignedPartitionStep : public FCustomStepBase
 	{
-		TArray<FStartupStep> CreateSteps()
+		TArray<TUniqueObj<FStartupStep>> CreateSteps()
 		{
 			struct FReadVirtualWorkerTranslatorStep : public FCustomStepBase
 			{
 				FReadVirtualWorkerTranslatorStep(FInternalState& InState, ISpatialOSWorker& InWorker,
-												 UGlobalStateManager& InGlobalStateManager)
+												 UGlobalStateManager& InGlobalStateManager,
+												 TOptional<Worker_PartitionId>* InLocalPartitionIdPtr)
 					: FCustomStepBase(InState)
 					, Worker(&InWorker)
 					, GlobalStateManager(&InGlobalStateManager)
+					, LocalPartitionIdPtr(InLocalPartitionIdPtr)
 				{
 				}
 
@@ -538,8 +539,7 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 								if (Mapping.Value.ServerWorkerEntityId == State->WorkerEntityId)
 								{
 									// We've received a virtual worker mapping that mentions our worker entity ID.
-									State->LocalVirtualWorkerId = Mapping.Key;
-									State->LocalPartitionId = Mapping.Value.PartitionEntityId;
+									*LocalPartitionIdPtr = Mapping.Value.PartitionEntityId;
 									return true;
 								}
 							}
@@ -551,21 +551,24 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 
 				ISpatialOSWorker* Worker;
 				UGlobalStateManager* GlobalStateManager;
+				TOptional<Worker_PartitionId>* LocalPartitionIdPtr;
 			};
 
 			struct FWaitForAssignedPartition : public FCustomStepBase
 			{
-				FWaitForAssignedPartition(FInternalState& InState, USpatialNetDriver& InNetDriver, ISpatialOSWorker& InWorker)
+				FWaitForAssignedPartition(FInternalState& InState, USpatialNetDriver& InNetDriver, ISpatialOSWorker& InWorker,
+										  const TOptional<Worker_PartitionId>* InLocalPartitionIdPtr)
 					: FCustomStepBase(InState)
 					, NetDriver(&InNetDriver)
 					, Worker(&InWorker)
+					, LocalPartitionIdPtr(InLocalPartitionIdPtr)
 				{
 				}
 
 				void OnStart() {}
 				bool TryFinish()
 				{
-					const EntityViewElement* AssignedPartitionEntity = Worker->GetView().Find(*State->LocalPartitionId);
+					const EntityViewElement* AssignedPartitionEntity = Worker->GetView().Find(**LocalPartitionIdPtr);
 					if (AssignedPartitionEntity != nullptr)
 					{
 						const EntityViewElement& VirtualWorkerTranslatorEntity =
@@ -588,13 +591,15 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 
 				USpatialNetDriver* NetDriver;
 				ISpatialOSWorker* Worker;
+				const TOptional<Worker_PartitionId>* LocalPartitionIdPtr;
 			};
 
-			TArray<FStartupStep> Steps;
+			TArray<TUniqueObj<FStartupStep>> Steps;
 
+			Steps.Emplace(CreateStartupStep(FReadVirtualWorkerTranslatorStep(*State, NetDriver->Connection->GetCoordinator(),
+																			 *NetDriver->GlobalStateManager, &LocalPartitionId)));
 			Steps.Emplace(CreateStartupStep(
-				FReadVirtualWorkerTranslatorStep(*State, NetDriver->Connection->GetCoordinator(), *NetDriver->GlobalStateManager)));
-			Steps.Emplace(CreateStartupStep(FWaitForAssignedPartition(*State, *NetDriver, NetDriver->Connection->GetCoordinator())));
+				FWaitForAssignedPartition(*State, *NetDriver, NetDriver->Connection->GetCoordinator(), &LocalPartitionId)));
 
 			return MoveTemp(Steps);
 		}
@@ -609,6 +614,7 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 		}
 		USpatialNetDriver* NetDriver;
 		FStartupExecutor Executor;
+		TOptional<Worker_PartitionId> LocalPartitionId;
 	};
 
 	struct FCreateSkeletonEntities
@@ -689,21 +695,15 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 						[] {
 							return true;
 						} };
-	FStartupStep SetNextLegacyStep{ [] {},
-									[StagePtr = &Stage, State = &State.Get()] {
-										*StagePtr = State->bHasGSMAuth ? EStage::GsmAuthDispatchGSMStartPlay
-																	   : EStage::GsmNonAuthWaitForGSMStartPlay;
-										return true;
-									} };
 
-	TArray<FStartupStep> Steps;
+	TArray<TUniqueObj<FStartupStep>> Steps;
 	Steps.Emplace(MoveTemp(Dummy));
 
 	Steps.Emplace(CreateStartupStep(FCreateServerWorkerEntityStep(State.Get(), *NetDriver)));
 	Steps.Emplace(CreateStartupStep(FWaitForServerWorkerEntitiesStep(State.Get(), GetCoordinator(), Setup)));
 	Steps.Emplace(CreateStartupStep(FWaitForGsmEntityStep(GetCoordinator())));
 	Steps.Emplace(CreateStartupStep(FDeriveDeploymentRecoveryStateStep(State.Get(), GetGSM(), GetCoordinator())));
-	Steps.Emplace(CreateStartupStep(FTryClaimingGsmEntityStep123(State.Get(), GetGSM())));
+	Steps.Emplace(CreateStartupStep(FElectGsmAuthorityStep(State.Get(), GetGSM())));
 	Steps.Emplace(CreateStartupStep(FAuthCreateAndAssignPartitions(State.Get(), Setup, *NetDriver)));
 	Steps.Emplace(CreateStartupStep(FGetAssignedPartitionStep(State.Get(), *NetDriver)));
 	if (GetDefault<USpatialGDKSettings>()->bEnableSkeletonEntityCreation)
@@ -711,10 +711,10 @@ TArray<FStartupStep> FSpatialServerStartupHandler::CreateSteps(USpatialNetDriver
 		Steps.Emplace(CreateStartupStep(FCreateSkeletonEntities(*NetDriver)));
 	}
 	Steps.Emplace(CreateStartupStep(FHandleBeginPlayStep(State.Get(), *NetDriver, GetCoordinator())));
-
-	Steps.Emplace(MoveTemp(SetNextLegacyStep));
 	return MoveTemp(Steps);
 }
+
+PRAGMA_ENABLE_OPTIMIZATION
 
 FSpatialServerStartupHandler::FSpatialServerStartupHandler(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup)
 	: Setup(InSetup)
@@ -730,19 +730,14 @@ bool FSpatialServerStartupHandler::TryFinishStartup()
 	return Executor.TryFinishStartup();
 }
 
-ViewCoordinator& FSpatialServerStartupHandler::GetCoordinator()
+ISpatialOSWorker& FSpatialServerStartupHandler::GetCoordinator()
 {
 	return NetDriver->Connection->GetCoordinator();
 }
 
-const ViewCoordinator& FSpatialServerStartupHandler::GetCoordinator() const
+const ISpatialOSWorker& FSpatialServerStartupHandler::GetCoordinator() const
 {
 	return NetDriver->Connection->GetCoordinator();
-}
-
-const TArray<Worker_Op>& FSpatialServerStartupHandler::GetOps() const
-{
-	return GetCoordinator().GetWorkerMessages();
 }
 
 UGlobalStateManager& FSpatialServerStartupHandler::GetGSM()
