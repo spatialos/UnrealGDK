@@ -1026,7 +1026,7 @@ bool USpatialActorChannel::TryResolveActor()
 	return true;
 }
 
-FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
+FObjectReplicator* USpatialActorChannel::GetObjectReplicatorForSpatialUpdate(UObject* TargetObject)
 {
 	// If there is no NetGUID for this object, we will crash in FObjectReplicator::StartReplicating, so we verify this here.
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
@@ -1036,23 +1036,17 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	{
 		// SpatialReceiver tried to resolve this object in the PackageMap, but it didn't propagate to GuidCache.
 		// This could happen if the UnrealObjectRef was already mapped to a different object that's been destroyed.
-		UE_LOG(LogSpatialActorChannel, Error, TEXT("PreReceiveSpatialUpdate: NetGUID is invalid! Object: %s"),
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("GetObjectReplicatorForSpatialUpdate: NetGUID is invalid! Object: %s"),
 			   *TargetObject->GetPathName());
 		return nullptr;
 	}
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 
-	if (!Replicator.bHasReplicatedProperties)
-	{
-		Replicator.bHasReplicatedProperties = true;
-		TargetObject->PreNetReceive();
-	}
-
 	return &Replicator;
 }
 
-void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+void USpatialActorChannel::InvokeRepNotifies(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
 													const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();

@@ -171,10 +171,10 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 										const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId,
 										FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged)
 {
-	FObjectReplicator* Replicator = Channel.PreReceiveSpatialUpdate(&Object);
+	FObjectReplicator* Replicator = Channel.GetObjectReplicatorForSpatialUpdate(&Object);
 	if (Replicator == nullptr)
 	{
-		// Can't apply this schema object. Error printed from PreReceiveSpatialUpdate.
+		// Can't apply this schema object. Error printed from GetObjectReplicatorForSpatialUpdate.
 		return;
 	}
 

@@ -174,7 +174,8 @@ private:
 										   USpatialActorChannel& Channel, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 
 	USpatialActorChannel* TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, Worker_EntityId EntityId);
-	void InvokePostNetReceives(Worker_EntityId EntityId) const;
+	bool InvokePreNetReceive(USpatialActorChannel& Channel, UObject& Object);
+	void InvokePostNetReceives();
 	FObjectRepNotifies& GetObjectRepNotifies(UObject& Object);
 
 	// Entity remove
@@ -209,6 +210,9 @@ private:
 	TMap<Worker_EntityId_Key, TSet<Worker_ComponentId>> PendingDynamicSubobjectComponents;
 
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
+
+	// Objects for a given entity are stored here then sent after all updates for that entity have been applied.
+	TArray<FWeakObjectPtr> PostNetReceivesToSend;
 
 	// RepNotifies are stored here then sent after all updates we have are applied
 	FObjectToRepNotifies ActorRepNotifiesToSend;

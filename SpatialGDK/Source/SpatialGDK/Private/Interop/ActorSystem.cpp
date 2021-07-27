@@ -167,7 +167,7 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 				ComponentRemoved(Delta.EntityId, Change.ComponentId);
 			}
 
-			InvokePostNetReceives(Delta.EntityId);
+			InvokePostNetReceives();
 			ResolvePendingOpsFromEntityUpdate(ToResolveOps);
 		}
 	}
@@ -225,7 +225,7 @@ void ActorSystem::ProcessAuthorityGains(const FEntitySubViewUpdate& SubViewUpdat
 																	? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
 																	: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
 			AuthorityGained(EntityId, AuthorityComponentSet);
-			InvokePostNetReceives(EntityId);
+			InvokePostNetReceives();
 		}
 	}
 }
@@ -975,7 +975,16 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 		bool bOutReferencesChanged = false;
 
 		FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
-		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
+		const bool bSuccessfullyPreNetReceived = InvokePreNetReceive(Channel, TargetObject);
+		if (bSuccessfullyPreNetReceived)
+		{
+			Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
+		}
+		else
+		{
+			UE_LOG(LogActorSystem, Log, TEXT("ApplyComponentData: Did not invoke PreNetReceive for object %s, entity id %lld, component id %u. No data will be applied."),
+				*TargetObject.GetName(), Channel.GetEntityId(), ComponentId);
+		}
 
 		RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 	}
@@ -1296,7 +1305,17 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 	bool bOutReferencesChanged = false;
 	FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
-	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
+
+	const bool bSuccessfullyPreNetReceived = InvokePreNetReceive(Channel, TargetObject);
+	if (bSuccessfullyPreNetReceived)
+	{
+		Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
+	}
+	else
+	{
+		UE_LOG(LogActorSystem, Log, TEXT("ApplyComponentUpdate: Did not invoke PreNetReceive for object %s, entity id %lld, component id %u. No data will be applied."),
+			*TargetObject.GetName(), Channel.GetEntityId(), ComponentId);
+	}
 	RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 
 	// This is a temporary workaround, see UNR-841:
@@ -1457,9 +1476,9 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 		ClientNetLoadActorHelper.RemoveRuntimeRemovedComponents(EntityId, EntityComponents, EntityActor);
 	}
 
-	InvokePostNetReceives(EntityId);
+	InvokePostNetReceives();
 
-	// Resolve things like RepNotify or RPCs after applying component data.
+	// Resolve things like RPCs and unresolved references after applying component data.
 	for (const ObjectPtrRefPair& ObjectToResolve : ObjectsToResolvePendingOpsFor)
 	{
 		ResolvePendingOperations(ObjectToResolve.Key, ObjectToResolve.Value);
@@ -1749,30 +1768,39 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 	return Channel;
 }
 
-void ActorSystem::InvokePostNetReceives(const Worker_EntityId EntityId) const
+bool ActorSystem::InvokePreNetReceive(USpatialActorChannel& Channel, UObject& Object)
 {
-	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
-	if (!IsValid(Channel))
+	if (Object.IsPendingKill())
 	{
-		UE_LOG(LogActorSystem, Error, TEXT("Tried to send PostNetReceives but channel was invalid, EntityId: %lld"), EntityId);
-		return;
+		UE_LOG(LogActorSystem, Log, TEXT("InvokePreNetReceive: Did not invoke PreNetReceive for object %s, as object is pending kill. Entity id: %lld."),
+			*Object.GetName(), Channel.GetEntityId());
+		return false;
 	}
 
-	for (auto ObjRepPair = Channel->ReplicationMap.CreateIterator(); ObjRepPair; ++ObjRepPair)
+	if (!PostNetReceivesToSend.Contains(FWeakObjectPtr(&Object)))
 	{
-		TSharedRef<FObjectReplicator>& ObjectReplicator = ObjRepPair->Value;
-		if (ObjectReplicator->GetObject() == nullptr)
-		{
-			ObjRepPair.RemoveCurrent();
-			continue;
-		}
-
-		if (ObjectReplicator->bHasReplicatedProperties)
-		{
-			ObjectReplicator->PostNetReceive();
-			ObjectReplicator->bHasReplicatedProperties = false;
-		}
+		Object.PreNetReceive();
+		PostNetReceivesToSend.Emplace(FWeakObjectPtr(&Object));
 	}
+
+	return true;
+}
+
+void ActorSystem::InvokePostNetReceives()
+{
+	for (const FWeakObjectPtr& WeakPtr : PostNetReceivesToSend)
+	{
+		UObject* Object = WeakPtr.Get();
+		if (!Object)
+		{
+			// An object could have been set to pending kill as a result of the user callback PreNetReceive.
+			UE_LOG(LogActorSystem, Log, TEXT("Not sending PostNetReceive for object: %s as it is not valid."),
+				*GetNameSafe(Object));
+		}
+		Object->PostNetReceive();
+	}
+
+	PostNetReceivesToSend.Empty();
 }
 
 FObjectRepNotifies& ActorSystem::GetObjectRepNotifies(UObject& Object)
@@ -1830,7 +1858,7 @@ void ActorSystem::TryInvokeRepNotifiesForObject(FWeakObjectPtr& WeakObjectPtr, F
 	});
 
 	RemoveRepNotifiesWithUnresolvedObjs(*Object, *Channel, ObjectRepNotifies.RepNotifies);
-	Channel->PostReceiveSpatialUpdate(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
+	Channel->InvokeRepNotifies(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
 }
 
 void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,

@@ -81,6 +81,7 @@ void ASpatialTestNetReceive::PrepareTest()
 							   TEXT("PreNetNumTimesCalled should be more than 1."));
 			RequireCompare_Int(TestActor->Subobject->PostNetNumTimesCalled, EComparisonMethod::Greater_Than_Or_Equal_To, 1,
 							   TEXT("PostNetNumTimesCalled should be more than 1."));
+			RequireEqual_Int(TestActor->Subobject->PreNetNumTimesCalled, TestActor->Subobject->PostNetNumTimesCalled, TEXT("Pre and PostNetReceive should be called the same number of times."));
 
 			RequireEqual_Int(TestActor->Subobject->RepNotifyNumTimesCalled, 1, TEXT("RepNotifyNumTimesCalled should be 1."));
 
