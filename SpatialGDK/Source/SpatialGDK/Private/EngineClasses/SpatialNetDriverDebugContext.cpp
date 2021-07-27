@@ -4,9 +4,11 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialServerWorkerSystem.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/DebugLBStrategy.h"
+#include "LoadBalancing/LegacyLoadbalancingComponents.h"
 #include "Utils/SpatialActorUtils.h"
 
 namespace
@@ -349,14 +351,36 @@ void USpatialNetDriverDebugContext::KeepActorOnLocalWorker(AActor* Actor)
 	}
 }
 
+void USpatialNetDriverDebugContext::UpdateServerWorkerData()
+{
+	if (NetDriver->ServerWorkerSystemImpl)
+	{
+		UGameInstance* GameInstance = NetDriver->GetWorld()->GetGameInstance();
+		USpatialServerWorkerSystem* ServerWorkerData = GameInstance->GetSubsystem<USpatialServerWorkerSystem>();
+		if (ensure(ServerWorkerData))
+		{
+			SpatialGDK::LegacyLB_CustomWorkerAssignments Assignments;
+			for (const auto& Delegation : SemanticDelegations)
+			{
+				Assignments.LabelToVirtualWorker.Add(Delegation.Key.ToString(), Delegation.Value);
+			}
+			TArray<SpatialGDK::ComponentUpdate> Updates;
+			Updates.Add(Assignments.CreateComponentUpdate());
+			ServerWorkerData->UpdateServerWorkerData(MoveTemp(Updates));
+		}
+	}
+}
+
 void USpatialNetDriverDebugContext::DelegateTagToWorker(FName Tag, uint32 WorkerId)
 {
 	SemanticDelegations.Add(Tag, WorkerId);
+	UpdateServerWorkerData();
 }
 
 void USpatialNetDriverDebugContext::RemoveTagDelegation(FName Tag)
 {
 	SemanticDelegations.Remove(Tag);
+	UpdateServerWorkerData();
 }
 
 TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorHierarchyExplicitDelegation(const AActor* Actor)

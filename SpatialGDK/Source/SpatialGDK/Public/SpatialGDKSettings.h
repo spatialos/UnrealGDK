@@ -6,7 +6,6 @@
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
 
-#include "EngineClasses/SpatialPartitionSystem.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RPCContainer.h"
 
@@ -15,6 +14,8 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSettings, Log, All);
 
 class ASpatialDebugger;
+class USpatialPartitionSystem;
+class USpatialServerWorkerSystem;
 
 /**
  * Enum that maps Unreal's log verbosity to allow use in settings.
@@ -353,6 +354,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL PartitionSystem to use"))
 	TSubclassOf<USpatialPartitionSystem> PartitionSystemClass;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL ServerWorkerSystem to use"))
+	TSubclassOf<USpatialServerWorkerSystem> ServerWorkerSystemClass;
 
 #if WITH_EDITOR
 	void SetMultiWorkerEditorEnabled(const bool bIsEnabled);

@@ -4,8 +4,10 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialServerWorkerSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/SpatialPartitionSystemImpl.h"
+#include "Interop/SpatialServerWorkerSystemImpl.h"
 #include "Schema/ServerWorker.h"
 #include "Schema/StandardLibrary.h"
 #include "SpatialGDKSettings.h"
@@ -13,6 +15,7 @@
 #include "SpatialView/CommandRetryHandler.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
+#include "SpatialView/EntityComponentTypes.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
 
@@ -84,6 +87,32 @@ void ServerWorkerEntityCreator::CreateWorkerEntity()
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
 
+	if (NetDriver.ServerWorkerSystemImpl)
+	{
+		UGameInstance* GameInstance = NetDriver.GetWorld()->GetGameInstance();
+		USpatialServerWorkerSystem* ServerWorkerData = GameInstance->GetSubsystem<USpatialServerWorkerSystem>();
+		if (ensure(ServerWorkerData))
+		{
+			TArray<ComponentData> DataArray = ServerWorkerData->GetServerWorkerData();
+			for (auto& Update : NetDriver.ServerWorkerSystemImpl->PendingComponentUpdates)
+			{
+				if (ComponentData* ExistingData = DataArray.FindByPredicate(ComponentIdEquality()))
+				{
+					ExistingData->ApplyUpdate(MoveTemp(Update));
+				}
+			}
+			NetDriver.ServerWorkerSystemImpl->PendingComponentUpdates.Empty();
+			for (auto& Data : DataArray)
+			{
+				NetDriver.ServerWorkerSystemImpl->ServerWorkerComponents.Add(Data.GetComponentId());
+				FWorkerComponentData WorkerComponentData = {};
+				WorkerComponentData.component_id = Data.GetComponentId();
+				WorkerComponentData.schema_type = Schema_CopyComponentData(Data.GetUnderlying());
+				Components.Add(WorkerComponentData);
+			}
+		}
+	}
+	
 	TArray<ComponentData> ComponentDatas;
 	for (FWorkerComponentData& Component : Components)
 	{

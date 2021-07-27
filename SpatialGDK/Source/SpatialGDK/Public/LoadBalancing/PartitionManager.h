@@ -19,7 +19,8 @@ class ViewCoordinator;
 class FPartitionManager
 {
 public:
-	FPartitionManager(Worker_EntityId InStrategyWorkerEntityId, ViewCoordinator& Coordinator, TUniquePtr<InterestFactory>&& InterestF);
+	FPartitionManager(const FSubView& InServerWorkerView, Worker_EntityId InStrategyWorkerEntityId, ViewCoordinator& Coordinator,
+					  TUniquePtr<InterestFactory>&& InterestF);
 	~FPartitionManager();
 
 	void Init(ISpatialOSWorker& Connection);
@@ -40,6 +41,7 @@ public:
 	TArray<FLBWorkerHandle> GetDisconnectedWorkers();
 
 	Worker_EntityId GetServerWorkerEntityIdForWorker(FLBWorkerHandle);
+	FLBWorkerHandle GetWorkerForServerWorkerEntity(Worker_EntityId);
 
 private:
 	struct Impl;

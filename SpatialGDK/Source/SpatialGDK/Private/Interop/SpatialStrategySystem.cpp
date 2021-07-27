@@ -17,14 +17,15 @@ DEFINE_LOG_CATEGORY(LogSpatialStrategySystem);
 namespace SpatialGDK
 {
 FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionsMgr, const FSubView& InLBView,
-											   TUniquePtr<FLoadBalancingStrategy> InStrategy)
+											   const FSubView& InServerWorkerView, TUniquePtr<FLoadBalancingStrategy> InStrategy)
 	: LBView(InLBView)
 	, PartitionsMgr(MoveTemp(InPartitionsMgr))
 	, DataStorages(InLBView)
 	, UserDataStorages(InLBView)
+	, ServerWorkerDataStorages(InServerWorkerView)
 	, Strategy(MoveTemp(InStrategy))
 {
-	Strategy->Init(UserDataStorages.DataStorages);
+	Strategy->Init(UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
 	DataStorages.DataStorages.Add(&AuthACKView);
 	DataStorages.DataStorages.Add(&NetOwningClientView);
 

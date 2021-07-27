@@ -69,9 +69,8 @@ CommandRequest CreateClaimPartitionRequest(Worker_PartitionId Partition)
 
 struct FPartitionManager::Impl
 {
-	Impl(ViewCoordinator& Coordinator, TUniquePtr<InterestFactory>&& InInterestF)
-		: WorkerView(Coordinator.CreateSubView(SpatialConstants::SERVER_WORKER_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
-											   SpatialGDK::FSubView::NoDispatcherCallbacks))
+	Impl(const FSubView& InServerWorkerView, ViewCoordinator& Coordinator, TUniquePtr<InterestFactory>&& InInterestF)
+		: WorkerView(InServerWorkerView)
 		, SystemWorkerView(Coordinator.CreateSubView(SpatialConstants::WORKER_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
 													 SpatialGDK::FSubView::NoDispatcherCallbacks))
 		, PartitionView(Coordinator.CreateSubView(SpatialConstants::PARTITION_ACK_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
@@ -411,9 +410,9 @@ struct FPartitionManager::Impl
 
 FPartitionManager::~FPartitionManager() = default;
 
-FPartitionManager::FPartitionManager(Worker_EntityId InStrategyWorkerEntityId, ViewCoordinator& Coordinator,
-									 TUniquePtr<InterestFactory>&& InterestF)
-	: m_Impl(MakeUnique<Impl>(Coordinator, MoveTemp(InterestF)))
+FPartitionManager::FPartitionManager(const FSubView& InServerWorkerView, Worker_EntityId InStrategyWorkerEntityId,
+									 ViewCoordinator& Coordinator, TUniquePtr<InterestFactory>&& InterestF)
+	: m_Impl(MakeUnique<Impl>(InServerWorkerView, Coordinator, MoveTemp(InterestF)))
 {
 	m_Impl->StrategyWorkerEntityId = InStrategyWorkerEntityId;
 }
@@ -551,6 +550,19 @@ Worker_EntityId FPartitionManager::GetServerWorkerEntityIdForWorker(FLBWorkerHan
 	}
 
 	return Worker->State->ServerWorkerId;
+}
+
+FLBWorkerHandle FPartitionManager::GetWorkerForServerWorkerEntity(Worker_EntityId EntityId)
+{
+	for (const auto& Worker : m_Impl->ConnectedWorkers)
+	{
+		if (Worker->State->ServerWorkerId == EntityId)
+		{
+			return Worker;
+		}
+	}
+
+	return FLBWorkerHandle();
 }
 
 } // namespace SpatialGDK

@@ -27,7 +27,7 @@ class FPartitionManager;
 class FSpatialStrategySystem
 {
 public:
-	FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionMgr, const FSubView& InLBView,
+	FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionMgr, const FSubView& InLBView, const FSubView& InServerWorkerView,
 						   TUniquePtr<FLoadBalancingStrategy> Strategy);
 
 	~FSpatialStrategySystem();
@@ -46,6 +46,7 @@ private:
 	TLBDataStorage<NetOwningClientWorker> NetOwningClientView;
 	FLBDataCollection DataStorages;
 	FLBDataCollection UserDataStorages;
+	FLBDataCollection ServerWorkerDataStorages;
 	TSet<Worker_ComponentId> UpdatesToConsider;
 	// --- Components watched to implement the strategy ---
 

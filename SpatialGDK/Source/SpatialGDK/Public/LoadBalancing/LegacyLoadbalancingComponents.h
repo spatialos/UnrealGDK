@@ -182,4 +182,74 @@ struct LegacyLB_VirtualWorkerAssignment
 
 	uint32 Virtual_worker_id;
 };
+
+struct LegacyLB_CustomWorkerAssignments
+{
+	static constexpr Worker_ComponentId ComponentId = 180500;
+
+	LegacyLB_CustomWorkerAssignments() {}
+
+	LegacyLB_CustomWorkerAssignments(const ComponentData& Data)
+		: LegacyLB_CustomWorkerAssignments(Data.GetUnderlying())
+	{
+	}
+
+	LegacyLB_CustomWorkerAssignments(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
+		ReadFromObject(ComponentObject);
+	}
+
+	ComponentData CreateComponentData() const
+	{
+		ComponentData Data(ComponentId);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.GetUnderlying());
+
+		WriteToObject(ComponentObject);
+
+		return Data;
+	}
+
+	ComponentUpdate CreateComponentUpdate() const
+	{
+		ComponentUpdate Update(ComponentId);
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.GetUnderlying());
+
+		WriteToObject(ComponentObject);
+
+		return Update;
+	}
+
+	void ApplyComponentUpdate(const ComponentUpdate& Update) { ApplyComponentUpdate(Update.GetUnderlying()); }
+
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
+		ReadFromObject(ComponentObject);
+	}
+
+	void ReadFromObject(Schema_Object* Object)
+	{
+		LabelToVirtualWorker.Empty();
+		uint32 NumEntries = Schema_GetUint32Count(Object, 1);
+		uint32 NumStrings = Schema_GetBytesCount(Object, 2);
+		for (uint32 i = 0; i < NumEntries; ++i)
+		{
+			uint32_t WorkerId = Schema_IndexUint32(Object, 1, i);
+			FString Label = IndexStringFromSchema(Object, 2, i);
+			LabelToVirtualWorker.Add(Label, WorkerId);
+		}
+	}
+
+	void WriteToObject(Schema_Object* Object) const
+	{
+		for (const auto& Entry : LabelToVirtualWorker)
+		{
+			Schema_AddUint32(Object, 1, Entry.Value);
+			AddStringToSchema(Object, 2, Entry.Key);
+		}
+	}
+
+	TMap<FString, uint32> LabelToVirtualWorker;
+};
 } // namespace SpatialGDK
