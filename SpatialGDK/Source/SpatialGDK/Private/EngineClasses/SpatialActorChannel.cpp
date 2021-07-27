@@ -1047,7 +1047,7 @@ FObjectReplicator* USpatialActorChannel::GetObjectReplicatorForSpatialUpdate(UOb
 }
 
 void USpatialActorChannel::InvokeRepNotifies(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-													const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds)
+											 const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 

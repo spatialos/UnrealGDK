@@ -982,8 +982,10 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 		}
 		else
 		{
-			UE_LOG(LogActorSystem, Log, TEXT("ApplyComponentData: Did not invoke PreNetReceive for object %s, entity id %lld, component id %u. No data will be applied."),
-				*TargetObject.GetName(), Channel.GetEntityId(), ComponentId);
+			UE_LOG(LogActorSystem, Log,
+				   TEXT("ApplyComponentData: Did not invoke PreNetReceive for object %s, entity id %lld, component id %u. No data will be "
+						"applied."),
+				   *TargetObject.GetName(), Channel.GetEntityId(), ComponentId);
 		}
 
 		RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
@@ -1313,8 +1315,10 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 	}
 	else
 	{
-		UE_LOG(LogActorSystem, Log, TEXT("ApplyComponentUpdate: Did not invoke PreNetReceive for object %s, entity id %lld, component id %u. No data will be applied."),
-			*TargetObject.GetName(), Channel.GetEntityId(), ComponentId);
+		UE_LOG(LogActorSystem, Log,
+			   TEXT("ApplyComponentUpdate: Did not invoke PreNetReceive for object %s, entity id %lld, component id %u. No data will be "
+					"applied."),
+			   *TargetObject.GetName(), Channel.GetEntityId(), ComponentId);
 	}
 	RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 
@@ -1772,8 +1776,9 @@ bool ActorSystem::InvokePreNetReceive(USpatialActorChannel& Channel, UObject& Ob
 {
 	if (Object.IsPendingKill())
 	{
-		UE_LOG(LogActorSystem, Log, TEXT("InvokePreNetReceive: Did not invoke PreNetReceive for object %s, as object is pending kill. Entity id: %lld."),
-			*Object.GetName(), Channel.GetEntityId());
+		UE_LOG(LogActorSystem, Log,
+			   TEXT("InvokePreNetReceive: Did not invoke PreNetReceive for object %s, as object is pending kill. Entity id: %lld."),
+			   *Object.GetName(), Channel.GetEntityId());
 		return false;
 	}
 
@@ -1794,8 +1799,7 @@ void ActorSystem::InvokePostNetReceives()
 		if (!Object)
 		{
 			// An object could have been set to pending kill as a result of the user callback PreNetReceive.
-			UE_LOG(LogActorSystem, Log, TEXT("Not sending PostNetReceive for object: %s as it is not valid."),
-				*GetNameSafe(Object));
+			UE_LOG(LogActorSystem, Log, TEXT("Not sending PostNetReceive for object: %s as it is not valid."), *GetNameSafe(Object));
 		}
 		Object->PostNetReceive();
 	}
