@@ -1204,21 +1204,30 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 		return;
 	}
 
-	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
-	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		return;
-	}
+	TFunction<void(AActor * Actor)> ProcessOwnerChange;
+	ProcessOwnerChange = [&ProcessOwnerChange, this](AActor* Actor) {
+		Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+		{
+			return;
+		}
 
-	USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId);
-	if (Channel == nullptr)
-	{
-		return;
-	}
+		USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId);
+		if (Channel == nullptr)
+		{
+			return;
+		}
 
-	Channel->MarkInterestDirty();
+		Channel->MarkInterestDirty();
 
-	OwnershipChangedEntities.Add(EntityId);
+		OwnershipChangedEntities.Add(EntityId);
+		for (AActor* Children : Actor->Children)
+		{
+			ProcessOwnerChange(Children);
+		}
+	};
+
+	ProcessOwnerChange(Actor);
 }
 
 void USpatialNetDriver::NotifyActorLevelUnloaded(AActor* Actor)
@@ -2191,7 +2200,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 					Actor->OnAuthorityLost();
 				}
-
+				
 				for (auto EntityId : HandoverManager->GetActorsToCheckForAuth())
 				{
 					TWeakObjectPtr<UObject> ObjectPtr = PackageMap->GetObjectFromEntityId(EntityId);
@@ -2303,6 +2312,15 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			if (PartitionSystemImpl.IsValid())
 			{
 				PartitionSystemImpl->ProcessDeletionEvents();
+			}
+
+			if (ServerWorkerSystemImpl.IsValid())
+			{
+				for (auto& Update : ServerWorkerSystemImpl->PendingComponentUpdates)
+				{
+					Connection->GetCoordinator().SendComponentUpdate(WorkerEntityId, MoveTemp(Update));
+				}
+				ServerWorkerSystemImpl->PendingComponentUpdates.Empty();
 			}
 
 			if (RPCService.IsValid())

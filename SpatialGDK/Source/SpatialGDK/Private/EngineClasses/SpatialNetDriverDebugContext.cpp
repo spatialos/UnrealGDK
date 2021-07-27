@@ -4,9 +4,11 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialServerWorkerSystem.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/DebugLBStrategy.h"
+#include "LoadBalancing/LegacyLoadbalancingComponents.h"
 #include "Utils/SpatialActorUtils.h"
 
 namespace
@@ -153,7 +155,7 @@ void USpatialNetDriverDebugContext::Reset()
 	SemanticDelegations.Empty();
 	CachedInterestSet.Empty();
 	ActorDebugInfo.Empty();
-
+	UpdateServerWorkerData();
 	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
 }
 
@@ -176,6 +178,19 @@ USpatialNetDriverDebugContext::DebugComponentAuthData& USpatialNetDriverDebugCon
 		Comp.Component = *DbgComp;
 		Comp.bAdded = true;
 	}
+	// else
+	//{
+	//	const SpatialGDK::EntityViewElement* Element = SubView->GetView().Find(Entity);
+	//	if (ensure(Element != nullptr))
+	//	{
+	//		const SpatialGDK::ComponentData* DbgCompData = Element->Components.FindByPredicate(SpatialGDK::ComponentIdEquality({
+	// SpatialGDK::DebugComponent::ComponentId })); 		if (DbgCompData)
+	//		{
+	//			Comp.Component = SpatialGDK::DebugComponent(*DbgComp);
+	//			Comp.bAdded = true;
+	//		}
+	//	}
+	//}
 	Comp.Entity = Entity;
 
 	return Comp;
@@ -307,6 +322,7 @@ void USpatialNetDriverDebugContext::AddInterestOnTag(FName Tag)
 				}
 			}
 		}
+		UpdateServerWorkerData();
 	}
 }
 
@@ -336,6 +352,7 @@ void USpatialNetDriverDebugContext::RemoveInterestOnTag(FName Tag)
 				}
 			}
 		}
+		UpdateServerWorkerData();
 	}
 }
 
@@ -349,14 +366,51 @@ void USpatialNetDriverDebugContext::KeepActorOnLocalWorker(AActor* Actor)
 	}
 }
 
+void USpatialNetDriverDebugContext::UpdateServerWorkerData()
+{
+	if (NetDriver->ServerWorkerSystemImpl)
+	{
+		UWorld* World = NetDriver->GetWorld();
+		if (World == nullptr)
+		{
+			return;
+		}
+
+		UGameInstance* GameInstance = World->GetGameInstance();
+		if (GameInstance == nullptr)
+		{
+			return;
+		}
+
+		USpatialServerWorkerSystem* ServerWorkerData = GameInstance->GetSubsystem<USpatialServerWorkerSystem>();
+		if (ensure(ServerWorkerData))
+		{
+			SpatialGDK::LegacyLB_CustomWorkerAssignments Assignments;
+			for (const auto& Delegation : SemanticDelegations)
+			{
+				Assignments.LabelToVirtualWorker.Add(Delegation.Key, Delegation.Value);
+			}
+			for (FName Label : SemanticInterest)
+			{
+				Assignments.AdditionalInterest.Add(Label);
+			}
+			TArray<SpatialGDK::ComponentUpdate> Updates;
+			Updates.Add(Assignments.CreateComponentUpdate());
+			ServerWorkerData->UpdateServerWorkerData(MoveTemp(Updates));
+		}
+	}
+}
+
 void USpatialNetDriverDebugContext::DelegateTagToWorker(FName Tag, uint32 WorkerId)
 {
 	SemanticDelegations.Add(Tag, WorkerId);
+	UpdateServerWorkerData();
 }
 
 void USpatialNetDriverDebugContext::RemoveTagDelegation(FName Tag)
 {
 	SemanticDelegations.Remove(Tag);
+	UpdateServerWorkerData();
 }
 
 TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorHierarchyExplicitDelegation(const AActor* Actor)

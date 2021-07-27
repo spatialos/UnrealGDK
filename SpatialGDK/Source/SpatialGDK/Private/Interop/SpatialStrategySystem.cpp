@@ -100,6 +100,24 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 	Strategy->Advance(Connection);
 }
 
+void FSpatialStrategySystem::ClearUserStorages()
+{
+	for (auto& Storage : UserDataStorages.DataStorages)
+	{
+		Storage->ClearModified();
+	}
+	for (auto& Storage : ServerWorkerDataStorages.DataStorages)
+	{
+		Storage->ClearModified();
+	}
+	DataStorages.EntitiesAdded.Empty();
+	DataStorages.EntitiesRemoved.Empty();
+	UserDataStorages.EntitiesAdded.Empty();
+	UserDataStorages.EntitiesRemoved.Empty();
+	ServerWorkerDataStorages.EntitiesAdded.Empty();
+	ServerWorkerDataStorages.EntitiesRemoved.Empty();
+}
+
 void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 {
 	// Update worker's interest if needed (now, only when additional data storage has been added)
@@ -124,11 +142,17 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 		if (ActorSetSystem.GetSetLeader(*Iterator) != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			Iterator.RemoveCurrent();
+			continue;
+		}
+		if (DataStorages.EntitiesRemoved.Contains(*Iterator))
+		{
+			Iterator.RemoveCurrent();
+			continue;
 		}
 	}
 
 	// Ask the Strategy about the entities that need migration.
-	FMigrationContext Ctx(MigratingEntities, ModifiedEntities, DataStorages.EntitiesRemoved);
+	FMigrationContext Ctx(ActorSetSystem, MigratingEntities, ModifiedEntities, DataStorages.EntitiesRemoved);
 	Strategy->CollectEntitiesToMigrate(Ctx);
 
 	// If there were pending migrations, meld them with the migration requests
