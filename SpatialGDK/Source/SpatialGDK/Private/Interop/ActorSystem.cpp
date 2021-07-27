@@ -1786,15 +1786,15 @@ bool ActorSystem::InvokePreNetReceive(USpatialActorChannel& Channel, UObject& Ob
 		Object.PreNetReceive();
 		PostNetReceivesToSend.Emplace(FWeakObjectPtr(&Object));
 
-		UE_LOG(LogActorSystem, Verbose,
-	TEXT("InvokePreNetReceive: Invoking PreNetReceive for object %s, entity id: %lld."),
-	*Object.GetName(), Channel.GetEntityId());
+		UE_LOG(LogActorSystem, Verbose, TEXT("InvokePreNetReceive: Invoking PreNetReceive for object %s, entity id: %lld."),
+			   *Object.GetName(), Channel.GetEntityId());
 	}
 	else
 	{
 		UE_LOG(LogActorSystem, Verbose,
-TEXT("InvokePreNetReceive: Not invoking PreNetReceive for object %s as it is already contained within PostNetReceivesToSend. Entity id: %lld."),
-*Object.GetName(), Channel.GetEntityId());
+			   TEXT("InvokePreNetReceive: Not invoking PreNetReceive for object %s as it is already contained within "
+					"PostNetReceivesToSend. Entity id: %lld."),
+			   *Object.GetName(), Channel.GetEntityId());
 	}
 
 	return true;
