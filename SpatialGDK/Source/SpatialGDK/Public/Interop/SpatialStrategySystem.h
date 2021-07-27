@@ -29,7 +29,7 @@ class FPartitionManager;
 class FSpatialStrategySystem
 {
 public:
-	FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionMgr, const FSubView& InLBView,
+	FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionMgr, const FSubView& InLBView, const FSubView& InServerWorkerView,
 						   TUniquePtr<FLoadBalancingStrategy> Strategy);
 
 	~FSpatialStrategySystem();
@@ -39,8 +39,6 @@ public:
 	void Destroy(ISpatialOSWorker& Connection);
 
 private:
-	void ClearUserStorages();
-
 	const FSubView& LBView;
 
 	TUniquePtr<FPartitionManager> PartitionsMgr;
@@ -52,6 +50,7 @@ private:
 	FActorSetSystem ActorSetSystem;
 	FLBDataCollection DataStorages;
 	FLBDataCollection UserDataStorages;
+	FLBDataCollection ServerWorkerDataStorages;
 	TSet<Worker_ComponentId> UpdatesToConsider;
 	// --- Components watched to implement the strategy ---
 

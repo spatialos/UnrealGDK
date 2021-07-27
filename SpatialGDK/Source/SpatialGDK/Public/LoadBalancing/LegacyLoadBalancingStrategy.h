@@ -13,7 +13,8 @@ namespace SpatialGDK
 class FSpatialPositionStorage;
 class FActorGroupStorage;
 class FDirectAssignmentStorage;
-class FLoadBalancingCalculator;
+class FDebugComponentStorage;
+class FCustomWorkerAssignmentStorage;
 
 class FLegacyLoadBalancing : public FLoadBalancingStrategy
 {
@@ -21,7 +22,7 @@ public:
 	FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, SpatialVirtualWorkerTranslator& InTranslator);
 	~FLegacyLoadBalancing();
 
-	virtual void Init(TArray<FLBDataStorage*>& OutLoadBalancingData) override;
+	virtual void Init(TArray<FLBDataStorage*>& OutLoadBalancingData, TArray<FLBDataStorage*>& OutServerWorkerData) override;
 
 	virtual void Advance(ISpatialOSWorker& Connection) override;
 	virtual void Flush(ISpatialOSWorker& Connection) override;
@@ -38,6 +39,7 @@ protected:
 	TUniquePtr<FSpatialPositionStorage> PositionStorage;
 	TUniquePtr<FActorGroupStorage> GroupStorage;
 	TUniquePtr<FDirectAssignmentStorage> AssignmentStorage;
+	TUniquePtr<FDebugComponentStorage> DebugCompStorage;
 	// --- Data Storage ---
 
 	// +++ Partition Assignment +++
@@ -57,6 +59,8 @@ protected:
 	TSet<Worker_EntityId_Key> ToRefresh;
 	TMap<Worker_EntityId_Key, int32> Assignment;
 	bool bDirectAssignment = false;
+
+	Worker_EntityId WorkerForCustomAssignment = 0;
 	// --- Load Balancing ---
 };
 
