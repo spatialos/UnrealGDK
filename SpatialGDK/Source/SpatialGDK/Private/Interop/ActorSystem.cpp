@@ -225,7 +225,6 @@ void ActorSystem::ProcessAuthorityGains(const FEntitySubViewUpdate& SubViewUpdat
 																	? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
 																	: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
 			AuthorityGained(EntityId, AuthorityComponentSet);
-			InvokePostNetReceives();
 		}
 	}
 }
@@ -1786,6 +1785,16 @@ bool ActorSystem::InvokePreNetReceive(USpatialActorChannel& Channel, UObject& Ob
 	{
 		Object.PreNetReceive();
 		PostNetReceivesToSend.Emplace(FWeakObjectPtr(&Object));
+
+		UE_LOG(LogActorSystem, Verbose,
+	TEXT("InvokePreNetReceive: Invoking PreNetReceive for object %s, entity id: %lld."),
+	*Object.GetName(), Channel.GetEntityId());
+	}
+	else
+	{
+		UE_LOG(LogActorSystem, Verbose,
+TEXT("InvokePreNetReceive: Not invoking PreNetReceive for object %s as it is already contained within PostNetReceivesToSend. Entity id: %lld."),
+*Object.GetName(), Channel.GetEntityId());
 	}
 
 	return true;
@@ -1800,8 +1809,12 @@ void ActorSystem::InvokePostNetReceives()
 		{
 			// An object could have been set to pending kill as a result of the user callback PreNetReceive.
 			UE_LOG(LogActorSystem, Log, TEXT("Not sending PostNetReceive for object: %s as it is not valid."), *GetNameSafe(Object));
+			continue;
 		}
+
 		Object->PostNetReceive();
+
+		UE_LOG(LogActorSystem, Verbose, TEXT("Sending PostNetReceive for object %s."), *Object->GetName());
 	}
 
 	PostNetReceivesToSend.Empty();
