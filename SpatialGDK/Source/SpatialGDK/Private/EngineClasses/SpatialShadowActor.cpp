@@ -46,6 +46,8 @@ void USpatialShadowActor::CreateHash()
 	for (TFieldIterator<FProperty> PropIt(Actor->GetClass()); PropIt; ++PropIt)
 	{
 		FProperty* Property = *PropIt;
+		UE_LOG(LogSpatialShadowActor, Display, TEXT("Hashing property: %s"),
+			   *Property->GetName()); // Temp for CI to check which property fails in 4.25
 
 		if (Property->HasAnyPropertyFlags(CPF_Net) && Property->HasAnyPropertyFlags(CPF_HasGetValueTypeHash))
 		{
@@ -77,7 +79,6 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges()
 
 		if (Property->HasAnyPropertyFlags(CPF_Net) && Property->HasAnyPropertyFlags(CPF_HasGetValueTypeHash))
 		{
-			UE_LOG(LogSpatialShadowActor, Display, TEXT("Hashing property: %s"), *Property->GetName()); // Temp for CI to check which property fails in 4.25
 			const uint32 LatestPropertyHash = Property->GetValueTypeHash(Property->ContainerPtrToValuePtr<void>(Actor, 0));
 
 			if (ReplicatedPropertyHashes[i] != LatestPropertyHash && !USpatialNetDriverAuthorityDebugger::IsSuppressedProperty(*Property))
