@@ -6,7 +6,7 @@
 #include "GameFramework/Character.h"
 #include "EventTracingCharacter.generated.h"
 
-UCLASS()
+UCLASS(HideDropdown)
 class AEventTracingCharacter : public ACharacter
 {
 	GENERATED_BODY()

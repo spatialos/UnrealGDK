@@ -6,7 +6,7 @@
 #include "CoreMinimal.h"
 #include "EventTracerComponent.generated.h"
 
-UCLASS()
+UCLASS(HideDropdown)
 class UEventTracerComponent : public UActorComponent
 {
 	GENERATED_BODY()
