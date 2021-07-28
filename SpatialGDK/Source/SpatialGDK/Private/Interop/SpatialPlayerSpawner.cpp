@@ -437,7 +437,7 @@ void USpatialPlayerSpawner::ProcessForwardedPlayerSpawnRequest(Schema_Object* Re
 	if (bAlreadyHasPlayer)
 	{
 		UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Ignoring duplicate forward player spawn request. Client worker ID: %lld"),
-			ClientWorkerId);
+			   ClientWorkerId);
 		return;
 	}
 
@@ -453,13 +453,13 @@ void USpatialPlayerSpawner::ProcessForwardedPlayerSpawnRequest(Schema_Object* Re
 		if (bRequestHandledSuccessfully)
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Received ForwardPlayerSpawn request. Client worker ID: %lld. PlayerStart: %s"),
-				ClientWorkerId, *PlayerStart->GetName());
+				   ClientWorkerId, *PlayerStart->GetName());
 			PassSpawnRequestToNetDriver(PlayerSpawnData, PlayerStart);
 		}
 		else
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Error,
-				TEXT("PlayerStart Actor UnrealObjectRef was invalid on forwarded player spawn request worker: %lld"), ClientWorkerId);
+				   TEXT("PlayerStart Actor UnrealObjectRef was invalid on forwarded player spawn request worker: %lld"), ClientWorkerId);
 		}
 	}
 	else
@@ -467,7 +467,7 @@ void USpatialPlayerSpawner::ProcessForwardedPlayerSpawnRequest(Schema_Object* Re
 		UE_LOG(
 			LogSpatialPlayerSpawner, Log,
 			TEXT("PlayerStart Actor was null object ref in forward spawn request. This is intentional when handing request to the correct "
-				"load balancing layer. Attempting to find a player start again."));
+				 "load balancing layer. Attempting to find a player start again."));
 		FindPlayerStartAndProcessPlayerSpawn(PlayerSpawnData, ClientWorkerId);
 	}
 
