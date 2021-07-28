@@ -1775,17 +1775,16 @@ bool ActorSystem::InvokePreNetReceive(UObject& Object)
 {
 	if (Object.IsPendingKill())
 	{
-		UE_LOG(LogActorSystem, Log,
-			   TEXT("InvokePreNetReceive: Did not invoke PreNetReceive for object %s, as object is pending kill."),
+		UE_LOG(LogActorSystem, Log, TEXT("InvokePreNetReceive: Did not invoke PreNetReceive for object %s, as object is pending kill."),
 			   *Object.GetName());
 		return false;
 	}
 
-	// We can have multiple spatial components receiving updates per unreal object but we only want to call PreNetReceive a single time for an object for each tick.
+	// We can have multiple spatial components receiving updates per unreal object but we only want to call PreNetReceive a single time for
+	// an object for each tick.
 	if (!PostNetReceivesToSend.Contains(FWeakObjectPtr(&Object)))
 	{
-		UE_LOG(LogActorSystem, VeryVerbose, TEXT("InvokePreNetReceive: Invoking PreNetReceive for object %s."),
-			   *Object.GetName());
+		UE_LOG(LogActorSystem, VeryVerbose, TEXT("InvokePreNetReceive: Invoking PreNetReceive for object %s."), *Object.GetName());
 
 		Object.PreNetReceive();
 		PostNetReceivesToSend.Emplace(FWeakObjectPtr(&Object));

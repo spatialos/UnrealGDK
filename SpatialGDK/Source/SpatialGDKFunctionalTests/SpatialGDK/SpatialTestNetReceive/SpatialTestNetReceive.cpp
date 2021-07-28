@@ -51,7 +51,8 @@ void ASpatialTestNetReceive::PrepareTest()
 	});
 
 	// Wait for standard replication.
-	AddStep(TEXT("SpatialTestNetReceiveCheckReceiveActorAndSubobject"), FWorkerDefinition::Client(1), nullptr, nullptr,
+	AddStep(
+		TEXT("SpatialTestNetReceiveCheckReceiveActorAndSubobject"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float Dt) {
 			if (!RequireEqual_Bool(IsValid(TestActor), true, TEXT("TestActor should be valid.")))
 			{
@@ -70,29 +71,28 @@ void ASpatialTestNetReceive::PrepareTest()
 		StepTimeLimit);
 
 	// Check the callbacks were called correctly.
-	AddStep(
-		TEXT("SpatialTestNetReceiveCheckCallbacks"), FWorkerDefinition::Client(1), nullptr,
-		[this]() {
-			const TArray<ERepStep>& RepSteps = TestActor->Subobject->RepSteps;
-			const TArray<ERepStep>& ExpectedRepSteps = TestActor->Subobject->ExpectedRepSteps;
-			const int NumMandatorySteps = TestActor->Subobject->NumMandatorySteps;
+	AddStep(TEXT("SpatialTestNetReceiveCheckCallbacks"), FWorkerDefinition::Client(1), nullptr, [this]() {
+		const TArray<ERepStep>& RepSteps = TestActor->Subobject->RepSteps;
+		const TArray<ERepStep>& ExpectedRepSteps = TestActor->Subobject->ExpectedRepSteps;
+		const int NumMandatorySteps = TestActor->Subobject->NumMandatorySteps;
 
-			// Have a minimum number of steps we require, as currently pre/postnetreceive are called when we gain ownership.
-			// However this is an implementation detail we don't care about.
-			AssertTrue(RepSteps.Num() >= NumMandatorySteps,
-							   FString::Printf(TEXT("RepSteps contains %d elements and should contain at least %d elements."), RepSteps.Num(), NumMandatorySteps));
+		// Have a minimum number of steps we require, as currently pre/postnetreceive are called when we gain ownership.
+		// However this is an implementation detail we don't care about.
+		AssertTrue(RepSteps.Num() >= NumMandatorySteps,
+				   FString::Printf(TEXT("RepSteps contains %d elements and should contain at least %d elements."), RepSteps.Num(),
+								   NumMandatorySteps));
 
-			for (int i = 0; i < RepSteps.Num(); ++i)
-			{
-				const ERepStep Step = RepSteps[i];
-				const ERepStep ExpectedStep = ExpectedRepSteps.IsValidIndex(i) ? ExpectedRepSteps[i] : ERepStep::None;
+		for (int i = 0; i < RepSteps.Num(); ++i)
+		{
+			const ERepStep Step = RepSteps[i];
+			const ERepStep ExpectedStep = ExpectedRepSteps.IsValidIndex(i) ? ExpectedRepSteps[i] : ERepStep::None;
 
-				AssertTrue(Step == ExpectedStep, FString::Printf(TEXT("Got RepStep: %s expected RepStep: %s."),
-																 *UEnum::GetValueAsString(Step), *UEnum::GetValueAsString(ExpectedStep)));
-			}
+			AssertTrue(Step == ExpectedStep, FString::Printf(TEXT("Got RepStep: %s expected RepStep: %s."), *UEnum::GetValueAsString(Step),
+															 *UEnum::GetValueAsString(ExpectedStep)));
+		}
 
-			FinishStep();
-		});
+		FinishStep();
+	});
 }
 
 void ASpatialTestNetReceive::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
