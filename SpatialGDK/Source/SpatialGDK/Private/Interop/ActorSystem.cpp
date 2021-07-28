@@ -974,7 +974,7 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 		bool bOutReferencesChanged = false;
 
 		FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
-		const bool bSuccessfullyPreNetReceived = InvokePreNetReceive(Channel, TargetObject);
+		const bool bSuccessfullyPreNetReceived = InvokePreNetReceive(TargetObject);
 		if (bSuccessfullyPreNetReceived)
 		{
 			Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
@@ -1307,7 +1307,7 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 	bool bOutReferencesChanged = false;
 	FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
 
-	const bool bSuccessfullyPreNetReceived = InvokePreNetReceive(Channel, TargetObject);
+	const bool bSuccessfullyPreNetReceived = InvokePreNetReceive(TargetObject);
 	if (bSuccessfullyPreNetReceived)
 	{
 		Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
@@ -1771,30 +1771,31 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 	return Channel;
 }
 
-bool ActorSystem::InvokePreNetReceive(USpatialActorChannel& Channel, UObject& Object)
+bool ActorSystem::InvokePreNetReceive(UObject& Object)
 {
 	if (Object.IsPendingKill())
 	{
 		UE_LOG(LogActorSystem, Log,
-			   TEXT("InvokePreNetReceive: Did not invoke PreNetReceive for object %s, as object is pending kill. Entity id: %lld."),
-			   *Object.GetName(), Channel.GetEntityId());
+			   TEXT("InvokePreNetReceive: Did not invoke PreNetReceive for object %s, as object is pending kill."),
+			   *Object.GetName());
 		return false;
 	}
 
+	// We can have multiple spatial components receiving updates per unreal object but we only want to call PreNetReceive a single time for an object for each tick.
 	if (!PostNetReceivesToSend.Contains(FWeakObjectPtr(&Object)))
 	{
-		UE_LOG(LogActorSystem, Verbose, TEXT("InvokePreNetReceive: Invoking PreNetReceive for object %s, entity id: %lld."),
-			   *Object.GetName(), Channel.GetEntityId());
+		UE_LOG(LogActorSystem, VeryVerbose, TEXT("InvokePreNetReceive: Invoking PreNetReceive for object %s."),
+			   *Object.GetName());
 
 		Object.PreNetReceive();
 		PostNetReceivesToSend.Emplace(FWeakObjectPtr(&Object));
 	}
 	else
 	{
-		UE_LOG(LogActorSystem, Verbose,
+		UE_LOG(LogActorSystem, VeryVerbose,
 			   TEXT("InvokePreNetReceive: Not invoking PreNetReceive for object %s as it is already contained within "
-					"PostNetReceivesToSend. Entity id: %lld."),
-			   *Object.GetName(), Channel.GetEntityId());
+					"PostNetReceivesToSend."),
+			   *Object.GetName());
 	}
 
 	return true;
@@ -1812,7 +1813,7 @@ void ActorSystem::InvokePostNetReceives()
 			continue;
 		}
 
-		UE_LOG(LogActorSystem, Verbose, TEXT("Sending PostNetReceive for object %s."), *Object->GetName());
+		UE_LOG(LogActorSystem, VeryVerbose, TEXT("Sending PostNetReceive for object %s."), *Object->GetName());
 
 		Object->PostNetReceive();
 	}

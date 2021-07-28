@@ -174,7 +174,7 @@ private:
 										   USpatialActorChannel& Channel, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 
 	USpatialActorChannel* TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, Worker_EntityId EntityId);
-	bool InvokePreNetReceive(USpatialActorChannel& Channel, UObject& Object);
+	bool InvokePreNetReceive(UObject& Object);
 	void InvokePostNetReceives();
 	FObjectRepNotifies& GetObjectRepNotifies(UObject& Object);
 

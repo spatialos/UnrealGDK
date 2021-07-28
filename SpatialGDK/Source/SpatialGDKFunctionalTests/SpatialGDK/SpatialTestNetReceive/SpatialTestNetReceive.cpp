@@ -14,10 +14,10 @@
  * The flow is as follows:
  * - Test:
  *	- The server spawns a ASpatialTestNetReceiveActor, which has a static subobject. The static subobject is where the properties are
- *stored. We use an subobject instead of storing properties on the actor as the subobject has significantly fewer replicated properties
- *inherited from native.
+ *	stored. We use an subobject instead of storing properties on the actor as the subobject has significantly fewer replicated properties
+ *	inherited from native.
  *		- The server also sets the values of the replicated int and the replicated OwnerOnly int. The actor's owner is set to the client's
- *PlayerController.
+ *		PlayerController.
  *	- The client then checks callbacks were called in the right order
  */
 
@@ -50,39 +50,49 @@ void ASpatialTestNetReceive::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(
-		TEXT("SpatialTestNetReceiveCheckAllOk"), FWorkerDefinition::Client(1), nullptr, nullptr,
+	// Wait for standard replication.
+	AddStep(TEXT("SpatialTestNetReceiveCheckReceiveActorAndSubobject"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float Dt) {
-			if (!RequireEqual_Bool(IsValid(TestActor), true, TEXT("TestActor should be valid")))
+			if (!RequireEqual_Bool(IsValid(TestActor), true, TEXT("TestActor should be valid.")))
 			{
 				return;
 			}
-			if (!RequireEqual_Int(IsValid(TestActor->Subobject), true, TEXT("TestActor's subobject should be valid")))
+			if (!RequireEqual_Bool(IsValid(TestActor->Subobject), true, TEXT("TestActor's subobject should be valid.")))
 			{
 				return;
 			}
 
-			RequireEqual_Int(TestActor->Subobject->TestInt, 5, TEXT("TestInt property should be updated"));
-			RequireEqual_Int(TestActor->Subobject->OwnerOnlyTestInt, 6, TEXT("ServerOnlyTestInt property should be updated"));
-
-			const int NumMandatorySteps = TestActor->Subobject->NumMandatorySteps;
-			TArray<ERepStep> RepSteps = TestActor->Subobject->RepSteps;
-			TArray<ERepStep> ExpectedRepSteps = TestActor->Subobject->ExpectedRepSteps;
-			RequireCompare_Int(RepSteps.Num(), EComparisonMethod::Greater_Than_Or_Equal_To, NumMandatorySteps,
-							   FString::Printf(TEXT("RepSteps should contain at least %d elements."), NumMandatorySteps));
-
-			for (int i = 0; i < TestActor->Subobject->RepSteps.Num(); ++i)
-			{
-				const ERepStep Step = RepSteps[i];
-				const ERepStep ExpectedStep = ExpectedRepSteps.IsValidIndex(i) ? ExpectedRepSteps[i] : ERepStep::None;
-
-				AssertTrue(Step == ExpectedStep, FString::Printf(TEXT("Got RepStep: %s expected RepStep: %s"),
-																 *UEnum::GetValueAsString(Step), *UEnum::GetValueAsString(ExpectedStep)));
-			}
+			AssertEqual_Int(TestActor->Subobject->TestInt, 5, TEXT("TestInt property should be updated."));
+			AssertEqual_Int(TestActor->Subobject->OwnerOnlyTestInt, 6, TEXT("OwnerOnlyTestInt property should be updated."));
 
 			FinishStep();
 		},
 		StepTimeLimit);
+
+	// Check the callbacks were called correctly.
+	AddStep(
+		TEXT("SpatialTestNetReceiveCheckCallbacks"), FWorkerDefinition::Client(1), nullptr,
+		[this]() {
+			const TArray<ERepStep>& RepSteps = TestActor->Subobject->RepSteps;
+			const TArray<ERepStep>& ExpectedRepSteps = TestActor->Subobject->ExpectedRepSteps;
+			const int NumMandatorySteps = TestActor->Subobject->NumMandatorySteps;
+
+			// Have a minimum number of steps we require, as currently pre/postnetreceive are called when we gain ownership.
+			// However this is an implementation detail we don't care about.
+			AssertTrue(RepSteps.Num() >= NumMandatorySteps,
+							   FString::Printf(TEXT("RepSteps contains %d elements and should contain at least %d elements."), RepSteps.Num(), NumMandatorySteps));
+
+			for (int i = 0; i < RepSteps.Num(); ++i)
+			{
+				const ERepStep Step = RepSteps[i];
+				const ERepStep ExpectedStep = ExpectedRepSteps.IsValidIndex(i) ? ExpectedRepSteps[i] : ERepStep::None;
+
+				AssertTrue(Step == ExpectedStep, FString::Printf(TEXT("Got RepStep: %s expected RepStep: %s."),
+																 *UEnum::GetValueAsString(Step), *UEnum::GetValueAsString(ExpectedStep)));
+			}
+
+			FinishStep();
+		});
 }
 
 void ASpatialTestNetReceive::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -120,7 +130,7 @@ void USpatialTestNetReceiveSubobject::PostNetReceive()
 	RepSteps.Add(ERepStep::PostNetReceive);
 }
 
-void USpatialTestNetReceiveSubobject::OnRep_TestInt(int32 OldTestInt)
+void USpatialTestNetReceiveSubobject::OnRep_TestInt()
 {
 	RepSteps.Add(ERepStep::RepNotify);
 }
