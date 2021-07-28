@@ -72,7 +72,8 @@ public:
 	int32 OwnerOnlyTestInt;
 
 	TArray<ERepStep> RepSteps;
-	TArray<ERepStep> ExpectedRepSteps = {ERepStep::PreNetReceive, ERepStep::PostNetReceive,  ERepStep::RepNotify, ERepStep::PreNetReceive, ERepStep::PostNetReceive};
+	TArray<ERepStep> ExpectedRepSteps = { ERepStep::PreNetReceive, ERepStep::PostNetReceive, ERepStep::RepNotify, ERepStep::PreNetReceive,
+										  ERepStep::PostNetReceive };
 	int32 NumMandatorySteps = 3; // The number of steps from the start of ExpectedRepSteps that are mandatory.
 
 	UFUNCTION()

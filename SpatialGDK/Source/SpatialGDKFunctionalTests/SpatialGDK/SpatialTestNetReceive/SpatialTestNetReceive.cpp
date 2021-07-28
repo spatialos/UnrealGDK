@@ -68,14 +68,16 @@ void ASpatialTestNetReceive::PrepareTest()
 			const int NumMandatorySteps = TestActor->Subobject->NumMandatorySteps;
 			TArray<ERepStep> RepSteps = TestActor->Subobject->RepSteps;
 			TArray<ERepStep> ExpectedRepSteps = TestActor->Subobject->ExpectedRepSteps;
-			RequireCompare_Int(RepSteps.Num(), EComparisonMethod::Greater_Than_Or_Equal_To, NumMandatorySteps, FString::Printf(TEXT("RepSteps should contain at least %d elements."), NumMandatorySteps));
+			RequireCompare_Int(RepSteps.Num(), EComparisonMethod::Greater_Than_Or_Equal_To, NumMandatorySteps,
+							   FString::Printf(TEXT("RepSteps should contain at least %d elements."), NumMandatorySteps));
 
 			for (int i = 0; i < TestActor->Subobject->RepSteps.Num(); ++i)
 			{
 				const ERepStep Step = RepSteps[i];
 				const ERepStep ExpectedStep = ExpectedRepSteps.IsValidIndex(i) ? ExpectedRepSteps[i] : ERepStep::None;
 
-				AssertTrue(Step == ExpectedStep, FString::Printf(TEXT("Got RepStep: %s expected RepStep: %s"), *UEnum::GetValueAsString(Step), *UEnum::GetValueAsString(ExpectedStep)));
+				AssertTrue(Step == ExpectedStep, FString::Printf(TEXT("Got RepStep: %s expected RepStep: %s"),
+																 *UEnum::GetValueAsString(Step), *UEnum::GetValueAsString(ExpectedStep)));
 			}
 
 			FinishStep();
