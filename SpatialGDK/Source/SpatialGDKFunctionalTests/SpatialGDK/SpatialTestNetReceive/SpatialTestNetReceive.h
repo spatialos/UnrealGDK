@@ -40,14 +40,15 @@ public:
 	USpatialTestNetReceiveSubobject* Subobject;
 };
 
-enum class RepStep
+UENUM()
+enum class ERepStep
 {
 	PreRep,
 	PreNetReceive,
 	PostNetReceive,
 	RepNotify,
 
-	SecondPreNetReceive, // For this test, expected to have RepNotify called before it
+	None,
 };
 
 UCLASS()
@@ -70,12 +71,9 @@ public:
 	UPROPERTY(Replicated)
 	int32 OwnerOnlyTestInt;
 
-	int32 PreNetNumTimesCalled;
-	int32 PostNetNumTimesCalled;
-	int32 RepNotifyNumTimesCalled;
-
-	RepStep PreviousReplicationStep = RepStep::PreRep;
-	TMap<RepStep, RepStep> RepStepToPrevRepStep;
+	TArray<ERepStep> RepSteps;
+	TArray<ERepStep> ExpectedRepSteps = {ERepStep::PreNetReceive, ERepStep::PostNetReceive,  ERepStep::RepNotify, ERepStep::PreNetReceive, ERepStep::PostNetReceive};
+	int32 NumMandatorySteps = 3; // The number of steps from the start of ExpectedRepSteps that are mandatory.
 
 	UFUNCTION()
 	void OnRep_TestInt(int32 OldTestInt);

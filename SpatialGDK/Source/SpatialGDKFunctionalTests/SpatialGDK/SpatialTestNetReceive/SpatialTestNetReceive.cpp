@@ -65,26 +65,18 @@ void ASpatialTestNetReceive::PrepareTest()
 			RequireEqual_Int(TestActor->Subobject->TestInt, 5, TEXT("TestInt property should be updated"));
 			RequireEqual_Int(TestActor->Subobject->OwnerOnlyTestInt, 6, TEXT("ServerOnlyTestInt property should be updated"));
 
-			RequireTrue(*TestActor->Subobject->RepStepToPrevRepStep.Find(RepStep::PreNetReceive) == RepStep::PreRep,
-						TEXT("Nothing should be called before PreNetReceive"));
-			RequireTrue(*TestActor->Subobject->RepStepToPrevRepStep.Find(RepStep::PostNetReceive) == RepStep::PreNetReceive,
-						TEXT("PreNetReceive should be called before PreNetReceive"));
-			RequireTrue(*TestActor->Subobject->RepStepToPrevRepStep.Find(RepStep::RepNotify) == RepStep::PostNetReceive,
-						TEXT("PostNetReceive should be called before TestInt's RepNotify."));
+			const int NumMandatorySteps = TestActor->Subobject->NumMandatorySteps;
+			TArray<ERepStep> RepSteps = TestActor->Subobject->RepSteps;
+			TArray<ERepStep> ExpectedRepSteps = TestActor->Subobject->ExpectedRepSteps;
+			RequireCompare_Int(RepSteps.Num(), EComparisonMethod::Greater_Than_Or_Equal_To, NumMandatorySteps, FString::Printf(TEXT("RepSteps should contain at least %d elements."), NumMandatorySteps));
 
-			RepStep* SecondPreNetMapping = TestActor->Subobject->RepStepToPrevRepStep.Find(RepStep::SecondPreNetReceive);
-			RequireTrue(SecondPreNetMapping == nullptr || *SecondPreNetMapping == RepStep::RepNotify,
-						TEXT("SecondPreNetReceive should be called after RepNotify or not at all."));
+			for (int i = 0; i < TestActor->Subobject->RepSteps.Num(); ++i)
+			{
+				const ERepStep Step = RepSteps[i];
+				const ERepStep ExpectedStep = ExpectedRepSteps.IsValidIndex(i) ? ExpectedRepSteps[i] : ERepStep::None;
 
-			// Pre/Post net can be called even when new properties aren't being received. For example, if ownership status changes.
-			RequireCompare_Int(TestActor->Subobject->PreNetNumTimesCalled, EComparisonMethod::Greater_Than_Or_Equal_To, 1,
-							   TEXT("PreNetNumTimesCalled should be more than 1."));
-			RequireCompare_Int(TestActor->Subobject->PostNetNumTimesCalled, EComparisonMethod::Greater_Than_Or_Equal_To, 1,
-							   TEXT("PostNetNumTimesCalled should be more than 1."));
-			RequireEqual_Int(TestActor->Subobject->PreNetNumTimesCalled, TestActor->Subobject->PostNetNumTimesCalled,
-							 TEXT("Pre and PostNetReceive should be called the same number of times."));
-
-			RequireEqual_Int(TestActor->Subobject->RepNotifyNumTimesCalled, 1, TEXT("RepNotifyNumTimesCalled should be 1."));
+				AssertTrue(Step == ExpectedStep, FString::Printf(TEXT("Got RepStep: %s expected RepStep: %s"), *UEnum::GetValueAsString(Step), *UEnum::GetValueAsString(ExpectedStep)));
+			}
 
 			FinishStep();
 		},
@@ -114,41 +106,21 @@ USpatialTestNetReceiveSubobject::USpatialTestNetReceiveSubobject()
 	: Super()
 {
 	SetIsReplicatedByDefault(true);
-
-	PreNetNumTimesCalled = 0;
-	PostNetNumTimesCalled = 0;
-	RepNotifyNumTimesCalled = 0;
 }
 
 void USpatialTestNetReceiveSubobject::PreNetReceive()
 {
-	if (++PreNetNumTimesCalled == 1)
-	{
-		RepStepToPrevRepStep.Add(RepStep::PreNetReceive, PreviousReplicationStep);
-		PreviousReplicationStep = RepStep::PreNetReceive;
-	}
-	else if (PreNetNumTimesCalled == 2)
-	{
-		RepStepToPrevRepStep.Add(RepStep::SecondPreNetReceive, PreviousReplicationStep);
-	}
+	RepSteps.Add(ERepStep::PreNetReceive);
 }
 
 void USpatialTestNetReceiveSubobject::PostNetReceive()
 {
-	if (++PostNetNumTimesCalled == 1)
-	{
-		RepStepToPrevRepStep.Add(RepStep::PostNetReceive, PreviousReplicationStep);
-		PreviousReplicationStep = RepStep::PostNetReceive;
-	}
+	RepSteps.Add(ERepStep::PostNetReceive);
 }
 
 void USpatialTestNetReceiveSubobject::OnRep_TestInt(int32 OldTestInt)
 {
-	if (++RepNotifyNumTimesCalled == 1)
-	{
-		RepStepToPrevRepStep.Add(RepStep::RepNotify, PreviousReplicationStep);
-		PreviousReplicationStep = RepStep::RepNotify;
-	}
+	RepSteps.Add(ERepStep::RepNotify);
 }
 
 void USpatialTestNetReceiveSubobject::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
