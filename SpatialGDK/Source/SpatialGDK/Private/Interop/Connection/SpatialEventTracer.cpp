@@ -343,6 +343,11 @@ FSpatialGDKSpanId SpatialEventTracer::PopLatentPropertyUpdateSpanId(const TWeakO
 	return TempSpanId;
 }
 
+bool SpatialEventTracer::IsObjectStackEmpty() const
+{
+	return ObjectSpanIdStacks.Num() == 0;
+}
+
 void SpatialEventTracer::SetFlushOnWrite(bool bValue)
 {
 	FPlatformAtomics::AtomicStore_Relaxed(&FlushOnWriteAtomic, bValue ? 1 : 0);
