@@ -36,6 +36,7 @@ public:
 	void OnPlayerSpawnResponseReceived(const Worker_Op& Op, const Worker_CommandResponseOp& CommandResponseOp);
 	void OnForwardedPlayerSpawnCommandReceived(const Worker_Op& Op, const Worker_CommandRequestOp& CommandRequestOp);
 	void OnForwardedPlayerSpawnResponseReceived(const Worker_Op& Op, const Worker_CommandResponseOp& CommandResponseOp);
+	void StartProcessingRequests();
 
 	// Client
 	void SendPlayerSpawnRequest();
@@ -49,6 +50,7 @@ public:
 
 	// Non-authoritative server worker
 	void ReceiveForwardedPlayerSpawnRequest(const Worker_CommandRequestOp& Op);
+	void ProcessForwardedPlayerSpawnRequest(Schema_Object* RequestPayload, Worker_RequestId RequestId);
 
 private:
 	struct ForwardSpawnRequestDeleter
@@ -79,11 +81,16 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	TMap<Worker_RequestId_Key, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>> OutgoingForwardPlayerSpawnRequests;
+	using CommandRequestPtr = TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>;
+	TMap<Worker_RequestId_Key, CommandRequestPtr> OutgoingForwardPlayerSpawnRequests;
 
 	SpatialGDK::FEntityQueryHandler QueryHandler;
 	SpatialGDK::EntityCommandRequestHandler RequestHandler;
 	SpatialGDK::EntityCommandResponseHandler ResponseHandler;
 
 	TSet<Worker_EntityId_Key> WorkersWithPlayersSpawned;
+	TArray<TPair<Worker_EntityId_Key, CommandRequestPtr>> QueuedPlayerSpawnRequests;
+	TArray<TPair<Worker_RequestId_Key, CommandRequestPtr>> QueueForwardPlayerSpawnRequests;
+	bool bQueueSpawnRequests;
+	bool bProcessQueuedRequests;
 };

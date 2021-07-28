@@ -580,6 +580,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClassesAfterStartup()
 		}
 
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
+		PlayerSpawner->StartProcessingRequests();
 	}
 }
 

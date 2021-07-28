@@ -45,6 +45,9 @@ void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver)
 	ResponseHandler.AddResponseHandler(
 		SpatialConstants::SERVER_WORKER_COMPONENT_ID, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID,
 		FOnCommandResponseWithOp::FDelegate::CreateUObject(this, &USpatialPlayerSpawner::OnForwardedPlayerSpawnResponseReceived));
+
+	bQueueSpawnRequests = true;
+	bProcessQueuedRequests = false;
 }
 
 void USpatialPlayerSpawner::Advance(const TArray<Worker_Op>& Ops)
@@ -52,6 +55,23 @@ void USpatialPlayerSpawner::Advance(const TArray<Worker_Op>& Ops)
 	QueryHandler.ProcessOps(Ops);
 	RequestHandler.ProcessOps(Ops);
 	ResponseHandler.ProcessOps(Ops);
+
+	if (bProcessQueuedRequests)
+	{
+		bQueueSpawnRequests = false;
+		for (auto& Request : QueuedPlayerSpawnRequests)
+		{
+			Schema_Object* RequestPayload = Schema_GetCommandRequestObject(Request.Value.Get());
+			FindPlayerStartAndProcessPlayerSpawn(RequestPayload, Request.Key);
+		}
+		QueuedPlayerSpawnRequests.Empty();
+		for (auto& Request : QueueForwardPlayerSpawnRequests)
+		{
+			Schema_Object* RequestPayload = Schema_GetCommandRequestObject(Request.Value.Get());
+			ProcessForwardedPlayerSpawnRequest(RequestPayload, Request.Key);
+		}
+		QueueForwardPlayerSpawnRequests.Empty();
+	}
 }
 
 void USpatialPlayerSpawner::OnPlayerSpawnCommandReceived(const Worker_Op& Op, const Worker_CommandRequestOp& CommandRequestOp)
@@ -115,6 +135,15 @@ void USpatialPlayerSpawner::OnForwardedPlayerSpawnResponseReceived(const Worker_
 								});
 	}
 	ReceiveForwardPlayerSpawnResponse(CommandResponseOp);
+}
+
+void USpatialPlayerSpawner::StartProcessingRequests()
+{
+	// If we're currently queuing, dequeue any requests next Advance
+	if (bQueueSpawnRequests)
+	{
+		bProcessQueuedRequests = true;
+	}
 }
 
 void USpatialPlayerSpawner::SendPlayerSpawnRequest()
@@ -247,8 +276,15 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequestOnServer(const Worker_Comma
 		return;
 	}
 
-	Schema_Object* RequestPayload = Schema_GetCommandRequestObject(Op.request.schema_type);
-	FindPlayerStartAndProcessPlayerSpawn(RequestPayload, Op.caller_worker_entity_id);
+	if (bQueueSpawnRequests)
+	{
+		QueuedPlayerSpawnRequests.Add(MakeTuple(Op.caller_worker_entity_id, Schema_CopyCommandRequest(Op.request.schema_type)));
+	}
+	else
+	{
+		Schema_Object* RequestPayload = Schema_GetCommandRequestObject(Op.request.schema_type);
+		FindPlayerStartAndProcessPlayerSpawn(RequestPayload, Op.caller_worker_entity_id);
+	}
 
 	Worker_CommandResponse Response = PlayerSpawner::CreatePlayerSpawnResponse();
 	NetDriver->Connection->SendCommandResponse(Op.request_id, &Response);
@@ -380,9 +416,20 @@ void USpatialPlayerSpawner::ForwardSpawnRequestToStrategizedServer(const Schema_
 
 void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_CommandRequestOp& Op)
 {
+	if (bQueueSpawnRequests)
+	{
+		QueueForwardPlayerSpawnRequests.Add(MakeTuple(Op.request_id, Schema_CopyCommandRequest(Op.request.schema_type)));
+		return;
+	}
+
 	Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
-	Schema_Object* PlayerSpawnData = Schema_GetObject(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_DATA_ID);
-	Worker_EntityId ClientWorkerId = Schema_GetEntityId(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID);
+	ProcessForwardedPlayerSpawnRequest(Payload, Op.request_id);
+}
+
+void USpatialPlayerSpawner::ProcessForwardedPlayerSpawnRequest(Schema_Object* RequestPayload, Worker_RequestId RequestId)
+{
+	Schema_Object* PlayerSpawnData = Schema_GetObject(RequestPayload, SpatialConstants::FORWARD_SPAWN_PLAYER_DATA_ID);
+	Worker_EntityId ClientWorkerId = Schema_GetEntityId(RequestPayload, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID);
 
 	// Accept the player if we have not already accepted a player from this worker.
 	bool bAlreadyHasPlayer;
@@ -390,13 +437,13 @@ void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_Comm
 	if (bAlreadyHasPlayer)
 	{
 		UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Ignoring duplicate forward player spawn request. Client worker ID: %lld"),
-			   ClientWorkerId);
+			ClientWorkerId);
 		return;
 	}
 
 	bool bRequestHandledSuccessfully = true;
 
-	const FUnrealObjectRef PlayerStartRef = GetObjectRefFromSchema(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_START_ACTOR_ID);
+	const FUnrealObjectRef PlayerStartRef = GetObjectRefFromSchema(RequestPayload, SpatialConstants::FORWARD_SPAWN_PLAYER_START_ACTOR_ID);
 	if (PlayerStartRef != FUnrealObjectRef::NULL_OBJECT_REF)
 	{
 		bool bUnresolvedRef = false;
@@ -406,13 +453,13 @@ void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_Comm
 		if (bRequestHandledSuccessfully)
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Received ForwardPlayerSpawn request. Client worker ID: %lld. PlayerStart: %s"),
-				   ClientWorkerId, *PlayerStart->GetName());
+				ClientWorkerId, *PlayerStart->GetName());
 			PassSpawnRequestToNetDriver(PlayerSpawnData, PlayerStart);
 		}
 		else
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Error,
-				   TEXT("PlayerStart Actor UnrealObjectRef was invalid on forwarded player spawn request worker: %lld"), ClientWorkerId);
+				TEXT("PlayerStart Actor UnrealObjectRef was invalid on forwarded player spawn request worker: %lld"), ClientWorkerId);
 		}
 	}
 	else
@@ -420,12 +467,12 @@ void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_Comm
 		UE_LOG(
 			LogSpatialPlayerSpawner, Log,
 			TEXT("PlayerStart Actor was null object ref in forward spawn request. This is intentional when handing request to the correct "
-				 "load balancing layer. Attempting to find a player start again."));
+				"load balancing layer. Attempting to find a player start again."));
 		FindPlayerStartAndProcessPlayerSpawn(PlayerSpawnData, ClientWorkerId);
 	}
 
 	Worker_CommandResponse Response = ServerWorker::CreateForwardPlayerSpawnResponse(bRequestHandledSuccessfully);
-	NetDriver->Connection->SendCommandResponse(Op.request_id, &Response);
+	NetDriver->Connection->SendCommandResponse(RequestId, &Response);
 }
 
 void USpatialPlayerSpawner::ReceiveForwardPlayerSpawnResponse(const Worker_CommandResponseOp& Op)
