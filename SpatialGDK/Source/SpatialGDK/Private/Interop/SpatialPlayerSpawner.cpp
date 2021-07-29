@@ -59,6 +59,7 @@ void USpatialPlayerSpawner::Advance(const TArray<Worker_Op>& Ops)
 	if (bProcessQueuedRequests)
 	{
 		bQueueSpawnRequests = false;
+		bProcessQueuedRequests = false;
 		for (auto& Request : QueuedPlayerSpawnRequests)
 		{
 			Schema_Object* RequestPayload = Schema_GetCommandRequestObject(Request.Value.Get());
