@@ -46,8 +46,6 @@ void USpatialShadowActor::CreateHash()
 	for (TFieldIterator<FProperty> PropIt(Actor->GetClass()); PropIt; ++PropIt)
 	{
 		FProperty* Property = *PropIt;
-		UE_LOG(LogSpatialShadowActor, Display, TEXT("Hashing property: %s"),
-			   *Property->GetName()); // Temp for CI to check which property fails in 4.25
 
 		if (Property->HasAnyPropertyFlags(CPF_Net) && Property->HasAnyPropertyFlags(CPF_HasGetValueTypeHash))
 		{
