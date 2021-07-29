@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
 #pragma once
 
 #include "Interop/Connection/SpatialGDKSpanId.h"
@@ -54,6 +53,7 @@ public:
 
 	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const FSpatialGDKSpanId& SpanId);
 	FSpatialGDKSpanId PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
+	bool IsObjectStackEmpty() const;
 
 	void SetFlushOnWrite(bool bValue);
 
