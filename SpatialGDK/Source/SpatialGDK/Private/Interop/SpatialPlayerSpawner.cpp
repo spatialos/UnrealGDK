@@ -279,8 +279,8 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequestOnServer(const Worker_Comma
 
 	if (bQueueSpawnRequests)
 	{
-		QueuedPlayerSpawnRequests.Add(
-			MakeTuple(Op.caller_worker_entity_id, CommandRequestPtr(Schema_CopyCommandRequest(Op.request.schema_type))));
+		QueuedPlayerSpawnRequests.Add(TPair<Worker_EntityId_Key, CommandRequestPtr>(
+			Op.caller_worker_entity_id, CommandRequestPtr(Schema_CopyCommandRequest(Op.request.schema_type))));
 	}
 	else
 	{
@@ -419,7 +419,8 @@ void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_Comm
 {
 	if (bQueueSpawnRequests)
 	{
-		QueueForwardPlayerSpawnRequests.Add(MakeTuple(Op.request_id, CommandRequestPtr(Schema_CopyCommandRequest(Op.request.schema_type))));
+		QueueForwardPlayerSpawnRequests.Add(TPair<Worker_RequestId_Key, CommandRequestPtr>(
+			Op.request_id, CommandRequestPtr(Schema_CopyCommandRequest(Op.request.schema_type))));
 		return;
 	}
 
