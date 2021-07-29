@@ -279,7 +279,8 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequestOnServer(const Worker_Comma
 
 	if (bQueueSpawnRequests)
 	{
-		QueuedPlayerSpawnRequests.Add(MakeTuple(Op.caller_worker_entity_id, Schema_CopyCommandRequest(Op.request.schema_type)));
+		QueuedPlayerSpawnRequests.Add(
+			MakeTuple(Op.caller_worker_entity_id, CommandRequestPtr(Schema_CopyCommandRequest(Op.request.schema_type))));
 	}
 	else
 	{
@@ -411,15 +412,14 @@ void USpatialPlayerSpawner::ForwardSpawnRequestToStrategizedServer(const Schema_
 	const Worker_RequestId RequestId =
 		NetDriver->Connection->SendCommandRequest(ServerWorkerEntity, &ForwardSpawnPlayerRequest, RETRY_MAX_TIMES, {});
 
-	OutgoingForwardPlayerSpawnRequests.Add(RequestId,
-										   TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>(ForwardSpawnPlayerSchemaRequest));
+	OutgoingForwardPlayerSpawnRequests.Add(RequestId, CommandRequestPtr(ForwardSpawnPlayerSchemaRequest));
 }
 
 void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_CommandRequestOp& Op)
 {
 	if (bQueueSpawnRequests)
 	{
-		QueueForwardPlayerSpawnRequests.Add(MakeTuple(Op.request_id, Schema_CopyCommandRequest(Op.request.schema_type)));
+		QueueForwardPlayerSpawnRequests.Add(MakeTuple(Op.request_id, CommandRequestPtr(Schema_CopyCommandRequest(Op.request.schema_type))));
 		return;
 	}
 
