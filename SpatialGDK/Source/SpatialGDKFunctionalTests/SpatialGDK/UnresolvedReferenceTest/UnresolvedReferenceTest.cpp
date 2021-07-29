@@ -11,7 +11,7 @@ AUnresolvedReferenceTest::AUnresolvedReferenceTest()
 	Author = TEXT("Ajanth");
 	Description = TEXT(
 		"Tests what happens when structs with references to actors whose entity have not been created yet are replicated. \
-						The unresolved references should evenetually be resolved");
+						The unresolved references should eventually be resolved");
 }
 
 void AUnresolvedReferenceTest::PrepareTest()
@@ -28,25 +28,16 @@ void AUnresolvedReferenceTest::PrepareTest()
 	});
 
 	// Wait for actor which will hold references to replicate to the clients
-	AddStep(TEXT("ClientWaitForReplication"), FWorkerDefinition::AllClients, nullptr, nullptr,
-		[this](float DeltaTime) {
-			int NumRefActor = 0;
-
-			for (const AUnresolvedReferenceTestActor* RefsActor : TActorRange<AUnresolvedReferenceTestActor>(GetWorld()))
-			{
-				++NumRefActor;
-			}
-
-			RequireEqual_Int(NumRefActor, 1, TEXT("There should be 1 RefActor"));
-			FinishStep();
-		});
+	AddStep(TEXT("ClientWaitForReplication"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
+		RequireEqual_Int(GetNumberOfActorsOfType<AUnresolvedReferenceTestActor>(GetWorld()), 1, TEXT("There should be 1 RefActor"));
+		FinishStep();
+	});
 
 	// Add actor references to actor holding references
 	AddStep(TEXT("MakeActorReferences"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		for (AUnresolvedReferenceTestActor* RefsActor : TActorRange<AUnresolvedReferenceTestActor>(GetWorld()))
 		{
-			// 3 actors are enough to check if the unresolved references are resolved
-			for (int i = 0; i < 3; i++)
+			for (int i = 0; i < NumActors; i++)
 			{
 				AReplicatedTestActorBase* Actor =
 					GetWorld()->SpawnActor<AReplicatedTestActorBase>(FVector::ZeroVector, FRotator::ZeroRotator);
@@ -63,8 +54,8 @@ void AUnresolvedReferenceTest::PrepareTest()
 		[this](float DeltaTime) {
 			for (const AUnresolvedReferenceTestActor* RefsActor : TActorRange<AUnresolvedReferenceTestActor>(GetWorld()))
 			{
-				RequireCompare_Int(RefsActor->ActorRefs.Num(), EComparisonMethod::Greater_Than, 0,
-								   TEXT("ActorRefs array length should be non-zero"));
+				RequireCompare_Int(RefsActor->ActorRefs.Num(), EComparisonMethod::Equal_To, NumActors,
+								   FString::Printf(TEXT("Number of actors should be %d"), NumActors));
 
 				RequireEqual_Int(Algo::Count(RefsActor->ActorRefs, nullptr), 0, TEXT("There are no unresolved actors in ActorRefs"));
 			}

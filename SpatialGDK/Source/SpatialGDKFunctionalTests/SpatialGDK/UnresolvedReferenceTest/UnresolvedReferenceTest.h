@@ -11,6 +11,9 @@ class SPATIALGDKFUNCTIONALTESTS_API AUnresolvedReferenceTest : public ASpatialFu
 {
 	GENERATED_BODY()
 
+	// 3 actors are enough to check if the references are resolved
+	const int NumActors = 3;
+
 public:
 	AUnresolvedReferenceTest();
 
