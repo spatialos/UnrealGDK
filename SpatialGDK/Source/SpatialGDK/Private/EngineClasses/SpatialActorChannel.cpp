@@ -434,10 +434,13 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 		const FRepLayoutCmd& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
 		const FRepChangedParent& Parent = Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
 
-		// Need special case here because Unreal has special handling of ReplicatedMovement, see AActor::OnRep_ReplicatedMovement
-		const bool RepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
+		// HACK: Need special case here because the gdk relies on the whole of the RepMovement struct being replicated to the client to decide whether to replicate physics.
+		// see: ComponentReader::ApplySchemaObject
+		// UNR-5843 TODO: fix this so we no longer need this special handling, for instance by replicating bRepPhysics as a separate always
+		// replicated field.
+		const bool bRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
 
-		if (!Parent.Active && !RepActorMovement)
+		if (!Parent.Active && !bRepActorMovement)
 		{
 			continue;
 		}

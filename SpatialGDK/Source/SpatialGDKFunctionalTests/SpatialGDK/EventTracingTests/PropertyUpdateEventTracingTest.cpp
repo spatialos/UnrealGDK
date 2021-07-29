@@ -19,6 +19,4 @@ void APropertyUpdateEventTracingTest::FinishEventTraceTest()
 	AssertTrue(bSuccess,
 			   FString::Printf(TEXT("Process property update events have the expected causes. Events Tested: %d, Events Failed: %d"),
 							   Test.NumTested, Test.NumFailed));
-
-	FinishStep();
 }

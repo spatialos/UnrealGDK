@@ -19,6 +19,4 @@ void AUserProcessCrossServerRPCEventTracingTest::FinishEventTraceTest()
 	AssertTrue(bSuccess,
 			   FString::Printf(TEXT("User event have been caused by the expected process RPC events. Events Tested: %d, Events Failed: %d"),
 							   Test.NumTested, Test.NumFailed));
-
-	FinishStep();
 }

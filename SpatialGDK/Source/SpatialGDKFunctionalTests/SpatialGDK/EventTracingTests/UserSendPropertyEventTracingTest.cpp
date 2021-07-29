@@ -16,24 +16,27 @@ void AUserSendPropertyEventTracingTest::FinishEventTraceTest()
 	TArray<FString> UserEventSpanIds;
 	TArray<FString> SendPropertyUpdatesCauseSpanIds;
 
-	for (const auto& Pair : TraceEvents)
-	{
-		const FString& SpanIdString = Pair.Key;
-		const FName& EventName = Pair.Value;
+	ForEachTraceSource([&UserEventSpanIds, &SendPropertyUpdatesCauseSpanIds](const TraceItemsData& SourceTraceItems) {
+		for (const auto& Pair : SourceTraceItems.SpanEvents)
+		{
+			const FString& SpanIdString = Pair.Key;
+			const FName& EventName = Pair.Value;
 
-		if (EventName == UserSendPropertyEventName || EventName == UserSendComponentPropertyEventName)
-		{
-			UserEventSpanIds.Add(SpanIdString);
-		}
-		else if (EventName == PropertyChangedEventName)
-		{
-			TArray<FString>* Causes = TraceSpans.Find(SpanIdString);
-			if (Causes != nullptr)
+			if (EventName == UserSendPropertyEventName || EventName == UserSendComponentPropertyEventName)
 			{
-				SendPropertyUpdatesCauseSpanIds += *Causes;
+				UserEventSpanIds.Add(SpanIdString);
+			}
+			else if (EventName == PropertyChangedEventName)
+			{
+				const TArray<FString>* Causes = SourceTraceItems.Spans.Find(SpanIdString);
+				if (Causes != nullptr)
+				{
+					SendPropertyUpdatesCauseSpanIds += *Causes;
+				}
 			}
 		}
-	}
+		return false;
+	});
 
 	int EventsTested = UserEventSpanIds.Num();
 
@@ -47,6 +50,4 @@ void AUserSendPropertyEventTracingTest::FinishEventTraceTest()
 	AssertTrue(bSuccess, FString::Printf(
 							 TEXT("User event have caused the expected send property update events. Events Tested: %d, Events Failed: %d"),
 							 EventsTested, EventsFailed));
-
-	FinishStep();
 }
