@@ -16,24 +16,27 @@ void AUserSendRPCEventTracingTest::FinishEventTraceTest()
 	TArray<FString> UserEventSpanIds;
 	TArray<FString> SendRPCCauseSpanIds;
 
-	for (const auto& Pair : TraceEvents)
-	{
-		const FString& SpanIdString = Pair.Key;
-		const FName& EventName = Pair.Value;
+	ForEachTraceSource([&UserEventSpanIds, &SendRPCCauseSpanIds](const TraceItemsData& SourceTraceItems) {
+		for (const auto& Pair : SourceTraceItems.SpanEvents)
+		{
+			const FString& SpanIdString = Pair.Key;
+			const FName& EventName = Pair.Value;
 
-		if (EventName == UserSendRPCEventName)
-		{
-			UserEventSpanIds.Add(SpanIdString);
-		}
-		else if (EventName == PushRPCEventName)
-		{
-			TArray<FString>* Causes = TraceSpans.Find(SpanIdString);
-			if (Causes != nullptr)
+			if (EventName == UserSendRPCEventName)
 			{
-				SendRPCCauseSpanIds += *Causes;
+				UserEventSpanIds.Add(SpanIdString);
+			}
+			else if (EventName == PushRPCEventName)
+			{
+				const TArray<FString>* Causes = SourceTraceItems.Spans.Find(SpanIdString);
+				if (Causes != nullptr)
+				{
+					SendRPCCauseSpanIds += *Causes;
+				}
 			}
 		}
-	}
+		return false;
+	});
 
 	int EventsTested = UserEventSpanIds.Num();
 
@@ -46,6 +49,4 @@ void AUserSendRPCEventTracingTest::FinishEventTraceTest()
 	bool bSuccess = EventsTested > 0 && EventsFailed == 0;
 	AssertTrue(bSuccess, FString::Printf(TEXT("User event have caused the expected send RPC events. Events Tested: %d, Events Failed: %d"),
 										 EventsTested, EventsFailed));
-
-	FinishStep();
 }

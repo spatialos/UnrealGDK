@@ -18,6 +18,4 @@ void AProcessCrossServerRPCEventTracingTest::FinishEventTraceTest()
 	bool bSuccess = Test.NumTested > 0 && Test.NumFailed == 0;
 	AssertTrue(bSuccess, FString::Printf(TEXT("Process RPC trace events have the expected causes. Events Tested: %d, Events Failed: %d"),
 										 Test.NumTested, Test.NumFailed));
-
-	FinishStep();
 }
