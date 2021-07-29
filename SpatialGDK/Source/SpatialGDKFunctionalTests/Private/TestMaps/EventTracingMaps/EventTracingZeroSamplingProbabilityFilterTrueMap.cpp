@@ -7,7 +7,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/EventTracingTests/SettingsTests/ZeroSamplingProbabilityFilterTrueTest.h"
 
 UEventTracingZeroSamplingProbabilityFilterTrueMap::UEventTracingZeroSamplingProbabilityFilterTrueMap()
-	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("EventTracingZeroSamplingProbabilityFilterTrueMap"))
+	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("EventTracingZeroSamplingProbabilityFilterTrueMap"))
 {
 	SetCustomConfig(
 		TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR TEXT("bEventTracingEnabled=True")

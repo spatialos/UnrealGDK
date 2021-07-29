@@ -7,7 +7,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/EventTracingTests/SettingsTests/CustomGDKFilterTest.h"
 
 UEventTracingCustomGDKFilterMap::UEventTracingCustomGDKFilterMap()
-	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("EventTracingCustomGDKFilterMap"))
+	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("EventTracingCustomGDKFilterMap"))
 {
 	SetCustomConfig(TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR TEXT("bEventTracingEnabled=True")
 						LINE_TERMINATOR TEXT("bEventTracingEnabledWithEditor=True") LINE_TERMINATOR TEXT(

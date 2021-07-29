@@ -7,7 +7,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/EventTracingTests/SettingsTests/MaxSamplingProbabilityFilterFalseTest.h"
 
 UEventTracingMaxSamplingProbabilityFilterFalseMap::UEventTracingMaxSamplingProbabilityFilterFalseMap()
-	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("EventTracingMaxSamplingProbabilityFilterFalseMap"))
+	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("EventTracingMaxSamplingProbabilityFilterFalseMap"))
 {
 	SetCustomConfig(
 		TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR TEXT("bEventTracingEnabled=True")
