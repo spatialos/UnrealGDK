@@ -200,7 +200,10 @@ void AStaticSubobjectsTest::PrepareTest()
 		FinishStep();
 	});
 
-	// Step 18 - Server Cleanup.
+	// Step 18 - In preparation for cleanup
+	MoveClientPawn(PawnSpawnLocation);
+
+	// Step 19 - Server Cleanup.
 	AddStep(TEXT("StaticSubobjectsTestServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Possess the original pawn, so that the spawned character can get destroyed correctly
 		ASpatialFunctionalTestFlowController* ClientOneFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
