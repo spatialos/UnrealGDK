@@ -7,7 +7,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/EventTracingTests/SettingsTests/EventSamplingProbabilityOverrideTest.h"
 
 UEventTracingEventSamplingProbabilityOverrideMap::UEventTracingEventSamplingProbabilityOverrideMap()
-	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("EventTracingEventSamplingProbabilityOverrideMap"))
+	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("EventTracingEventSamplingProbabilityOverrideMap"))
 {
 	SetCustomConfig(
 		TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR TEXT("bEventTracingEnabled=True")

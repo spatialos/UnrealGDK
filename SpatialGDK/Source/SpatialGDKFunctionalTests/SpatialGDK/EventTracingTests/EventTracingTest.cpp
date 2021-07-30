@@ -165,9 +165,13 @@ void AEventTracingTest::GatherData()
 			FoundWorker++;
 		}
 
-		// TODO UNR-5851 - Also read runtime logs.
+		if (FoundRuntime != RequiredRuntime && FileCreation.FilePath.Contains(TEXT("runtime")))
+		{
+			GatherDataFromFile(FileCreation.FilePath, TraceSource::Runtime);
+			FoundRuntime++;
+		}
 
-		if (FoundClient == RequiredClients && FoundWorker == RequiredWorkers)
+		if (FoundClient == RequiredClients && FoundWorker == RequiredWorkers && FoundRuntime == RequiredRuntime)
 		{
 			FoundAllEventTraceLogs = true;
 			break;
