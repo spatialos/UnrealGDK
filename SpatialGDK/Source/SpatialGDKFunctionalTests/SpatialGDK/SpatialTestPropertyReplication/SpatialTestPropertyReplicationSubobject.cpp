@@ -16,7 +16,8 @@
  *  - All workers check that they can see exactly 1 ReplicatedTestActor and 1 ReplicatedTestActorSubobject.
  *  - The authorative server changes the replicated property of the replicated subobject.
  *  - All workers check that the replicated property of the replicated subobject has changed.
- *  - The non-auth server changes the the replicated property of the replicated subobject which generates two expected errors.
+ *  - The non-auth server changes the the replicated property of the replicated subobject which generates an expected error.
+ *  - The client changes the replicated properties which generates an expected errors.
  *  - Auth server check that the replicated property of the replicated subobject has not changed.
  * - Clean-up:
  *  - ReplicatedTestActor is destroyed using the RegisterAutoDestroyActor helper function.
@@ -35,10 +36,8 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 
 	if (HasAuthority())
 	{
-		// Subobject property change - expect an actor level error and a property level error
-		AddExpectedLogError(TEXT("ReplicatedTestActorSubobject, property changed without authority was ReplicatedSubActor!"), 1);
-
-		AddExpectedLogError(TEXT("ReplicatedTestActor, property changed without authority was TestReplicatedProperty!"), 1);
+		// Subobject property change 
+		AddExpectedLogError(TEXT("ReplicatedTestActor, property changed without authority was TestReplicatedProperty!"), 2);
 	}
 
 	AddStep(
@@ -102,7 +101,7 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 		},
 		5.0f);
 
-	// This step generates two expected errors for each replicated subobject (actor level and property level)
+	// This step generates an expected error for the replicated subobject 
 	AddStep(
 		TEXT("The non-auth server changes the replicated properties"), FWorkerDefinition::Server(2),
 		[this]() -> bool {
@@ -113,6 +112,19 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 			TestActor->ReplicatedSubActor->TestReplicatedProperty = 555;
 
 			FinishStep();
+		});
+
+	// This step generates an expected errors for the replicated subobject
+	AddStep(
+		TEXT("The client changes the replicated properties"), FWorkerDefinition::Client(1),
+		[this]() -> bool {
+		return IsValid(TestActor);
+		},
+		[this]() {
+		// Subobject property
+		TestActor->ReplicatedSubActor->TestReplicatedProperty = 222;
+
+		FinishStep();
 		});
 
 	AddStep(

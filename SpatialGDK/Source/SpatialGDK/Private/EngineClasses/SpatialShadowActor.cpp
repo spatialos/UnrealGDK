@@ -57,7 +57,7 @@ void USpatialShadowActor::CreateHash()
 
 void USpatialShadowActor::CheckUnauthorisedDataChanges()
 {
-	if (!IsValid(Actor) || Actor->IsPendingKillOrUnreachable() || !Actor->HasAuthority())
+	if (!IsValid(Actor) || Actor->IsPendingKillOrUnreachable() || Actor->HasAuthority())
 	{
 		return;
 	}
