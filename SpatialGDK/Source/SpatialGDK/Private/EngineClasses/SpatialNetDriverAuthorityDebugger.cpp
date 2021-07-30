@@ -8,23 +8,29 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialNetDriverAuthorityDebugger);
 
-const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedActors = {
-	TEXT("LockingPlayerController_C"), TEXT("GameStateBase"), TEXT("DefaultPawn"), TEXT("PlayerState"),
-	TEXT("SpatialFunctionalTestFlowController"), TEXT("LockingPlayerController_C"),
-	TEXT("TestPossessionPlayerController"), TEXT("TestPawnBase_RepGraphAlwaysReplicate"), TEXT("GameplayDebuggerCategoryReplicator"),
-	TEXT("TestPossessionPawn"),
-	TEXT("PlayerController"),
-	TEXT("Character"), TEXT("ReplicatedStartupActorPlayerController"),
-	TEXT("SpatialAuthorityTestGameState"),
-	TEXT("TestMovementCharacter"),
-	TEXT("SpatialTestRepNotifyActor"),
+const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedActors = { TEXT("LockingPlayerController_C"),
+																			 TEXT("GameStateBase"),
+																			 TEXT("DefaultPawn"),
+																			 TEXT("PlayerState"),
+																			 TEXT("SpatialFunctionalTestFlowController"),
+																			 TEXT("LockingPlayerController_C"),
+																			 TEXT("TestPossessionPlayerController"),
+																			 TEXT("TestPawnBase_RepGraphAlwaysReplicate"),
+																			 TEXT("GameplayDebuggerCategoryReplicator"),
+																			 TEXT("TestPossessionPawn"),
+																			 TEXT("PlayerController"),
+																			 TEXT("Character"),
+																			 TEXT("ReplicatedStartupActorPlayerController"),
+																			 TEXT("SpatialAuthorityTestGameState"),
+																			 TEXT("TestMovementCharacter"),
+																			 TEXT("SpatialTestRepNotifyActor"),
 																			 TEXT("SpatialTestSingleServerDynamicComponents"),
-	TEXT("PlayerDisconnectController"),
-	TEXT("SpatialTestMultiServerUnrealComponents"),
-	TEXT("AlwaysInterestedTest"), TEXT("HandoverReplicationTestCube"),
-	TEXT("BP_EventTracerCharacter_C"),
-	TEXT("CubeWithReferences")
-};
+																			 TEXT("PlayerDisconnectController"),
+																			 TEXT("SpatialTestMultiServerUnrealComponents"),
+																			 TEXT("AlwaysInterestedTest"),
+																			 TEXT("HandoverReplicationTestCube"),
+																			 TEXT("BP_EventTracerCharacter_C"),
+																			 TEXT("CubeWithReferences") };
 
 const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedProperties = { TEXT("Role"),
 																				 TEXT("RemoteRole"),

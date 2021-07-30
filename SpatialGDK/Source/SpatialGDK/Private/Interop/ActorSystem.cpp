@@ -286,12 +286,12 @@ void ActorSystem::Advance()
 
 			const int32 EntitiesRemoved = PresentEntities.Remove(Delta.EntityId);
 
-			#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 			if (NetDriver->AuthorityDebugger != nullptr)
 			{
 				NetDriver->AuthorityDebugger->RemoveSpatialShadowActor(Delta.EntityId);
 			}
-			#endif
+#endif
 		}
 	}
 

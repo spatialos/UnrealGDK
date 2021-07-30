@@ -36,7 +36,7 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 
 	if (HasAuthority())
 	{
-		// Subobject property change 
+		// Subobject property change
 		AddExpectedLogError(TEXT("ReplicatedTestActor, property changed without authority was TestReplicatedProperty!"), 2);
 	}
 
@@ -101,7 +101,7 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 		},
 		5.0f);
 
-	// This step generates an expected error for the replicated subobject 
+	// This step generates an expected error for the replicated subobject
 	AddStep(
 		TEXT("The non-auth server changes the replicated properties"), FWorkerDefinition::Server(2),
 		[this]() -> bool {
@@ -118,13 +118,13 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 	AddStep(
 		TEXT("The client changes the replicated properties"), FWorkerDefinition::Client(1),
 		[this]() -> bool {
-		return IsValid(TestActor);
+			return IsValid(TestActor);
 		},
 		[this]() {
-		// Subobject property
-		TestActor->ReplicatedSubActor->TestReplicatedProperty = 222;
+			// Subobject property
+			TestActor->ReplicatedSubActor->TestReplicatedProperty = 222;
 
-		FinishStep();
+			FinishStep();
 		});
 
 	AddStep(
