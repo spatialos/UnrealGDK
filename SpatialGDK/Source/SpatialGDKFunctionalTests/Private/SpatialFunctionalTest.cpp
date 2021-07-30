@@ -416,7 +416,7 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 					FinishTestTimerHandle.Invalidate();
 
 					// This will call NotifyTestFinishedObserver on other workers.
-					bFinishedTest = true;  
+					bFinishedTest = true;
 
 					// Clear cached values.
 					CachedTestResult = EFunctionalTestResult::Default;
