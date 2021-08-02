@@ -279,8 +279,8 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequestOnServer(const Worker_Comma
 
 	if (bQueueSpawnRequests)
 	{
-		QueuedPlayerSpawnRequests.Add(TPair<Worker_EntityId_Key, CommandRequestPtr>(
-			Op.caller_worker_entity_id, CommandRequestPtr(Schema_CopyCommandRequest(Op.request.schema_type))));
+		QueuedPlayerSpawnRequests.Add(TPair<Worker_EntityId_Key, OwningCommandRequestPtr>(
+			Op.caller_worker_entity_id, OwningCommandRequestPtr(Schema_CopyCommandRequest(Op.request.schema_type))));
 	}
 	else
 	{
@@ -412,15 +412,15 @@ void USpatialPlayerSpawner::ForwardSpawnRequestToStrategizedServer(const Schema_
 	const Worker_RequestId RequestId =
 		NetDriver->Connection->SendCommandRequest(ServerWorkerEntity, &ForwardSpawnPlayerRequest, RETRY_MAX_TIMES, {});
 
-	OutgoingForwardPlayerSpawnRequests.Add(RequestId, CommandRequestPtr(ForwardSpawnPlayerSchemaRequest));
+	OutgoingForwardPlayerSpawnRequests.Add(RequestId, OwningCommandRequestPtr(ForwardSpawnPlayerSchemaRequest));
 }
 
 void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_CommandRequestOp& Op)
 {
 	if (bQueueSpawnRequests)
 	{
-		QueueForwardPlayerSpawnRequests.Add(TPair<Worker_RequestId_Key, CommandRequestPtr>(
-			Op.request_id, CommandRequestPtr(Schema_CopyCommandRequest(Op.request.schema_type))));
+		QueueForwardPlayerSpawnRequests.Add(TPair<Worker_RequestId_Key, OwningCommandRequestPtr>(
+			Op.request_id, OwningCommandRequestPtr(Schema_CopyCommandRequest(Op.request.schema_type))));
 		return;
 	}
 
@@ -535,5 +535,5 @@ void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const Worker_EntityId
 		NetDriver->Connection->SendCommandRequest(EntityId, &ForwardSpawnPlayerRequest, RETRY_UNTIL_COMPLETE, {});
 
 	// Move the request data from the old request ID map entry across to the new ID entry.
-	OutgoingForwardPlayerSpawnRequests.Add(NewRequestId, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>(OldRequest.Get()));
+	OutgoingForwardPlayerSpawnRequests.Add(NewRequestId, OwningCommandRequestPtr(OldRequest.Get()));
 }
