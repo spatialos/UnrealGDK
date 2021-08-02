@@ -118,7 +118,7 @@ bool SpatialFunctionalTestRequireHandler::RequireValid(const UObject* Object, co
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Unexpectedly received invalid Actor %s."), *GetNameSafe(Object));
+		StatusMsg = FString::Printf(TEXT("Unexpectedly received invalid actor %s."), *GetNameSafe(Object));
 	}
 
 	GenericRequire(Msg, bPassed, StatusMsg);
