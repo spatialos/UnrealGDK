@@ -290,6 +290,12 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 
 	UE_LOG(LogGlobalStateManager, Verbose, TEXT("GSM updated actor authority: %s %s."), *Actor->GetPathName(),
 		   bAuthoritative ? TEXT("authoritative") : TEXT("not authoritative"));
+
+	// Assign entity IDs for all locally authoritative startup ACtors
+	if (Actor->HasAuthority())
+	{
+		NetDriver->GetOrCreateSpatialActorChannel(Actor);
+	}
 }
 
 Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
@@ -341,6 +347,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
+	bGSMReadyForPlay = true;
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
 }
 

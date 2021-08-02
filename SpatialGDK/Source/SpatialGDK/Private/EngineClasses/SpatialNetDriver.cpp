@@ -759,9 +759,15 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 		   TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
 }
 
-void USpatialNetDriver::OnActorSpawned(AActor* Actor) const
+void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (Actor->GetIsReplicated() && Actor->HasAuthority()
+		&& Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) && GlobalStateManager->bGSMReadyForPlay)
+	{
+		GetOrCreateSpatialActorChannel(Actor);
+	}
+
 	if (SpatialGDKSettings->bEnableCrossLayerActorSpawning)
 	{
 		return;
