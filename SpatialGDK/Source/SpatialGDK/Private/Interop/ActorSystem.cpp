@@ -147,10 +147,11 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 	{
 		if (Delta.Type == EntityDelta::UPDATE)
 		{
+			TArray<FWeakObjectPtr> ToResolveOps;
 			for (const ComponentChange& Change : Delta.ComponentsAdded)
 			{
 				ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.Data);
-				ComponentAdded(Delta.EntityId, Change.ComponentId, Change.Data);
+				ComponentAdded(Delta.EntityId, Change.ComponentId, Change.Data, ToResolveOps);
 			}
 			for (const ComponentChange& Change : Delta.ComponentUpdates)
 			{
@@ -159,12 +160,15 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
 			{
 				ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
-				ComponentAdded(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
+				ComponentAdded(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data, ToResolveOps);
 			}
 			for (const ComponentChange& Change : Delta.ComponentsRemoved)
 			{
 				ComponentRemoved(Delta.EntityId, Change.ComponentId);
 			}
+
+			InvokePostNetReceives();
+			ResolvePendingOpsFromEntityUpdate(ToResolveOps);
 		}
 	}
 }
@@ -185,16 +189,16 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 				continue;
 			}
 
-			if (!PresentEntities.Contains(Delta.EntityId))
+			if (!PresentEntities.Contains(EntityId))
 			{
 				// Create new actor for the entity.
-				EntityAdded(Delta.EntityId);
+				EntityAdded(EntityId);
 
-				PresentEntities.Emplace(Delta.EntityId);
+				PresentEntities.Emplace(EntityId);
 			}
 			else
 			{
-				RefreshEntity(Delta.EntityId);
+				RefreshEntity(EntityId);
 			}
 		}
 	}
@@ -545,7 +549,8 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 	}
 }
 
-void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data)
+void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data,
+								 TArray<FWeakObjectPtr>& OutToResolveOps)
 {
 	if (ComponentId == SpatialConstants::DORMANT_COMPONENT_ID)
 	{
@@ -587,7 +592,7 @@ void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_Co
 		return;
 	}
 
-	HandleIndividualAddComponent(EntityId, ComponentId, Data);
+	HandleIndividualAddComponent(EntityId, ComponentId, Data, OutToResolveOps);
 }
 
 void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update)
@@ -815,7 +820,7 @@ void ActorSystem::HandleDormantComponentAdded(const Worker_EntityId EntityId) co
 }
 
 void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-											   Schema_ComponentData* Data)
+											   Schema_ComponentData* Data, TArray<FWeakObjectPtr>& OutToResolveOps)
 {
 	uint32 Offset = 0;
 	bool bFoundOffset = NetDriver->ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset);
@@ -895,11 +900,12 @@ void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, c
 
 	if (bComponentsComplete)
 	{
-		AttachDynamicSubobject(Actor, EntityId, Info);
+		AttachDynamicSubobject(Actor, EntityId, Info, OutToResolveOps);
 	}
 }
 
-void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info)
+void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info,
+										 TArray<FWeakObjectPtr>& OutToResolveOps)
 {
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
 	if (Channel == nullptr)
@@ -939,8 +945,8 @@ void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId
 		Components.Remove(ComponentId);
 	});
 
-	// Resolve things like RepNotify or RPCs after applying component data.
-	ResolvePendingOperations(Subobject, SubobjectRef);
+	// Resolve things like RPCs and user object references after we have applied all other component updates for the entity.
+	OutToResolveOps.Emplace(FWeakObjectPtr(Subobject));
 }
 
 void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentId ComponentId,
@@ -968,7 +974,18 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 		bool bOutReferencesChanged = false;
 
 		FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
-		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
+		const bool bSuccessfullyPreNetReceived = InvokePreNetReceive(TargetObject);
+		if (bSuccessfullyPreNetReceived)
+		{
+			Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
+		}
+		else
+		{
+			UE_LOG(LogActorSystem, Log,
+				   TEXT("ApplyComponentData: Did not invoke PreNetReceive for object %s, entity id %lld, component id %u. No data will be "
+						"applied."),
+				   *TargetObject.GetName(), Channel.GetEntityId(), ComponentId);
+		}
 
 		RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 	}
@@ -976,6 +993,34 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 	{
 		UE_LOG(LogActorSystem, Verbose, TEXT("Entity: %d Component: %d - Skipping because RPC components don't have actual data."),
 			   Channel.GetEntityId(), ComponentId);
+	}
+}
+
+void ActorSystem::ResolvePendingOpsFromEntityUpdate(const TArray<FWeakObjectPtr>& ToResolveOps)
+{
+	// This should be called after all component updates and adds have been completed, and PostNetReceives have been called to avoid user
+	// code from seeing inconsistent state
+	for (const FWeakObjectPtr& WeakObjectPtr : ToResolveOps)
+	{
+		UObject* Object = WeakObjectPtr.Get();
+		if (!Object)
+		{
+			UE_LOG(LogActorSystem, Log,
+				   TEXT("ResolvePendingOpsFromEntityUpdate: Did not resolve pending ops for object %s as it was no longer valid."),
+				   *GetNameSafe(Object));
+			continue;
+		}
+
+		const FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
+
+		if (!ObjectRef.IsValid())
+		{
+			UE_LOG(LogActorSystem, Error,
+				   TEXT("ResolvePendingOpsFromEntityUpdate: Tried to resolve pending ops for %s but object ref was not valid."),
+				   *Object->GetName());
+		}
+
+		ResolvePendingOperations(Object, ObjectRef);
 	}
 }
 
@@ -1261,7 +1306,19 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 	bool bOutReferencesChanged = false;
 	FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
-	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
+
+	const bool bSuccessfullyPreNetReceived = InvokePreNetReceive(TargetObject);
+	if (bSuccessfullyPreNetReceived)
+	{
+		Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
+	}
+	else
+	{
+		UE_LOG(LogActorSystem, Log,
+			   TEXT("ApplyComponentUpdate: Did not invoke PreNetReceive for object %s, entity id %lld, component id %u. No data will be "
+					"applied."),
+			   *TargetObject.GetName(), Channel.GetEntityId(), ComponentId);
+	}
 	RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 
 	// This is a temporary workaround, see UNR-841:
@@ -1422,7 +1479,9 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 		ClientNetLoadActorHelper.RemoveRuntimeRemovedComponents(EntityId, EntityComponents, EntityActor);
 	}
 
-	// Resolve things like RepNotify or RPCs after applying component data.
+	InvokePostNetReceives();
+
+	// Resolve things like RPCs and unresolved references after applying component data.
 	for (const ObjectPtrRefPair& ObjectToResolve : ObjectsToResolvePendingOpsFor)
 	{
 		ResolvePendingOperations(ObjectToResolve.Key, ObjectToResolve.Value);
@@ -1712,6 +1771,55 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 	return Channel;
 }
 
+bool ActorSystem::InvokePreNetReceive(UObject& Object)
+{
+	if (Object.IsPendingKill())
+	{
+		UE_LOG(LogActorSystem, Log, TEXT("InvokePreNetReceive: Did not invoke PreNetReceive for object %s, as object is pending kill."),
+			   *Object.GetName());
+		return false;
+	}
+
+	// We can have multiple spatial components receiving updates per unreal object but we only want to call PreNetReceive a single time for
+	// an object for each tick.
+	if (!PostNetReceivesToSend.Contains(FWeakObjectPtr(&Object)))
+	{
+		UE_LOG(LogActorSystem, VeryVerbose, TEXT("InvokePreNetReceive: Invoking PreNetReceive for object %s."), *Object.GetName());
+
+		Object.PreNetReceive();
+		PostNetReceivesToSend.Emplace(FWeakObjectPtr(&Object));
+	}
+	else
+	{
+		UE_LOG(LogActorSystem, VeryVerbose,
+			   TEXT("InvokePreNetReceive: Not invoking PreNetReceive for object %s as it is already contained within "
+					"PostNetReceivesToSend."),
+			   *Object.GetName());
+	}
+
+	return true;
+}
+
+void ActorSystem::InvokePostNetReceives()
+{
+	for (const FWeakObjectPtr& WeakPtr : PostNetReceivesToSend)
+	{
+		UObject* Object = WeakPtr.Get();
+		if (!Object)
+		{
+			// An object could have been set to pending kill as a result of the user callback PreNetReceive.
+			UE_LOG(LogActorSystem, Log, TEXT("Not sending PostNetReceive for object: %s as it is not valid."), *GetNameSafe(Object));
+			continue;
+		}
+
+		UE_LOG(LogActorSystem, VeryVerbose, TEXT("Sending PostNetReceive for object %s."), *Object->GetName());
+
+		Object->PostNetReceive();
+	}
+
+	PostNetReceivesToSend.Empty();
+}
+
 FObjectRepNotifies& ActorSystem::GetObjectRepNotifies(UObject& Object)
 {
 	return Object.IsA<AActor>() ? ActorRepNotifiesToSend.FindOrAdd(FWeakObjectPtr(&Object))
@@ -1739,11 +1847,6 @@ void ActorSystem::InvokeRepNotifies()
 
 void ActorSystem::TryInvokeRepNotifiesForObject(FWeakObjectPtr& WeakObjectPtr, FObjectRepNotifies& ObjectRepNotifies) const
 {
-	if (ObjectRepNotifies.RepNotifies.Num() == 0)
-	{
-		return;
-	}
-
 	// Object could have been killed during a RepNotify
 	UObject* Object = WeakObjectPtr.Get();
 	if (!Object)
@@ -1772,7 +1875,7 @@ void ActorSystem::TryInvokeRepNotifiesForObject(FWeakObjectPtr& WeakObjectPtr, F
 	});
 
 	RemoveRepNotifiesWithUnresolvedObjs(*Object, *Channel, ObjectRepNotifies.RepNotifies);
-	Channel->PostReceiveSpatialUpdate(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
+	Channel->InvokeRepNotifies(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
 }
 
 void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
