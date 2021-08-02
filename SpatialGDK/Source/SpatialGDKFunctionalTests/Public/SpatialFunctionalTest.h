@@ -138,7 +138,7 @@ public:
 	APawn* GetLocalFlowPawn();
 
 	template <class T>
-	T* SpawnActor(const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters());
+	T* SpawnActor(const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters(), const bool bRegisterAsAutoDestroy = true);
 
 	// Helper to get the local Worker Type.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
@@ -493,10 +493,13 @@ private:
 };
 
 template <class T>
-T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParameters)
+T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParameters, const bool bRegisterAsAutoDestroy)
 {
 	T* Actor = GetWorld()->SpawnActor<T>(SpawnParameters);
 	checkf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
-	RegisterAutoDestroyActor(Actor);
+	if (bRegisterAsAutoDestroy)
+	{
+		RegisterAutoDestroyActor(Actor);
+	}
 	return Actor;
 }
