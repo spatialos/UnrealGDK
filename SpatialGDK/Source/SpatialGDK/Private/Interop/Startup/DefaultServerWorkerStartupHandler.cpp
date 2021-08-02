@@ -131,7 +131,7 @@ bool FSpatialServerStartupHandler::TryFinishStartup()
 			WorkerPartitionConstraint.constraint.component_constraint.component_id = SpatialConstants::WORKER_PARTITION_TAG_COMPONENT_ID;
 			WorkerPartitionConstraint.constraint_type = Worker_ConstraintType::WORKER_CONSTRAINT_TYPE_COMPONENT;
 
-			Worker_EntityQuery PartitionsQuery;
+			Worker_EntityQuery PartitionsQuery{};
 
 			PartitionsQuery.constraint = WorkerPartitionConstraint;
 
