@@ -42,3 +42,7 @@ component SkeletonEntityPopulationAuthTag {
 component SkeletonEntityPopulationFinishedTag {
     id = 2015;
 }
+
+component WorkerPartitionTag {
+    id = 2016;
+}
