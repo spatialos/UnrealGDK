@@ -138,7 +138,6 @@ public:
 	APawn* GetLocalFlowPawn();
 
 	template <class T>
-	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	T* SpawnActor(const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters());
 
 	// Helper to get the local Worker Type.
@@ -315,7 +314,6 @@ public:
 	bool RequireEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance = 1.e-4) { return RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
 
 	template<typename EnumType>
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Enum)"), Category = "Spatial Functional Test")
 	bool RequireEqual_Enum(const EnumType Value, const EnumType Expected, const FString& Msg) { return RequireHandler.RequireEqual_Enum(Value, Expected, Msg); }
 
 
@@ -344,7 +342,6 @@ public:
 	bool RequireNotEqual_Transform(const FTransform& Value, const FTransform& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	template<typename EnumType>
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Enum)"), Category = "Spatial Functional Test")
 	bool RequireNotEqual_Enum(const EnumType Value, const EnumType NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual_Enum(Value, NotExpected, Msg); }
 	// clang-format on
 
@@ -496,7 +493,6 @@ private:
 };
 
 template <class T>
-UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParameters)
 {
 	T* Actor = GetWorld()->SpawnActor<T>(SpawnParameters);
