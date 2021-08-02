@@ -119,9 +119,27 @@ public:
 	// clang-format on
 	ASpatialFunctionalTestFlowController* GetFlowController(ESpatialFunctionalTestWorkerType WorkerType, int WorkerId);
 
+	// clang-format off
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (WorkerId = "1",
+		ToolTip = "Returns the PlayerController owning a FlowController for a specific Server / Client.\nKeep in mind that WorkerIds start from 1, and the Server's WorkerId will match their VirtualWorkerId while the Client's will be based on the order they connect.\n\n'All' Worker type will soft assert as it isn't supported."))
+	// clang-format on
+	APlayerController* GetFlowPlayerController(const ESpatialFunctionalTestWorkerType WorkerType, const int WorkerId);
+
 	// Get the FlowController that is Local to this instance.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	ASpatialFunctionalTestFlowController* GetLocalFlowController();
+
+	// Get the player controller owning the current flow controller.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	APlayerController* GetLocalFlowPlayerController();
+
+	// Get the pawn that belongs to the PlayerController associated with the current flow controller.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	APawn* GetLocalFlowPawn();
+
+	template <class T>
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	T* SpawnActor(const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters());
 
 	// Helper to get the local Worker Type.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
@@ -258,6 +276,9 @@ public:
 
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	bool RequireValid(const UObject* Object, const FString& Msg) { return RequireHandler.RequireValid(Object, Msg); }
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
 	bool RequireTrue(bool bCheckTrue, const FString& Msg) { return RequireHandler.RequireTrue(bCheckTrue, Msg); }
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
@@ -292,6 +313,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Transform)"), Category = "Spatial Functional Test")
 	bool RequireEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance = 1.e-4) { return RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
+
+	template<typename EnumType>
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Enum)"), Category = "Spatial Functional Test")
+	bool RequireEqual_Enum(const EnumType Value, const EnumType Expected, const FString& Msg) { return RequireHandler.RequireEqual_Enum(Value, Expected, Msg); }
+
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Bool)"), Category = "Spatial Functional Test")
 	bool RequireNotEqual_Bool(bool bValue, bool bNotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(bValue, bNotExpected, Msg); }
@@ -361,12 +387,6 @@ public:
 
 	// Clears all the snapshots taken, not meant to be used directly.
 	static void ClearAllTakenSnapshots();
-
-	// Get the player controller owned by the current flow controller.
-	APlayerController* GetFlowPlayerController();
-
-	// Get the pawn that belongs to the PlayerController associated with the current flow controller.
-	APawn* GetFlowPawn();
 
 protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }
@@ -470,3 +490,13 @@ private:
 	// will check if there's a snapshot for them, and if so launch with it instead of the default snapshot.
 	static TMap<FString, FString> TakenSnapshots;
 };
+
+template <class T>
+UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParameters)
+{
+	T* Actor = GetWorld()->SpawnActor<T>(SpawnParameters);
+	checkf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
+	RegisterAutoDestroyActor(Actor);
+	return Actor;
+}
