@@ -27,6 +27,4 @@ void AUserReceivePropertyEventTracingTest::FinishEventTraceTest()
 												  "property update events. Events Tested: %d, Events Failed: %d"),
 											 Test.NumTested, Test.NumFailed));
 	}
-
-	FinishStep();
 }
