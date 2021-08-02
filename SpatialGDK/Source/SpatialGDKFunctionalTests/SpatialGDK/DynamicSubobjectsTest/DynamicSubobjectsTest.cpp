@@ -99,7 +99,8 @@ void ADynamicSubobjectsTest::PrepareTest()
 			APawn* PlayerCharacter = GetLocalFlowPawn();
 			if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid")))
 			{
-				RequireTrue(PlayerCharacter == GetLocalFlowPlayerController()->AcknowledgedPawn, TEXT("The client should possess the pawn."));
+				RequireTrue(PlayerCharacter == GetLocalFlowPlayerController()->AcknowledgedPawn,
+							TEXT("The client should possess the pawn."));
 				FinishStep();
 			}
 		},

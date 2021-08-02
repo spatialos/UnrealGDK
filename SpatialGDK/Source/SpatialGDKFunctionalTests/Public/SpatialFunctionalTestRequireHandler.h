@@ -46,7 +46,7 @@ public:
 	bool RequireEqual(const FVector& Value, const FVector& Expected, const FString& Msg, float Tolerance);
 	bool RequireEqual(const FRotator& Value, const FRotator& Expected, const FString& Msg, float Tolerance);
 	bool RequireEqual(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance);
-	template<typename EnumType>
+	template <typename EnumType>
 	bool RequireEqual_Enum(const EnumType Value, const EnumType Expected, const FString& Msg);
 
 	bool RequireNotEqual(bool bValue, bool bNotExpected, const FString& Msg);
@@ -74,7 +74,7 @@ private:
 	TMap<FString, FSpatialFunctionalTestRequire> Requires;
 };
 
-template<typename EnumType>
+template <typename EnumType>
 bool SpatialFunctionalTestRequireHandler::RequireEqual_Enum(const EnumType Value, const EnumType Expected, const FString& Msg)
 {
 	const bool bPassed = Value == Expected;

@@ -670,7 +670,8 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddStep(const FStr
 	return StepDefinitions[StepDefinitions.Num() - 1];
 }
 
-ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(const ESpatialFunctionalTestWorkerType WorkerType, const int WorkerId)
+ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(const ESpatialFunctionalTestWorkerType WorkerType,
+																				const int WorkerId)
 {
 	ensureMsgf(WorkerType != ESpatialFunctionalTestWorkerType::All, TEXT("Trying to call GetFlowController with All WorkerType"));
 	for (auto* FlowController : FlowControllers)

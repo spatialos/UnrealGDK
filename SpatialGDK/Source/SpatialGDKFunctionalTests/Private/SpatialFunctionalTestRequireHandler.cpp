@@ -79,7 +79,8 @@ SpatialFunctionalTestRequireHandler::SpatialFunctionalTestRequireHandler()
 {
 }
 
-FString SpatialFunctionalTestRequireHandler::GenerateStatusMessage(bool bPassed, FString Received, FString Expected, FString Tolerance, bool bNotEqual)
+FString SpatialFunctionalTestRequireHandler::GenerateStatusMessage(bool bPassed, FString Received, FString Expected, FString Tolerance,
+																   bool bNotEqual)
 {
 	if (bNotEqual)
 	{
