@@ -996,7 +996,7 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 	}
 }
 
-void ActorSystem::ResolvePendingOpsFromEntityUpdate(TArray<FWeakObjectPtr> ToResolveOps)
+void ActorSystem::ResolvePendingOpsFromEntityUpdate(const TArray<FWeakObjectPtr>& ToResolveOps)
 {
 	// This should be called after all component updates and adds have been completed, and PostNetReceives have been called to avoid user
 	// code from seeing inconsistent state
