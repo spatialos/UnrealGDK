@@ -646,7 +646,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClassesAfterStartup()
 			}
 #endif // WITH_GAMEPLAY_DEBUGGER
 		}
-		PlayerSpawner->StartProcessingRequests();
 	}
 }
 
