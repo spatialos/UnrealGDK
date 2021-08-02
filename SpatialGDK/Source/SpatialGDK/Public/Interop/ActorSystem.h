@@ -56,6 +56,7 @@ public:
 
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref);
 	void CleanupRepStateMap(FSpatialObjectRepState& RepState);
+	void ResolvePendingOpsFromEntityUpdate(const TArray<FWeakObjectPtr>& ToResolveOps);
 	void ResolveAsyncPendingLoad(UObject* LoadedObject, const FUnrealObjectRef& ObjectRef);
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
@@ -124,7 +125,8 @@ private:
 	void AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
 	void HandleActorAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId, Worker_Authority Authority);
 
-	void ComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
+	void ComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data,
+						TArray<FWeakObjectPtr>& OutToResolveOps);
 	void ComponentUpdated(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
 	void ComponentRemoved(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
@@ -146,8 +148,9 @@ private:
 
 	// Component add
 	void HandleDormantComponentAdded(Worker_EntityId EntityId) const;
-	void HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
-	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info);
+	void HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data,
+									  TArray<FWeakObjectPtr>& OutToResolveOps);
+	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info, TArray<FWeakObjectPtr>& OutToResolveOps);
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentId ComponentId,
 							Schema_ComponentData* Data);
 
@@ -171,6 +174,8 @@ private:
 										   USpatialActorChannel& Channel, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 
 	USpatialActorChannel* TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, Worker_EntityId EntityId);
+	bool InvokePreNetReceive(UObject& Object);
+	void InvokePostNetReceives();
 	FObjectRepNotifies& GetObjectRepNotifies(UObject& Object);
 
 	// Entity remove
@@ -205,6 +210,9 @@ private:
 	TMap<Worker_EntityId_Key, TSet<Worker_ComponentId>> PendingDynamicSubobjectComponents;
 
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
+
+	// Objects for a given entity are stored here then sent after all updates for that entity have been applied.
+	TArray<FWeakObjectPtr> PostNetReceivesToSend;
 
 	// RepNotifies are stored here then sent after all updates we have are applied
 	FObjectToRepNotifies ActorRepNotifiesToSend;

@@ -2,6 +2,7 @@
 
 #include "TestMaps/SpatialNetworkingMap.h"
 
+#include "SpatialGDK/SpatialTestNetReceive/SpatialTestNetReceive.h"
 #include "SpatialGDK/StaticSubobjectsTest/StaticSubobjectTestActor.h"
 #include "SpatialGDK/StaticSubobjectsTest/StaticSubobjectsTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DormancyTests/DormancyTestActor.h"
@@ -48,6 +49,7 @@ void USpatialNetworkingMap::CreateCustomContentForMap()
 	AddActorToLevel<ADynamicSubobjectsTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<AStaticSubobjectsTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ASpatialDynamicComponentsFastReadditionTest>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ASpatialTestNetReceive>(CurrentLevel, FTransform::Identity);
 
 	AddActorToLevel<AInitiallyDormantDynamicActorTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicActorSetToAwakeTest>(CurrentLevel, FTransform::Identity);
