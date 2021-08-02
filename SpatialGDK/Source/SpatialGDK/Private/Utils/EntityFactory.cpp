@@ -523,6 +523,9 @@ TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(cons
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_SHADOW_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
 
+	// Worker partitions need this tag so startup handler can distinguish between them and any other partitions.
+	Components.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::WORKER_PARTITION_TAG_COMPONENT_ID));
+
 	return Components;
 }
 

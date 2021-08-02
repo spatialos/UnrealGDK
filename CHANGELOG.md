@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unused worker types will no longer generate worker configuration files.
 - Fixed an issue that could cause SpatialNetGuidCache and native's NetGuidCache to become out of sync.
 - Add helpers to the test framework - `SpawnActor`, `RequireValid`, `GetFlowPlayerController`, `RequireEqual_Enum`, and `RequireNotEqual_Enum`.
+- Refactored startup to be all in a couple classes, `FSpatialServerStartupHandler` and `FSpatialClientStartupHandler`.
 
 ## [`0.14.0-rc`] - Unreleased
 

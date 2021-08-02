@@ -80,7 +80,7 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_receiving_empty_mapping_THEN_
 
 	// Now apply the mapping to the translator and test the result. Because the mapping is empty,
 	// it should ignore the mapping and continue to report an empty mapping.
-	Translator->ApplyVirtualWorkerManagerData(DataObject);
+	Translator->ApplyMappingFromSchema(DataObject);
 
 	TestEqual<VirtualWorkerId>("Local virtual worker ID is not known.", Translator->GetLocalVirtualWorkerId(),
 							   SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
@@ -104,7 +104,7 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_a_valid_mapping_is_received_T
 	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, 2, ValidWorkerTwo, WorkerTwoId);
 
 	// Now apply the mapping to the translator and test the result.
-	Translator->ApplyVirtualWorkerManagerData(DataObject);
+	Translator->ApplyMappingFromSchema(DataObject);
 
 	const PhysicalWorkerName* VirtualWorker1PhysicalName = Translator->GetPhysicalWorkerForVirtualWorker(1);
 	TestNotNull("There is a mapping for virtual worker 1", VirtualWorker1PhysicalName);
@@ -137,7 +137,7 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_another_valid_mappi
 	TestingSchemaHelpers::AddTranslationComponentDataMapping(FirstValidDataObject, 2, ValidWorkerTwo, WorkerTwoId);
 
 	// Apply valid mapping to the translator.
-	Translator->ApplyVirtualWorkerManagerData(FirstValidDataObject);
+	Translator->ApplyMappingFromSchema(FirstValidDataObject);
 
 	// Create a second mapping.
 	Schema_Object* SecondValidDataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
@@ -147,7 +147,7 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_another_valid_mappi
 	TestingSchemaHelpers::AddTranslationComponentDataMapping(SecondValidDataObject, 2, ValidWorkerThree, WorkerThreeId);
 
 	// Apply valid mapping to the translator.
-	Translator->ApplyVirtualWorkerManagerData(SecondValidDataObject);
+	Translator->ApplyMappingFromSchema(SecondValidDataObject);
 
 	// Translator should return the values from the new mapping
 	const PhysicalWorkerName* VirtualWorker1PhysicalName = Translator->GetPhysicalWorkerForVirtualWorker(1);
