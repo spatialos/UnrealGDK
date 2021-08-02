@@ -342,6 +342,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Transform)"), Category = "Spatial Functional Test")
 	bool RequireNotEqual_Transform(const FTransform& Value, const FTransform& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
+
+	template<typename EnumType>
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Enum)"), Category = "Spatial Functional Test")
+	bool RequireNotEqual_Enum(const EnumType Value, const EnumType NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual_Enum(Value, NotExpected, Msg); }
 	// clang-format on
 
 	// # Snapshot APIs.

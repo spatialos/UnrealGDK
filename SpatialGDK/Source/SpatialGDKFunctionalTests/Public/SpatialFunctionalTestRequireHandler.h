@@ -57,6 +57,8 @@ public:
 	bool RequireNotEqual(const FVector& Value, const FVector& NotExpected, const FString& Msg);
 	bool RequireNotEqual(const FRotator& Value, const FRotator& NotExpected, const FString& Msg);
 	bool RequireNotEqual(const FTransform& Value, const FTransform& NotExpected, const FString& Msg);
+	template <typename EnumType>
+	bool RequireNotEqual_Enum(const EnumType Value, const EnumType NotExpected, const FString& Msg);
 
 	bool GenericRequire(const FString& Key, bool bPassed, const FString& StatusMsg);
 
@@ -81,6 +83,18 @@ bool SpatialFunctionalTestRequireHandler::RequireEqual_Enum(const EnumType Value
 	const FString ReceivedString = UEnum::GetValueAsString(Value);
 	const FString ExpectedString = UEnum::GetValueAsString(Expected);
 	const FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString);
+
+	GenericRequire(Msg, bPassed, StatusMsg);
+	return bPassed;
+}
+
+template <typename EnumType>
+bool SpatialFunctionalTestRequireHandler::RequireNotEqual_Enum(const EnumType Value, const EnumType NotExpected, const FString& Msg)
+{
+	const bool bPassed = Value != NotExpected;
+	const FString ReceivedString = UEnum::GetValueAsString(Value);
+	const FString ExpectedString = UEnum::GetValueAsString(NotExpected);
+	const FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, FString(), true);
 
 	GenericRequire(Msg, bPassed, StatusMsg);
 	return bPassed;
