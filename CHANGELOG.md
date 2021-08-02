@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features:
 - Gameplay Debugger now supports multi-worker environments.
 - Add support DOREPLIFETIME_ACTIVE_OVERRIDE for replication conditions, with the exception of TArray's this should now work the same as in native.
+- Pre and PostNetReceive are now called on an object a maximum of a single time in a given tick. This matches native much closer.
 - The GDK has been upgraded to use version 15.2.0 of SpatialOS.
 
 ### Bug fixes:

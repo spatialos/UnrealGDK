@@ -249,9 +249,9 @@ public:
 
 	FRepChangeState CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object);
 
-	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
-	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-								  const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
+	FObjectReplicator* GetObjectReplicatorForSpatialUpdate(UObject* TargetObject);
+	void InvokeRepNotifies(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+						   const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
 											 const FObjectReferencesMap& RefMap, const UObject* Object) const;
