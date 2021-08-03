@@ -9,6 +9,7 @@
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
 #include "SpatialFunctionalTestRequireHandler.h"
 #include "SpatialFunctionalTestStep.h"
+#include "Algo/Count.h"
 #include "SpatialFunctionalTest.generated.h"
 
 // Blueprint Delegate
@@ -365,16 +366,16 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	bool WasLoadedFromTakenSnapshot();
 
-	template <typename T>
-	static int GetNumberOfActorsOfType(UWorld* World)
+	template <typename Actor_Type>
+	static SIZE_T CountActors(UWorld* World)
 	{
-		int Counter = 0;
-		for (TActorIterator<T> Iter(World); Iter; ++Iter)
-		{
-			Counter++;
-		}
+		return CountActors<Actor_Type>(World, [](Actor_Type*){ return true; });;
+	}
 
-		return Counter;
+	template <typename Actor_Type>
+	static SIZE_T CountActors(UWorld* World, TFunction<bool(Actor_Type*)> Pred)
+	{
+		return Algo::CountIf(TActorRange<Actor_Type>(World),Pred);
 	}
 
 	// Get the path of the taken snapshot for this world's map. Returns an empty string if it's using the default snapshot.

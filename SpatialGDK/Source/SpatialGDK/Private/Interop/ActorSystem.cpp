@@ -153,6 +153,16 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 				ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.Data);
 				ComponentAdded(Delta.EntityId, Change.ComponentId, Change.Data, ToResolveOps);
 			}
+			for (const ComponentChange& Change : Delta.ComponentsRemoved)
+			{
+				// NOTE: We have to deal the with dormant before ComponentUpdated
+				// otherwise a SubViewUpdate that contains a component update that
+				// also removes the dormant component will have its updates ignored.
+				if (Change.ComponentId == SpatialConstants::DORMANT_COMPONENT_ID)
+				{
+					ComponentRemoved(Delta.EntityId, Change.ComponentId);
+				}
+			}
 			for (const ComponentChange& Change : Delta.ComponentUpdates)
 			{
 				ComponentUpdated(Delta.EntityId, Change.ComponentId, Change.Update);
@@ -164,7 +174,13 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 			}
 			for (const ComponentChange& Change : Delta.ComponentsRemoved)
 			{
-				ComponentRemoved(Delta.EntityId, Change.ComponentId);
+				// NOTE: We have to deal the with dormant before ComponentUpdated
+				// otherwise a SubViewUpdate that contains a component update that
+				// also removes the dormant component will have its updates ignored.
+				if (Change.ComponentId != SpatialConstants::DORMANT_COMPONENT_ID)
+				{
+					ComponentRemoved(Delta.EntityId, Change.ComponentId);
+				}
 			}
 
 			InvokePostNetReceives();

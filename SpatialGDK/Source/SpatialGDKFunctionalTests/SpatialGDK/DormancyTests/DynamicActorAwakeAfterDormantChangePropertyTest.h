@@ -6,7 +6,8 @@
 #include "DormancyTest.h"
 #include "DynamicActorAwakeAfterDormantChangePropertyTest.generated.h"
 
-// TODO: Failing due to UNR-5790. Add to test gyms when ticket is solved.
+
+class ADormancyTestActor;
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ADynamicActorAwakeAfterDormantChangePropertyTest : public ADormancyTest
@@ -16,5 +17,13 @@ class SPATIALGDKFUNCTIONALTESTS_API ADynamicActorAwakeAfterDormantChangeProperty
 public:
 	ADynamicActorAwakeAfterDormantChangePropertyTest();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	virtual void PrepareTest() override;
+
+private:
+	int test() {return 1;};
+
+	UPROPERTY(Replicated)
+	ADormancyTestActor* DormancyActor;
 };
