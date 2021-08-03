@@ -34,15 +34,11 @@ void ASpatialTestNetReceive::PrepareTest()
 	Super::PrepareTest();
 
 	AddStep(TEXT("SpatialTestNetReceiveInitialise"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		APlayerController* PlayerController =
-			Cast<APlayerController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
+		APlayerController* PlayerController = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
 
 		FActorSpawnParameters Params;
 		Params.Owner = PlayerController;
-		TestActor = GetWorld()->SpawnActor<ASpatialTestNetReceiveActor>(Params);
-		RegisterAutoDestroyActor(TestActor);
-
-		checkf(IsValid(TestActor), TEXT("TestActor must be valid"));
+		TestActor = SpawnActor<ASpatialTestNetReceiveActor>(Params);
 
 		TestActor->Subobject->TestInt = 5;
 		TestActor->Subobject->OwnerOnlyTestInt = 6;
@@ -54,11 +50,11 @@ void ASpatialTestNetReceive::PrepareTest()
 	AddStep(
 		TEXT("SpatialTestNetReceiveCheckReceiveActorAndSubobject"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float Dt) {
-			if (!RequireEqual_Bool(IsValid(TestActor), true, TEXT("TestActor should be valid.")))
+			if (!RequireValid(TestActor, TEXT("TestActor should be valid.")))
 			{
 				return;
 			}
-			if (!RequireEqual_Bool(IsValid(TestActor->Subobject), true, TEXT("TestActor's subobject should be valid.")))
+			if (!RequireValid(TestActor->Subobject, TEXT("TestActor's subobject should be valid.")))
 			{
 				return;
 			}
@@ -84,11 +80,10 @@ void ASpatialTestNetReceive::PrepareTest()
 
 		for (int i = 0; i < RepSteps.Num(); ++i)
 		{
-			const ERepStep Step = RepSteps[i];
-			const ERepStep ExpectedStep = ExpectedRepSteps.IsValidIndex(i) ? ExpectedRepSteps[i] : ERepStep::None;
+			ERepStep Step = RepSteps[i];
+			ERepStep ExpectedStep = ExpectedRepSteps.IsValidIndex(i) ? ExpectedRepSteps[i] : ERepStep::None;
 
-			AssertTrue(Step == ExpectedStep, FString::Printf(TEXT("Got RepStep: %s expected RepStep: %s."), *UEnum::GetValueAsString(Step),
-															 *UEnum::GetValueAsString(ExpectedStep)));
+			RequireEqual_Enum(Step, ExpectedStep, FString::Printf(TEXT("Step and ExpectedStep should be equal at index %d."), i));
 		}
 
 		FinishStep();
