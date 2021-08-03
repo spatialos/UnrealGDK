@@ -764,11 +764,11 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 	// Allocate entity ids for dynamically spawned actors
-	 if (Actor->GetIsReplicated() && Actor->HasAuthority() && Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType)
+	if (Actor->GetIsReplicated() && Actor->HasAuthority() && Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType)
 		&& GlobalStateManager->bGSMReadyForPlay)
-	 { 
+	{
 		GetOrCreateSpatialActorChannel(Actor);
-	 }
+	}
 
 	if (SpatialGDKSettings->bEnableCrossLayerActorSpawning)
 	{
