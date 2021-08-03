@@ -5,6 +5,7 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/ActorSetSystem.h"
 #include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/LegacyLoadBalancingCommon.h"
 #include "LoadBalancing/LegacyLoadbalancingComponents.h"
@@ -150,13 +151,74 @@ void FLegacyLoadBalancing::OnWorkersDisconnected(TArrayView<FLBWorkerHandle> Dis
 {
 	// Not handled
 }
-
 void FLegacyLoadBalancing::TickPartitions(FPartitionManager& PartitionMgr)
 {
 	if (bCreatedPartitions)
 	{
+		if (ServerWorkerCustomAssignment->GetModifiedEntities().Num() > 0 || DebugCompStorage->GetModifiedEntities().Num() > 0)
+		{
+			for (const auto& Layer : LBContext.Layers)
+			{
+				for (const auto& Cell : Layer.Cells)
+				{
+					uint32 WorkerIdx = Cell.WorkerId - 1;
+					FPartitionHandle WorkerPartition = Partitions[WorkerIdx];
+					FLBWorkerHandle WorkerHandle = VirtualWorkerIdToHandle[WorkerIdx];
+					Worker_EntityId ServerWorkerEntity = PartitionMgr.GetServerWorkerEntityIdForWorker(WorkerHandle);
+
+					const LegacyLB_CustomWorkerAssignments* DebugWorkerInfo =
+						ServerWorkerCustomAssignment->GetObjects().Find(ServerWorkerEntity);
+					TSet<Worker_EntityId> AdditionalEntities;
+					if (DebugWorkerInfo)
+					{
+						for (const auto& DebugEntry : DebugCompStorage->GetObjects())
+						{
+							for (FName Label : DebugEntry.Value.ActorTags)
+							{
+								if (DebugWorkerInfo->AdditionalInterest.Contains(Label))
+								{
+									AdditionalEntities.Add(DebugEntry.Key);
+									break;
+								}
+							}
+						}
+					}
+
+					FVector2D CellCenter = Cell.Region.GetCenter();
+					const FVector Center3D{ CellCenter.X, CellCenter.Y, 0.0f };
+
+					const FVector2D EdgeLengths2D = Cell.Region.GetSize();
+					check(EdgeLengths2D.X > 0.0f && EdgeLengths2D.Y > 0.0f);
+					const FVector EdgeLengths3D{ EdgeLengths2D.X + Cell.Border, EdgeLengths2D.Y + Cell.Border, FLT_MAX };
+
+					SpatialGDK::QueryConstraint Constraint;
+					Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D),
+																		  SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
+
+					if (AdditionalEntities.Num() > 0)
+					{
+						SpatialGDK::QueryConstraint EntitiesConstraint;
+						for (Worker_EntityId Entity : AdditionalEntities)
+						{
+							SpatialGDK::QueryConstraint EntityQuery;
+							EntityQuery.EntityIdConstraint = Entity;
+							EntitiesConstraint.OrConstraint.Add(EntityQuery);
+						}
+						SpatialGDK::QueryConstraint CompleteConstraint;
+						CompleteConstraint.OrConstraint.Add(Constraint);
+						CompleteConstraint.OrConstraint.Add(EntitiesConstraint);
+						PartitionMgr.SetPartitionInterest(WorkerPartition, CompleteConstraint);
+					}
+					else
+					{
+						PartitionMgr.SetPartitionInterest(WorkerPartition, Constraint);
+					}
+				}
+			}
+		}
 		return;
 	}
+
 	if (ConnectedWorkers.Num() == ExpectedWorkers && bTranslatorIsReady)
 	{
 		TMap<Worker_EntityId_Key, FLBWorkerHandle> WorkersMap;
@@ -174,6 +236,7 @@ void FLegacyLoadBalancing::TickPartitions(FPartitionManager& PartitionMgr)
 		if (!bDirectAssignment)
 		{
 			Partitions.SetNum(ExpectedWorkers);
+
 			for (const auto& Layer : LBContext.Layers)
 			{
 				for (const auto& Cell : Layer.Cells)
@@ -247,6 +310,101 @@ void FLegacyLoadBalancing::TickPartitions(FPartitionManager& PartitionMgr)
 	}
 }
 
+TOptional<uint32> FLegacyLoadBalancing::EvaluateDebugComponent(Worker_EntityId EntityId)
+{
+	auto AssignmentData = ServerWorkerCustomAssignment->GetObjects().Find(WorkerForCustomAssignment);
+	if (!AssignmentData)
+	{
+		return {};
+	}
+
+	if (const DebugComponent* DbgComp = DebugCompStorage->GetObjects().Find(EntityId))
+	{
+		if (DbgComp->DelegatedWorkerId.IsSet())
+		{
+			if (!ensure(int32(DbgComp->DelegatedWorkerId.GetValue() - 1) < Partitions.Num()))
+			{
+				return {};
+			}
+			return DbgComp->DelegatedWorkerId.GetValue();
+		}
+
+		FPartitionHandle CandidatePartition;
+		uint32 CandidateWorker;
+		for (auto Tag : DbgComp->ActorTags)
+		{
+			if (const uint32* WorkerId = AssignmentData->LabelToVirtualWorker.Find(Tag))
+			{
+				if (!ensure(int32(*WorkerId - 1) < Partitions.Num()))
+				{
+					continue;
+				}
+				FPartitionHandle CurPartition = Partitions[*WorkerId - 1];
+				ensure(!CandidatePartition.IsValid() || CurPartition == CandidatePartition);
+				CandidatePartition = CurPartition;
+				CandidateWorker = *WorkerId;
+			}
+		}
+		if (CandidatePartition.IsValid())
+		{
+			return CandidateWorker;
+		}
+	}
+	return {};
+}
+
+TOptional<TPair<Worker_EntityId, uint32>> FLegacyLoadBalancing::EvaluateDebugComponent(Worker_EntityId EntityId, FActorSetSystem& ActorSets)
+{
+	Worker_EntityId SetLeader = ActorSets.GetSetLeader(EntityId);
+	if (SetLeader != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		TOptional<uint32> CandidateWorker = EvaluateDebugComponent(SetLeader);
+		const TSet<Worker_EntityId_Key>* ActorSet = ActorSets.GetSet(SetLeader);
+
+		if (ensure(ActorSet != nullptr))
+		{
+			for (auto SetMember : *ActorSet)
+			{
+				TOptional<uint32> Worker = EvaluateDebugComponent(SetMember);
+				if (Worker)
+				{
+					ensure(!CandidateWorker || Worker.GetValue() == CandidateWorker.GetValue());
+					CandidateWorker = Worker;
+				}
+			}
+		}
+
+		if (CandidateWorker)
+		{
+			return MakeTuple(SetLeader, CandidateWorker.GetValue());
+		}
+	}
+	else
+	{
+		TOptional<uint32> Worker = EvaluateDebugComponent(EntityId);
+		if (Worker)
+		{
+			return MakeTuple(EntityId, Worker.GetValue());
+		}
+	}
+	return {};
+}
+
+void FLegacyLoadBalancing::EvaluateDebugComponent(Worker_EntityId EntityId, FMigrationContext& Ctx)
+{
+	auto NewAssignment = EvaluateDebugComponent(EntityId, Ctx.ActorSets);
+	if (NewAssignment)
+	{
+		ToRefresh.Remove(NewAssignment->Key);
+		int32& CurAssignment = Assignment.FindOrAdd(EntityId, -1);
+		if (CurAssignment != NewAssignment->Value - 1)
+		{
+			CurAssignment = NewAssignment->Value - 1;
+			Ctx.EntitiesToMigrate.Add(EntityId, Partitions[CurAssignment]);
+		}
+	}
+}
+
 void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 {
 	if (bCreatedPartitions)
@@ -255,6 +413,28 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 		{
 			TSet<Worker_EntityId_Key> NotChecked;
 			ToRefresh = ToRefresh.Union(Ctx.ModifiedEntities);
+			ToRefresh = ToRefresh.Difference(Ctx.DeletedEntities);
+
+			if (ServerWorkerCustomAssignment->GetModifiedEntities().Contains(WorkerForCustomAssignment))
+			{
+				for (const auto& Entry : DebugCompStorage->GetObjects())
+				{
+					EvaluateDebugComponent(Entry.Key, Ctx);
+				}
+			}
+			else if (DebugCompStorage->GetObjects().Num() > 0)
+			{
+				for (const auto& Entity : DebugCompStorage->GetModifiedEntities())
+				{
+					EvaluateDebugComponent(Entity, Ctx);
+				}
+				TSet<Worker_EntityId_Key> ToRefreshCopy = ToRefresh;
+				for (const auto& Entity : ToRefreshCopy)
+				{
+					EvaluateDebugComponent(Entity, Ctx);
+				}
+			}
+
 			for (Worker_EntityId EntityId : ToRefresh)
 			{
 				if (Ctx.MigratingEntities.Contains(EntityId))
@@ -271,9 +451,10 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 
 				int32& CurAssignment = Assignment.FindOrAdd(EntityId, -1);
 
-				if (CurAssignment >= 0 && CurAssignment < Layer.Cells.Num())
+				if (CurAssignment >= 0 && CurAssignment < Partitions.Num())
 				{
-					if (Layer.Cells[CurAssignment].Region.IsInside(Actor2DLocation))
+					int32 LayerIndex = CurAssignment + 1 - Layer.FirstWorkerId;
+					if (ensureAlways(LayerIndex < Layer.Cells.Num()) && Layer.Cells[LayerIndex].Region.IsInside(Actor2DLocation))
 					{
 						continue;
 					}

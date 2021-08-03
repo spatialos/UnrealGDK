@@ -15,6 +15,7 @@ class FActorGroupStorage;
 class FDirectAssignmentStorage;
 class FDebugComponentStorage;
 class FCustomWorkerAssignmentStorage;
+class FActorSetSystem;
 
 class FLegacyLoadBalancing : public FLoadBalancingStrategy
 {
@@ -34,7 +35,9 @@ public:
 
 protected:
 	void QueryTranslation(ISpatialOSWorker& Connection);
-	TOptional<FLBWorkerHandle> EvaluateDebugComponent(Worker_EntityId);
+	void EvaluateDebugComponent(Worker_EntityId, FMigrationContext& Ctx);
+	TOptional<TPair<Worker_EntityId, uint32>> EvaluateDebugComponent(Worker_EntityId, FActorSetSystem&);
+	TOptional<uint32> EvaluateDebugComponent(Worker_EntityId);
 
 	// +++ Data Storage +++
 	TUniquePtr<FSpatialPositionStorage> PositionStorage;

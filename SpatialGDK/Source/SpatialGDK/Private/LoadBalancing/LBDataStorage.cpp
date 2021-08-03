@@ -12,6 +12,28 @@ void FLBDataCollection::Advance()
 		{
 		case EntityDelta::UPDATE:
 		{
+			for (const auto& Added : Delta.ComponentsAdded)
+			{
+				for (auto& Storage : DataStorages)
+				{
+					if (Storage->GetComponentsToWatch().Contains(Added.ComponentId))
+					{
+						Storage->OnComponentAdded(Delta.EntityId, Added.ComponentId, Added.Data);
+					}
+				}
+			}
+
+			for (const auto& Added : Delta.ComponentsRemoved)
+			{
+				for (auto& Storage : DataStorages)
+				{
+					if (Storage->GetComponentsToWatch().Contains(Added.ComponentId))
+					{
+						// The removal is not communicated though...
+						Storage->OnRemoved(Delta.EntityId);
+					}
+				}
+			}
 			for (const auto& CompleteUpdate : Delta.ComponentsRefreshed)
 			{
 				for (auto& Storage : DataStorages)

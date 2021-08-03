@@ -2226,6 +2226,22 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 					Actor->OnAuthorityLost();
 				}
+				for (auto EntityId : HandoverManager->GetActorsToCheckForAuth())
+				{
+					TWeakObjectPtr<UObject> ObjectPtr = PackageMap->GetObjectFromEntityId(EntityId);
+					AActor* Actor = Cast<AActor>(ObjectPtr.Get());
+					if (Actor == nullptr || Actor->HasAuthority())
+					{
+						continue;
+					}
+					else if (Actor != nullptr)
+					{
+						Actor->Role = ROLE_Authority;
+						Actor->RemoteRole = ROLE_SimulatedProxy;
+
+						Actor->OnAuthorityGained();
+					}
+				}
 			}
 			HandoverManager->Flush(Connection->GetCoordinator(), EntitiesHandedOver);
 		}
@@ -2321,6 +2337,15 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			if (PartitionSystemImpl.IsValid())
 			{
 				PartitionSystemImpl->ProcessDeletionEvents();
+			}
+
+			if (ServerWorkerSystemImpl.IsValid())
+			{
+				for (auto& Update : ServerWorkerSystemImpl->PendingComponentUpdates)
+				{
+					Connection->GetCoordinator().SendComponentUpdate(WorkerEntityId, MoveTemp(Update));
+				}
+				ServerWorkerSystemImpl->PendingComponentUpdates.Empty();
 			}
 
 			if (RPCService.IsValid())

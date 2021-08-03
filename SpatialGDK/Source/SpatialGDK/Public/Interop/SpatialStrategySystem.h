@@ -39,6 +39,8 @@ public:
 	void Destroy(ISpatialOSWorker& Connection);
 
 private:
+	void ClearUserStorages();
+
 	const FSubView& LBView;
 
 	TUniquePtr<FPartitionManager> PartitionsMgr;
