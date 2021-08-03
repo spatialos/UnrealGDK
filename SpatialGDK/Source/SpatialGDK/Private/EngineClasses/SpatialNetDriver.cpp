@@ -764,11 +764,11 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 	// Allocate entity ids for dynamically spawned actors
-	if (Actor->GetIsReplicated() && Actor->HasAuthority() && Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType)
+	 if (Actor->GetIsReplicated() && Actor->HasAuthority() && Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType)
 		&& GlobalStateManager->bGSMReadyForPlay)
-	{
+	 { 
 		GetOrCreateSpatialActorChannel(Actor);
-	}
+	 }
 
 	if (SpatialGDKSettings->bEnableCrossLayerActorSpawning)
 	{
@@ -3039,7 +3039,7 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 	const bool bHasAuthority = HasServerAuthority(EntityId);
 	if (bHasAuthority == false)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Unable to flush dormancy on actor (%s) without authority"), *Actor->GetName());
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s) without authority"), *Actor->GetName());
 		return;
 	}
 
