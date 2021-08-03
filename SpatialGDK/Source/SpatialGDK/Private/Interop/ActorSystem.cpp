@@ -1904,6 +1904,7 @@ void ActorSystem::CleanUpTornOffChannels()
 			Channel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
 		}
 	}
+	EntityChannelsToSetTornOff.Empty();
 }
 
 void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
