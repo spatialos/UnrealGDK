@@ -140,6 +140,7 @@ private:
 	void TryInvokeRepNotifiesForObject(FWeakObjectPtr& Object, FObjectRepNotifies& ObjectRepNotifies) const;
 	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
 													TArray<GDK_PROPERTY(Property) *>& RepNotifies);
+	void CleanUpTornOffChannels();
 
 	// Authority
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
@@ -217,6 +218,9 @@ private:
 	// RepNotifies are stored here then sent after all updates we have are applied
 	FObjectToRepNotifies ActorRepNotifiesToSend;
 	FObjectToRepNotifies SubobjectRepNotifiesToSend;
+
+	// Channels are set as torn off after we have sent all our other user callbacks, such as rep notifies.
+	TArray<Worker_EntityId> EntityChannelsToSetTornOff;
 
 	// Deserialized state store for Actor relevant components.
 	TMap<Worker_EntityId_Key, ActorData> ActorDataStore;
