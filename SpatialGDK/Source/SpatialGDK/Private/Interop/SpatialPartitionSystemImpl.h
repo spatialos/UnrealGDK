@@ -8,6 +8,7 @@
 namespace SpatialGDK
 {
 class FSubView;
+class FSpatialHandoverManager;
 
 class FPartitionSystemImpl
 {
@@ -16,6 +17,10 @@ public:
 		: PartitionData(SubView)
 	{
 	}
+
+	void Advance();
+	void ProcessHandoverEvents(FSpatialHandoverManager&);
+	void ProcessDeletionEvents();
 
 	FLBDataCollection PartitionData;
 	TArray<SpatialGDK::FPartitionEvent> Events;

@@ -30,8 +30,8 @@ public:
 
 	void Flush(ISpatialOSWorker& Connection, const TSet<Worker_EntityId_Key>& ActorsReleased);
 
-	TSet<Worker_EntityId_Key> ConsumeDelegatedPartitions();
-	TSet<Worker_EntityId_Key> ConsumeDelegationLost();
+	const TSet<Worker_EntityId_Key>& GetDelegatedPartitions() { return PartitionsDelegated; }
+	const TSet<Worker_EntityId_Key>& GetDelegationLost() { return DelegationLost; }
 
 private:
 	void PopulateDataStore(const Worker_EntityId EntityId);

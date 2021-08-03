@@ -6,8 +6,11 @@
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/LBDataStorage.h"
+#include "LoadBalancing/LegacyLoadBalancingCommon.h"
 #include "LoadBalancing/LegacyLoadbalancingComponents.h"
 #include "LoadBalancing/PartitionManager.h"
+
+DEFINE_LOG_CATEGORY(LogSpatialLegacyLoadBalancing)
 
 namespace SpatialGDK
 {

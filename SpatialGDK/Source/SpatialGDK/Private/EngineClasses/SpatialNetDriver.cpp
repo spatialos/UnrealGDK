@@ -2277,13 +2277,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			if (PartitionSystemImpl.IsValid())
 			{
-				PartitionSystemImpl->PartitionData.Advance();
-				for (Worker_EntityId PartitionAdded : PartitionSystemImpl->PartitionData.EntitiesAdded)
-				{
-					SpatialGDK::FPartitionEvent Event = { PartitionAdded, SpatialGDK::FPartitionEvent::Created };
-					PartitionSystemImpl->Events.Add(Event);
-				}
-				PartitionSystemImpl->PartitionData.EntitiesAdded.Empty();
+				PartitionSystemImpl->Advance();
 			}
 
 			if (LoadBalanceEnforcer.IsValid())
@@ -2298,27 +2292,16 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			if (HandoverManager.IsValid())
 			{
 				HandoverManager->Advance();
-				for (Worker_EntityId Partition : HandoverManager->ConsumeDelegationLost())
+				if (PartitionSystemImpl.IsValid())
 				{
-					SpatialGDK::FPartitionEvent Event = { Partition, SpatialGDK::FPartitionEvent::DelegationLost };
-					PartitionSystemImpl->Events.Add(Event);
-				}
-				for (Worker_EntityId Partition : HandoverManager->ConsumeDelegatedPartitions())
-				{
-					SpatialGDK::FPartitionEvent Event = { Partition, SpatialGDK::FPartitionEvent::Delegated };
-					PartitionSystemImpl->Events.Add(Event);
+					PartitionSystemImpl->ProcessHandoverEvents(*HandoverManager);
 				}
 			}
 
 			// Add partition deletion after handling handover to have a natural flow of events.
 			if (PartitionSystemImpl.IsValid())
 			{
-				for (Worker_EntityId PartitionAdded : PartitionSystemImpl->PartitionData.EntitiesRemoved)
-				{
-					SpatialGDK::FPartitionEvent Event = { PartitionAdded, SpatialGDK::FPartitionEvent::Deleted };
-					PartitionSystemImpl->Events.Add(Event);
-				}
-				PartitionSystemImpl->PartitionData.EntitiesRemoved.Empty();
+				PartitionSystemImpl->ProcessDeletionEvents();
 			}
 
 			if (RPCService.IsValid())

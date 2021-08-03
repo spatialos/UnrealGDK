@@ -20,6 +20,9 @@ FSpatialHandoverManager::FSpatialHandoverManager(const FSubView& InActorView, co
 
 void FSpatialHandoverManager::Advance()
 {
+	PartitionsDelegated.Empty();
+	DelegationLost.Empty();
+
 	for (const EntityDelta& Delta : PartitionView.GetViewDelta().EntityDeltas)
 	{
 		switch (Delta.Type)
@@ -164,20 +167,6 @@ void FSpatialHandoverManager::Flush(ISpatialOSWorker& Connection, const TSet<Wor
 									   ComponentUpdate(MoveTemp(UpdateData), SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID));
 	}
 	ActorsToACK.Empty();
-}
-
-TSet<Worker_EntityId_Key> FSpatialHandoverManager::ConsumeDelegatedPartitions()
-{
-	TSet<Worker_EntityId_Key> Partitions;
-	Swap(Partitions, PartitionsDelegated);
-	return Partitions;
-}
-
-TSet<Worker_EntityId_Key> FSpatialHandoverManager::ConsumeDelegationLost()
-{
-	TSet<Worker_EntityId_Key> Partitions;
-	Swap(Partitions, DelegationLost);
-	return Partitions;
 }
 
 } // namespace SpatialGDK
