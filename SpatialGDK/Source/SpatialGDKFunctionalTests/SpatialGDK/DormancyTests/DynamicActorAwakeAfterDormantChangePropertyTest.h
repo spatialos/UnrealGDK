@@ -22,8 +22,6 @@ public:
 	virtual void PrepareTest() override;
 
 private:
-	int test() {return 1;};
-
 	UPROPERTY(Replicated)
 	ADormancyTestActor* DormancyActor;
 };
