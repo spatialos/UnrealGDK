@@ -99,9 +99,9 @@ void AStaticSubobjectsTest::PrepareTest()
 	AddStep(
 		TEXT("StaticSubobjectsTestClientCheckPawnPossesion"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-			APawn* PlayerPawn = GetFlowPawn();
+			APawn* PlayerPawn = GetLocalFlowPawn();
 			RequireTrue(IsValid(PlayerPawn), TEXT("PlayerCharacter should be valid"));
-			RequireTrue(PlayerPawn == GetFlowPlayerController()->AcknowledgedPawn, TEXT("The client should possess the pawn."));
+			RequireTrue(PlayerPawn == GetLocalFlowPlayerController()->AcknowledgedPawn, TEXT("The client should possess the pawn."));
 			FinishStep();
 		},
 		StepTimeLimit);
@@ -236,7 +236,7 @@ void AStaticSubobjectsTest::MoveClientPawn(FVector& ToLocation)
 	AddStep(
 		TEXT("StaticSubobjectsTestClientCheckMovement"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this, &ToLocation](float DeltaTime) {
-			APawn* PlayerCharacter = GetFlowPawn();
+			APawn* PlayerCharacter = GetLocalFlowPawn();
 
 			if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid")))
 			{
