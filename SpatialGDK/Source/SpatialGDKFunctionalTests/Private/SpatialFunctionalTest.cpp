@@ -670,7 +670,8 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddStep(const FStr
 	return StepDefinitions[StepDefinitions.Num() - 1];
 }
 
-ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(ESpatialFunctionalTestWorkerType WorkerType, int WorkerId)
+ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(const ESpatialFunctionalTestWorkerType WorkerType,
+																				const int WorkerId)
 {
 	ensureMsgf(WorkerType != ESpatialFunctionalTestWorkerType::All, TEXT("Trying to call GetFlowController with All WorkerType"));
 	for (auto* FlowController : FlowControllers)
@@ -678,6 +679,39 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(
 		if (FlowController->WorkerDefinition.Type == WorkerType && FlowController->WorkerDefinition.Id == WorkerId)
 		{
 			return FlowController;
+		}
+	}
+	return nullptr;
+}
+
+APlayerController* ASpatialFunctionalTest::GetFlowPlayerController(const ESpatialFunctionalTestWorkerType WorkerType, const int WorkerId)
+{
+	if (ASpatialFunctionalTestFlowController* FlowController = GetFlowController(WorkerType, WorkerId))
+	{
+		return Cast<APlayerController>(FlowController->GetOwner());
+	}
+	return nullptr;
+}
+
+APlayerController* ASpatialFunctionalTest::GetLocalFlowPlayerController()
+{
+	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
+	if (ensureAlwaysMsgf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server.")))
+	{
+		return Cast<APlayerController>(FlowController->GetOwner());
+	}
+	return nullptr;
+}
+
+APawn* ASpatialFunctionalTest::GetLocalFlowPawn()
+{
+	APlayerController* PlayerController = GetLocalFlowPlayerController();
+	if (IsValid(PlayerController))
+	{
+		APawn* PlayerCharacter = PlayerController->GetPawn();
+		if (IsValid(PlayerCharacter))
+		{
+			return PlayerCharacter;
 		}
 	}
 	return nullptr;
@@ -808,30 +842,6 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 			FoundActor->SetLifeSpan(0.01f);
 		}
 	}
-}
-
-APlayerController* ASpatialFunctionalTest::GetFlowPlayerController()
-{
-	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
-	if (ensureAlwaysMsgf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server.")))
-	{
-		return Cast<APlayerController>(FlowController->GetOwner());
-	}
-	return nullptr;
-}
-
-APawn* ASpatialFunctionalTest::GetFlowPawn()
-{
-	APlayerController* PlayerController = GetFlowPlayerController();
-	if (IsValid(PlayerController))
-	{
-		APawn* PlayerCharacter = PlayerController->GetPawn();
-		if (IsValid(PlayerCharacter))
-		{
-			return PlayerCharacter;
-		}
-	}
-	return nullptr;
 }
 
 namespace
