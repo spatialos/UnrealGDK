@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue that could cause SpatialNetGuidCache and native's NetGuidCache to become out of sync.
 - Add helpers to the test framework - `SpawnActor`, `RequireValid`, `GetFlowPlayerController`, `RequireEqual_Enum`, and `RequireNotEqual_Enum`.
 - Refactored startup to be all in a couple classes, `FSpatialServerStartupHandler` and `FSpatialClientStartupHandler`.
+- Newly torn off channels are now conditionally closed after all updates in a given tick have been applied.
 
 ## [`0.14.0-rc`] - Unreleased
 
