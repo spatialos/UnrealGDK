@@ -11,6 +11,19 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialStartupHandler, Log, All);
 
 namespace SpatialGDK
 {
+struct FDeploymentMapData
+{
+	FString DeploymentMapURL;
+
+	bool bAcceptingPlayers;
+
+	int32 DeploymentSessionId;
+
+	uint32 SchemaHash;
+
+	static bool TryRead(const Schema_Object& ComponentObject, FDeploymentMapData& InOutData);
+};
+
 struct FStartupStep
 {
 	virtual ~FStartupStep() = default;
