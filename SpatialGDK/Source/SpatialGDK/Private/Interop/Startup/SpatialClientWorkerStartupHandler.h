@@ -7,13 +7,15 @@
 #include "Interop/EntityQueryHandler.h"
 #include "SpatialCommonTypes.h"
 
+#include "Interop/Startup/SpatialStartupCommon.h"
+
 class USpatialNetDriver;
 
 namespace SpatialGDK
 {
 class ViewCoordinator;
 
-class FSpatialClientStartupHandler
+class FSpatialClientStartupHandler final
 {
 public:
 	explicit FSpatialClientStartupHandler(USpatialNetDriver& InNetDriver, UGameInstance& InGameInstance);
@@ -32,16 +34,7 @@ private:
 	TOptional<FString> ClientStartupExtraState;
 	FTimerHandle GSMQueryRetryTimer;
 	FEntityQueryHandler QueryHandler;
-	struct FDeploymentMapData
-	{
-		FString DeploymentMapURL;
 
-		bool bAcceptingPlayers;
-
-		int32 DeploymentSessionId;
-
-		uint32 SchemaHash;
-	};
 	TOptional<FDeploymentMapData> GSMData;
 	static bool GetFromComponentData(const Worker_ComponentData& Component, FDeploymentMapData& OutData);
 
@@ -69,6 +62,10 @@ private:
 
 	USpatialNetDriver* NetDriver;
 	TWeakObjectPtr<UGameInstance> GameInstance;
+
+	TArray<TUniquePtr<FStartupStep>> CreateSteps();
+
+	FStartupExecutor Executor;
 };
 
 } // namespace SpatialGDK
