@@ -338,6 +338,10 @@ void ActorSystem::Advance()
 	// authoritative you are supposed to be the only server that can update properties.
 	InvokeRepNotifies();
 
+	// And finally send clean up for channels that we got a tear off update for.
+	// We don't do this earlier as Rep Notifies require the actor channel.
+	CleanUpTornOffChannels();
+
 	// No need to ProcessAuthorityGains on SimulatedSubView as we won't have gained authority on Entities in that SubView.
 	ProcessAuthorityGains(EntityAuthSubView);
 	ProcessAuthorityGains(EntityOwnershipSubView);
@@ -973,10 +977,10 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 		ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 		bool bOutReferencesChanged = false;
 
-		FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
 		const bool bSuccessfullyPreNetReceived = InvokePreNetReceive(TargetObject);
 		if (bSuccessfullyPreNetReceived)
 		{
+			FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
 			Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
 		}
 		else
@@ -1305,11 +1309,11 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 	bool bOutReferencesChanged = false;
-	FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
 
 	const bool bSuccessfullyPreNetReceived = InvokePreNetReceive(TargetObject);
 	if (bSuccessfullyPreNetReceived)
 	{
+		FObjectRepNotifies& ObjectRepNotifiesOut = GetObjectRepNotifies(TargetObject);
 		Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, ObjectRepNotifiesOut, bOutReferencesChanged);
 	}
 	else
@@ -1330,7 +1334,7 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 		// Check if bTearOff has been set to true
 		if (GetBoolFromSchema(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
-			Channel.ConditionalCleanUp(false, EChannelCloseReason::TearOff);
+			EntityChannelsToSetTornOff.Add(Channel.GetEntityId());
 		}
 	}
 }
@@ -1889,6 +1893,18 @@ void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USp
 			Channel.RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator.RepLayout, ObjectRepState->ReferenceMap, &Object);
 		}
 	}
+}
+
+void ActorSystem::CleanUpTornOffChannels()
+{
+	for (const Worker_EntityId EntityId : EntityChannelsToSetTornOff)
+	{
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
+		{
+			Channel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
+		}
+	}
+	EntityChannelsToSetTornOff.Empty();
 }
 
 void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
