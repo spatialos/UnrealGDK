@@ -1,9 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "RelevancyTest.h"
+#include "GameFramework/PlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/RelevancyTestActors.h"
-#include "GameFramework/PlayerController.h"
 
 #include "LoadBalancing/LayeredLBStrategy.h"
 
@@ -40,8 +40,7 @@ void ARelevancyTest::PrepareTest()
 			AssertIsValid(GridStrategy, TEXT("Invalid LBS"));
 			const FVector WorkerPos = GridStrategy->GetWorkerEntityPosition();
 
-			AlwaysRelevantActor =
-				SpawnActor<AAlwaysRelevantTestActor>(WorkerPos, FRotator::ZeroRotator, FActorSpawnParameters());
+			AlwaysRelevantActor = SpawnActor<AAlwaysRelevantTestActor>(WorkerPos, FRotator::ZeroRotator);
 			AlwaysRelevantServerOnlyActor =
 				SpawnActor<AAlwaysRelevantServerOnlyTestActor>(WorkerPos, FRotator::ZeroRotator, FActorSpawnParameters());
 

@@ -1,8 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "AlwaysInterestedTest.h"
-#include "SpatialFunctionalTestFlowController.h"
 #include "GameFramework/PlayerController.h"
+#include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/AlwaysInterestedTestActors.h"
 
 #include "LoadBalancing/LayeredLBStrategy.h"
@@ -74,24 +74,19 @@ void AAlwaysInterestedTest::PrepareTest()
 
 			if (HasAuthority())
 			{
-				ActorWithAlwaysInterestedProperty =
-					SpawnActor<AAlwaysInterestedTestActor>(LocalWorkerPosition, FRotator::ZeroRotator);
+				ActorWithAlwaysInterestedProperty = SpawnActor<AAlwaysInterestedTestActor>(LocalWorkerPosition, FRotator::ZeroRotator);
 
-				InterestedInThisReplicatedActor =
-					SpawnActor<ASmallNCDActor>(LocalWorkerPosition, FRotator::ZeroRotator);
+				InterestedInThisReplicatedActor = SpawnActor<ASmallNCDActor>(LocalWorkerPosition, FRotator::ZeroRotator);
 
-				NotInterestedInThisReplicatedActor =
-					SpawnActor<ASmallNCDActor>(LocalWorkerPosition, FRotator::ZeroRotator);
+				NotInterestedInThisReplicatedActor = SpawnActor<ASmallNCDActor>(LocalWorkerPosition, FRotator::ZeroRotator);
 
 				// This actor is used later as a replacement for InterestedInThisReplicatedActor, so isn't immediate added to
 				// AlwaysInterested
-				OtherInterestedInThisReplicatedActor =
-					SpawnActor<ASmallNCDActor>(LocalWorkerPosition, FRotator::ZeroRotator);
+				OtherInterestedInThisReplicatedActor = SpawnActor<ASmallNCDActor>(LocalWorkerPosition, FRotator::ZeroRotator);
 
 				ActorWithAlwaysInterestedProperty->InterestedActors.Push(InterestedInThisReplicatedActor);
 
-				AController* PlayerController1 =
-					GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
+				AController* PlayerController1 = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
 				if (!AssertTrue(IsValid(PlayerController1), TEXT("Should have spawned a PlayerController 1")))
 				{
 					return;
@@ -102,8 +97,7 @@ void AAlwaysInterestedTest::PrepareTest()
 					return;
 				}
 
-				AController* PlayerController2 =
-					GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 2);
+				AController* PlayerController2 = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 2);
 				if (!AssertTrue(IsValid(PlayerController2), TEXT("Should have spawned a PlayerController 2")))
 				{
 					return;
