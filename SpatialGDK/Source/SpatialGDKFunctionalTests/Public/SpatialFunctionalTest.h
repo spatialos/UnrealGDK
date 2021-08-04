@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Algo/Count.h"
 #include "CoreMinimal.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -9,7 +10,6 @@
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
 #include "SpatialFunctionalTestRequireHandler.h"
 #include "SpatialFunctionalTestStep.h"
-#include "Algo/Count.h"
 #include "SpatialFunctionalTest.generated.h"
 
 // Blueprint Delegate
@@ -369,7 +369,9 @@ public:
 	template <typename ActorType>
 	static int32 CountActors(UWorld* World)
 	{
-		return CountActors<ActorType>(World, [](ActorType*){ return true; });
+		return CountActors<ActorType>(World, [](ActorType*) {
+			return true;
+		});
 	}
 
 	template <typename ActorType>

@@ -60,6 +60,7 @@ void USpatialNetworkingMap::CreateCustomContentForMap()
 	AddActorToLevel<AUnresolvedReferenceTest>(CurrentLevel, FTransform::Identity);
 	// Add test helpers
 	// Unfortunately, the nature of some tests requires them to have actors placed in the level, to trigger some Unreal behavior
+	AddActorToLevel<AReplicatedVisibilityTestActor>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicSubObjectTestActor>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<AStaticSubobjectTestActor>(CurrentLevel, FTransform(FVector(-20000.0f, -20000.0f, 40.0f)));
 }
