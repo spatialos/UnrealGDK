@@ -34,23 +34,20 @@ void ASpatialTestInitialOnlyForInterestActor::PrepareTest()
 
 	AddStep(TEXT("Init test environment"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Spawn cube
-		ASpatialTestInitialOnlySpawnActor* SpawnActor = GetWorld()->SpawnActor<ASpatialTestInitialOnlySpawnActor>(
-			FVector(-1500.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
-
-		RegisterAutoDestroyActor(SpawnActor);
+		SpawnActor<ASpatialTestInitialOnlySpawnActor>(
+			FVector(-1500.0f, 0.0f, 40.0f), FRotator::ZeroRotator);
 
 		AssertTrue(GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition, TEXT("Initial Only Enabled"));
 
 		// Spawn the TestPossessionPawn actor for Client 1 to possess.
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 		ATestPossessionPawn* TestCharacter =
-			GetWorld()->SpawnActor<ATestPossessionPawn>(FVector(1500.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+			SpawnActor<ATestPossessionPawn>(FVector(1500.0f, 0.0f, 40.0f), FRotator::ZeroRotator);
 		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 
 		// Set a reference to the previous Pawn so that it can be processed back in the last step of the test
 		OriginalPawn = TPair<AController*, APawn*>(PlayerController, PlayerController->GetPawn());
 
-		RegisterAutoDestroyActor(TestCharacter);
 		PlayerController->Possess(TestCharacter);
 
 		FinishStep();
@@ -68,8 +65,7 @@ void ASpatialTestInitialOnlyForInterestActor::PrepareTest()
 		30.0f);
 
 	AddStep(TEXT("Move character to cube"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
+		APlayerController* PlayerController = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
 		ATestPossessionPawn* PlayerCharacter = Cast<ATestPossessionPawn>(PlayerController->GetPawn());
 
 		// Move the character to the correct location

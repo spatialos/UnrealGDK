@@ -140,6 +140,9 @@ public:
 	template <class T>
 	T* SpawnActor(const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters(), const bool bRegisterAsAutoDestroy = true);
 
+	template <class T>
+	T* SpawnActor(const FVector& Location, const FRotator& Rotation, const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters(), const bool bRegisterAsAutoDestroy = true);
+
 	// Helper to get the local Worker Type.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	ESpatialFunctionalTestWorkerType GetLocalWorkerType();
@@ -493,9 +496,21 @@ private:
 };
 
 template <class T>
-T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParameters, const bool bRegisterAsAutoDestroy)
+T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParameters, const bool bRegisterAsAutoDestroy/*=true*/)
 {
 	T* Actor = GetWorld()->SpawnActor<T>(SpawnParameters);
+	checkf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
+	if (bRegisterAsAutoDestroy)
+	{
+		RegisterAutoDestroyActor(Actor);
+	}
+	return Actor;
+}
+
+template <class T>
+T* ASpatialFunctionalTest::SpawnActor(const FVector& Location, const FRotator& Rotation, const FActorSpawnParameters& SpawnParameters, const bool bRegisterAsAutoDestroy/*=true*/)
+{
+	T* Actor = GetWorld()->SpawnActor<T>(Location, Rotation, SpawnParameters);
 	checkf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
 	if (bRegisterAsAutoDestroy)
 	{

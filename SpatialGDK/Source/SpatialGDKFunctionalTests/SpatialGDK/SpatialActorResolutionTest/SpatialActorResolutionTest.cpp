@@ -40,7 +40,7 @@ void ASpatialActorResolutionTest::PrepareTest()
 	Super::PrepareTest();
 
 	AddStep(TEXT("Spawn the self-destroying actor and save its EntityID"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		TestActor = GetWorld()->SpawnActor<ASelfDestroyingActor>();
+		TestActor = SpawnActor<ASelfDestroyingActor>(FActorSpawnParameters(), false);
 		FinishStep();
 	});
 

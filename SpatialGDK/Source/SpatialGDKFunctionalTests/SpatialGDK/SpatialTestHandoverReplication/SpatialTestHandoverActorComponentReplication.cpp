@@ -136,9 +136,8 @@ void ASpatialTestHandoverActorComponentReplication::PrepareTest()
 	Super::PrepareTest();
 
 	AddStep(TEXT("Server 1 spawns a HandoverCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		HandoverCube = GetWorld()->SpawnActor<AHandoverReplicationTestCube>(HandoverReplicationTestValues::Server1Position,
-																			FRotator::ZeroRotator, FActorSpawnParameters());
-		RegisterAutoDestroyActor(HandoverCube);
+		HandoverCube = SpawnActor<AHandoverReplicationTestCube>(HandoverReplicationTestValues::Server1Position,
+																			FRotator::ZeroRotator);
 		FinishStep();
 	});
 
