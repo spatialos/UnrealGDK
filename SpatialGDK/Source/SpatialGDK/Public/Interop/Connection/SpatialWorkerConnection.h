@@ -23,7 +23,7 @@ namespace SpatialGDK
 class ServerWorkerEntityCreator
 {
 public:
-	ServerWorkerEntityCreator(USpatialNetDriver& InNetDriver, USpatialWorkerConnection& InConnection);
+	ServerWorkerEntityCreator(USpatialNetDriver& InNetDriver, ISpatialOSWorker& InConnection);
 	void CreateWorkerEntity();
 	void ProcessOps(const TArray<Worker_Op>& Ops);
 	bool IsFinished() const;
@@ -42,7 +42,7 @@ private:
 	Worker_EntityId WorkerEntityId;
 
 	USpatialNetDriver& NetDriver;
-	USpatialWorkerConnection& Connection;
+	ISpatialOSWorker& Connection;
 
 	FCommandsHandler CommandsHandler;
 };

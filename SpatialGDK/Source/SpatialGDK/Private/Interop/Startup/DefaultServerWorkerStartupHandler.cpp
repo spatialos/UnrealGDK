@@ -30,7 +30,7 @@ bool FSpatialServerStartupHandler::TryFinishStartup()
 		if (!bCalledCreateEntity)
 		{
 			bCalledCreateEntity = true;
-			WorkerEntityCreator.Emplace(*NetDriver, *NetDriver->Connection);
+			WorkerEntityCreator.Emplace(*NetDriver, GetCoordinator());
 		}
 		WorkerEntityCreator->ProcessOps(GetOps());
 		if (WorkerEntityCreator->IsFinished())
