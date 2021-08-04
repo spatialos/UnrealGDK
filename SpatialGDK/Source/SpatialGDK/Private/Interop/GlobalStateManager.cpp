@@ -294,7 +294,7 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 	// Allocate entity ids for all startup actors
 	if (Actor->HasAuthority())
 	{
-		NetDriver->GetOrCreateSpatialActorChannel(Actor);
+		NetDriver->PackageMap->TryResolveObjectAsEntity(Actor);
 	}
 }
 

@@ -767,7 +767,8 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 	if (Actor->GetIsReplicated() && Actor->HasAuthority() && Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType)
 		&& GlobalStateManager->bGSMReadyForPlay)
 	{
-		GetOrCreateSpatialActorChannel(Actor);
+		PackageMap->TryResolveObjectAsEntity(Actor);
+		
 	}
 
 	if (SpatialGDKSettings->bEnableCrossLayerActorSpawning)
