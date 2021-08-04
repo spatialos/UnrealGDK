@@ -13,12 +13,6 @@ class ULegacyPartitionSystem : public USpatialPartitionSystem
 public:
 	ULegacyPartitionSystem();
 
-	TArray<SpatialGDK::FLBDataStorage*> GetData() override;
-
-	void Initialize(FSubsystemCollectionBase&) override;
-
-	void Tick();
-
 	const TMap<Worker_EntityId_Key, SpatialGDK::LegacyLB_GridCell>& GetGridCells() const { return GridCells.GetObjects(); }
 	const TMap<Worker_EntityId_Key, SpatialGDK::LegacyLB_Layer>& GetLayers() const { return Layers.GetObjects(); }
 	const TMap<Worker_EntityId_Key, SpatialGDK::LegacyLB_VirtualWorkerAssignment>& GetVirtualWorkerIds() const
@@ -27,6 +21,15 @@ public:
 	}
 
 protected:
+	TArray<SpatialGDK::FLBDataStorage*> GetData() override;
+
+	virtual void Initialize(FSubsystemCollectionBase&) override;
+	virtual void Deinitialize() override;
+
+	void Tick();
+
+	void OnWorldChanged(UWorld* OldWorld, UWorld* NewWorld);
+
 	TSet<Worker_RequestId_Key> Partitions;
 	SpatialGDK::TLBDataStorage<SpatialGDK::LegacyLB_GridCell> GridCells;
 	SpatialGDK::TLBDataStorage<SpatialGDK::LegacyLB_Layer> Layers;

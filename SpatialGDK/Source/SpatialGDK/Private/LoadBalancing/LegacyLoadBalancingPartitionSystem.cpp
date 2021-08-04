@@ -1,4 +1,5 @@
 #include "LoadBalancing/LegacyLoadBalancingPartitionSystem.h"
+#include "EngineClasses/SpatialGameInstance.h"
 #include "LoadBalancing/LegacyLoadBalancingCommon.h"
 
 ULegacyPartitionSystem::ULegacyPartitionSystem() {}
@@ -13,9 +14,44 @@ TArray<SpatialGDK::FLBDataStorage*> ULegacyPartitionSystem::GetData()
 	return Storages;
 }
 
-void ULegacyPartitionSystem::Initialize(FSubsystemCollectionBase&)
+void ULegacyPartitionSystem::Initialize(FSubsystemCollectionBase& Collection)
 {
-	GetGameInstance()->GetWorld()->OnPostTickDispatch().AddUObject(this, &ULegacyPartitionSystem::Tick);
+	Super::Initialize(Collection);
+
+	USpatialGameInstance* GameInstance = Cast<USpatialGameInstance>(GetOuter());
+	if (!ensure(GameInstance != nullptr))
+	{
+		return;
+	}
+
+	GameInstance->OnWorldChanged().AddUObject(this, &ULegacyPartitionSystem::OnWorldChanged);
+	OnWorldChanged(nullptr, GameInstance->GetWorld());
+}
+
+void ULegacyPartitionSystem::Deinitialize()
+{
+	USpatialGameInstance* GameInstance = Cast<USpatialGameInstance>(GetOuter());
+	if (!ensure(GameInstance != nullptr))
+	{
+		return;
+	}
+
+	GameInstance->OnWorldChanged().RemoveAll(this);
+
+	Super::Deinitialize();
+}
+
+void ULegacyPartitionSystem::OnWorldChanged(UWorld* OldWorld, UWorld* NewWorld)
+{
+	if (OldWorld != nullptr)
+	{
+		OldWorld->OnPostTickDispatch().RemoveAll(this);
+	}
+
+	if (NewWorld != nullptr)
+	{
+		NewWorld->OnPostTickDispatch().AddUObject(this, &ULegacyPartitionSystem::Tick);
+	}
 }
 
 void ULegacyPartitionSystem::Tick()
