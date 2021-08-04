@@ -369,15 +369,12 @@ public:
 	template <typename ActorType>
 	static int32 CountActors(UWorld* World)
 	{
-		return CountActors<ActorType>(World, [](ActorType*) {
-			return true;
-		});
-	}
-
-	template <typename ActorType>
-	static int32 CountActors(UWorld* World, TFunction<bool(ActorType*)> Pred)
-	{
-		return Algo::CountIf(TActorRange<ActorType>(World), Pred);
+		int32 Count = 0;
+		for (const ActorType& Actor : TActorRange<ActorType>(World))
+		{
+			++Count;
+		}
+		return Count;
 	}
 
 	// Get the path of the taken snapshot for this world's map. Returns an empty string if it's using the default snapshot.
