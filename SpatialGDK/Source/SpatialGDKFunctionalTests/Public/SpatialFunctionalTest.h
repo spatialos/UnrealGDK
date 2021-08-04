@@ -366,16 +366,16 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	bool WasLoadedFromTakenSnapshot();
 
-	template <typename Actor_Type>
-	static SIZE_T CountActors(UWorld* World)
+	template <typename ActorType>
+	static int32 CountActors(UWorld* World)
 	{
-		return CountActors<Actor_Type>(World, [](Actor_Type*){ return true; });;
+		return CountActors<ActorType>(World, [](Actor_Type*){ return true; });
 	}
 
 	template <typename Actor_Type>
-	static SIZE_T CountActors(UWorld* World, TFunction<bool(Actor_Type*)> Pred)
+	static int32 CountActors(UWorld* World, TFunction<bool(ActorType*)> Pred)
 	{
-		return Algo::CountIf(TActorRange<Actor_Type>(World),Pred);
+		return Algo::CountIf(TActorRange<ActorType>(World), Pred);
 	}
 
 	// Get the path of the taken snapshot for this world's map. Returns an empty string if it's using the default snapshot.
