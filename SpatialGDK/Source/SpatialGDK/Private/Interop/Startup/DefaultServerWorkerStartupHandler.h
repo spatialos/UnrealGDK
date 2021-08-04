@@ -1,27 +1,35 @@
 ﻿#pragma once
 
+#include "Containers/UnrealString.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/ClaimPartitionHandler.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/CreateEntityHandler.h"
 #include "Interop/SkeletonEntityCreationStep.h"
 #include "SpatialCommonTypes.h"
+#include "Templates/SharedPointer.h"
+
+#include "Interop/Startup/SpatialStartupCommon.h"
 
 class USpatialNetDriver;
 class UGlobalStateManager;
 
 namespace SpatialGDK
 {
-class ViewCoordinator;
+class ISpatialOSWorker;
 
-class FSpatialServerStartupHandler
+struct FServerWorkerStartupContext;
+
+struct FInitialSetup
+{
+	int32 ExpectedServerWorkersCount;
+};
+
+class FSpatialServerStartupHandler final
 {
 public:
-	struct FInitialSetup
-	{
-		int32 ExpectedServerWorkersCount;
-	};
 	explicit FSpatialServerStartupHandler(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup);
+	~FSpatialServerStartupHandler();
 	bool TryFinishStartup();
 	FString GetStartupStateDescription() const;
 
@@ -55,8 +63,8 @@ private:
 
 	TOptional<FSkeletonEntityCreationStartupStep> SkeletonEntityStep;
 
-	ViewCoordinator& GetCoordinator();
-	const ViewCoordinator& GetCoordinator() const;
+	ISpatialOSWorker& GetCoordinator();
+	const ISpatialOSWorker& GetCoordinator() const;
 	const TArray<Worker_Op>& GetOps() const;
 	UGlobalStateManager& GetGSM();
 
@@ -86,10 +94,15 @@ private:
 		Initial = CreateWorkerEntity,
 	};
 
+	TArray<TUniquePtr<FStartupStep>> CreateSteps();
+
 	EStage Stage = EStage::Initial;
+	USpatialNetDriver* NetDriver;
 
 	FInitialSetup Setup;
 
-	USpatialNetDriver* NetDriver;
+	TSharedRef<FServerWorkerStartupContext> State;
+
+	FStartupExecutor Executor;
 };
 } // namespace SpatialGDK

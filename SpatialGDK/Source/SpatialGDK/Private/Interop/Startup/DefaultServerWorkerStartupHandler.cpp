@@ -13,15 +13,24 @@
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialStatics.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogSpatialStartupHandler, Log, All);
+#include "Interop/Startup/AssignedPartitionStartupSteps.h"
+#include "Interop/Startup/ElectGsmAuthWorkerStep.h"
+#include "Interop/Startup/HandleSkeletonEntityCreationStep.h"
+#include "Interop/Startup/PartitionCreationStartupSteps.h"
+#include "Interop/Startup/ServerWorkerCreationStartupSteps.h"
+#include "Interop/Startup/StartPlayStartupSteps.h"
 
 namespace SpatialGDK
 {
 FSpatialServerStartupHandler::FSpatialServerStartupHandler(USpatialNetDriver& InNetDriver, const FInitialSetup& InSetup)
-	: Setup(InSetup)
-	, NetDriver(&InNetDriver)
+	: NetDriver(&InNetDriver)
+	, Setup(InSetup)
+	, State(MakeShared<FServerWorkerStartupContext>())
+	, Executor(CreateSteps())
 {
 }
+
+FSpatialServerStartupHandler::~FSpatialServerStartupHandler() = default;
 
 bool FSpatialServerStartupHandler::TryFinishStartup()
 {
@@ -435,12 +444,12 @@ bool FSpatialServerStartupHandler::TryClaimingStartupPartition()
 	return false;
 }
 
-ViewCoordinator& FSpatialServerStartupHandler::GetCoordinator()
+ISpatialOSWorker& FSpatialServerStartupHandler::GetCoordinator()
 {
 	return NetDriver->Connection->GetCoordinator();
 }
 
-const ViewCoordinator& FSpatialServerStartupHandler::GetCoordinator() const
+const ISpatialOSWorker& FSpatialServerStartupHandler::GetCoordinator() const
 {
 	return NetDriver->Connection->GetCoordinator();
 }
@@ -497,4 +506,21 @@ FString FSpatialServerStartupHandler::GetStartupStateDescription() const
 	return TEXT("Invalid state");
 }
 
+TArray<TUniquePtr<FStartupStep>> FSpatialServerStartupHandler::CreateSteps()
+{
+	TArray<TUniquePtr<FStartupStep>> Steps;
+	Steps.Emplace(MakeUnique<FCreateServerWorkerStep>(State, *NetDriver, GetCoordinator()));
+	Steps.Emplace(MakeUnique<FWaitForServerWorkersStep>(State, Setup, GetCoordinator()));
+	Steps.Emplace(MakeUnique<FWaitForGsmEntityStep>(GetCoordinator()));
+	Steps.Emplace(MakeUnique<FDeriveDeploymentStartupStateStep>(State, GetCoordinator(), GetGSM()));
+	Steps.Emplace(MakeUnique<FElectGsmAuthWorkerStep>(State, GetGSM()));
+	Steps.Emplace(MakeUnique<FAuthCreateAndAssignPartitions>(State, Setup, *NetDriver, GetCoordinator()));
+	Steps.Emplace(MakeUnique<FGetAssignedPartitionStep>(State, GetCoordinator(), *NetDriver));
+	if (GetDefault<USpatialGDKSettings>()->bEnableSkeletonEntityCreation)
+	{
+		Steps.Emplace(MakeUnique<FCreateSkeletonEntities>(*NetDriver));
+	}
+	Steps.Emplace(MakeUnique<FHandleBeginPlayStep>(State, *NetDriver, GetCoordinator()));
+	return Steps;
+}
 } // namespace SpatialGDK
