@@ -3,11 +3,10 @@
 #include "DynamicActorAwakeAfterDormantChangePropertyTest.h"
 
 #include "DormancyTestActor.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Engine/NetDriver.h"
 #include "Engine/NetworkObjectList.h"
+#include "EngineClasses/SpatialNetDriver.h"
 #include "Net/UnrealNetwork.h"
-
 
 // This test checks whether changes on a dormant actor are replicated when the actor becomes awake.
 
@@ -37,8 +36,10 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 
 	// Step 2 Require channel to actually be dormant
 	AddStep(TEXT("ServerAssertActuallyDormant"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float) {
-		const TSet<TSharedPtr<FNetworkObjectInfo>, FNetworkObjectKeyFuncs>& Actives = DormancyActor->GetNetDriver()->GetNetworkObjectList().GetActiveObjects();
-		const TSet<TSharedPtr<FNetworkObjectInfo>, FNetworkObjectKeyFuncs>& Dormants = DormancyActor->GetNetDriver()->GetNetworkObjectList().GetDormantObjectsOnAllConnections();
+		const TSet<TSharedPtr<FNetworkObjectInfo>, FNetworkObjectKeyFuncs>& Actives =
+			DormancyActor->GetNetDriver()->GetNetworkObjectList().GetActiveObjects();
+		const TSet<TSharedPtr<FNetworkObjectInfo>, FNetworkObjectKeyFuncs>& Dormants =
+			DormancyActor->GetNetDriver()->GetNetworkObjectList().GetDormantObjectsOnAllConnections();
 
 		RequireEqual_Bool(Actives.Contains(DormancyActor), false, TEXT("Require test actor to no longer be in ActiveObjects"));
 		RequireEqual_Bool(Dormants.Contains(DormancyActor), true, TEXT("Require test actor to be in ObjectsDormantOnAllConnections"));
@@ -46,7 +47,7 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 	});
 
 	// Step 3 - Client check NetDormancy is DORM_DormantAll
-	AddStep(("ClientAssertDormancyTestState"), FWorkerDefinition::AllClients, nullptr,[this](){
+	AddStep(("ClientAssertDormancyTestState"), FWorkerDefinition::AllClients, nullptr, [this]() {
 		AssertEqual_Int(DormancyActor->NetDormancy, DORM_DormantAll, TEXT("Dormancy on ADormancyTestActor"));
 		AssertEqual_Int(DormancyActor->TestIntProp, 0, TEXT("TestIntProp on ADormancyTestActor"));
 		FinishStep();
@@ -92,11 +93,14 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 
 	// Step 8 Require channel to actually be DORM_Awake
 	AddStep(TEXT("ServerRequireActuallyAwake"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float) {
-		const TSet<TSharedPtr<FNetworkObjectInfo>, FNetworkObjectKeyFuncs>& Actives = DormancyActor->GetNetDriver()->GetNetworkObjectList().GetActiveObjects();
-		const TSet<TSharedPtr<FNetworkObjectInfo>, FNetworkObjectKeyFuncs>& Dormants = DormancyActor->GetNetDriver()->GetNetworkObjectList().GetDormantObjectsOnAllConnections();
+		const TSet<TSharedPtr<FNetworkObjectInfo>, FNetworkObjectKeyFuncs>& Actives =
+			DormancyActor->GetNetDriver()->GetNetworkObjectList().GetActiveObjects();
+		const TSet<TSharedPtr<FNetworkObjectInfo>, FNetworkObjectKeyFuncs>& Dormants =
+			DormancyActor->GetNetDriver()->GetNetworkObjectList().GetDormantObjectsOnAllConnections();
 
 		RequireEqual_Bool(Actives.Contains(DormancyActor), true, TEXT("Require test actor to be in ActiveObjects"));
-		RequireEqual_Bool(Dormants.Contains(DormancyActor), false, TEXT("Require test actor to no longer be in ObjectsDormantOnAllConnections"));
+		RequireEqual_Bool(Dormants.Contains(DormancyActor), false,
+						  TEXT("Require test actor to no longer be in ObjectsDormantOnAllConnections"));
 		FinishStep();
 	});
 
@@ -108,5 +112,5 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 			RequireEqual_Int(DormancyActor->TestIntProp, 1, TEXT("TestIntProp on ADormancyTestActor"));
 			FinishStep();
 		},
-	5.0f);
+		5.0f);
 }
