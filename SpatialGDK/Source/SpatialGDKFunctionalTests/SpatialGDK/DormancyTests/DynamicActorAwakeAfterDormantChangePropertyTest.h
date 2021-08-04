@@ -6,7 +6,6 @@
 #include "DormancyTest.h"
 #include "DynamicActorAwakeAfterDormantChangePropertyTest.generated.h"
 
-
 class ADormancyTestActor;
 
 UCLASS()

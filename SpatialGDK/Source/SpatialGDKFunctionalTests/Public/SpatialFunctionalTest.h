@@ -369,10 +369,10 @@ public:
 	template <typename ActorType>
 	static int32 CountActors(UWorld* World)
 	{
-		return CountActors<ActorType>(World, [](Actor_Type*){ return true; });
+		return CountActors<ActorType>(World, [](ActorType*){ return true; });
 	}
 
-	template <typename Actor_Type>
+	template <typename ActorType>
 	static int32 CountActors(UWorld* World, TFunction<bool(ActorType*)> Pred)
 	{
 		return Algo::CountIf(TActorRange<ActorType>(World), Pred);
