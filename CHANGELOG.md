@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rep notifies for a parent actor are now called before child subobject rep notifies, and, for a given object, rep notifies are called in ascending RepIndex order.
 - Fixed a double Spatial component add if an Unreal component is added and destroyed in between actor's replications.
 - Fixed Actor Dormancy issue, we now correctly update if we set an actor awake and update properties on it on the same tick.
+- Fixed IsActorGroupOwnerForClass being called befor NetDriver is ready.
 
 ### Internal:
 - Modified startup flow to only create ActorSystem, RPCService and some others after startup has otherwise finished; removed initial op reordering.
