@@ -3239,6 +3239,10 @@ void USpatialNetDriver::TryFinishStartup()
 			}
 			else if (!StartupHandler->TryFinishStartup())
 			{
+				// We set bIsReadyToStart in TryFinishStartup a bit prematurely to get around ordering
+				// issues, setting bIsReadyToStart back to false shouldn't be needed but its here in case
+				// FSpatialServerStartupHandler::TryFinishStartup gets a new failure case.
+				bIsReadyToStart = false;
 				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for startup: %s."),
 						*StartupHandler->GetStartupStateDescription());
 			}

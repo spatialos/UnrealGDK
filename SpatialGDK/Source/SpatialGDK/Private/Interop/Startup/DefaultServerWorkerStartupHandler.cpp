@@ -348,6 +348,10 @@ bool FSpatialServerStartupHandler::TryFinishStartup()
 
 			NetDriver->CreateAndInitializeCoreClassesAfterStartup();
 
+			// HACK: for getting around ordering issues between UGlobalStateManager::TriggerBeginPlay
+			// and USpatialNetDriver::IsReady
+			NetDriver->SetReady();
+
 			GetGSM().TriggerBeginPlay();
 
 			GetGSM().SetAcceptingPlayers(true);
@@ -367,6 +371,10 @@ bool FSpatialServerStartupHandler::TryFinishStartup()
 			&& Schema_GetBool(StartupActorManagerData->GetFields(), SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID))
 		{
 			NetDriver->CreateAndInitializeCoreClassesAfterStartup();
+
+			// HACK: for getting around ordering issues between UGlobalStateManager::TriggerBeginPlay
+			// and USpatialNetDriver::IsReady
+			NetDriver->SetReady();
 
 			GetGSM().TriggerBeginPlay();
 
