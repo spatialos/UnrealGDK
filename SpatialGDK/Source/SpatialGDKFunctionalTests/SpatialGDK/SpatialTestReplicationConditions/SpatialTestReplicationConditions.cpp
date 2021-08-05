@@ -300,17 +300,17 @@ void ASpatialTestReplicationConditions::PrepareTest()
 	AddStep(TEXT("ASpatialTestReplicationConditions Spawn and Setup Test Actor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		AssertTrue(HasAuthority(), TEXT("Server 1 requires authority over the test actor"));
 
-		TestActor_Common = SpawnActor<ATestReplicationConditionsActor_Common>(ActorSpawnPosition, FRotator::ZeroRotator);
+		TestActor_Common = SpawnActor<ATestReplicationConditionsActor_Common>(ActorSpawnPosition);
 
-		TestActor_CustomEnabled = SpawnActor<ATestReplicationConditionsActor_Custom>(ActorSpawnPosition, FRotator::ZeroRotator);
+		TestActor_CustomEnabled = SpawnActor<ATestReplicationConditionsActor_Custom>(ActorSpawnPosition);
 
-		TestActor_CustomDisabled = SpawnActor<ATestReplicationConditionsActor_Custom>(ActorSpawnPosition, FRotator::ZeroRotator);
+		TestActor_CustomDisabled = SpawnActor<ATestReplicationConditionsActor_Custom>(ActorSpawnPosition);
 
-		TestActor_AutonomousOnly = SpawnActor<ATestReplicationConditionsActor_AutonomousOnly>(ActorSpawnPosition, FRotator::ZeroRotator);
+		TestActor_AutonomousOnly = SpawnActor<ATestReplicationConditionsActor_AutonomousOnly>(ActorSpawnPosition);
 
-		TestActor_PhysicsEnabled = SpawnActor<ATestReplicationConditionsActor_Physics>(ActorSpawnPosition, FRotator::ZeroRotator);
+		TestActor_PhysicsEnabled = SpawnActor<ATestReplicationConditionsActor_Physics>(ActorSpawnPosition);
 
-		TestActor_PhysicsDisabled = SpawnActor<ATestReplicationConditionsActor_Physics>(ActorSpawnPosition, FRotator::ZeroRotator);
+		TestActor_PhysicsDisabled = SpawnActor<ATestReplicationConditionsActor_Physics>(ActorSpawnPosition);
 
 		TestActor_Common->SpawnDynamicComponents();
 		TestActor_CustomEnabled->SpawnDynamicComponents();

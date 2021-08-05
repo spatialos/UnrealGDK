@@ -40,22 +40,18 @@ void ARelevancyTest::PrepareTest()
 			AssertIsValid(GridStrategy, TEXT("Invalid LBS"));
 			const FVector WorkerPos = GridStrategy->GetWorkerEntityPosition();
 
-			AlwaysRelevantActor = SpawnActor<AAlwaysRelevantTestActor>(WorkerPos, FRotator::ZeroRotator);
+			AlwaysRelevantActor = SpawnActor<AAlwaysRelevantTestActor>(WorkerPos);
 			AlwaysRelevantServerOnlyActor =
-				SpawnActor<AAlwaysRelevantServerOnlyTestActor>(WorkerPos, FRotator::ZeroRotator, FActorSpawnParameters());
+				SpawnActor<AAlwaysRelevantServerOnlyTestActor>(WorkerPos);
 
 			AController* PlayerController = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
-			if (!AssertTrue(IsValid(PlayerController), TEXT("Failed to retrieve player controller")))
-			{
-				return;
-			}
 
 			if (PlayerController->HasAuthority())
 			{
 				OnlyRelevantToOwnerTestActor =
-					SpawnActor<AOnlyRelevantToOwnerTestActor>(WorkerPos, FRotator::ZeroRotator, FActorSpawnParameters());
+					SpawnActor<AOnlyRelevantToOwnerTestActor>(WorkerPos);
 				UseOwnerRelevancyTestActor =
-					SpawnActor<AUseOwnerRelevancyTestActor>(WorkerPos, FRotator::ZeroRotator, FActorSpawnParameters());
+					SpawnActor<AUseOwnerRelevancyTestActor>(WorkerPos);
 
 				OnlyRelevantToOwnerTestActor->SetOwner(PlayerController);
 				UseOwnerRelevancyTestActor->SetOwner(OnlyRelevantToOwnerTestActor);

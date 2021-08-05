@@ -45,8 +45,7 @@ AddStep(
 
 	AddStep(TEXT("The Server spawns one ReplicatedTestActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		TestActor =
-			GetWorld()->SpawnActor<AReplicatedTestActor>(FVector(0.0f, 0.0f, 50.0f), FRotator::ZeroRotator, FActorSpawnParameters());
-		RegisterAutoDestroyActor(TestActor);
+			SpawnActor<AReplicatedTestActor>(FVector(0.0f, 0.0f, 50.0f));
 
 		FinishStep();
 	}, nullptr, 5.0f);

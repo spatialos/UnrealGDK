@@ -138,11 +138,14 @@ public:
 	APawn* GetLocalFlowPawn();
 
 	template <class T>
-	T* SpawnActor(const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters(), const bool bRegisterAsAutoDestroy = true);
+	T* SpawnActor(const bool bRegisterAsAutoDestroy);
 
 	template <class T>
-	T* SpawnActor(const FVector& Location, const FRotator& Rotation, const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters(),
-				  const bool bRegisterAsAutoDestroy = true);
+	T* SpawnActor(const FActorSpawnParameters& SpawnParameters);
+
+	template <class T>
+	T* SpawnActor(const FVector& Location = FVector::ZeroVector, const FRotator& Rotation = FRotator::ZeroRotator, const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters(),
+					const bool bRegisterAsAutoDestroy = true);
 
 	// Helper to get the local Worker Type.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
@@ -497,10 +500,11 @@ private:
 };
 
 template <class T>
-T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParameters, const bool bRegisterAsAutoDestroy /*=true*/)
+T* ASpatialFunctionalTest::SpawnActor(const bool bRegisterAsAutoDestroy)
 {
-	T* Actor = GetWorld()->SpawnActor<T>(SpawnParameters);
-	checkf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
+	T* Actor = GetWorld()->SpawnActor<T>();
+	verifyf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
+
 	if (bRegisterAsAutoDestroy)
 	{
 		RegisterAutoDestroyActor(Actor);
@@ -509,11 +513,22 @@ T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParamete
 }
 
 template <class T>
+T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParameters)
+{
+	T* Actor = GetWorld()->SpawnActor<T>(SpawnParameters);
+	verifyf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
+
+	RegisterAutoDestroyActor(Actor);
+	return Actor;
+}
+
+template <class T>
 T* ASpatialFunctionalTest::SpawnActor(const FVector& Location, const FRotator& Rotation, const FActorSpawnParameters& SpawnParameters,
 									  const bool bRegisterAsAutoDestroy /*=true*/)
 {
 	T* Actor = GetWorld()->SpawnActor<T>(Location, Rotation, SpawnParameters);
-	checkf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
+	verifyf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
+
 	if (bRegisterAsAutoDestroy)
 	{
 		RegisterAutoDestroyActor(Actor);

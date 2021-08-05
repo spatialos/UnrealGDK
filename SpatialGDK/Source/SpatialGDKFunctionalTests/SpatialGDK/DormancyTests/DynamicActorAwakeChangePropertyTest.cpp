@@ -20,7 +20,6 @@ void ADynamicActorAwakeChangePropertyTest::PrepareTest()
 	AddStep(TEXT("ServerSpawnDormancyActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		AActor* Actor = CreateDormancyTestActor();
 		Actor->SetNetDormancy(DORM_Awake);
-		RegisterAutoDestroyActor(Actor);
 		FinishStep();
 	});
 

@@ -56,7 +56,7 @@ void ASpatialTestSingleServerDynamicComponents::PrepareTest()
 			AddExpectedLogError(TEXT("Dynamic component using InitialOnly data. This data will not be sent."), 5, false);
 		}
 
-		TestActor = GetWorld()->SpawnActor<ATestDynamicComponentActor>(ActorSpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
+		TestActor = SpawnActor<ATestDynamicComponentActor>(ActorSpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters(), false);
 		TestActor->OnSpawnComponent = CreateAndAttachTestDynamicComponentToActor(TestActor, TEXT("OnSpawnDynamicComponent1"));
 		TestActor->OnSpawnComponent->OwnerOnlyReplicatedVar = 101;
 		TestActor->OnSpawnComponent->InitialOnlyReplicatedVar = 102;

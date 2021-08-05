@@ -48,7 +48,7 @@ void ASpatialTestHandover::PrepareTest()
 
 	// Server 1 spawns the HandoverCube under its authority area.
 	AddStep(TEXT("SpatialTestHandoverServer1SpawnCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		HandoverCube = SpawnActor<AHandoverCube>(Server1Position, FRotator::ZeroRotator, FActorSpawnParameters());
+		HandoverCube = SpawnActor<AHandoverCube>(Server1Position);
 
 		FinishStep();
 	});

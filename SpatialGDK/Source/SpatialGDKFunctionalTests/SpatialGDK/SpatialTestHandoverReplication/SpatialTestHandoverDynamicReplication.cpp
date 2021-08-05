@@ -59,7 +59,7 @@ void ASpatialTestHandoverDynamicReplication::PrepareTest()
 				 "ADynamicReplicationHandoverCube) with bReplicates set to false "
 				 "inside its authority area."),
 			FWorkerDefinition::Server(1), nullptr, [this]() {
-				HandoverCube = SpawnActor<ADynamicReplicationHandoverCube>(Server1Position, FRotator::ZeroRotator);
+				HandoverCube = SpawnActor<ADynamicReplicationHandoverCube>(Server1Position);
 				FinishStep();
 			});
 

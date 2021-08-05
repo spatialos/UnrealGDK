@@ -28,10 +28,7 @@ void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 		FRotator SpawnPositionRotator = FRotator(0.0f, 360.0f / NumVirtualWorkers, 0.0f);
 		for (int32 i = 0; i != NumVirtualWorkers; ++i)
 		{
-			ACharacter* Character = World->SpawnActor<ACharacter>(SpawnPosition, FRotator::ZeroRotator);
-			AssertTrue(IsValid(Character),
-					   FString::Printf(TEXT("Spawned ACharacter %s in worker %s"), *GetNameSafe(Character),
-									   *GetFlowController(ESpatialFunctionalTestWorkerType::Server, i + 1)->GetDisplayName()));
+			SpawnActor<ACharacter>(SpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters(), false);
 			SpawnPosition = SpawnPositionRotator.RotateVector(SpawnPosition);
 		}
 

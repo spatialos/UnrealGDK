@@ -52,7 +52,7 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 		AssertIsValid(PlayerController, TEXT("Must have valid PlayerController for test"));
 		DefaultPawn = PlayerController->GetPawn();
 		PlayerController->UnPossess();
-		SpawnedPawn = SpawnActor<ATestMovementCharacter>(Server1Position, FRotator::ZeroRotator);
+		SpawnedPawn = SpawnActor<ATestMovementCharacter>(Server1Position);
 		PlayerController->Possess(SpawnedPawn);
 
 		AssertEqual_Int(Driver->ClientConnections.Num(), GetNumberOfClientWorkers() + 1,
