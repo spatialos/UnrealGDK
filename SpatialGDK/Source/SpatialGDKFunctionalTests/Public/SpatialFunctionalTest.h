@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Algo/Count.h"
 #include "CoreMinimal.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -365,16 +366,15 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	bool WasLoadedFromTakenSnapshot();
 
-	template <typename T>
-	static int GetNumberOfActorsOfType(UWorld* World)
+	template <typename ActorType>
+	static int32 CountActors(UWorld* World)
 	{
-		int Counter = 0;
-		for (TActorIterator<T> Iter(World); Iter; ++Iter)
+		int32 Count = 0;
+		for (const ActorType* Actor : TActorRange<ActorType>(World))
 		{
-			Counter++;
+			++Count;
 		}
-
-		return Counter;
+		return Count;
 	}
 
 	// Get the path of the taken snapshot for this world's map. Returns an empty string if it's using the default snapshot.

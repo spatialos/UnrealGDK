@@ -33,13 +33,3 @@ void ADormancyTest::DestroyDormancyTestActors()
 		}
 	}
 }
-
-void ADormancyTest::RequireDormancyActorCount(const int ExpectedCount)
-{
-	int Counter = 0;
-	for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
-	{
-		Counter++;
-	}
-	RequireEqual_Int(Counter, ExpectedCount, TEXT("Number of TestDormancyActors in world"));
-}
