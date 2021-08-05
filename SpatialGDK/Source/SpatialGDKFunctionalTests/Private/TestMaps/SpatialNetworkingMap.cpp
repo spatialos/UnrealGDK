@@ -55,8 +55,7 @@ void USpatialNetworkingMap::CreateCustomContentForMap()
 	AddActorToLevel<ADynamicActorSetToAwakeTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicActorDormantAllChangePropertyTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicActorAwakeChangePropertyTest>(CurrentLevel, FTransform::Identity);
-	// TODO: This test can be uncommented when UNR-5790 is fixed.
-	// AddActorToLevel<ADynamicActorAwakeAfterDormantChangePropertyTest>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ADynamicActorAwakeAfterDormantChangePropertyTest>(CurrentLevel, FTransform::Identity);
 
 	AddActorToLevel<AUnresolvedReferenceTest>(CurrentLevel, FTransform::Identity);
 

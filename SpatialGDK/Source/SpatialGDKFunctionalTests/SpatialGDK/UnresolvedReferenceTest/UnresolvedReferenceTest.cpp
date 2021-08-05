@@ -27,7 +27,7 @@ void AUnresolvedReferenceTest::PrepareTest()
 
 	// Wait for actor which will hold references to replicate to the clients
 	AddStep(TEXT("ClientWaitForReplication"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
-		RequireEqual_Int(GetNumberOfActorsOfType<AUnresolvedReferenceTestActor>(GetWorld()), 1, TEXT("There should be 1 RefActor"));
+		RequireEqual_Int(CountActors<AUnresolvedReferenceTestActor>(GetWorld()), 1, TEXT("There should be 1 RefActor"));
 		FinishStep();
 	});
 

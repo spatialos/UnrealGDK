@@ -272,7 +272,7 @@ void AAlwaysInterestedTest::PrepareTest()
 				// correct the reference when the actor comes back into view - UNR-3917
 				// RequireTrue(IsValid(InterestedInThisReplicatedActor), TEXT("Should see interested actor via authority"));
 				// RequireTrue(IsValid(NotInterestedInThisReplicatedActor), TEXT("Should see not-interested actor via authority"));
-				RequireEqual_Int(GetNumberOfActorsOfType<ASmallNCDActor>(GetWorld()), 3, TEXT("Should see all actors via authority"));
+				RequireEqual_Int(CountActors<ASmallNCDActor>(GetWorld()), 3, TEXT("Should see all actors via authority"));
 				RequireTrue(IsValid(OtherInterestedInThisReplicatedActor), TEXT("Should see other interested actor via authority"));
 				FinishStep(); // This will only actually finish if requires are satisfied
 			},
@@ -287,7 +287,7 @@ void AAlwaysInterestedTest::PrepareTest()
 				RequireTrue(!IsValid(InterestedInThisReplicatedActor), TEXT("Shouldn't see interested actor"));
 				RequireTrue(!IsValid(NotInterestedInThisReplicatedActor), TEXT("Shouldn't see not-interested actor"));
 				RequireTrue(!IsValid(OtherInterestedInThisReplicatedActor), TEXT("Shouldn't see other interested actor"));
-				RequireEqual_Int(GetNumberOfActorsOfType<ASmallNCDActor>(GetWorld()), 0, TEXT("Shouldn't see any Interest actors"));
+				RequireEqual_Int(CountActors<ASmallNCDActor>(GetWorld()), 0, TEXT("Shouldn't see any Interest actors"));
 				FinishStep(); // This will only actually finish if requires are satisfied
 			},
 			StepTimeLimit);

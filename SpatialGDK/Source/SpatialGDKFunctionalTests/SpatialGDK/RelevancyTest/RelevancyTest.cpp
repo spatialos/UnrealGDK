@@ -80,10 +80,10 @@ void ARelevancyTest::PrepareTest()
 
 	{ // Step 2 - Check actors count is correct on servers
 		AddStep(TEXT("RelevancyTestCountActorsOnServers"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
-			int NumAlwaysRelevantActors = GetNumberOfActorsOfType<AAlwaysRelevantTestActor>(GetWorld());
-			int NumAlwaysServerOnlyRelevantActors = GetNumberOfActorsOfType<AAlwaysRelevantServerOnlyTestActor>(GetWorld());
-			int NumOnlyRelevantToOwnerActors = GetNumberOfActorsOfType<AOnlyRelevantToOwnerTestActor>(GetWorld());
-			int NumUseOwnerRelevancyActors = GetNumberOfActorsOfType<AUseOwnerRelevancyTestActor>(GetWorld());
+			int NumAlwaysRelevantActors = CountActors<AAlwaysRelevantTestActor>(GetWorld());
+			int NumAlwaysServerOnlyRelevantActors = CountActors<AAlwaysRelevantServerOnlyTestActor>(GetWorld());
+			int NumOnlyRelevantToOwnerActors = CountActors<AOnlyRelevantToOwnerTestActor>(GetWorld());
+			int NumUseOwnerRelevancyActors = CountActors<AUseOwnerRelevancyTestActor>(GetWorld());
 			int NumServers = GetNumberOfServerWorkers();
 
 			RequireEqual_Int(NumAlwaysRelevantActors, NumServers, TEXT("Servers see expected number of always relevant actors"));
@@ -97,8 +97,8 @@ void ARelevancyTest::PrepareTest()
 
 	{ // Step 3 - Check actors count is correct on clients
 		AddStep(TEXT("RelevancyTestCountActorsOnClients"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
-			int NumAlwaysRelevantActors = GetNumberOfActorsOfType<AAlwaysRelevantTestActor>(GetWorld());
-			int NumAlwaysServerOnlyRelevantActors = GetNumberOfActorsOfType<AAlwaysRelevantServerOnlyTestActor>(GetWorld());
+			int NumAlwaysRelevantActors = CountActors<AAlwaysRelevantTestActor>(GetWorld());
+			int NumAlwaysServerOnlyRelevantActors = CountActors<AAlwaysRelevantServerOnlyTestActor>(GetWorld());
 			int NumServers = GetNumberOfServerWorkers();
 
 			RequireEqual_Int(NumAlwaysRelevantActors, NumServers, TEXT("Client see expected number of always relevant actors"));
@@ -109,8 +109,8 @@ void ARelevancyTest::PrepareTest()
 
 	{ // Step 4 - Check actors count is correct on owning client
 		AddStep(TEXT("RelevancyTestCountActorsOnClients"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](float DeltaTime) {
-			int NumOnlyRelevantToOwnerActors = GetNumberOfActorsOfType<AOnlyRelevantToOwnerTestActor>(GetWorld());
-			int NumUseOwnerRelevancyActors = GetNumberOfActorsOfType<AUseOwnerRelevancyTestActor>(GetWorld());
+			int NumOnlyRelevantToOwnerActors = CountActors<AOnlyRelevantToOwnerTestActor>(GetWorld());
+			int NumUseOwnerRelevancyActors = CountActors<AUseOwnerRelevancyTestActor>(GetWorld());
 
 			RequireEqual_Int(NumOnlyRelevantToOwnerActors, 1, TEXT("Owning client sees expected number of only relevant to owner actors"));
 			RequireEqual_Int(NumUseOwnerRelevancyActors, 1, TEXT("Owning client sees expected number of use owner relevancy actors"));
@@ -120,8 +120,8 @@ void ARelevancyTest::PrepareTest()
 
 	{ // Step 5 - Check actors count is correct on non-owning client
 		AddStep(TEXT("RelevancyTestCountActorsOnClients"), FWorkerDefinition::Client(2), nullptr, nullptr, [this](float DeltaTime) {
-			int NumOnlyRelevantToOwnerActors = GetNumberOfActorsOfType<AOnlyRelevantToOwnerTestActor>(GetWorld());
-			int NumUseOwnerRelevancyActors = GetNumberOfActorsOfType<AUseOwnerRelevancyTestActor>(GetWorld());
+			int NumOnlyRelevantToOwnerActors = CountActors<AOnlyRelevantToOwnerTestActor>(GetWorld());
+			int NumUseOwnerRelevancyActors = CountActors<AUseOwnerRelevancyTestActor>(GetWorld());
 
 			RequireEqual_Int(NumOnlyRelevantToOwnerActors, 0,
 							 TEXT("Non-owning client sees expected number of only relevant to owner actors"));
