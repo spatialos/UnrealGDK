@@ -859,7 +859,8 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	SCOPE_CYCLE_UOBJECT(ReplicateSubobjectSpecificClass, Object);
 
 	bool bCreatedReplicator = false;
-
+	// Set here because FindOrCreateReplicator will remove the replicator from the dormancy map
+	const bool bPreviouslyDormant = Connection->DormantReplicatorMap.Contains(Object);
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object, &bCreatedReplicator).Get();
 
 	// If we're creating an entity, don't try replicating
@@ -869,7 +870,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	}
 
 	// New subobject that hasn't been replicated before
-	if (bCreatedReplicator)
+	if (bCreatedReplicator && !bPreviouslyDormant)
 	{
 		// Attach to to the entity
 		DynamicallyAttachSubobject(Object);
