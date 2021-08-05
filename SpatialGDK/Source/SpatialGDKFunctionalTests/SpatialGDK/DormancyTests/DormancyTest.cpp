@@ -6,7 +6,7 @@
 
 AActor* ADormancyTest::CreateDormancyTestActor()
 {
-	return SpawnActor<ADormancyTestActor>({ 0.0f, 0.0f, 0.0f });
+	return SpawnActor<ADormancyTestActor>();
 }
 
 void ADormancyTest::RequireDormancyTestState(const TEnumAsByte<enum ENetDormancy> ExpectedNetDormancy, const int ExpectedTestIntProp,
