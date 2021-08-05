@@ -158,6 +158,8 @@ void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 				// NOTE: We have to deal the with dormant before ComponentUpdated
 				// otherwise a SubViewUpdate that contains a component update that
 				// also removes the dormant component will have its updates ignored.
+				// Simon Sarginson 05-08-2021 UNR-5863 TODO: Address this properly
+				// by making dormancy not a dynamic component but a fixed field.
 				if (Change.ComponentId == SpatialConstants::DORMANT_COMPONENT_ID)
 				{
 					ComponentRemoved(Delta.EntityId, Change.ComponentId);
