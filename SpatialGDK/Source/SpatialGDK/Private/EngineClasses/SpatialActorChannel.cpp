@@ -860,7 +860,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 
 	bool bCreatedReplicator = false;
 	// Set here because FindOrCreateReplicator will remove the replicator from the dormancy map
-	const bool bPreviouslyDormant = Connection->DormantReplicatorMap.Find(Object);
+	const bool bPreviouslyDormant = Connection->DormantReplicatorMap.Contains(Object);
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object, &bCreatedReplicator).Get();
 
 	// If we're creating an entity, don't try replicating

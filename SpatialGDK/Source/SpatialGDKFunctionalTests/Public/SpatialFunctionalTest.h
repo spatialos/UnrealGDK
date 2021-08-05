@@ -370,7 +370,7 @@ public:
 	static int32 CountActors(UWorld* World)
 	{
 		int32 Count = 0;
-		for (const ActorType& Actor : TActorRange<ActorType>(World))
+		for (const ActorType* Actor : TActorRange<ActorType>(World))
 		{
 			++Count;
 		}
