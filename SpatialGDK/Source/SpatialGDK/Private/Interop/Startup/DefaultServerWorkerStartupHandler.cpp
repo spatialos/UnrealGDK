@@ -1,4 +1,4 @@
-﻿#include "Interop/Startup/DefaultServerWorkerStartupHandler.h"
+#include "Interop/Startup/DefaultServerWorkerStartupHandler.h"
 
 #include "Algo/AllOf.h"
 #include "Algo/MinElement.h"
@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/GlobalStateManager.h"
+#include "Interop/SpatialPlayerSpawner.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ServerWorker.h"
 #include "Utils/EntityFactory.h"
@@ -351,6 +352,8 @@ bool FSpatialServerStartupHandler::TryFinishStartup()
 
 			GetGSM().SetAcceptingPlayers(true);
 
+			NetDriver->PlayerSpawner->StartProcessingRequests();
+
 			Stage = EStage::Finished;
 		}
 	}
@@ -366,6 +369,8 @@ bool FSpatialServerStartupHandler::TryFinishStartup()
 			NetDriver->CreateAndInitializeCoreClassesAfterStartup();
 
 			GetGSM().TriggerBeginPlay();
+
+			NetDriver->PlayerSpawner->StartProcessingRequests();
 
 			Stage = EStage::Finished;
 		}
