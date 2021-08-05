@@ -74,8 +74,7 @@ void AVisibilityTest::PrepareTest()
 
 			AssertTrue(HasAuthority(), TEXT("We should have authority over the test actor."));
 
-			ClientOneSpawnedPawn =
-				SpawnActor<ATestMovementCharacter>(CharacterSpawnLocation);
+			ClientOneSpawnedPawn = SpawnActor<ATestMovementCharacter>(CharacterSpawnLocation);
 
 			ClientOneDefaultPawn = PlayerController->GetPawn();
 

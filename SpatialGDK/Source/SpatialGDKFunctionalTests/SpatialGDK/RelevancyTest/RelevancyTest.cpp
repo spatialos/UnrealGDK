@@ -41,17 +41,14 @@ void ARelevancyTest::PrepareTest()
 			const FVector WorkerPos = GridStrategy->GetWorkerEntityPosition();
 
 			AlwaysRelevantActor = SpawnActor<AAlwaysRelevantTestActor>(WorkerPos);
-			AlwaysRelevantServerOnlyActor =
-				SpawnActor<AAlwaysRelevantServerOnlyTestActor>(WorkerPos);
+			AlwaysRelevantServerOnlyActor = SpawnActor<AAlwaysRelevantServerOnlyTestActor>(WorkerPos);
 
 			AController* PlayerController = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
 
 			if (PlayerController->HasAuthority())
 			{
-				OnlyRelevantToOwnerTestActor =
-					SpawnActor<AOnlyRelevantToOwnerTestActor>(WorkerPos);
-				UseOwnerRelevancyTestActor =
-					SpawnActor<AUseOwnerRelevancyTestActor>(WorkerPos);
+				OnlyRelevantToOwnerTestActor = SpawnActor<AOnlyRelevantToOwnerTestActor>(WorkerPos);
+				UseOwnerRelevancyTestActor = SpawnActor<AUseOwnerRelevancyTestActor>(WorkerPos);
 
 				OnlyRelevantToOwnerTestActor->SetOwner(PlayerController);
 				UseOwnerRelevancyTestActor->SetOwner(OnlyRelevantToOwnerTestActor);

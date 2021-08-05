@@ -37,8 +37,7 @@ void AUnresolvedReferenceTest::PrepareTest()
 		{
 			for (int i = 0; i < NumActors; i++)
 			{
-				AReplicatedTestActorBase* Actor =
-					SpawnActor<AReplicatedTestActorBase>();
+				AReplicatedTestActorBase* Actor = SpawnActor<AReplicatedTestActorBase>();
 				RefsActor->ActorRefs.Add(Actor);
 			}
 		}

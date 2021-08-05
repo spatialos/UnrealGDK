@@ -3,10 +3,10 @@
 #include "RPCInInterfaceTest.h"
 #include "Engine/World.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "GameFramework/PlayerController.h"
 
 /**
  * This test ensures that an RPC function declared in an interface can be called in Spatial to ensure parity with native Unreal.

@@ -144,8 +144,8 @@ public:
 	T* SpawnActor(const FActorSpawnParameters& SpawnParameters);
 
 	template <class T>
-	T* SpawnActor(const FVector& Location = FVector::ZeroVector, const FRotator& Rotation = FRotator::ZeroRotator, const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters(),
-					const bool bRegisterAsAutoDestroy = true);
+	T* SpawnActor(const FVector& Location = FVector::ZeroVector, const FRotator& Rotation = FRotator::ZeroRotator,
+				  const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters(), const bool bRegisterAsAutoDestroy = true);
 
 	// Helper to get the local Worker Type.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
