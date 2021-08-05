@@ -502,24 +502,13 @@ private:
 template <class T>
 T* ASpatialFunctionalTest::SpawnActor(const bool bRegisterAsAutoDestroy)
 {
-	T* Actor = GetWorld()->SpawnActor<T>();
-	verifyf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
-
-	if (bRegisterAsAutoDestroy)
-	{
-		RegisterAutoDestroyActor(Actor);
-	}
-	return Actor;
+	return SpawnActor<T>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters(), bRegisterAsAutoDestroy);
 }
 
 template <class T>
 T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParameters)
 {
-	T* Actor = GetWorld()->SpawnActor<T>(SpawnParameters);
-	verifyf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
-
-	RegisterAutoDestroyActor(Actor);
-	return Actor;
+	return SpawnActor<T>(FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters, true);
 }
 
 template <class T>
@@ -527,7 +516,7 @@ T* ASpatialFunctionalTest::SpawnActor(const FVector& Location, const FRotator& R
 									  const bool bRegisterAsAutoDestroy /*=true*/)
 {
 	T* Actor = GetWorld()->SpawnActor<T>(Location, Rotation, SpawnParameters);
-	verifyf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
+	checkf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
 
 	if (bRegisterAsAutoDestroy)
 	{

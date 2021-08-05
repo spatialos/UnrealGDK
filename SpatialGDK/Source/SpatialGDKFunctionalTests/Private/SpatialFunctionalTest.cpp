@@ -681,7 +681,7 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(
 			return FlowController;
 		}
 	}
-	verifyf(false, TEXT("We should always find a flow controller."));
+	checkf(false, TEXT("We should always find a flow controller."));
 	return nullptr;
 }
 
@@ -689,7 +689,7 @@ APlayerController* ASpatialFunctionalTest::GetFlowPlayerController(const ESpatia
 {
 	ASpatialFunctionalTestFlowController* FlowController = GetFlowController(WorkerType, WorkerId);
 	APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
-	verifyf(IsValid(PlayerController), TEXT("The parent of a FlowController should always be a valid PlayerController."));
+	checkf(IsValid(PlayerController), TEXT("The parent of a FlowController should always be a valid PlayerController."));
 
 	return PlayerController;
 }
