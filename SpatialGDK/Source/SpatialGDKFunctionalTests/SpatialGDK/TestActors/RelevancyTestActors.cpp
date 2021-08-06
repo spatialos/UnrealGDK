@@ -5,23 +5,23 @@
 AAlwaysRelevantTestActor::AAlwaysRelevantTestActor()
 {
 	bAlwaysRelevant = true;
-	NetCullDistanceSquared = 0;
+	NetCullDistanceSquared = 1;
 }
 
 AAlwaysRelevantServerOnlyTestActor::AAlwaysRelevantServerOnlyTestActor()
 {
 	bAlwaysRelevant = true;
-	NetCullDistanceSquared = 0;
+	NetCullDistanceSquared = 1;
 }
 
 AOnlyRelevantToOwnerTestActor::AOnlyRelevantToOwnerTestActor()
 {
 	bOnlyRelevantToOwner = true;
-	NetCullDistanceSquared = 0;
+	NetCullDistanceSquared = 1;
 }
 
 AUseOwnerRelevancyTestActor::AUseOwnerRelevancyTestActor()
 {
 	bNetUseOwnerRelevancy = true;
-	NetCullDistanceSquared = 0;
+	NetCullDistanceSquared = 1;
 }
