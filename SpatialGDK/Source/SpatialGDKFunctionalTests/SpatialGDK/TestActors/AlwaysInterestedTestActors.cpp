@@ -6,7 +6,7 @@
 
 AAlwaysInterestedTestActor::AAlwaysInterestedTestActor()
 {
-	NetCullDistanceSquared = 0;
+	NetCullDistanceSquared = 1;
 }
 
 void AAlwaysInterestedTestActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -18,5 +18,5 @@ void AAlwaysInterestedTestActor::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 
 ASmallNCDActor::ASmallNCDActor()
 {
-	NetCullDistanceSquared = 0;
+	NetCullDistanceSquared = 1;
 }
