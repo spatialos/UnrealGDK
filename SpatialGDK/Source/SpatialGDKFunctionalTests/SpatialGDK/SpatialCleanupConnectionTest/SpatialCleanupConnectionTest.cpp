@@ -49,7 +49,6 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 		USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
 		AssertIsValid(Driver, TEXT("Test is exclusive to using SpatialNetDriver"));
 		PlayerController = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
-		AssertIsValid(PlayerController, TEXT("Must have valid PlayerController for test"));
 		DefaultPawn = PlayerController->GetPawn();
 		PlayerController->UnPossess();
 		SpawnedPawn = SpawnActor<ATestMovementCharacter>(Server1Position);
