@@ -28,7 +28,7 @@ void ADynamicActorAwakeChangePropertyTest::PrepareTest()
 	AddStep(
 		TEXT("ClientRequireDormancyTestState"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireDormancyActorCount(1);
+			RequireEqual_Int(CountActors<ADormancyTestActor>(GetWorld()), 1,TEXT("Number of TestDormancyActors in world"));
 			RequireDormancyTestState(DORM_Awake, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 			FinishStep();
 		},

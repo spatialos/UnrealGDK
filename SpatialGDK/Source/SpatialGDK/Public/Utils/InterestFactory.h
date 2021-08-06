@@ -47,9 +47,8 @@ class SPATIALGDK_API InterestFactory
 public:
 	InterestFactory(USpatialClassInfoManager* InClassInfoManager);
 
-	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy) const;
+	Interest CreateServerWorkerInterest(TArray<Worker_ComponentId> PartitionsComponents) const;
 	Interest CreatePartitionInterest(const QueryConstraint& LoadBalancingConstraint, bool bDebug) const;
-	void AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, Interest& OutInterest) const;
 	static Interest CreateRoutingWorkerInterest();
 	Interest CreateSkeletonEntityInterest() const;
 
