@@ -232,17 +232,15 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 
 	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 	{
-		// Calling IsActorGroupOwnerForClass before NotifyBeginPlay has been called (when NetDriver is ready) is invalid.
-		if (!SpatialNetDriver->IsReady())
-		{
-			UE_LOG(LogSpatial, Error,
-				   TEXT("Called IsActorGroupOwnerForClass before NotifyBeginPlay has been called is invalid. Actor class: %s"),
-				   *GetNameSafe(ActorClass));
-			return true;
-		}
-
 		if (const ULayeredLBStrategy* LBStrategy = GetLayeredLBStrategy(SpatialNetDriver))
 		{
+			if (!LBStrategy->IsReady())
+			{
+				UE_LOG(LogSpatial, Error,
+					TEXT("Called IsActorGroupOwnerForClass before LBStrategy is ready. Actor class: %s"),
+					*GetNameSafe(ActorClass));
+				return true;
+			}
 			return LBStrategy->CouldHaveAuthority(ActorClass);
 		}
 	}
