@@ -512,8 +512,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	if (WorkerType == SpatialConstants::DefaultServerWorkerType)
 	{
 		StartupHandler = MakeUnique<SpatialGDK::FSpatialServerStartupHandler>(
-			*this, SpatialGDK::FSpatialServerStartupHandler::FInitialSetup{
-					   static_cast<int32>(LoadBalanceStrategy->GetMinimumRequiredWorkers()) });
+			*this, SpatialGDK::FInitialSetup{ static_cast<int32>(LoadBalanceStrategy->GetMinimumRequiredWorkers()) });
 	}
 	else if (WorkerType == SpatialConstants::DefaultClientWorkerType)
 	{
