@@ -21,7 +21,7 @@ public:
 	}
 
 protected:
-	TArray<SpatialGDK::FLBDataStorage*> GetData() override;
+	virtual TArray<SpatialGDK::FLBDataStorage*> GetData() override;
 
 	virtual void Initialize(FSubsystemCollectionBase&) override;
 	virtual void Deinitialize() override;
@@ -29,6 +29,9 @@ protected:
 	void Tick();
 
 	void OnWorldChanged(UWorld* OldWorld, UWorld* NewWorld);
+
+	FDelegateHandle WorldChangedDelegate;
+	FDelegateHandle PostTickDispatchDelegate;
 
 	TSet<Worker_RequestId_Key> Partitions;
 	SpatialGDK::TLBDataStorage<SpatialGDK::LegacyLB_GridCell> GridCells;

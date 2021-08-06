@@ -24,7 +24,7 @@ void ULegacyPartitionSystem::Initialize(FSubsystemCollectionBase& Collection)
 		return;
 	}
 
-	GameInstance->OnWorldChanged().AddUObject(this, &ULegacyPartitionSystem::OnWorldChanged);
+	WorldChangedDelegate = GameInstance->OnWorldChanged().AddUObject(this, &ULegacyPartitionSystem::OnWorldChanged);
 	OnWorldChanged(nullptr, GameInstance->GetWorld());
 }
 
@@ -36,7 +36,7 @@ void ULegacyPartitionSystem::Deinitialize()
 		return;
 	}
 
-	GameInstance->OnWorldChanged().RemoveAll(this);
+	GameInstance->OnWorldChanged().Remove(WorldChangedDelegate);
 
 	Super::Deinitialize();
 }
@@ -45,12 +45,12 @@ void ULegacyPartitionSystem::OnWorldChanged(UWorld* OldWorld, UWorld* NewWorld)
 {
 	if (OldWorld != nullptr)
 	{
-		OldWorld->OnPostTickDispatch().RemoveAll(this);
+		OldWorld->OnPostTickDispatch().Remove(PostTickDispatchDelegate);
 	}
 
 	if (NewWorld != nullptr)
 	{
-		NewWorld->OnPostTickDispatch().AddUObject(this, &ULegacyPartitionSystem::Tick);
+		PostTickDispatchDelegate = NewWorld->OnPostTickDispatch().AddUObject(this, &ULegacyPartitionSystem::Tick);
 	}
 }
 
