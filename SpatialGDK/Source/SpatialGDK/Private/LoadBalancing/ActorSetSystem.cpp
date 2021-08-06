@@ -68,6 +68,7 @@ void FActorSetSystem::Update(TLBDataStorage<ActorSetMember>& Data, TSet<Worker_E
 		{
 			EntitiesToEvaluate.Append(SetToClear);
 		}
+		EntitiesToEvaluate.Remove(Deleted);
 
 		Worker_EntityId CurrentSetLeader;
 		if (ActorSetMembership.RemoveAndCopyValue(Deleted, CurrentSetLeader))

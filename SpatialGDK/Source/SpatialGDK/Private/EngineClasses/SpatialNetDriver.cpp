@@ -28,7 +28,6 @@
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSubviews.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
@@ -66,7 +65,6 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "LoadBalancing/PartitionManager.h"
 #include "Schema/ActorOwnership.h"
-#include "Schema/ActorSetMember.h"
 #include "Schema/SpatialDebugging.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -1179,30 +1177,21 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 		return;
 	}
 
-	TFunction<void(AActor * Actor)> ProcessOwnerChange;
-	ProcessOwnerChange = [&ProcessOwnerChange, this](AActor* Actor) {
-		Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
-		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-		{
-			return;
-		}
+	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		return;
+	}
 
-		USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId);
-		if (Channel == nullptr)
-		{
-			return;
-		}
+	USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId);
+	if (Channel == nullptr)
+	{
+		return;
+	}
 
-		Channel->MarkInterestDirty();
+	Channel->MarkInterestDirty();
 
-		OwnershipChangedEntities.Add(EntityId);
-		for (AActor* Children : Actor->Children)
-		{
-			ProcessOwnerChange(Children);
-		}
-	};
-
-	ProcessOwnerChange(Actor);
+	OwnershipChangedEntities.Add(EntityId);
 }
 
 void USpatialNetDriver::NotifyActorLevelUnloaded(AActor* Actor)
@@ -1249,24 +1238,10 @@ void USpatialNetDriver::NotifyStreamingLevelUnload(class ULevel* Level)
 
 void USpatialNetDriver::ProcessOwnershipChanges()
 {
-	const bool bShouldWriteLoadBalancingData =
-		IsValid(Connection)
-		&& /*GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents*/ USpatialStatics::IsStrategyWorkerEnabled();
-
 	for (Worker_EntityId EntityId : OwnershipChangedEntities)
 	{
 		if (USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId))
 		{
-			if (bShouldWriteLoadBalancingData)
-			{
-				if (ensureAlwaysMsgf(IsValid(Channel->Actor),
-									 TEXT("Tried to process ownership changes for invalid channel Actor. Entity: %lld"), EntityId))
-				{
-					const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, *Channel->Actor);
-					Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
-				}
-			}
-
 			Channel->ServerProcessOwnershipChange();
 		}
 	}
