@@ -298,11 +298,6 @@ public:
 	};
 	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
 
-	// HACK: for getting around ordering issues between UGlobalStateManager::TriggerBeginPlay
-	// and USpatialNetDriver::IsReady please don't use it beyond where its used currently in
-	// FSpatialServerStartupHandler::TryFinishStartup
-	void SetReady() { bIsReadyToStart = true; }
-
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
