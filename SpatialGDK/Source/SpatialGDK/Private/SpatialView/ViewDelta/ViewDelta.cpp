@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/ViewDelta/IntermediateReceivedViewChange.h"

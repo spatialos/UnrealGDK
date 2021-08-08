@@ -4,7 +4,7 @@
 #include "CoreMinimal.h"
 #include "ExpectedEntityDelta.h"
 
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 
 namespace SpatialGDK
 {

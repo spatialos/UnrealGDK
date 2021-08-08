@@ -80,7 +80,7 @@ struct DifferentEntityComponent
 	bool operator()(const ReceivedComponentChange& Op) const { return Op.ComponentId != ComponentId || Op.EntityId != EntityId; }
 };
 
-// Comparator that will return true when the entity change in question is not for the same entity-component-stated as stored.
+// Comparator that will return true when the entity change in question is not for the same entity-component-set as stored.
 struct DifferentEntityComponentSet
 {
 	Worker_EntityId EntityId;

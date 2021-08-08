@@ -14,7 +14,7 @@
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/SubView.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 #include "Utils/SpatialActorUtils.h"
 #endif // WITH_GAMEPLAY_DEBUGGER
 
