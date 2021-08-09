@@ -766,6 +766,12 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 	// Allocate entity ids for dynamically spawned actors
 	if (Actor->GetIsReplicated() && Actor->HasAuthority() && Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
 	{
+		if (PackageMap == nullptr)
+		{
+			UE_LOG(LogSpatial, Error,
+				   TEXT("PackageMap is null. Actor name: %s"),
+				   *Actor->GetClass()->GetName());
+		}
 		PackageMap->TryResolveObjectAsEntity(Actor);
 	}
 
