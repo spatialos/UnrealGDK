@@ -93,6 +93,7 @@ class FSpatialStrategySystem;
 class FSkeletonEntityCreationStartupStep;
 class FSpatialServerStartupHandler;
 class FSpatialClientStartupHandler;
+class FPartitionSystemImpl;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -238,6 +239,7 @@ public:
 
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
 	TUniquePtr<SpatialGDK::FSpatialStrategySystem> StrategySystem;
+	TUniquePtr<SpatialGDK::FPartitionSystemImpl> PartitionSystemImpl;
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialGDK::FSpatialHandoverManager> HandoverManager;
 	TUniquePtr<SpatialGDK::UnrealServerInterestFactory> InterestFactory;

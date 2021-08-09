@@ -24,6 +24,7 @@
 #include "EngineClasses/SpatialNetDriverGameplayDebuggerContext.h"
 #include "EngineClasses/SpatialNetDriverRPC.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialPartitionSystem.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
@@ -46,6 +47,7 @@
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialNetDriverLoadBalancingHandler.h"
 #include "Interop/SpatialOutputDevice.h"
+#include "Interop/SpatialPartitionSystemImpl.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialRoutingSystem.h"
@@ -476,6 +478,21 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		USpatialPackageMapClient* NewPackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 		check(NewPackageMap == PackageMap);
 
+		if (WorkerType == SpatialConstants::DefaultServerWorkerType && USpatialStatics::IsStrategyWorkerEnabled())
+		{
+			USpatialPartitionSystem* Partitions = GameInstance->GetSubsystem<USpatialPartitionSystem>();
+			if (Partitions)
+			{
+				SpatialGDK::FSubView& PartitionsSubView =
+					Connection->GetCoordinator().CreateSubView(SpatialConstants::PARTITION_ACK_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
+															   SpatialGDK::FSubView::NoDispatcherCallbacks);
+
+				PartitionSystemImpl = MakeUnique<SpatialGDK::FPartitionSystemImpl>(PartitionsSubView);
+				PartitionSystemImpl->PartitionData.DataStorages = Partitions->GetData();
+				Partitions->SetImpl(*PartitionSystemImpl);
+			}
+		}
+
 		PackageMap->Init(*this);
 
 		// The interest factory depends on the package map, so is created last.
@@ -495,8 +512,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	if (WorkerType == SpatialConstants::DefaultServerWorkerType)
 	{
 		StartupHandler = MakeUnique<SpatialGDK::FSpatialServerStartupHandler>(
-			*this, SpatialGDK::FSpatialServerStartupHandler::FInitialSetup{
-					   static_cast<int32>(LoadBalanceStrategy->GetMinimumRequiredWorkers()) });
+			*this, SpatialGDK::FInitialSetup{ static_cast<int32>(LoadBalanceStrategy->GetMinimumRequiredWorkers()) });
 	}
 	else if (WorkerType == SpatialConstants::DefaultClientWorkerType)
 	{
@@ -1057,6 +1073,13 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 void USpatialNetDriver::Shutdown()
 {
+	UGameInstance* GameInstance = GetGameInstance();
+	USpatialPartitionSystem* Partitions = GameInstance ? GameInstance->GetSubsystem<USpatialPartitionSystem>() : nullptr;
+	if (Partitions != nullptr)
+	{
+		Partitions->ClearImpl();
+	}
+
 	USpatialNetDriverDebugContext::DisableDebugSpatialGDK(this);
 
 	SpatialOutputDevice = nullptr;
@@ -2262,6 +2285,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (bIsDefaultServerOrClientWorker)
 		{
+			if (PartitionSystemImpl.IsValid())
+			{
+				PartitionSystemImpl->Advance();
+			}
+
 			if (LoadBalanceEnforcer.IsValid())
 			{
 				SCOPE_CYCLE_COUNTER(STAT_SpatialUpdateAuthority);
@@ -2274,6 +2302,16 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			if (HandoverManager.IsValid())
 			{
 				HandoverManager->Advance();
+				if (PartitionSystemImpl.IsValid())
+				{
+					PartitionSystemImpl->ProcessHandoverEvents(*HandoverManager);
+				}
+			}
+
+			// Add partition deletion after handling handover to have a natural flow of events.
+			if (PartitionSystemImpl.IsValid())
+			{
+				PartitionSystemImpl->ProcessDeletionEvents();
 			}
 
 			if (RPCService.IsValid())

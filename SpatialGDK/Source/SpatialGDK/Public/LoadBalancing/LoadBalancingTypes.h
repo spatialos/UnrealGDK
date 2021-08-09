@@ -27,14 +27,17 @@ using FPartitionHandle = TSharedPtr<FPartitionDesc>;
 
 struct FMigrationContext
 {
-	FMigrationContext(const TSet<Worker_EntityId_Key>& InMigratingEntities, const TSet<Worker_EntityId_Key>& InModifiedEntities)
+	FMigrationContext(const TSet<Worker_EntityId_Key>& InMigratingEntities, const TSet<Worker_EntityId_Key>& InModifiedEntities,
+					  const TSet<Worker_EntityId_Key>& InDeletedEntities)
 		: MigratingEntities(InMigratingEntities)
 		, ModifiedEntities(InModifiedEntities)
+		, DeletedEntities(InDeletedEntities)
 	{
 	}
 
 	const TSet<Worker_EntityId_Key>& MigratingEntities;
 	const TSet<Worker_EntityId_Key>& ModifiedEntities;
+	const TSet<Worker_EntityId_Key>& DeletedEntities;
 	TMap<Worker_EntityId_Key, FPartitionHandle> EntitiesToMigrate;
 };
 

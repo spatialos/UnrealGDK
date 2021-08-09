@@ -20,6 +20,9 @@ FSpatialHandoverManager::FSpatialHandoverManager(const FSubView& InActorView, co
 
 void FSpatialHandoverManager::Advance()
 {
+	PartitionsDelegated.Empty();
+	DelegationLost.Empty();
+
 	for (const EntityDelta& Delta : PartitionView.GetViewDelta().EntityDeltas)
 	{
 		switch (Delta.Type)
@@ -27,9 +30,11 @@ void FSpatialHandoverManager::Advance()
 		case EntityDelta::ADD:
 			PartitionsToACK.Add(Delta.EntityId);
 			OwnedPartitions.Add(Delta.EntityId);
+			PartitionsDelegated.Add(Delta.EntityId);
 			break;
 		case EntityDelta::REMOVE:
 			OwnedPartitions.Remove(Delta.EntityId);
+			DelegationLost.Add(Delta.EntityId);
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
 
