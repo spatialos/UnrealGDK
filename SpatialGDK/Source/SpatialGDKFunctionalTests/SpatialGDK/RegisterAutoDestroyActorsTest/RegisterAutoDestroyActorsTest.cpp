@@ -6,6 +6,8 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialFunctionalTestFlowController.h"
 
+DEFINE_LOG_CATEGORY(LogTestRegisterAutoDestroyActors);
+
 ARegisterAutoDestroyActorsTestPart1::ARegisterAutoDestroyActorsTestPart1()
 {
 	Author = "Nuno";
@@ -28,9 +30,11 @@ void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 		FRotator SpawnPositionRotator = FRotator(0.0f, 360.0f / NumVirtualWorkers, 0.0f);
 		for (int32 i = 0; i != NumVirtualWorkers; ++i)
 		{
-			SpawnActor<ACharacter>(SpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters(),
+			ACharacter* Character = SpawnActor<ACharacter>(SpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters(),
 								   /*bRegisterAsAutoDestroy*/ ERegisterToAutoDestroy::No);
 			SpawnPosition = SpawnPositionRotator.RotateVector(SpawnPosition);
+
+			UE_LOG(LogTestRegisterAutoDestroyActors, Log, TEXT("Spawned ACharacter %s in worker %s"), *GetNameSafe(Character), *GetFlowController(ESpatialFunctionalTestWorkerType::Server, i + 1)->GetDisplayName());
 		}
 
 		FinishStep();
