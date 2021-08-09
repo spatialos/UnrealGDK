@@ -14,7 +14,7 @@ public:
 
 	Worker_EntityId GetSetLeader(Worker_EntityId Entity) const
 	{
-		const Worker_EntityId* Entry = ActorSetMembership.Find(Entity);
+		const Worker_EntityId_Key* Entry = ActorSetMembership.Find(Entity);
 		return Entry != nullptr ? *Entry : SpatialConstants::INVALID_ENTITY_ID;
 	}
 
