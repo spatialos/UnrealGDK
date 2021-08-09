@@ -26,7 +26,7 @@ void FActorSetSystem::Update(TLBDataStorage<ActorSetMember>& Data, TSet<Worker_E
 
 		Worker_EntityId_Key* PreviousSetLeader = ActorSetMembership.Find(Modified);
 
-		if (NewSetLeader == SpatialConstants::INVALID_ENTITY_ID && PreviousSetLeader == nullptr
+		if ((NewSetLeader == SpatialConstants::INVALID_ENTITY_ID && PreviousSetLeader == nullptr)
 			|| (PreviousSetLeader != nullptr && *PreviousSetLeader == NewSetLeader))
 		{
 			// no change
