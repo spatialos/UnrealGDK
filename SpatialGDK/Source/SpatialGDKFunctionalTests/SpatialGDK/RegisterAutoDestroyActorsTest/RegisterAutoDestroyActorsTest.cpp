@@ -31,7 +31,7 @@ void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 		for (int32 i = 0; i != NumVirtualWorkers; ++i)
 		{
 			ACharacter* Character = SpawnActor<ACharacter>(SpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters(),
-														   /*bRegisterAsAutoDestroy*/ ERegisterToAutoDestroy::No);
+														   			ERegisterToAutoDestroy::No);
 			SpawnPosition = SpawnPositionRotator.RotateVector(SpawnPosition);
 
 			UE_LOG(LogTestRegisterAutoDestroyActors, Log, TEXT("Spawned ACharacter %s in worker %s"), *GetNameSafe(Character),
