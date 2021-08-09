@@ -20,7 +20,6 @@ void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 
 	// Step 1 - Spawn Actor On Auth
 	AddStep(TEXT("SERVER_1_Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		UWorld* World = GetWorld();
 		const int32 NumVirtualWorkers = GetNumberOfServerWorkers();
 
 		// spawn 1 per server worker
