@@ -29,7 +29,7 @@ void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 		for (int32 i = 0; i != NumVirtualWorkers; ++i)
 		{
 			SpawnActor<ACharacter>(SpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters(),
-								   /*bRegisterAsAutoDestroy*/ ERegisterToAutoDestroy::No);
+								   ERegisterToAutoDestroy::No);
 			SpawnPosition = SpawnPositionRotator.RotateVector(SpawnPosition);
 		}
 
