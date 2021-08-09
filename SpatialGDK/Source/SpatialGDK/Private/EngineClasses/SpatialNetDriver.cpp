@@ -2089,34 +2089,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 					ActorsHandedOver.Add(Actor);
 					EntitiesHandedOver.Add(EntityId);
-
-					AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
-					if (HierarchyRoot->HasAuthority())
-					{
-						TFunction<void(AActor*)> ForceReplicateChildren;
-						ForceReplicateChildren = [&](AActor* HierarchyActor) {
-							if (HierarchyActor != Actor && HierarchyActor->GetIsReplicated())
-							{
-								if (FNetworkObjectInfo const* ActorInfo = FindNetworkObjectInfo(HierarchyActor))
-								{
-									if (!ActorInfo->bPendingNetUpdate)
-									{
-										LoadBalancingContext.AddActorToReplicate(HierarchyActor);
-									}
-								}
-
-								if (USpatialActorChannel* Channel = GetOrCreateSpatialActorChannel(HierarchyActor))
-								{
-									Channel->ForcePositionReplication();
-								}
-							}
-							for (AActor* ChildActor : HierarchyActor->Children)
-							{
-								ForceReplicateChildren(ChildActor);
-							}
-						};
-						ForceReplicateChildren(HierarchyRoot);
-					}
 				}
 			}
 		}
@@ -2191,6 +2163,23 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 					Actor->RemoteRole = ROLE_Authority;
 
 					Actor->OnAuthorityLost();
+				}
+
+				for (auto EntityId : HandoverManager->GetActorsToCheckForAuth())
+				{
+					TWeakObjectPtr<UObject> ObjectPtr = PackageMap->GetObjectFromEntityId(EntityId);
+					AActor* Actor = Cast<AActor>(ObjectPtr.Get());
+					if (Actor == nullptr || Actor->HasAuthority())
+					{
+						continue;
+					}
+					else if (Actor != nullptr)
+					{
+						Actor->Role = ROLE_Authority;
+						Actor->RemoteRole = ROLE_SimulatedProxy;
+
+						Actor->OnAuthorityGained();
+					}
 				}
 			}
 			HandoverManager->Flush(Connection->GetCoordinator(), EntitiesHandedOver);

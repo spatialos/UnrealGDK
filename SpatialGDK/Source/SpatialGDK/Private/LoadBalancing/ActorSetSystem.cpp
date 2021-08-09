@@ -33,7 +33,6 @@ void FActorSetSystem::Update(TLBDataStorage<ActorSetMember>& Data, TSet<Worker_E
 			continue;
 		}
 
-		EntitiesToEvaluate.Add(Modified);
 		TSet<Worker_EntityId_Key>* PreviousSet = PreviousSetLeader != nullptr ? ActorSets.Find(*PreviousSetLeader) : nullptr;
 
 		if (PreviousSet != nullptr)
@@ -47,6 +46,7 @@ void FActorSetSystem::Update(TLBDataStorage<ActorSetMember>& Data, TSet<Worker_E
 
 		if (NewSetLeader == SpatialConstants::INVALID_ENTITY_ID)
 		{
+			EntitiesToEvaluate.Add(Modified);
 			ActorSetMembership.Remove(Modified);
 		}
 		else
@@ -58,6 +58,8 @@ void FActorSetSystem::Update(TLBDataStorage<ActorSetMember>& Data, TSet<Worker_E
 		if (NewSet && !DeletedEntities.Contains(NewSetLeader))
 		{
 			NewSet->Add(Modified);
+			EntitiesToEvaluate.Add(NewSetLeader);
+			EntitiesToAttach.Add(Modified);
 		}
 	}
 
@@ -69,6 +71,7 @@ void FActorSetSystem::Update(TLBDataStorage<ActorSetMember>& Data, TSet<Worker_E
 			EntitiesToEvaluate.Append(SetToClear);
 		}
 		EntitiesToEvaluate.Remove(Deleted);
+		EntitiesToAttach.Remove(Deleted);
 
 		Worker_EntityId CurrentSetLeader;
 		if (ActorSetMembership.RemoveAndCopyValue(Deleted, CurrentSetLeader))

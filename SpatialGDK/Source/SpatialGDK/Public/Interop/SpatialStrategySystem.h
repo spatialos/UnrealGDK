@@ -39,6 +39,8 @@ public:
 	void Destroy(ISpatialOSWorker& Connection);
 
 private:
+	void ClearUserStorages();
+
 	const FSubView& LBView;
 
 	TUniquePtr<FPartitionManager> PartitionsMgr;
@@ -62,6 +64,7 @@ private:
 	TUniquePtr<FLoadBalancingStrategy> Strategy;
 	TSet<Worker_EntityId_Key> MigratingEntities;
 	TMap<Worker_EntityId_Key, FPartitionHandle> PendingMigrations;
+	TMap<Worker_EntityId_Key, FPartitionHandle> EntityAssignment;
 	// --- Migration data ---
 
 	void UpdateStrategySystemInterest(ISpatialOSWorker& Connection);

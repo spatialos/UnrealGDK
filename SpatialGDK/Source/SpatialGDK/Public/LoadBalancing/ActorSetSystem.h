@@ -21,11 +21,17 @@ public:
 	const TSet<Worker_EntityId_Key>* GetSet(Worker_EntityId Entity) const { return ActorSets.Find(Entity); }
 
 	const TSet<Worker_EntityId_Key>& GetEntitiesToEvaluate() const { return EntitiesToEvaluate; }
-	void ClearEntitiesToEvaluate() { EntitiesToEvaluate.Empty(); }
+	const TSet<Worker_EntityId_Key>& GetEntitiesToAttach() const { return EntitiesToAttach; }
+	void Clear()
+	{
+		EntitiesToEvaluate.Empty();
+		EntitiesToAttach.Empty();
+	}
 
 protected:
 	TMap<Worker_EntityId_Key, TSet<Worker_EntityId_Key>> ActorSets;
 	TMap<Worker_EntityId_Key, Worker_EntityId_Key> ActorSetMembership;
 	TSet<Worker_EntityId_Key> EntitiesToEvaluate;
+	TSet<Worker_EntityId_Key> EntitiesToAttach;
 };
 } // namespace SpatialGDK
