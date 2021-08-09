@@ -768,9 +768,7 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 	{
 		if (PackageMap == nullptr)
 		{
-			UE_LOG(LogSpatial, Error,
-				   TEXT("PackageMap is null. Actor name: %s"),
-				   *Actor->GetClass()->GetName());
+			UE_LOG(LogSpatial, Error, TEXT("PackageMap is null. Actor name: %s"), *Actor->GetClass()->GetName());
 		}
 		PackageMap->TryResolveObjectAsEntity(Actor);
 	}
