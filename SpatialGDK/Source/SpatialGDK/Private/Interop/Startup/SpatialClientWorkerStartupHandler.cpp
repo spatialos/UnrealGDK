@@ -6,6 +6,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Schema/ServerWorker.h"
+#include "SpatialStartupCommon.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "Utils/EntityFactory.h"
 #include "Utils/InterestFactory.h"
@@ -17,131 +18,194 @@ namespace SpatialGDK
 FSpatialClientStartupHandler::FSpatialClientStartupHandler(USpatialNetDriver& InNetDriver, UGameInstance& InGameInstance)
 	: NetDriver(&InNetDriver)
 	, GameInstance(&InGameInstance)
+	, Executor(CreateSteps())
 {
-}
-
-FSpatialClientStartupHandler::~FSpatialClientStartupHandler()
-{
-	if (GSMQueryRetryTimer.IsValid())
-	{
-		if (GameInstance.IsValid())
-		{
-			GameInstance->GetTimerManager().ClearTimer(GSMQueryRetryTimer);
-		}
-	}
 }
 
 bool FSpatialClientStartupHandler::TryFinishStartup()
 {
-	if (!bQueriedGSM)
+	return Executor.TryFinish();
+}
+
+ViewCoordinator& FSpatialClientStartupHandler::GetCoordinator()
+{
+	return NetDriver->Connection->GetCoordinator();
+}
+
+const ViewCoordinator& FSpatialClientStartupHandler::GetCoordinator() const
+{
+	return NetDriver->Connection->GetCoordinator();
+}
+
+FString FSpatialClientStartupHandler::GetStartupStateDescription() const
+{
+	return Executor.Describe();
+}
+
+struct FQueryGsmStep final : public FStartupStep
+{
+	FQueryGsmStep(TSharedRef<FDeploymentMapData> InMapData, USpatialNetDriver& InNetDriver, ISpatialOSWorker& InConnection,
+				  UGameInstance& InGameInstance)
+		: MapData(InMapData)
+		, NetDriver(&InNetDriver)
+		, Connection(&InConnection)
+		, GameInstance(&InGameInstance)
 	{
-		bQueriedGSM = true;
-		QueryGSM();
+		StepName = TEXT("Query the GSM");
 	}
 
-	TOptional<USpatialNetDriver::FPendingNetworkFailure> PendingNetworkFailure;
+	~FQueryGsmStep()
+	{
+		if (GameInstance.IsValid() && GsmQueryRetryTimerHandle.IsValid())
+		{
+			GameInstance->GetTimerManager().ClearTimer(GsmQueryRetryTimerHandle);
+		}
+	}
+
+	virtual void Start() override { QueryGSM(); }
+
+	virtual bool TryFinish() override;
+
+	void QueryGSM();
+
+private:
+	TSharedRef<FDeploymentMapData> MapData;
+	USpatialNetDriver* NetDriver;
+
+	ISpatialOSWorker* Connection;
+
+	FEntityQueryHandler QueryHandler;
+	TWeakObjectPtr<UGameInstance> GameInstance;
+	FTimerHandle GsmQueryRetryTimerHandle;
+
+	TOptional<FString> ClientStartupExtraState;
+
+	TOptional<FDeploymentMapData> GSMData;
+	static bool GetFromComponentData(const Worker_ComponentData& Component, FDeploymentMapData& OutData);
+
+	struct FSnapshotData
+	{
+		uint64 SnapshotVersion;
+	};
+	TOptional<FSnapshotData> SnapshotData;
+	static bool GetFromComponentData(const Worker_ComponentData& Component, FSnapshotData& OutData);
+};
+
+class FMapLoadStep final : public FStartupStep
+{
+public:
+	FMapLoadStep(TSharedRef<FDeploymentMapData> InLoadState, UNetDriver& InNetDriver)
+		: LoadState(InLoadState)
+		, NetDriver(&InNetDriver)
+	{
+		StepName = TEXT("Loading map");
+	}
+	~FMapLoadStep()
+	{
+		if (PostMapLoadedDelegateHandle.IsValid())
+		{
+			FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostMapLoadedDelegateHandle);
+			PostMapLoadedDelegateHandle.Reset();
+		}
+	}
+
+	virtual void Start() override;
+
+	virtual bool TryFinish() override { return bIsLoadingMap == bFinishedMapLoad; }
+
+private:
+	void OnMapLoaded(UWorld* LoadedWorld);
+
+	TSharedRef<FDeploymentMapData> LoadState;
+	UNetDriver* NetDriver;
+
+	bool bIsLoadingMap = false;
+	bool bFinishedMapLoad = false;
+	FDelegateHandle PostMapLoadedDelegateHandle;
+};
+
+class FSpawnPlayerStep : public FStartupStep
+{
+public:
+	FSpawnPlayerStep(USpatialNetDriver& InNetDriver)
+		: NetDriver(&InNetDriver)
+	{
+		StepName = TEXT("Spawn the player");
+	}
+
+	virtual void Start() override { NetDriver->PlayerSpawner->SendPlayerSpawnRequest(); }
+
+	virtual bool TryFinish() override { return true; }
+
+private:
+	USpatialNetDriver* NetDriver;
+};
+
+TArray<TUniquePtr<FStartupStep>> FSpatialClientStartupHandler::CreateSteps()
+{
+	auto MapData = MakeShared<FDeploymentMapData>();
+
+	TArray<TUniquePtr<FStartupStep>> Steps;
+
+	Steps.Emplace(MakeUnique<FQueryGsmStep>(MapData, *NetDriver, GetCoordinator(), *GameInstance));
+	Steps.Emplace(MakeUnique<FMapLoadStep>(MapData, *NetDriver));
+	Steps.Emplace(MakeUnique<FSpawnPlayerStep>(*NetDriver));
+
+	return Steps;
+}
+
+bool FQueryGsmStep::TryFinish()
+{
+	QueryHandler.ProcessOps(Connection->GetWorkerMessages());
+
 	ClientStartupExtraState.Reset();
+	TOptional<USpatialNetDriver::FPendingNetworkFailure> PendingNetworkFailure;
 
-	QueryHandler.ProcessOps(GetOps());
-
-	if (Stage == EStage::QueryGSM)
+	if (GSMData && SnapshotData && GSMData->bAcceptingPlayers)
 	{
-		if (GSMData && SnapshotData && GSMData->bAcceptingPlayers)
+		// TODO: Get snapshot version from the GSM entity or whatever.
+		const uint64 ServerSnapshotVersion = SnapshotData->SnapshotVersion;
+		const uint32 ServerSchemaHash = GSMData->SchemaHash;
+		const uint32 LocalSchemaHash = NetDriver->ClassInfoManager->SchemaDatabase->SchemaBundleHash;
+		const uint32 LocalSessionId = NetDriver->ClientGetSessionId();
+		if (GSMData->DeploymentSessionId != LocalSessionId)
 		{
-			// TODO: Get snapshot version from the GSM entity or whatever.
-			const uint64 ServerSnapshotVersion = SnapshotData->SnapshotVersion;
-			const uint32 ServerSchemaHash = GSMData->SchemaHash;
-			const uint32 LocalSchemaHash = NetDriver->ClassInfoManager->SchemaDatabase->SchemaBundleHash;
-			const uint32 LocalSessionId = NetDriver->ClientGetSessionId();
-			if (GSMData->DeploymentSessionId != LocalSessionId)
-			{
-				UE_LOG(LogSpatialClientWorkerStartupHandler, VeryVerbose,
-					   TEXT("GlobalStateManager session id mismatch - got (%d) expected (%d)."), GSMData->DeploymentSessionId,
-					   LocalSessionId);
+			UE_LOG(LogSpatialClientWorkerStartupHandler, VeryVerbose,
+				   TEXT("GlobalStateManager session id mismatch - got (%d) expected (%d)."), GSMData->DeploymentSessionId, LocalSessionId);
 
-				ClientStartupExtraState = FString::Printf(TEXT("GlobalStateManager session id mismatch - got (%d) expected (%d)."),
-														  GSMData->DeploymentSessionId, LocalSessionId);
-			}
-			else if (SpatialConstants::SPATIAL_SNAPSHOT_VERSION != ServerSnapshotVersion)
-			{
-				UE_LOG(LogSpatialClientWorkerStartupHandler, Error,
-					   TEXT("Your client's snapshot version does not match your deployment's snapshot version. Client version: = '%llu', "
-							"Server "
-							"version = '%llu'"),
-					   ServerSnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
-
-				PendingNetworkFailure = {
-					ENetworkFailure::OutdatedClient,
-					TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot.")
-				};
-			}
-			else if (LocalSchemaHash != ServerSchemaHash) // Are we running with the same schema hash as the server?
-			{
-				UE_LOG(LogSpatialClientWorkerStartupHandler, Error,
-					   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
-					   LocalSchemaHash, ServerSchemaHash);
-
-				PendingNetworkFailure = {
-					ENetworkFailure::OutdatedClient,
-					TEXT("Your version of the game does not match that of the server. Please try updating your game version.")
-				};
-			}
-			else
-			{
-				UWorld* CurrentWorld = NetDriver->GetWorld();
-				const FString& DeploymentMapURL = GSMData->DeploymentMapURL;
-				if (CurrentWorld == nullptr || UWorld::RemovePIEPrefix(DeploymentMapURL) != UWorld::RemovePIEPrefix(CurrentWorld->URL.Map))
-				{
-					Stage = EStage::WaitForMapLoad;
-
-					PostMapLoadedDelegateHandle =
-						FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &FSpatialClientStartupHandler::OnMapLoaded);
-
-					// Load the correct map based on the GSM URL
-					UE_LOG(LogSpatialClientWorkerStartupHandler, Log, TEXT("Welcomed by SpatialOS (Level: %s)"), *DeploymentMapURL);
-
-					// Extract map name and options
-					FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(NetDriver);
-					FURL LastURL = WorldContext.PendingNetGame->URL;
-
-					FURL RedirectURL = FURL(&LastURL, *DeploymentMapURL, (ETravelType)WorldContext.TravelType);
-					RedirectURL.Host = LastURL.Host;
-					RedirectURL.Port = LastURL.Port;
-					RedirectURL.Portal = LastURL.Portal;
-
-					// Usually the LastURL options are added to the RedirectURL in the FURL constructor.
-					// However this is not the case when TravelType = TRAVEL_Absolute so we must do it explicitly here.
-					if (WorldContext.TravelType == ETravelType::TRAVEL_Absolute)
-					{
-						RedirectURL.Op.Append(LastURL.Op);
-					}
-
-					RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
-
-					WorldContext.PendingNetGame->bSuccessfullyConnected = true;
-					WorldContext.PendingNetGame->bSentJoinRequest = false;
-					WorldContext.PendingNetGame->URL = RedirectURL;
-				}
-				else
-				{
-					Stage = EStage::SendPlayerSpawnRequest;
-				}
-			}
+			ClientStartupExtraState = FString::Printf(TEXT("GlobalStateManager session id mismatch - got (%d) expected (%d)."),
+													  GSMData->DeploymentSessionId, LocalSessionId);
 		}
-	}
-
-	if (Stage == EStage::WaitForMapLoad)
-	{
-		if (bFinishedMapLoad)
+		else if (SpatialConstants::SPATIAL_SNAPSHOT_VERSION != ServerSnapshotVersion)
 		{
-			Stage = EStage::SendPlayerSpawnRequest;
-		}
-	}
+			UE_LOG(LogSpatialClientWorkerStartupHandler, Error,
+				   TEXT("Your client's snapshot version does not match your deployment's snapshot version. Client version: = '%llu', "
+						"Server "
+						"version = '%llu'"),
+				   ServerSnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
 
-	if (Stage == EStage::SendPlayerSpawnRequest)
-	{
-		NetDriver->PlayerSpawner->SendPlayerSpawnRequest();
-		Stage = EStage::Finished;
+			PendingNetworkFailure = {
+				ENetworkFailure::OutdatedClient,
+				TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot.")
+			};
+		}
+		else if (LocalSchemaHash != ServerSchemaHash) // Are we running with the same schema hash as the server?
+		{
+			UE_LOG(LogSpatialClientWorkerStartupHandler, Error,
+				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
+				   LocalSchemaHash, ServerSchemaHash);
+
+			PendingNetworkFailure = {
+				ENetworkFailure::OutdatedClient,
+				TEXT("Your version of the game does not match that of the server. Please try updating your game version.")
+			};
+		}
+		else
+		{
+			*MapData = *GSMData;
+
+			return true;
+		}
 	}
 
 	if (PendingNetworkFailure)
@@ -149,29 +213,10 @@ bool FSpatialClientStartupHandler::TryFinishStartup()
 		NetDriver->PendingNetworkFailure = PendingNetworkFailure;
 	}
 
-	return Stage == EStage::Finished;
+	return false;
 }
 
-void FSpatialClientStartupHandler::OnMapLoaded(UWorld* LoadedWorld)
-{
-	if (LoadedWorld == nullptr)
-	{
-		return;
-	}
-
-	if (LoadedWorld->GetNetDriver() != NetDriver)
-	{
-		// In PIE, if we have more than 2 clients, then OnMapLoaded is going to be triggered once each client loads the world.
-		// As the delegate is a global variable, it triggers all 3 USpatialNetDriver::OnMapLoaded callbacks. As a result, we should
-		// make sure that the net driver of this world is in fact us.
-		return;
-	}
-
-	FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostMapLoadedDelegateHandle);
-	bFinishedMapLoad = true;
-}
-
-void FSpatialClientStartupHandler::QueryGSM()
+void FQueryGsmStep::QueryGSM()
 {
 	// Build a constraint for the GSM.
 	Worker_ComponentConstraint GSMComponentConstraint{};
@@ -190,7 +235,7 @@ void FSpatialClientStartupHandler::QueryGSM()
 	GSMQuery.snapshot_result_type_component_ids = ComponentIds.GetData();
 	GSMQuery.snapshot_result_type_component_id_count = ComponentIds.Num();
 
-	const Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery, RETRY_UNTIL_COMPLETE);
+	const Worker_RequestId RequestID = Connection->SendEntityQueryRequest(EntityQuery(GSMQuery), RETRY_UNTIL_COMPLETE);
 
 	FEntityQueryDelegate GSMQueryDelegate = [this](const Worker_EntityQueryResponseOp& Op) {
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
@@ -233,71 +278,27 @@ void FSpatialClientStartupHandler::QueryGSM()
 			}
 		}
 
-		if (Stage != EStage::Finished)
-		{
-			if (!bStartedRetrying)
-			{
-				bStartedRetrying = true;
-				// Automatically retry.
-				FTimerManager& TimerManager = GameInstance->GetTimerManager();
-				TimerManager.SetTimer(
-					GSMQueryRetryTimer,
-					[this]() {
-						QueryGSM();
-					},
-					0.1f, /*bInLoop =*/true);
-			}
-		}
+		// Automatically retry.
+		FTimerManager& TimerManager = GameInstance->GetTimerManager();
+		TimerManager.SetTimer(
+			GsmQueryRetryTimerHandle,
+			[this]() {
+				QueryGSM();
+			},
+			0.1f, /*bInLoop =*/false);
 	};
 
 	QueryHandler.AddRequest(RequestID, GSMQueryDelegate);
 }
 
-ViewCoordinator& FSpatialClientStartupHandler::GetCoordinator()
-{
-	return NetDriver->Connection->GetCoordinator();
-}
-
-const ViewCoordinator& FSpatialClientStartupHandler::GetCoordinator() const
-{
-	return NetDriver->Connection->GetCoordinator();
-}
-const TArray<Worker_Op>& FSpatialClientStartupHandler::GetOps() const
-{
-	return GetCoordinator().GetWorkerMessages();
-}
-
-bool FSpatialClientStartupHandler::GetFromComponentData(const Worker_ComponentData& Component, FDeploymentMapData& OutData)
+bool FQueryGsmStep::GetFromComponentData(const Worker_ComponentData& Component, FDeploymentMapData& OutData)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Component.schema_type);
 
-	int FieldsFound = 0;
-
-	if (Schema_GetBytesCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID) != 0)
-	{
-		++FieldsFound;
-		OutData.DeploymentMapURL = GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID);
-	}
-
-	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID) != 0)
-	{
-		++FieldsFound;
-		OutData.bAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
-	}
-	if (Schema_GetInt32Count(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID) != 0)
-	{
-		++FieldsFound;
-		OutData.DeploymentSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
-	}
-	if (Schema_GetUint32Count(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH) != 0)
-	{
-		++FieldsFound;
-		OutData.SchemaHash = Schema_GetUint32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH);
-	}
-	return FieldsFound == 4;
+	return FDeploymentMapData::TryRead(*ComponentObject, OutData);
 }
 
-bool FSpatialClientStartupHandler::GetFromComponentData(const Worker_ComponentData& Component, FSnapshotData& OutData)
+bool FQueryGsmStep::GetFromComponentData(const Worker_ComponentData& Component, FSnapshotData& OutData)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Component.schema_type);
 
@@ -312,21 +313,62 @@ bool FSpatialClientStartupHandler::GetFromComponentData(const Worker_ComponentDa
 	return FieldsFound == 1;
 }
 
-FString FSpatialClientStartupHandler::GetStartupStateDescription() const
+void FMapLoadStep::Start()
 {
-	switch (Stage)
+	UWorld* CurrentWorld = NetDriver->GetWorld();
+	const FString& DeploymentMapURL = LoadState->DeploymentMapURL;
+	if (CurrentWorld == nullptr || UWorld::RemovePIEPrefix(DeploymentMapURL) != UWorld::RemovePIEPrefix(CurrentWorld->URL.Map))
 	{
-	case EStage::QueryGSM:
-		return FString::Printf(TEXT("Querying GSM entity for the initial deployment data: %s"),
-							   *ClientStartupExtraState.Get(/*DefaultValue =*/TEXT("Nominal")));
-	case EStage::WaitForMapLoad:
-		return TEXT("Waiting for the map to be loaded");
-	case EStage::SendPlayerSpawnRequest:
-		return TEXT("Sending player spawn request");
-	case EStage::Finished:
-		return TEXT("Finished");
+		bIsLoadingMap = true;
+
+		PostMapLoadedDelegateHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &FMapLoadStep::OnMapLoaded);
+
+		// Load the correct map based on the GSM URL
+		UE_LOG(LogSpatialClientWorkerStartupHandler, Log, TEXT("Welcomed by SpatialOS (Level: %s)"), *DeploymentMapURL);
+
+		// Extract map name and options
+		FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(NetDriver);
+		FURL LastURL = WorldContext.PendingNetGame->URL;
+
+		FURL RedirectURL = FURL(&LastURL, *DeploymentMapURL, (ETravelType)WorldContext.TravelType);
+		RedirectURL.Host = LastURL.Host;
+		RedirectURL.Port = LastURL.Port;
+		RedirectURL.Portal = LastURL.Portal;
+
+		// Usually the LastURL options are added to the RedirectURL in the FURL constructor.
+		// However this is not the case when TravelType = TRAVEL_Absolute so we must do it explicitly here.
+		if (WorldContext.TravelType == ETravelType::TRAVEL_Absolute)
+		{
+			RedirectURL.Op.Append(LastURL.Op);
+		}
+
+		RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
+
+		WorldContext.PendingNetGame->bSuccessfullyConnected = true;
+		WorldContext.PendingNetGame->bSentJoinRequest = false;
+		WorldContext.PendingNetGame->URL = RedirectURL;
 	}
-	return TEXT("Invalid state");
+}
+
+void FMapLoadStep::OnMapLoaded(UWorld* LoadedWorld)
+{
+	if (LoadedWorld == nullptr)
+	{
+		return;
+	}
+
+	if (LoadedWorld->GetNetDriver() != NetDriver)
+	{
+		// In PIE, if we have more than 2 clients, then OnMapLoaded is going to be triggered once each client loads the world.
+		// As the delegate is a global variable, it triggers all 3 USpatialNetDriver::OnMapLoaded callbacks. As a result, we should
+		// make sure that the net driver of this world is in fact us.
+		return;
+	}
+
+	FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostMapLoadedDelegateHandle);
+	PostMapLoadedDelegateHandle.Reset();
+
+	bFinishedMapLoad = true;
 }
 
 } // namespace SpatialGDK
