@@ -775,7 +775,7 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 		   TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
 }
 
-void USpatialNetDriver::OnActorSpawned(AActor* Actor)
+void USpatialNetDriver::OnActorSpawned(AActor* Actor) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
