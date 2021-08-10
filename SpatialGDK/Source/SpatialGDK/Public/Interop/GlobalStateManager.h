@@ -66,7 +66,6 @@ public:
 
 	// Startup Actor Manager Component
 	bool bCanSpawnWithAuthority;
-	bool bGSMReadyForPlay;
 
 private:
 	// Deployment Map Component

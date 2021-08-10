@@ -69,7 +69,7 @@ bool FWaitForWorld::Update()
 	if (TestWorld && TestWorld->AreActorsInitialized())
 	{
 		AGameStateBase* GameState = TestWorld->GetGameState();
-		if (GameState && GameState->HasBegunPlay())
+		if (GameState && GameState->HasMatchStarted())
 		{
 			return true;
 		}

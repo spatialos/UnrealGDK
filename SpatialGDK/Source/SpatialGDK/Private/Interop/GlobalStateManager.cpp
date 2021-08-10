@@ -347,7 +347,6 @@ void UGlobalStateManager::TriggerBeginPlay()
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
-	bGSMReadyForPlay = true;
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
 }
 
