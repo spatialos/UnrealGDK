@@ -53,17 +53,17 @@ private:
 	// Calculate and return the net component added in [`Start`, `End`).
 	// Also add the resulting component to `Components`.
 	// The accumulated component change in this range must be a component add.
-	static ComponentChange CalculateAdd(ReceivedComponentChange* Start, ReceivedComponentChange* End, TArray<ComponentData>& Components);
+	static ComponentChange CalculateAdd(FReceivedComponentChange* Start, FReceivedComponentChange* End, TArray<ComponentData>& Components);
 	// Calculate and return the net complete update in [`Start`, `End`).
 	// Also set `Component` to match.
 	// The accumulated component change in this range must be a complete-update or
 	// `Data` and `Events` should be non null.
-	static ComponentChange CalculateCompleteUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End, Schema_ComponentData* Data,
-												   Schema_ComponentUpdate* Events, ComponentData& Component);
+	static ComponentChange CalculateCompleteUpdate(FReceivedComponentChange* Start, FReceivedComponentChange* End,
+												   Schema_ComponentData* Data, Schema_ComponentUpdate* Events, ComponentData& Component);
 	// Calculate and return the net update in [`Start`, `End`).
 	// Also apply the update to `Component`.
 	// The accumulated component change in this range must be an update or a complete-update.
-	static ComponentChange CalculateUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End, ComponentData& Component);
+	static ComponentChange CalculateUpdate(FReceivedComponentChange* Start, FReceivedComponentChange* End, ComponentData& Component);
 
 	// The sentinel entity ID has the property that when converted to a uint64 it will be greater than INT64_MAX.
 	// If we convert all entity IDs to uint64s before comparing them we can then be assured that the sentinel value
@@ -75,20 +75,20 @@ private:
 	// Adds component changes to `Delta` and updates `Components` accordingly.
 	// `It` must point to the first element with a given entity ID.
 	// Returns a pointer to the next entity in the component changes list.
-	ReceivedComponentChange* ProcessEntityComponentChanges(ReceivedComponentChange* It, ReceivedComponentChange* End,
-														   TArray<ComponentData>& Components, EntityDelta& Delta);
+	FReceivedComponentChange* ProcessEntityComponentChanges(FReceivedComponentChange* It, FReceivedComponentChange* End,
+															TArray<ComponentData>& Components, EntityDelta& Delta);
 	// Adds authority changes to `Delta` and updates `EntityAuthority` accordingly.
 	// `It` must point to the first element with a given entity ID.
 	// Returns a pointer to the next entity in the authority changes list.
-	ReceivedAuthorityChange* ProcessEntityAuthorityChanges(ReceivedAuthorityChange* It, ReceivedAuthorityChange* End,
-														   TArray<Worker_ComponentSetId>& EntityAuthority, EntityDelta& Delta);
+	FReceivedAuthorityChange* ProcessEntityAuthorityChanges(FReceivedAuthorityChange* It, FReceivedAuthorityChange* End,
+															TArray<Worker_ComponentSetId>& EntityAuthority, EntityDelta& Delta);
 	// Sets `bAdded` and `bRemoved` fields in the `Delta`.
 	// `It` must point to the first element with a given entity ID.
 	// `ViewElement` must point to the same entity in the view or end if it doesn't exist.
 	// Returns a pointer to the next entity in the authority changes list.
 	// After returning `*ViewElement` will point to that entity in the view or nullptr if it doesn't exist.
-	ReceivedEntityChange* ProcessEntityExistenceChange(ReceivedEntityChange* It, ReceivedEntityChange* End, EntityDelta& Delta,
-													   bool bAlreadyInView, EntityView& View);
+	FReceivedEntityChange* ProcessEntityExistenceChange(FReceivedEntityChange* It, FReceivedEntityChange* End, EntityDelta& Delta,
+														bool bAlreadyInView, EntityView& View);
 
 	TArray<EntityDelta> EntityDeltas;
 	TArray<AuthorityChange> AuthorityGainedForDelta;

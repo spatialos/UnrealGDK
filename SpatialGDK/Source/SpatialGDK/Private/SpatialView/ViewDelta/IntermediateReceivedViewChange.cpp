@@ -16,9 +16,9 @@ void FIntermediateReceivedViewChange::SetFromOpList(TArray<OpList> OpLists, cons
 		ExtractChangesFromOpList(Ops, View, ComponentSetData);
 	}
 
-	Algo::StableSort(ComponentChanges, EntityComponentComparison{});
-	Algo::StableSort(AuthorityChanges, EntityComponentComparison{});
-	Algo::StableSort(EntityChanges, EntityComparison{});
+	Algo::StableSort(ComponentChanges, FCompareByEntityComponent{});
+	Algo::StableSort(AuthorityChanges, FCompareByEntityComponent{});
+	Algo::StableSort(EntityChanges, FCompareByEntityId{});
 }
 
 void FIntermediateReceivedViewChange::Clear()
@@ -48,10 +48,10 @@ void FIntermediateReceivedViewChange::ExtractChangesFromOpList(const OpList& Ops
 			// Ignore critical sections.
 			break;
 		case WORKER_OP_TYPE_ADD_ENTITY:
-			EntityChanges.Push(ReceivedEntityChange{ Op.op.add_entity.entity_id, true });
+			EntityChanges.Push(FReceivedEntityChange{ Op.op.add_entity.entity_id, true });
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			EntityChanges.Push(ReceivedEntityChange{ Op.op.remove_entity.entity_id, false });
+			EntityChanges.Push(FReceivedEntityChange{ Op.op.remove_entity.entity_id, false });
 			break;
 		case WORKER_OP_TYPE_METRICS:
 		case WORKER_OP_TYPE_FLAG_UPDATE:
@@ -71,9 +71,9 @@ void FIntermediateReceivedViewChange::ExtractChangesFromOpList(const OpList& Ops
 			break;
 		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
 			GenerateComponentChangesFromSetData(Op.op.component_set_authority_change, View, ComponentSetData);
-			AuthorityChanges.Push(ReceivedAuthorityChange{ Op.op.component_set_authority_change.entity_id,
-														   Op.op.component_set_authority_change.component_set_id,
-														   static_cast<bool>(Op.op.component_set_authority_change.authority) });
+			AuthorityChanges.Push(FReceivedAuthorityChange{ Op.op.component_set_authority_change.entity_id,
+															Op.op.component_set_authority_change.component_set_id,
+															static_cast<bool>(Op.op.component_set_authority_change.authority) });
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			ComponentChanges.Emplace(Op.op.component_update);

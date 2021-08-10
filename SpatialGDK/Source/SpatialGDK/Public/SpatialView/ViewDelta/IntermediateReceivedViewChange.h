@@ -44,9 +44,9 @@ struct FIntermediateReceivedViewChange
 	// Resets all state to represent whatever is stored in `OpLists`. This has no preconditions.
 	void SetFromOpList(TArray<OpList> OpLists, const EntityView& View, const FComponentSetData& ComponentSetData);
 
-	TArray<ReceivedEntityChange> EntityChanges;
-	TArray<ReceivedComponentChange> ComponentChanges;
-	TArray<ReceivedAuthorityChange> AuthorityChanges;
+	TArray<FReceivedEntityChange> EntityChanges;
+	TArray<FReceivedComponentChange> ComponentChanges;
+	TArray<FReceivedAuthorityChange> AuthorityChanges;
 	TArray<Worker_Op> WorkerMessages;
 
 	uint8 ConnectionStatusCode = 0;
