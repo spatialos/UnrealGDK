@@ -78,6 +78,7 @@ void FActorSetSystem::Update(TLBDataStorage<ActorSetMember>& Data, TSet<Worker_E
 		{
 			if (auto* CurrentSet = ActorSets.Find(CurrentSetLeader))
 			{
+				// TODO : Should we reevaluate the set leader ?
 				CurrentSet->Remove(Deleted);
 				if (CurrentSet->Num() == 0)
 				{
