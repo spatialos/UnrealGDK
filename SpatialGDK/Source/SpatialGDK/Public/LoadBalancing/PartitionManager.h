@@ -27,10 +27,11 @@ public:
 	bool IsReady();
 
 	TOptional<Worker_PartitionId> GetPartitionId(FPartitionHandle);
-	FPartitionHandle CreatePartition(FString DisplayName, void* UserData, const SpatialGDK::QueryConstraint& Interest);
+	FPartitionHandle CreatePartition(FString DisplayName, void* UserData, const SpatialGDK::QueryConstraint& Interest,
+									 TArray<ComponentData> MetaData);
 	void SetPartitionInterest(FPartitionHandle Partition, const SpatialGDK::QueryConstraint& NewInterest);
 	void AssignPartitionTo(FPartitionHandle Partition, FLBWorkerHandle Worker);
-	void SetPartitionMetadata(FPartitionHandle /*???*/);
+	void UpdatePartitionMetadata(FPartitionHandle, TArray<ComponentUpdate>);
 
 	void AdvanceView(ISpatialOSWorker& Connection);
 	void Flush(ISpatialOSWorker& Connection);

@@ -56,6 +56,7 @@ public:
 		FSpatialGDKSpanId SpanId;
 	};
 	TArray<UpdateToSend> GetRPCsAndAcksToSend();
+	static TArray<Worker_ComponentId> GetRPCComponents();
 	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
 
 	void ClearPendingRPCs(Worker_EntityId EntityId);

@@ -94,15 +94,12 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessCustomActorProperties(TestActor_CustomEnabled, bWrite, bEnabled);
 		}
 
-		if (!bSpatialEnabled) // TODO: UNR-5212 - fix DOREPLIFETIME_ACTIVE_OVERRIDE replication
+		if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
+					   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
 		{
-			if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
-						   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
-			{
-				const bool bWrite = false;
-				const bool bEnabled = false;
-				ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
-			}
+			const bool bWrite = false;
+			const bool bEnabled = false;
+			ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
 		}
 
 		if (AssertTrue(TestActor_AutonomousOnly->AreAllDynamicComponentsValid(),
@@ -173,15 +170,12 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessCustomActorProperties(TestActor_CustomEnabled, bWrite, bEnabled);
 		}
 
-		if (!bSpatialEnabled) // TODO: UNR-5212 - fix DOREPLIFETIME_ACTIVE_OVERRIDE replication
+		if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
+					   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
 		{
-			if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
-						   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
-			{
-				const bool bWrite = false;
-				const bool bEnabled = false;
-				ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
-			}
+			const bool bWrite = false;
+			const bool bEnabled = false;
+			ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
 		}
 
 		if (AssertTrue(TestActor_AutonomousOnly->AreAllDynamicComponentsValid(),
@@ -256,15 +250,12 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessCustomActorProperties(TestActor_CustomEnabled, bWrite, bEnabled);
 		}
 
-		if (!bSpatialEnabled) // TODO: UNR-5212 - fix DOREPLIFETIME_ACTIVE_OVERRIDE replication
+		if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
+					   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
 		{
-			if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
-						   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
-			{
-				const bool bWrite = false;
-				const bool bEnabled = false;
-				ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
-			}
+			const bool bWrite = false;
+			const bool bEnabled = false;
+			ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
 		}
 
 		if (AssertTrue(TestActor_AutonomousOnly->AreAllDynamicComponentsValid(),
@@ -481,8 +472,8 @@ FString CondAsString(ELifetimeCondition Condition)
 	return ConditionName.ToString();
 }
 
-FString StaticCompText = TEXT(" on static component");
-FString DynamicCompText = TEXT(" on dynamic component");
+static FString StaticCompText = TEXT(" on static component");
+static FString DynamicCompText = TEXT(" on dynamic component");
 
 // This function encapsulates the logic for both writing to, and reading from (and asserting) the properties of TestActor_Common.
 // When bWrite is true, the Action lambda just writes the expected property values to the Actor.
@@ -558,17 +549,18 @@ void ASpatialTestReplicationConditions::ProcessCommonActorProperties(bool bWrite
 	WrappedAction(TestActor_Common->DynamicComponent->CondServerOnly_Var, 550, COND_ServerOnly, DynamicCompText);
 }
 
-void ASpatialTestReplicationConditions::ProcessCustomActorProperties(ATestReplicationConditionsActor_Custom* Actor, bool bWrite,
-																	 bool bCustomEnabled)
+void ASpatialTestReplicationConditions::ProcessCustomActorProperties(ATestReplicationConditionsActor_Custom* Actor, const bool bWrite,
+																	 const bool bCustomEnabled)
 {
-	auto WrappedAction = [&](int32& Source, int32 Expected, FString AdditionalText = TEXT("")) {
+	auto WrappedAction = [&](int32& Source, const bool bEnabled, const int32 Expected, const FString AdditionalText = TEXT("")) {
 		bool CondIgnore[COND_Max]{};
+		CondIgnore[COND_Custom] = !bEnabled;
 		Action(Source, Expected, COND_Custom, bWrite, CondIgnore, AdditionalText);
 	};
 
-	WrappedAction(Actor->CondCustom_Var, bCustomEnabled ? 1010 : 2010);
-	WrappedAction(Actor->StaticComponent->CondCustom_Var, bCustomEnabled ? 1020 : 2020, StaticCompText);
-	WrappedAction(Actor->DynamicComponent->CondCustom_Var, bCustomEnabled ? 1030 : 2030, DynamicCompText);
+	WrappedAction(Actor->CondCustom_Var, bCustomEnabled, bCustomEnabled ? 1010 : 2010);
+	WrappedAction(Actor->StaticComponent->CondCustom_Var, bCustomEnabled, bCustomEnabled ? 1020 : 2020, StaticCompText);
+	WrappedAction(Actor->DynamicComponent->CondCustom_Var, bCustomEnabled, bCustomEnabled ? 1030 : 2030, DynamicCompText);
 }
 
 void ASpatialTestReplicationConditions::ProcessAutonomousOnlyActorProperties(bool bWrite, bool bAutonomousExpected, bool bSimulatedExpected)

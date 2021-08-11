@@ -935,6 +935,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "actor_group_member.schema",
 										   "actor_set_member.schema",
 										   "actor_ownership.schema",
+										   "skeleton_entity.schema",
 										   "spawndata.schema",
 										   "spawner.schema",
 										   "tombstone.schema",
@@ -1112,11 +1113,12 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	TestTrue("Schema compiler run successful",
 			 SpatialGDKEditor::Schema::RunSchemaCompiler(SchemaJsonPath, SchemaFolder, SchemaBuildFolder));
 
-	TestTrue("Schema bundle file successfully read", SpatialGDKEditor::Schema::ExtractInformationFromSchemaJson(
-														 SchemaJsonPath, SchemaDatabase->ComponentSetIdToComponentIds,
-														 SchemaDatabase->ComponentIdToFieldIdsIndex, SchemaDatabase->FieldIdsArray));
+	TestTrue("Schema bundle file successfully read",
+			 SpatialGDKEditor::Schema::ExtractInformationFromSchemaJson(SchemaJsonPath, SchemaDatabase->ComponentSetIdToComponentIds,
+																		SchemaDatabase->ComponentIdToFieldIdsIndex,
+																		SchemaDatabase->FieldIdsArray, SchemaDatabase->ListIdsArray));
 
-	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 13);
+	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 14);
 
 	TestTrue("Found spatial well known components",
 			 SchemaDatabase->ComponentSetIdToComponentIds.Contains(SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID));

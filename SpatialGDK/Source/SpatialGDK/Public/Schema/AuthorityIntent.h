@@ -16,7 +16,7 @@ namespace SpatialGDK
 // VirtualWorkerId set here doesn't match the worker's Id.
 struct AuthorityIntent : AbstractMutableComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
 
 	AuthorityIntent()
 		: VirtualWorkerId(SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID)
@@ -79,7 +79,7 @@ struct AuthorityIntent : AbstractMutableComponent
 
 struct AuthorityIntentV2
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENTV2_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENTV2_COMPONENT_ID;
 
 	AuthorityIntentV2() {}
 
@@ -142,7 +142,7 @@ struct AuthorityIntentV2
 
 struct AuthorityIntentACK
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID;
 
 	AuthorityIntentACK() {}
 

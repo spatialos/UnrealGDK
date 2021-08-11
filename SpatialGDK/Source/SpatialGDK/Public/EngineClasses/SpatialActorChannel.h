@@ -249,13 +249,15 @@ public:
 
 	FRepChangeState CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object);
 
-	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
-	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-								  const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
+	FObjectReplicator* GetObjectReplicatorForSpatialUpdate(UObject* TargetObject);
+	void InvokeRepNotifies(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+						   const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
-											 const FObjectReferencesMap& RefMap, UObject* Object);
+											 const FObjectReferencesMap& RefMap, const UObject* Object) const;
 
+	Worker_ComponentId GetInterestComponentId() const;
+	void OnHandoverAuthorityGained();
 	void UpdateShadowData();
 	void UpdateSpatialPosition();
 	void ForcePositionReplication() { TimeWhenPositionLastUpdated = 0; }
@@ -276,6 +278,8 @@ public:
 
 	bool NeedOwnerInterestUpdate() const { return bNeedOwnerInterestUpdate; }
 
+	const FVector& GetLastUpdatedSpatialPosition() const { return LastPositionSinceUpdate; }
+
 protected:
 	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
@@ -290,7 +294,7 @@ private:
 
 	void UpdateVisibleComponent(AActor* Actor);
 
-	bool SatisfiesSpatialPositionUpdateRequirements() const;
+	bool SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition) const;
 
 	void ValidateChannelNotBroken();
 

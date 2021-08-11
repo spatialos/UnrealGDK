@@ -181,6 +181,25 @@ void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealOb
 	{
 		SpatialGuidCache->AssignNewSubobjectNetGUID(Object, ObjectRef);
 	}
+	else
+	{
+		// Sanity check consistency between SpatialGuidCache and native's GuidCache, as it would be pretty bad if they were out of sync.
+		const FNetworkGUID ObjectNetGUID = GetNetGUIDFromObject(Object);
+		if (!ObjectNetGUID.IsValid())
+		{
+			// TODO UNR-5844: Remove this workaround if we have not seen this ensure triggered.
+			ensureAlwaysMsgf(
+				false,
+				TEXT("SpatialGuidCache has a NetGUID mapping which native's GuidCache does not have for object: %s with NetGUID: %u. "
+					 "Removing existing mapping from SpatialGuidCache and recreating."),
+				*Object->GetName(), NetGUID.Value);
+
+			RemoveSubobject(ObjectRef);
+			SpatialGuidCache->AssignNewSubobjectNetGUID(Object, ObjectRef);
+		}
+	}
+
+	SlowCheckMapsConsistency(Object);
 }
 
 void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
@@ -386,6 +405,14 @@ Worker_EntityId USpatialPackageMapClient::AllocateNewEntityId() const
 	return EntityPool->GetNextEntityId();
 }
 
+void USpatialPackageMapClient::SlowCheckMapsConsistency(const UObject* Object) const
+{
+#if DO_GUARD_SLOW
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	SpatialGuidCache->SlowCheckMapsConsistency(Object);
+#endif
+}
+
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 	: FNetGUIDCache(InDriver)
 {
@@ -421,11 +448,15 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 		// and then register the entity id ref.
 		StablyNamedRef = NetGUIDToUnrealObjectRef[NetGUID];
 		NetGUIDToUnrealObjectRef.Emplace(NetGUID, EntityObjectRef);
+
+		SlowCheckMapsConsistency(Actor);
 	}
 	else
 	{
 		NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
 		RegisterObjectRef(NetGUID, EntityObjectRef);
+
+		SlowCheckMapsConsistency(Actor);
 	}
 
 	UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"), *Actor->GetName(),
@@ -472,6 +503,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 		UE_LOG(LogSpatialPackageMap, Verbose,
 			   TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"), *Subobject->GetName(),
 			   *Actor->GetName(), *SubobjectNetGUID.ToString(), *EntityIdSubobjectRef.ToString());
+
+		SlowCheckMapsConsistency(Subobject);
 	}
 
 	return NetGUID;
@@ -481,6 +514,8 @@ void FSpatialNetGUIDCache::AssignNewSubobjectNetGUID(UObject* Subobject, const F
 {
 	FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
 	RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
+
+	SlowCheckMapsConsistency(Subobject);
 }
 
 // Recursively assign netguids to the outer chain of a UObject. Then associate them with their Spatial representation (FUnrealObjectRef)
@@ -518,6 +553,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(UObject* Ob
 		0, 0, Object->GetFName().ToString(),
 		(OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : FUnrealObjectRef(), bNoLoadOnClient);
 	RegisterObjectRef(NetGUID, StablyNamedObjRef);
+
+	SlowCheckMapsConsistency(Object);
 
 	return NetGUID;
 }
@@ -570,33 +607,38 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 		}
 	}
 
-	// Remove dynamically attached subobjects
+	// Remove dynamic subobjects and objects replicated on the actorchannel.
 	if (USpatialActorChannel* Channel = SpatialNetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		for (UObject* DynamicSubobject : Channel->CreateSubObjects)
+		for (const auto& ObjReplicatorPair : Channel->ReplicationMap)
 		{
-			if (FNetworkGUID* SubobjectNetGUID = NetGUIDLookup.Find(DynamicSubobject))
+			if (FNetworkGUID* ObjectNetGUID = NetGUIDLookup.Find(ObjReplicatorPair.Value->GetWeakObjectPtr()))
 			{
-				if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*SubobjectNetGUID))
+				if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*ObjectNetGUID))
 				{
 					UnrealObjectRefToNetGUID.Remove(*SubobjectRef);
-					NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
+					NetGUIDToUnrealObjectRef.Remove(*ObjectNetGUID);
 				}
 			}
 		}
 	}
 
-	// Remove actor.
+	// Remove actor mappings.
 	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
-	// TODO: Figure out why NetGUIDToUnrealObjectRef might not have this GUID. UNR-989
-	if (FUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID))
+	if (EntityNetGUID.IsValid())
 	{
-		UnrealObjectRefToNetGUID.Remove(*ActorRef);
-	}
-	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
-	if (StablyNamedRefOption.IsSet())
-	{
-		UnrealObjectRefToNetGUID.Remove(StablyNamedRefOption.GetValue());
+		// This may have already been removed by the code removing items replicated on the ActorChannel.
+
+		// TODO: Figure out why NetGUIDToUnrealObjectRef might not have this GUID. UNR-989
+		if (FUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID))
+		{
+			UnrealObjectRefToNetGUID.Remove(*ActorRef);
+		}
+		NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
+		if (StablyNamedRefOption.IsSet())
+		{
+			UnrealObjectRefToNetGUID.Remove(StablyNamedRefOption.GetValue());
+		}
 	}
 }
 
@@ -625,8 +667,7 @@ void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& Subobj
 
 	if (UnrealMetadata->NativeClass.IsStale())
 	{
-		UE_LOG(LogSpatialPackageMap, Log, TEXT("Attempting to remove stale subobject from package map - %s"),
-			   *UnrealMetadata->ClassPath);
+		UE_LOG(LogSpatialPackageMap, Log, TEXT("Attempting to remove stale subobject from package map - %s"), *UnrealMetadata->ClassPath);
 	}
 	else
 	{
@@ -831,4 +872,42 @@ void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const FUnreal
 		*UnrealObjectRefToNetGUID.FindChecked(RemappedObjectRef).ToString(), *RemappedObjectRef.ToString());
 	NetGUIDToUnrealObjectRef.Emplace(NetGUID, RemappedObjectRef);
 	UnrealObjectRefToNetGUID.Emplace(RemappedObjectRef, NetGUID);
+}
+
+void FSpatialNetGUIDCache::SlowCheckMapsConsistency(const UObject* Object) const
+{
+#if DO_GUARD_SLOW
+	const FNetworkGUID ObjectNetGUID = GetNetGUID(Object);
+	const FUnrealObjectRef ObjectRef = GetUnrealObjectRefFromNetGUID(ObjectNetGUID);
+	const FNetworkGUID ObjectRefNetGUID = UnrealObjectRefToNetGUID.FindRef(ObjectRef);
+
+	ensureAlwaysMsgf(ObjectNetGUID == ObjectRefNetGUID,
+					 TEXT("NetGUID inconsistency between SpatialNetGuidCache and native's NetGuidCache. Object: %s, ObjectNetGUID: %u, "
+						  "ObjectRefNetGUID: %u"),
+					 *GetNameSafe(Object), ObjectNetGUID.Value, ObjectRefNetGUID.Value);
+
+	if (!IsValid(Object))
+	{
+		ensureAlwaysMsgf(!ObjectNetGUID.IsValid(), TEXT("Object is not valid but has a valid ObjectNetGUID. Object: %s, ObjectNetGUID: %u"),
+						 *GetNameSafe(Object), ObjectNetGUID.Value);
+		ensureAlwaysMsgf(!ObjectRefNetGUID.IsValid(),
+						 TEXT("Object is not valid but has a valid ObjectRefNetGUID. Object: %s, ObjectRefNetGUID: %u"),
+						 *GetNameSafe(Object), ObjectRefNetGUID.Value);
+		ensureAlwaysMsgf(ObjectRef.Entity == SpatialConstants::INVALID_ENTITY_ID,
+						 TEXT("Object is not valid but has a valid ObjectRef Entity ID. Object: %s, EntityId: %lld, Offset: %u"),
+						 *GetNameSafe(Object), ObjectRef.Entity, ObjectRef.Offset);
+	}
+	else
+	{
+		ensureAlwaysMsgf(ObjectNetGUID.IsValid(), TEXT("Object is valid but has an invalid ObjectNetGUID. Object: %s, ObjectNetGUID: %u"),
+						 *Object->GetName(), ObjectNetGUID.Value);
+		ensureAlwaysMsgf(ObjectRefNetGUID.IsValid(),
+						 TEXT("Object is valid but has an invalid ObjRefNetGUID. Object: %s, ObjectRefNetGUID: %u"), *Object->GetName(),
+						 ObjectRefNetGUID.Value);
+		ensureAlwaysMsgf(
+			ObjectRef.Entity != SpatialConstants::INVALID_ENTITY_ID || ObjectRef.Path.IsSet(),
+			TEXT("Object is valid but has an ObjectRef with an invalid Entity ID and no set Path. Object: %s, EntityId: %lld, offset: %u"),
+			*Object->GetName(), ObjectRef.Entity, ObjectRef.Offset);
+	}
+#endif
 }

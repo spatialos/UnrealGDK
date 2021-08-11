@@ -1,7 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "LoadBalancing/PartitionManager.h"
+
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "Interop/SpatialCommandsHandler.h"
+#include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/PartitionManager.h"
 #include "Schema/ServerWorker.h"
 #include "Schema/StandardLibrary.h"
@@ -9,8 +12,7 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
 
-#include "Interop/CreateEntityHandler.h"
-#include "Interop/ReserveEntityIdsHandler.h"
+#include "Algo/Find.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPartitionManager);
 
@@ -20,6 +22,9 @@ struct FPartitionInternalState
 {
 	Worker_PartitionId Id = 0;
 	QueryConstraint LBConstraint;
+	TSet<Worker_ComponentId> CurrentMetadataComponents;
+	TArray<ComponentData> PendingMetadataCreation;
+	TArray<ComponentUpdate> PendingMetadataUpdates;
 
 	TOptional<Worker_RequestId> CreationRequest;
 	TOptional<Worker_RequestId> AssignmentRequest;
@@ -72,87 +77,16 @@ struct FPartitionManager::Impl
 		, PartitionView(Coordinator.CreateSubView(SpatialConstants::PARTITION_ACK_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
 												  SpatialGDK::FSubView::NoDispatcherCallbacks))
 		, InterestF(MoveTemp(InInterestF))
+		, WorkersDispatcher(WorkerView)
+		, SystemWorkersDispatcher(SystemWorkerView)
 	{
+		WorkersDispatcher.DataStorages.Add(&WorkersData);
+		SystemWorkersDispatcher.DataStorages.Add(&SystemWorkersData);
 	}
 
 	void AdvanceView(ISpatialOSWorker& Connection)
 	{
-		const TArray<Worker_Op>& Messages = Connection.GetWorkerMessages();
-
-		for (const auto& Message : Messages)
-		{
-			switch (Message.op_type)
-			{
-			case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			{
-				const Worker_CreateEntityResponseOp& Op = Message.op.create_entity_response;
-				if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-				{
-					UE_LOG(LogSpatialPartitionManager, Error, TEXT("Partition entity creation failed: \"%s\". Entity: %lld."),
-						   UTF8_TO_TCHAR(Op.message), Op.entity_id);
-				}
-				else
-				{
-					FPartitionHandle* Partition = PartitionCreationRequests.Find(Op.request_id);
-					if (Partition && Partitions.Contains(*Partition))
-					{
-						(*Partition)->State->CreationRequest.Reset();
-						(*Partition)->State->bPartitionCreated = true;
-
-						PartitionCreationRequests.Remove(Op.request_id);
-					}
-				}
-
-				break;
-			}
-			case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-			{
-				const Worker_ReserveEntityIdsResponseOp& Op = Message.op.reserve_entity_ids_response;
-
-				if (PartitionReserveRequest.IsSet() && PartitionReserveRequest.GetValue() == Op.request_id)
-				{
-					PartitionReserveRequest.Reset();
-					if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-					{
-						UE_LOG(LogSpatialPartitionManager, Error, TEXT("Reserve partition Id failed : %s"), UTF8_TO_TCHAR(Op.message));
-					}
-					else
-					{
-						FirstPartitionId = Op.first_entity_id;
-						CurPartitionId = FirstPartitionId;
-					}
-				}
-				break;
-			}
-			case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			{
-				const Worker_CommandResponseOp& Op = Message.op.command_response;
-				if (StrategyWorkerRequest.IsSet() && Op.request_id == StrategyWorkerRequest.GetValue())
-				{
-					if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-					{
-						UE_LOG(LogSpatialPartitionManager, Error, TEXT("Claim Strategy partition failed : %s"), UTF8_TO_TCHAR(Op.message));
-					}
-					StrategyWorkerRequest.Reset();
-				}
-				for (auto Partition : Partitions)
-				{
-					FPartitionInternalState& State = *Partition->State;
-					if (State.AssignmentRequest.IsSet() && State.AssignmentRequest.GetValue() == Op.request_id)
-					{
-						if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-						{
-							UE_LOG(LogSpatialPartitionManager, Error, TEXT("Claim partition %llu failed : %s"), State.Id,
-								   UTF8_TO_TCHAR(Op.message));
-						}
-						State.CurrentAssignment = State.RequestedAssignment;
-						State.AssignmentRequest.Reset();
-					}
-				}
-			}
-			break;
-			}
-		}
+		CommandsHandler.ProcessOps(Connection.GetWorkerMessages());
 
 		for (const EntityDelta& Delta : PartitionView.GetViewDelta().EntityDeltas)
 		{
@@ -216,102 +150,49 @@ struct FPartitionManager::Impl
 			}
 		}
 
-		for (const EntityDelta& Delta : WorkerView.GetViewDelta().EntityDeltas)
+		WorkersDispatcher.Advance();
+		SystemWorkersDispatcher.Advance();
+
+		TSet<Worker_EntityId_Key> WorkersToInspect = WorkersData.GetModifiedEntities();
+		const TSet<Worker_EntityId_Key>& SystemWorkerModified = SystemWorkersData.GetModifiedEntities();
+		if (SystemWorkerModified.Num() != 0)
 		{
-			switch (Delta.Type)
+			for (const auto& Entry : WorkersData.GetObjects())
 			{
-			case EntityDelta::UPDATE:
-			{
-				ServerWorker& ServerWorkerData = WorkersData.FindChecked(Delta.EntityId);
-				bool bWasReady = ServerWorkerData.bReadyToBeginPlay;
-				for (const auto& CompleteUpdate : Delta.ComponentsRefreshed)
+				if (SystemWorkerModified.Contains(Entry.Value.SystemEntityId))
 				{
-					if (CompleteUpdate.ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
-					{
-						ServerWorkerData = ServerWorker(CompleteUpdate.Data);
-					}
+					WorkersToInspect.Add(Entry.Key);
 				}
-				for (const auto& Update : Delta.ComponentUpdates)
-				{
-					if (Update.ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
-					{
-						ServerWorkerData.ApplyComponentUpdate(Update.Update);
-					}
-				}
-				if (!bWasReady && ServerWorkerData.bReadyToBeginPlay)
-				{
-					WorkerConnected(Delta.EntityId);
-				}
-			}
-			break;
-			case EntityDelta::ADD:
-			{
-				const EntityViewElement& WorkerDesc = WorkerView.GetView().FindChecked(Delta.EntityId);
-				for (const auto& Component : WorkerDesc.Components)
-				{
-					if (Component.GetComponentId() == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
-					{
-						ServerWorker& ServerWorkerData = WorkersData.Add(Delta.EntityId, ServerWorker(Component.GetUnderlying()));
-						if (ServerWorkerData.bReadyToBeginPlay)
-						{
-							WorkerConnected(Delta.EntityId);
-						}
-					}
-				}
-			}
-			break;
-			case EntityDelta::REMOVE:
-			{
-				WorkersData.Remove(Delta.EntityId);
-			}
-			case EntityDelta::TEMPORARILY_REMOVED:
-			{
-			}
-			break;
-			default:
-				break;
 			}
 		}
 
-		for (const EntityDelta& Delta : SystemWorkerView.GetViewDelta().EntityDeltas)
+		for (Worker_EntityId UpdatedWorker : WorkersToInspect)
 		{
-			switch (Delta.Type)
+			const ServerWorker& ServerWorkerData = WorkersData.GetObjects().FindChecked(UpdatedWorker);
+			if (ServerWorkerData.bReadyToBeginPlay)
 			{
-			case EntityDelta::ADD:
-			{
-				const EntityViewElement& WorkerDesc = SystemWorkerView.GetView().FindChecked(Delta.EntityId);
-				for (const auto& Component : WorkerDesc.Components)
+				FLBWorkerHandle* AlreadyConnectedWorker =
+					Algo::FindByPredicate(ConnectedWorkers, [&UpdatedWorker](const FLBWorkerHandle& Connected) {
+						return Connected->State->ServerWorkerId == UpdatedWorker;
+					});
+				if (AlreadyConnectedWorker == nullptr)
 				{
-					if (Component.GetComponentId() == SpatialConstants::WORKER_COMPONENT_ID)
+					if (SystemWorkersData.GetObjects().Contains(ServerWorkerData.SystemEntityId))
 					{
-						Worker_ComponentData temp;
-						temp.component_id = SpatialConstants::WORKER_COMPONENT_ID;
-						temp.schema_type = Component.GetUnderlying();
-						SystemWorkersData.Add(Delta.EntityId, Worker(temp));
+						WorkerConnected(UpdatedWorker);
 					}
 				}
 			}
-			break;
-			case EntityDelta::REMOVE:
-			{
-				SystemWorkersData.Remove(Delta.EntityId);
-				// TODO : Disconnect
-			}
-			case EntityDelta::TEMPORARILY_REMOVED:
-			{
-			}
-			break;
-			default:
-				break;
-			}
 		}
+		WorkersData.ClearModified();
+		SystemWorkersData.ClearModified();
 	}
 
 	void WorkerConnected(Worker_EntityId ServerWorkerEntityId)
 	{
-		const ServerWorker& ServerWorkerData = WorkersData.FindChecked(ServerWorkerEntityId);
+		const ServerWorker& ServerWorkerData = WorkersData.GetObjects().FindChecked(ServerWorkerEntityId);
 		Worker_EntityId SysEntityId = ServerWorkerData.SystemEntityId;
-		const Worker& SystemWorkerData = SystemWorkersData.FindChecked(SysEntityId);
+		const Worker& SystemWorkerData = SystemWorkersData.GetObjects().FindChecked(SysEntityId);
 
 		FLBWorkerHandle ConnectedWorker = MakeShared<FLBWorkerDesc>(FName(SystemWorkerData.WorkerType));
 		ConnectedWorker->State = MakeUnique<FLBWorkerInternalState>();
@@ -324,21 +205,38 @@ struct FPartitionManager::Impl
 		ConnectedWorkersThisFrame.Add(ConnectedWorker);
 	}
 
-	void Flush(ISpatialOSWorker& Connection)
+	bool WaitForPartitionIdAvailable(ISpatialOSWorker& Connection)
 	{
-		// Wait for the initial entityId reservation query to land
-		if (FirstPartitionId == 0)
-		{
-			return;
-		}
-
 		// Ask for more ids if we run out.
-		if (CurPartitionId == FirstPartitionId + k_PartitionsReserveRange)
+		if (FirstPartitionId == 0
+		|| CurPartitionId >= FirstPartitionId + k_PartitionsReserveRange)
 		{
 			if (!PartitionReserveRequest.IsSet())
 			{
 				PartitionReserveRequest = Connection.SendReserveEntityIdsRequest(Impl::k_PartitionsReserveRange, RETRY_UNTIL_COMPLETE);
+				CommandsHandler.AddRequest(*PartitionReserveRequest, [this](const Worker_ReserveEntityIdsResponseOp& Op)
+				{
+					PartitionReserveRequest.Reset();
+					if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+					{
+						UE_LOG(LogSpatialPartitionManager, Error, TEXT("Reserve partition Id failed : %s"), UTF8_TO_TCHAR(Op.message));
+					}
+					else
+					{
+						FirstPartitionId = Op.first_entity_id;
+						CurPartitionId = FirstPartitionId;
+					}
+				});
 			}
+			return true;
+		}
+		return false;
+	}
+
+	void Flush(ISpatialOSWorker& Connection)
+	{
+		if (WaitForPartitionIdAvailable(Connection))
+		{
 			return;
 		}
 
@@ -355,14 +253,53 @@ struct FPartitionManager::Impl
 					TArray<ComponentData> Components =
 						CreatePartitionEntityComponents(PartitionState.DisplayName, PartitionState.Id, PartitionState.LBConstraint);
 
+					for (auto& InitialComponent : PartitionState.PendingMetadataCreation)
+					{
+						PartitionState.CurrentMetadataComponents.Add(InitialComponent.GetComponentId());
+						Components.Add(MoveTemp(InitialComponent));
+					}
+					PartitionState.PendingMetadataCreation.Empty();
+
 					Worker_EntityId PartitionEntity = PartitionState.Id;
 					const Worker_RequestId RequestId =
 						Connection.SendCreateEntityRequest(MoveTemp(Components), PartitionEntity, SpatialGDK::RETRY_UNTIL_COMPLETE);
 					PartitionState.CreationRequest = RequestId;
 					PartitionCreationRequests.Add(RequestId, PartitionEntry);
+					CommandsHandler.AddRequest(RequestId, [this](const Worker_CreateEntityResponseOp& Op)
+					{
+						if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+						{
+							UE_LOG(LogSpatialPartitionManager, Error, TEXT("Partition entity creation failed: \"%s\". Entity: %lld."),
+								UTF8_TO_TCHAR(Op.message), Op.entity_id);
+						}
+						else
+						{
+							FPartitionHandle* Partition = PartitionCreationRequests.Find(Op.request_id);
+							if (Partition && Partitions.Contains(*Partition))
+							{
+								(*Partition)->State->CreationRequest.Reset();
+								(*Partition)->State->bPartitionCreated = true;
+
+								PartitionCreationRequests.Remove(Op.request_id);
+							}
+						}
+					});
 				}
 				continue;
 			}
+
+			for (auto& NewComponent : PartitionState.PendingMetadataCreation)
+			{
+				PartitionState.CurrentMetadataComponents.Add(NewComponent.GetComponentId());
+				Connection.SendAddComponent(PartitionState.Id, MoveTemp(NewComponent));
+			}
+			PartitionState.PendingMetadataCreation.Empty();
+
+			for (auto& Update : PartitionState.PendingMetadataUpdates)
+			{
+				Connection.SendComponentUpdate(PartitionState.Id, MoveTemp(Update));
+			}
+			PartitionState.PendingMetadataUpdates.Empty();
 
 			if (PartitionState.UserAssignment != PartitionState.CurrentAssignment)
 			{
@@ -373,11 +310,26 @@ struct FPartitionManager::Impl
 						Worker_EntityId SystemWorkerEntityId = PartitionState.UserAssignment->State->SystemWorkerId;
 
 						PartitionState.RequestedAssignment = PartitionState.UserAssignment;
-						PartitionState.AssignmentRequest = Connection.SendEntityCommandRequest(
-							SystemWorkerEntityId, CreateClaimPartitionRequest(PartitionState.Id), SpatialGDK::RETRY_UNTIL_COMPLETE, {});
+						PartitionState.AssignmentRequest = CommandsHandler.ClaimPartition(Connection, SystemWorkerEntityId, PartitionState.Id,
+						[this, PartitionEntry](const Worker_CommandResponseOp& Op)
+						{
+							if(Partitions.Contains(PartitionEntry))
+							{ 
+								FPartitionInternalState& State = *PartitionEntry->State;
+								if (State.AssignmentRequest.IsSet() && State.AssignmentRequest.GetValue() == Op.request_id)
+								{
+									if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+									{
+										UE_LOG(LogSpatialPartitionManager, Error, TEXT("Claim partition %llu failed : %s"), State.Id,
+											UTF8_TO_TCHAR(Op.message));
+									}
+									State.CurrentAssignment = State.RequestedAssignment;
+									State.AssignmentRequest.Reset();
+								}
+							}
+						});
 					}
 				}
-				continue;
 			}
 		}
 	}
@@ -396,7 +348,8 @@ struct FPartitionManager::Impl
 														  const QueryConstraint& LBConstraint)
 	{
 		AuthorityDelegationMap DelegationMap;
-		DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
+		DelegationMap.Add(SpatialConstants::PARTITION_METADATA_AUTH_COMPONENT_SET_ID,
+						  SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
 		DelegationMap.Add(SpatialConstants::PARTITION_WORKER_AUTH_COMPONENT_SET_ID, EntityId);
 
 		TArray<Worker_ComponentData> Components;
@@ -426,26 +379,34 @@ struct FPartitionManager::Impl
 	const FSubView& WorkerView;
 	const FSubView& SystemWorkerView;
 	const FSubView& PartitionView;
+
 	TUniquePtr<InterestFactory> InterestF;
 
 	Worker_EntityId StrategyWorkerEntityId = 0;
 	TOptional<Worker_RequestId> StrategyWorkerRequest;
+	FCommandsHandler CommandsHandler;
+
+	// +++ Partition management data +++
+	Worker_EntityId FirstPartitionId = 0;
+	Worker_EntityId CurPartitionId = 0;
 
 	TMap<Worker_RequestId_Key, FPartitionHandle> PartitionCreationRequests;
-	TOptional<Worker_RequestId> PartitionReserveRequest = 0;
+	TOptional<Worker_RequestId> PartitionReserveRequest;
 
 	TMap<Worker_EntityId_Key, FPartitionHandle> IdToPartitionsMap;
 	TSet<FPartitionHandle> Partitions;
+	// --- Partition management data ---
 
-	TMap<Worker_EntityId_Key, ServerWorker> WorkersData;
-	TMap<Worker_EntityId_Key, Worker> SystemWorkersData;
-
-	Worker_EntityId FirstPartitionId = 0;
-	Worker_EntityId CurPartitionId = 0;
+	// +++ Server worker management data +++
+	TLBDataStorage<ServerWorker> WorkersData;
+	TLBDataStorage<Worker> SystemWorkersData;
+	FLBDataCollection WorkersDispatcher;
+	FLBDataCollection SystemWorkersDispatcher;
 
 	TSet<FLBWorkerHandle> ConnectedWorkers;
 	TArray<FLBWorkerHandle> ConnectedWorkersThisFrame;
 	TArray<FLBWorkerHandle> DisconnectedWorkersThisFrame;
+	// --- Server worker management data ---
 };
 
 FPartitionManager::~FPartitionManager() = default;
@@ -459,11 +420,18 @@ FPartitionManager::FPartitionManager(Worker_EntityId InStrategyWorkerEntityId, V
 
 void FPartitionManager::Init(ISpatialOSWorker& Connection)
 {
-	m_Impl->StrategyWorkerRequest = Connection.SendEntityCommandRequest(
-		m_Impl->StrategyWorkerEntityId, CreateClaimPartitionRequest(SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID),
-		SpatialGDK::RETRY_UNTIL_COMPLETE, {});
+	m_Impl->StrategyWorkerRequest =  m_Impl->CommandsHandler.ClaimPartition(Connection, 
+		m_Impl->StrategyWorkerEntityId, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID,
+		[this](const Worker_CommandResponseOp& Op)
+		{
+			if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+			{
+				UE_LOG(LogSpatialPartitionManager, Error, TEXT("Claim Strategy partition failed : %s"), UTF8_TO_TCHAR(Op.message));
+			}
+			m_Impl->StrategyWorkerRequest.Reset();
+		});
 
-	m_Impl->PartitionReserveRequest = Connection.SendReserveEntityIdsRequest(Impl::k_PartitionsReserveRange, RETRY_UNTIL_COMPLETE);
+	m_Impl->WaitForPartitionIdAvailable(Connection);
 }
 
 bool FPartitionManager::IsReady()
@@ -485,13 +453,15 @@ TOptional<Worker_PartitionId> FPartitionManager::GetPartitionId(FPartitionHandle
 	return PartitionState.Id;
 }
 
-FPartitionHandle FPartitionManager::CreatePartition(FString DisplayName, void* UserData, const QueryConstraint& Interest)
+FPartitionHandle FPartitionManager::CreatePartition(FString DisplayName, void* UserData, const QueryConstraint& Interest,
+													TArray<ComponentData> MetaData)
 {
 	FPartitionHandle NewPartition = MakeShared<FPartitionDesc>();
 	NewPartition->State = MakeUnique<FPartitionInternalState>();
 	NewPartition->State->UserData = UserData;
 	NewPartition->State->LBConstraint = Interest;
 	NewPartition->State->DisplayName = MoveTemp(DisplayName);
+	NewPartition->State->PendingMetadataCreation = MoveTemp(MetaData);
 
 	m_Impl->Partitions.Add(NewPartition);
 
@@ -520,13 +490,33 @@ void FPartitionManager::AssignPartitionTo(FPartitionHandle Partition, FLBWorkerH
 	PartitionState.UserAssignment = Worker;
 }
 
-void FPartitionManager::SetPartitionMetadata(FPartitionHandle Partition)
+void FPartitionManager::UpdatePartitionMetadata(FPartitionHandle Partition, TArray<ComponentUpdate> Updates)
 {
 	if (!m_Impl->Partitions.Contains(Partition))
 	{
 		return;
 	}
-	// Later
+
+	FPartitionInternalState& PartitionState = *Partition->State;
+	for (auto& Update : Updates)
+	{
+		// Disallow adding new components on the fly for now.
+		if (ensureAlways(PartitionState.CurrentMetadataComponents.Contains(Update.GetComponentId())))
+		{
+			ComponentUpdate* PendingUpdate =
+				PartitionState.PendingMetadataUpdates.FindByPredicate([&Update](const ComponentUpdate& QueuedUpdate) {
+					return QueuedUpdate.GetComponentId() == Update.GetComponentId();
+				});
+			if (PendingUpdate != nullptr)
+			{
+				PendingUpdate->Merge(MoveTemp(Update));
+			}
+			else
+			{
+				PartitionState.PendingMetadataUpdates.Add(MoveTemp(Update));
+			}
+		}
+	}
 }
 
 void FPartitionManager::AdvanceView(ISpatialOSWorker& Connection)

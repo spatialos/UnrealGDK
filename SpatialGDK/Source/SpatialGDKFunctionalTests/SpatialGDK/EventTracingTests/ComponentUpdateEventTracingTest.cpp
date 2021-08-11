@@ -19,6 +19,4 @@ void AComponentUpdateEventTracingTest::FinishEventTraceTest()
 	AssertTrue(bSuccess,
 			   FString::Printf(TEXT("Component update trace events have the expected causes. Events Tested: %d, Events Failed: %d"),
 							   Test.NumTested, Test.NumFailed));
-
-	FinishStep();
 }

@@ -34,10 +34,6 @@ void WellKnownEntitySystem::Advance()
 			{
 				ProcessComponentUpdate(Change.ComponentId, Change.Update);
 			}
-			for (const ComponentChange& Change : Delta.ComponentsAdded)
-			{
-				ProcessComponentAdd(Change.ComponentId, Change.Data);
-			}
 			for (const AuthorityChange& Change : Delta.AuthorityGained)
 			{
 				ProcessAuthorityGain(Delta.EntityId, Change.ComponentSetId);
@@ -62,15 +58,6 @@ void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId Comp
 {
 	switch (ComponentId)
 	{
-	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(Schema_GetComponentUpdateFields(Update));
-		break;
-	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-		GlobalStateManager->ApplyDeploymentMapUpdate(Update);
-		break;
-	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplyStartupActorManagerUpdate(Update);
-		break;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 #if WITH_EDITOR
 		GlobalStateManager->OnShutdownComponentUpdate(Update);
@@ -81,72 +68,21 @@ void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId Comp
 	}
 }
 
-void WellKnownEntitySystem::ProcessComponentAdd(const Worker_ComponentId ComponentId, Schema_ComponentData* Data)
-{
-	switch (ComponentId)
-	{
-	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(Schema_GetComponentDataFields(Data));
-		break;
-	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-		GlobalStateManager->ApplyDeploymentMapData(Data);
-		break;
-	case SpatialConstants::SNAPSHOT_VERSION_COMPONENT_ID:
-		GlobalStateManager->ApplySnapshotVersionData(Data);
-		break;
-	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplyStartupActorManagerData(Data);
-		break;
-	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
-		MaybeClaimSnapshotPartition();
-		break;
-	default:
-		break;
-	}
-}
-
 void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
-	GlobalStateManager->AuthorityChanged({ EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });
-
-	if (SubView->GetView()[EntityId].Components.ContainsByPredicate(
-			SpatialGDK::ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID }))
-	{
-		GlobalStateManager->WorkerEntityReady();
-		GlobalStateManager->TrySendWorkerReadyToBeginPlay();
-	}
-
 	if (SubView->GetView()[EntityId].Components.ContainsByPredicate(
 			SpatialGDK::ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID }))
 	{
 		InitializeVirtualWorkerTranslationManager();
-		VirtualWorkerTranslationManager->AuthorityChanged({ EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });
 	}
 }
 
 void WellKnownEntitySystem::ProcessEntityAdd(const Worker_EntityId EntityId)
 {
 	const EntityViewElement& Element = SubView->GetView()[EntityId];
-	for (const ComponentData& ComponentData : Element.Components)
-	{
-		ProcessComponentAdd(ComponentData.GetComponentId(), ComponentData.GetUnderlying());
-	}
 	for (const Worker_ComponentSetId ComponentId : Element.Authority)
 	{
 		ProcessAuthorityGain(EntityId, ComponentId);
-	}
-}
-
-void WellKnownEntitySystem::OnMapLoaded() const
-{
-	if (GlobalStateManager != nullptr && !GlobalStateManager->GetCanBeginPlay()
-		&& SubView->HasAuthority(GlobalStateManager->GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
-	{
-		// ServerTravel - Increment the session id, so users don't rejoin the old game.
-		GlobalStateManager->TriggerBeginPlay();
-		GlobalStateManager->SetDeploymentState();
-		GlobalStateManager->SetAcceptingPlayers(true);
-		GlobalStateManager->IncrementSessionID();
 	}
 }
 
@@ -156,52 +92,6 @@ void WellKnownEntitySystem::InitializeVirtualWorkerTranslationManager()
 {
 	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Connection, NetDriver, VirtualWorkerTranslator);
 	VirtualWorkerTranslationManager->SetNumberOfVirtualWorkers(NumberOfWorkers);
-}
-
-void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
-{
-	// Perform a naive leader election where we wait for the correct number of server workers to be present in the deployment, and then
-	// whichever server has the lowest server worker entity ID becomes the leader and claims the snapshot partition.
-	const Worker_EntityId LocalServerWorkerEntityId = GlobalStateManager->GetLocalServerWorkerEntityId();
-
-	if (LocalServerWorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		UE_LOG(LogWellKnownEntitySystem, Warning, TEXT("MaybeClaimSnapshotPartition aborted due to lack of local server worker entity"));
-		return;
-	}
-
-	Worker_EntityId LowestEntityId = LocalServerWorkerEntityId;
-
-	int ServerCount = 0;
-	for (const auto& Iter : SubView->GetView())
-	{
-		const Worker_EntityId EntityId = Iter.Key;
-		const SpatialGDK::EntityViewElement& Element = Iter.Value;
-		if (Element.Components.ContainsByPredicate([](const SpatialGDK::ComponentData& CompData) {
-				return CompData.GetComponentId() == SpatialConstants::SERVER_WORKER_COMPONENT_ID;
-			}))
-		{
-			ServerCount++;
-
-			if (EntityId < LowestEntityId)
-			{
-				LowestEntityId = EntityId;
-			}
-		}
-	}
-
-	if (LocalServerWorkerEntityId == LowestEntityId && ServerCount >= NumberOfWorkers)
-	{
-		UE_LOG(LogWellKnownEntitySystem, Log, TEXT("MaybeClaimSnapshotPartition claiming snapshot partition"));
-		GlobalStateManager->ClaimSnapshotPartition();
-	}
-
-	if (ServerCount > NumberOfWorkers)
-	{
-		UE_LOG(LogWellKnownEntitySystem, Warning,
-			   TEXT("MaybeClaimSnapshotPartition found too many server worker entities, expected %d got %d."), NumberOfWorkers,
-			   ServerCount);
-	}
 }
 
 } // Namespace SpatialGDK

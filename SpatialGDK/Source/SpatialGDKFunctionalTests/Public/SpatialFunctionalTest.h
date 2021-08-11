@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Algo/Count.h"
 #include "CoreMinimal.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -119,9 +120,26 @@ public:
 	// clang-format on
 	ASpatialFunctionalTestFlowController* GetFlowController(ESpatialFunctionalTestWorkerType WorkerType, int WorkerId);
 
+	// clang-format off
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (WorkerId = "1",
+		ToolTip = "Returns the PlayerController owning a FlowController for a specific Server / Client.\nKeep in mind that WorkerIds start from 1, and the Server's WorkerId will match their VirtualWorkerId while the Client's will be based on the order they connect.\n\n'All' Worker type will soft assert as it isn't supported."))
+	// clang-format on
+	APlayerController* GetFlowPlayerController(const ESpatialFunctionalTestWorkerType WorkerType, const int WorkerId);
+
 	// Get the FlowController that is Local to this instance.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	ASpatialFunctionalTestFlowController* GetLocalFlowController();
+
+	// Get the player controller owning the current flow controller.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	APlayerController* GetLocalFlowPlayerController();
+
+	// Get the pawn that belongs to the PlayerController associated with the current flow controller.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	APawn* GetLocalFlowPawn();
+
+	template <class T>
+	T* SpawnActor(const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters(), const bool bRegisterAsAutoDestroy = true);
 
 	// Helper to get the local Worker Type.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
@@ -187,11 +205,11 @@ public:
 
 	// Convenience function that goes over all FlowControllers and counts how many are Servers.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
-	int GetNumberOfServerWorkers();
+	int32 GetNumberOfServerWorkers() const;
 
 	// Convenience function that goes over all FlowControllers and counts how many are Clients.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
-	int GetNumberOfClientWorkers();
+	int32 GetNumberOfClientWorkers() const;
 
 	// Convenience function that returns the Id used for executing steps on all Servers / Clients.
 	// clang-format off
@@ -258,6 +276,9 @@ public:
 
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	bool RequireValid(const UObject* Object, const FString& Msg) { return RequireHandler.RequireValid(Object, Msg); }
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
 	bool RequireTrue(bool bCheckTrue, const FString& Msg) { return RequireHandler.RequireTrue(bCheckTrue, Msg); }
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
@@ -293,6 +314,10 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Transform)"), Category = "Spatial Functional Test")
 	bool RequireEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance = 1.e-4) { return RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
 
+	template<typename EnumType>
+	bool RequireEqual_Enum(const EnumType Value, const EnumType Expected, const FString& Msg) { return RequireHandler.RequireEqual_Enum(Value, Expected, Msg); }
+
+
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Bool)"), Category = "Spatial Functional Test")
 	bool RequireNotEqual_Bool(bool bValue, bool bNotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(bValue, bNotExpected, Msg); }
 
@@ -316,6 +341,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Transform)"), Category = "Spatial Functional Test")
 	bool RequireNotEqual_Transform(const FTransform& Value, const FTransform& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
+
+	template<typename EnumType>
+	bool RequireNotEqual_Enum(const EnumType Value, const EnumType NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual_Enum(Value, NotExpected, Msg); }
 	// clang-format on
 
 	// # Snapshot APIs.
@@ -338,16 +366,15 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	bool WasLoadedFromTakenSnapshot();
 
-	template <typename T>
-	static int GetNumberOfActorsOfType(UWorld* World)
+	template <typename ActorType>
+	static int32 CountActors(UWorld* World)
 	{
-		int Counter = 0;
-		for (TActorIterator<T> Iter(World); Iter; ++Iter)
+		int32 Count = 0;
+		for (const ActorType* Actor : TActorRange<ActorType>(World))
 		{
-			Counter++;
+			++Count;
 		}
-
-		return Counter;
+		return Count;
 	}
 
 	// Get the path of the taken snapshot for this world's map. Returns an empty string if it's using the default snapshot.
@@ -361,12 +388,6 @@ public:
 
 	// Clears all the snapshots taken, not meant to be used directly.
 	static void ClearAllTakenSnapshots();
-
-	// Get the player controller owned by the current flow controller.
-	APlayerController* GetFlowPlayerController();
-
-	// Get the pawn that belongs to the PlayerController associated with the current flow controller.
-	APawn* GetFlowPawn();
 
 protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }
@@ -470,3 +491,15 @@ private:
 	// will check if there's a snapshot for them, and if so launch with it instead of the default snapshot.
 	static TMap<FString, FString> TakenSnapshots;
 };
+
+template <class T>
+T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParameters, const bool bRegisterAsAutoDestroy)
+{
+	T* Actor = GetWorld()->SpawnActor<T>(SpawnParameters);
+	checkf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
+	if (bRegisterAsAutoDestroy)
+	{
+		RegisterAutoDestroyActor(Actor);
+	}
+	return Actor;
+}

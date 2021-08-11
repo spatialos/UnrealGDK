@@ -492,6 +492,11 @@ const TArray<Schema_FieldId>& USpatialClassInfoManager::GetFieldIdsByComponentId
 	return SchemaDatabase->FieldIdsArray[SchemaDatabase->ComponentIdToFieldIdsIndex[ComponentId]].FieldIds;
 }
 
+const TArray<Schema_FieldId>& USpatialClassInfoManager::GetListIdsByComponentId(Worker_ComponentId ComponentId)
+{
+	return SchemaDatabase->ListIdsArray[SchemaDatabase->ComponentIdToFieldIdsIndex[ComponentId]].FieldIds;
+}
+
 const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction* Function)
 {
 	check(Object != nullptr && Function != nullptr);
@@ -658,5 +663,24 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 				ActorForRelevancy->NetCullDistanceSquared, *Actor->GetPathName(), *ActorForRelevancy->GetPathName());
 		}
 	}
+	return SpatialConstants::INVALID_COMPONENT_ID;
+}
+
+bool USpatialClassInfoManager::IsInterestBucketComponentId(const Worker_ComponentId ComponentId) const
+{
+	return ComponentId == SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID
+		   || ComponentId == SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID || IsNetCullDistanceComponent(ComponentId);
+}
+
+Worker_ComponentId USpatialClassInfoManager::GetExistingInterestBucketComponentId(const SpatialGDK::EntityViewElement& Entity) const
+{
+	for (const SpatialGDK::ComponentData& Component : Entity.Components)
+	{
+		if (IsInterestBucketComponentId(Component.GetComponentId()))
+		{
+			return Component.GetComponentId();
+		}
+	}
+
 	return SpatialConstants::INVALID_COMPONENT_ID;
 }

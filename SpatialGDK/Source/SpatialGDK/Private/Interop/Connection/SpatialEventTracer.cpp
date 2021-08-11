@@ -10,25 +10,6 @@ DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
 namespace SpatialGDK
 {
-TraceQueryPtr ParseOrDefault(const FString& Str, const TCHAR* FilterForLog)
-{
-	TraceQueryPtr Ptr;
-	if (Str.Len() > 0)
-	{
-		Ptr.Reset(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*Str)));
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Applied %s query: %s"), FilterForLog, *Str);
-	}
-
-	if (!Ptr.IsValid())
-	{
-		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified query \"%s\" is invalid; defaulting to \"false\" query. %s"),
-			   FilterForLog, Trace_GetLastError());
-		Ptr.Reset(Trace_ParseSimpleQuery("false"));
-	}
-
-	return Ptr;
-}
-
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
 	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
@@ -39,36 +20,34 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 		return;
 	}
 
-	uint32_t ItemSize = Trace_GetSerializedItemSize(Item);
 	// Depends whether we are using rotating logs or single-log mode (where we track max size).
 	const bool bTrackFileSize = EventTracer->MaxFileSize != 0;
-	if (!bTrackFileSize || (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize))
+	if (!bTrackFileSize || (EventTracer->BytesWrittenToStream < EventTracer->MaxFileSize))
 	{
-		if (bTrackFileSize) 
-		{
-			EventTracer->BytesWrittenToStream += ItemSize;
-		}
+		int64_t BytesWritten = Trace_SerializeItemToStream(Stream, Item);
 
-		int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
-		if (Code == WORKER_RESULT_FAILURE)
+		if (BytesWritten == WORKER_RESULT_FAILURE)
 		{
-			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s)"), Code,
+			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize with error code %lld (%s)"), BytesWritten,
 				   ANSI_TO_TCHAR(Trace_GetLastError()));
+		}
+		else if (BytesWritten == 0)
+		{
+			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize due to file stream having insufficient capacity."));
+		}
+		else if (bTrackFileSize)
+		{
+			EventTracer->BytesWrittenToStream += BytesWritten;
 		}
 
 		if (FPlatformAtomics::AtomicRead_Relaxed(&EventTracer->FlushOnWriteAtomic))
 		{
-			if (Io_Stream_Flush(Stream) == -1)
+			if (Io_Stream_Flush(Stream) == WORKER_RESULT_FAILURE)
 			{
-				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to flush stream with error code %d (%s)"), Code,
+				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to flush stream with error code %lld (%s)"), BytesWritten,
 					   ANSI_TO_TCHAR(Io_Stream_GetLastError(Stream)));
 			}
 		}
-	}
-	else
-	{
-		// Went over max capacity so stop writing here.
-		EventTracer->BytesWrittenToStream = EventTracer->MaxFileSize;
 	}
 }
 
@@ -130,8 +109,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	Parameters.span_sampling_parameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
 
 	// Filters
-	TraceQueryPtr PreFilter = ParseOrDefault(SamplingSettings->GDKEventPreFilter, TEXT("pre-filter"));
-	TraceQueryPtr PostFilter = ParseOrDefault(SamplingSettings->GDKEventPostFilter, TEXT("post-filter"));
+	UEventTracingSamplingSettings::TraceQueryPtr PreFilter = SamplingSettings->GetGDKEventPreFilter();
+	UEventTracingSamplingSettings::TraceQueryPtr PostFilter = SamplingSettings->GetGDKEventPostFilter();
 
 	checkf(PreFilter.Get() != nullptr, TEXT("Pre-filter is invalid."));
 	checkf(PostFilter.Get() != nullptr, TEXT("Post-filter is invalid."));
@@ -360,6 +339,11 @@ FSpatialGDKSpanId SpatialEventTracer::PopLatentPropertyUpdateSpanId(const TWeakO
 	ObjectSpanIdStacks.Remove(Object);
 
 	return TempSpanId;
+}
+
+bool SpatialEventTracer::IsObjectStackEmpty() const
+{
+	return ObjectSpanIdStacks.Num() == 0;
 }
 
 void SpatialEventTracer::SetFlushOnWrite(bool bValue)

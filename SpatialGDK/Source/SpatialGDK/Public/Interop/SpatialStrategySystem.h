@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/LoadBalancingTypes.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/CrossServerEndpoint.h"
@@ -21,7 +22,6 @@ namespace SpatialGDK
 {
 class ISpatialOSWorker;
 class FLoadBalancingStrategy;
-class FLBDataStorage;
 class FPartitionManager;
 
 class FSpatialStrategySystem
@@ -41,19 +41,26 @@ private:
 
 	TUniquePtr<FPartitionManager> PartitionsMgr;
 
+	// +++ Components watched to implement the strategy +++
+	TLBDataStorage<AuthorityIntentACK> AuthACKView;
+	TLBDataStorage<NetOwningClientWorker> NetOwningClientView;
+	FLBDataCollection DataStorages;
+	FLBDataCollection UserDataStorages;
 	TSet<Worker_ComponentId> UpdatesToConsider;
-	TSet<Worker_EntityId_Key> MigratingEntities;
-	TSet<Worker_EntityId_Key> EntitiesACKMigration;
-	TSet<Worker_EntityId_Key> EntitiesClientChanged;
-	TMap<Worker_EntityId_Key, FPartitionHandle> PendingMigrations;
-	TArray<FLBDataStorage*> DataStorages;
+	// --- Components watched to implement the strategy ---
+
+	// +++ Components managed by the strategy worker +++
 	TMap<Worker_EntityId_Key, AuthorityIntentV2> AuthorityIntentView;
 	TMap<Worker_EntityId_Key, AuthorityDelegation> AuthorityDelegationView;
-	TMap<Worker_EntityId_Key, NetOwningClientWorker> NetOwningClientView;
+	// --- Components managed by the strategy worker ---
+
+	// +++ Migration data +++
 	TUniquePtr<FLoadBalancingStrategy> Strategy;
+	TSet<Worker_EntityId_Key> MigratingEntities;
+	TMap<Worker_EntityId_Key, FPartitionHandle> PendingMigrations;
+	// --- Migration data ---
 
 	void UpdateStrategySystemInterest(ISpatialOSWorker& Connection);
-
 	bool bStrategySystemInterestDirty = false;
 };
 } // namespace SpatialGDK

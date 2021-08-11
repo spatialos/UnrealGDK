@@ -123,9 +123,11 @@ public:
 
 			if (bMatchesKeywords)
 			{
-				// Alphanumeric, dot and underscore seem to cover UE class paths:
+				// This will cover the following:
+				// Alphanumeric, forward slashes or underscores; then a dot; then alphanumeric or underscores.
 				// /Game/Directory/AnotherDirectory_4/Asset.Asset_C
-				static const FRegexPattern ClassPathPattern(TEXT("(/[\\w\\d/\\._]+_C)"));
+				// /Script/MyModule.MyClass
+				static const FRegexPattern ClassPathPattern(TEXT("(/[\\w\\d-/\\._]+\\./[\\w\\d-\\._]+)"));
 
 				FRegexMatcher ClassPathMatcher(ClassPathPattern, Message);
 
