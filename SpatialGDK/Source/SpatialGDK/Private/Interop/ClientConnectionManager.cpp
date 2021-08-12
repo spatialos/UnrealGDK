@@ -77,7 +77,7 @@ void ClientConnectionManager::RegisterClientConnection(const Worker_EntityId InW
 
 	const EntityViewElement* EntityView = SubView->GetView().Find(InWorkerEntityId);
 	if (!ensureAlwaysMsgf(EntityView != nullptr,
-						  TEXT("Failed to entity component data for system worker entity %lld. Client IP will be unset."),
+						  TEXT("Failed to retrieve entity component data for system worker entity %lld. Client IP will be unset."),
 						  InWorkerEntityId))
 	{
 		return;
