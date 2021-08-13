@@ -840,7 +840,7 @@ void SSpatialGDKCloudDeploymentConfiguration::OnCloudDocumentationClicked()
 {
 	FString WebError;
 	FPlatformProcess::LaunchURL(
-		TEXT("https://documentation.improbable.io/gdk-for-unreal/docs/cloud-deployment-workflow#section-build-server-worker-assembly"),
+		TEXT("https://networking.docs.improbable.io/gdk-for-unreal/v0.14.0/workflows/deployment-workflows/cloud-deployment-workflow"),
 		TEXT(""), &WebError);
 	if (!WebError.IsEmpty())
 	{
