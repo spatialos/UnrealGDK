@@ -2497,19 +2497,6 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 
 void ActorSystem::DestroyActor(AActor* Actor, const Worker_EntityId EntityId)
 {
-	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
-	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
-	// is currently owned by this worker before issuing an entity delete request. If the associated entity is still authoritative
-	// on this server, we need to make sure this worker doesn't issue an entity delete request, as this entity is really
-	// transitioning to the same server as the actor we're currently operating on, and is just a few frames behind.
-	// We make the assumption that if we're destroying actors here (due to a remove entity op), then this is only due to two
-	// situations;
-	// 1. Actor's entity has been transitioned to another server
-	// 2. The Actor was deleted on another server
-	// In neither situation do we want to delete associated entities, so prevent them from being issued.
-	// TODO: fix this with working sets (UNR-411)
-	NetDriver->StartIgnoringAuthoritativeDestruction();
-
 	// Clean up the actor channel. For clients, this will also call destroy on the actor.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
@@ -2539,7 +2526,6 @@ void ActorSystem::DestroyActor(AActor* Actor, const Worker_EntityId EntityId)
 	{
 		UE_LOG(LogActorSystem, Error, TEXT("Failed to destroy actor in RemoveActor %s %lld"), *Actor->GetName(), EntityId);
 	}
-	NetDriver->StopIgnoringAuthoritativeDestruction();
 
 	check(NetDriver->PackageMap->GetObjectFromEntityId(EntityId) == nullptr);
 }

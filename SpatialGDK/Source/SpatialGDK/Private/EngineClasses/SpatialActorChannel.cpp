@@ -252,11 +252,6 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		return;
 	}
 
-	if (!NetDriver->IsAuthoritativeDestructionAllowed())
-	{
-		return;
-	}
-
 	const bool bHasAuthority = NetDriver->HasServerAuthority(EntityId);
 	if (Actor != nullptr)
 	{
@@ -281,7 +276,7 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 				NetDriver->ActorSystem->RetireEntity(EntityId, Actor->IsNetStartupActor());
 			}
 		}
-		else if (bCreatedEntity) // We have not gained authority yet
+		else if (bCreatingNewEntity) // We have not gained authority yet
 		{
 			if (ensureMsgf(Actor->HasAuthority(), TEXT("EntityId %lld Actor %s doesn't have authority, can't disable replication"),
 						   EntityId, *Actor->GetName()))
