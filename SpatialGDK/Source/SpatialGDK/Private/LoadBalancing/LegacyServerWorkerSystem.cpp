@@ -3,7 +3,7 @@
 
 ULegacyServerWorkerSystem::ULegacyServerWorkerSystem() = default;
 
-TArray<SpatialGDK::ComponentData> ULegacyServerWorkerSystem::GetServerWorkerData()
+TArray<SpatialGDK::ComponentData> ULegacyServerWorkerSystem::GetServerWorkerInitialData()
 {
 	TArray<SpatialGDK::ComponentData> Data;
 	// Will be used to add test debug data in the next PR.

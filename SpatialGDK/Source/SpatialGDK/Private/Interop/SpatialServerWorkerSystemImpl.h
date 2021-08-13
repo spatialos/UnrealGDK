@@ -15,6 +15,7 @@ public:
 	void Flush(Worker_EntityId ServerWorkerEntityId, ISpatialOSWorker& Connection);
 
 	TSet<Worker_ComponentId> ServerWorkerComponents;
+	TArray<SpatialGDK::ComponentData> InitialData;
 	TArray<SpatialGDK::ComponentUpdate> PendingComponentUpdates;
 };
 } // namespace SpatialGDK

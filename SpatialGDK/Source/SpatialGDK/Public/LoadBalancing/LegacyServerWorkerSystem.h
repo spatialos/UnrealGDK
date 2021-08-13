@@ -11,5 +11,6 @@ class ULegacyServerWorkerSystem : public USpatialServerWorkerSystem
 public:
 	ULegacyServerWorkerSystem();
 
-	TArray<SpatialGDK::ComponentData> GetServerWorkerData() override;
+private:
+	TArray<SpatialGDK::ComponentData> GetServerWorkerInitialData() override;
 };

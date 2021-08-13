@@ -95,16 +95,11 @@ void ServerWorkerEntityCreator::CreateWorkerEntity()
 
 	if (NetDriver.ServerWorkerSystemImpl)
 	{
-		UGameInstance* GameInstance = NetDriver.GetWorld()->GetGameInstance();
-		USpatialServerWorkerSystem* ServerWorkerData = GameInstance->GetSubsystem<USpatialServerWorkerSystem>();
-		if (ensure(ServerWorkerData))
+		TArray<ComponentData> DataArray = MoveTemp(NetDriver.ServerWorkerSystemImpl->InitialData);
+		for (auto& Data : DataArray)
 		{
-			TArray<ComponentData> DataArray = ServerWorkerData->GetServerWorkerData();
-			for (auto& Data : DataArray)
-			{
-				NetDriver.ServerWorkerSystemImpl->ServerWorkerComponents.Add(Data.GetComponentId());
-				ComponentDatas.Add(MoveTemp(Data));
-			}
+			NetDriver.ServerWorkerSystemImpl->ServerWorkerComponents.Add(Data.GetComponentId());
+			ComponentDatas.Add(MoveTemp(Data));
 		}
 	}
 

@@ -29,13 +29,12 @@ public:
 
 	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
 
-	virtual TArray<SpatialGDK::ComponentData> GetServerWorkerData();
-
 	void UpdateServerWorkerData(TArray<SpatialGDK::ComponentUpdate> Updates);
 
-	void SetImpl(SpatialGDK::FServerWorkerSystemImpl& InImpl) { Impl = &InImpl; }
+	void SetImpl(SpatialGDK::FServerWorkerSystemImpl& InImpl);
 	void ClearImpl() { Impl = nullptr; }
 
 private:
+	virtual TArray<SpatialGDK::ComponentData> GetServerWorkerInitialData();
 	SpatialGDK::FServerWorkerSystemImpl* Impl = nullptr;
 };

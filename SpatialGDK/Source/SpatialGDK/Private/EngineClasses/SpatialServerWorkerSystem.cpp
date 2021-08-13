@@ -33,7 +33,7 @@ bool USpatialServerWorkerSystem::ShouldCreateSubsystem(UObject* Outer) const
 	return false;
 }
 
-TArray<SpatialGDK::ComponentData> USpatialServerWorkerSystem::GetServerWorkerData()
+TArray<SpatialGDK::ComponentData> USpatialServerWorkerSystem::GetServerWorkerInitialData()
 {
 	return TArray<SpatialGDK::ComponentData>();
 }
@@ -67,4 +67,10 @@ void USpatialServerWorkerSystem::UpdateServerWorkerData(TArray<SpatialGDK::Compo
 			Impl->PendingComponentUpdates.Add(MoveTemp(Update));
 		}
 	}
+}
+
+void USpatialServerWorkerSystem::SetImpl(SpatialGDK::FServerWorkerSystemImpl& InImpl)
+{
+	Impl = &InImpl;
+	Impl->InitialData = GetServerWorkerInitialData();
 }
