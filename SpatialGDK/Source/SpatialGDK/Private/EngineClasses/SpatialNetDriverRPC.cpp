@@ -374,6 +374,8 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, const FRPCPayload&
 {
 	constexpr bool RPCConsumed = true;
 
+	static const FName DebugRPCName(*SpatialConstants::RPCTypeToString(ERPCType::ServerReliable));
+
 	FUnrealObjectRef ObjectRef(EntityId, RPCData.Offset);
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver.PackageMap->GetObjectFromUnrealObjectRef(ObjectRef);
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
@@ -397,6 +399,11 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, const FRPCPayload&
 		UE_LOG(LogSpatialNetDriverRPC, Error, TEXT("Failed to execute RPC on Actor %s, (Entity %llu), function missing for index %i"),
 			   *TargetObject->GetName(), EntityId, RPCData.Index);
 		return RPCConsumed;
+	}
+
+	if (MetaData.RPCName == DebugRPCName)
+	{
+		UE_LOG(LogSpatialNetDriverRPC, Log, TEXT("Executed %s on %s"), *Function->GetName(), *TargetObject->GetName());
 	}
 
 	// NB : FMemory_Alloca is stack allocation, and cannot be done inside the RAII holder.

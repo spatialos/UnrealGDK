@@ -52,6 +52,22 @@ public:
 	static Interest CreateRoutingWorkerInterest();
 	Interest CreateSkeletonEntityInterest() const;
 
+	// The components clients need to see on entities they have authority over that they don't already see through authority.
+	void AddClientSelfInterest(Interest& OutInterest) const;
+	// The components servers need to see on entities they have authority over that they don't already see through authority.
+	void AddServerSelfInterest(Interest& OutInterest) const;
+	// Add the always relevant and the always interested query.
+	void AddClientAlwaysRelevantQuery(Interest& OutInterest, const QueryConstraint& LevelConstraint) const;
+	QueryConstraint CreateClientAlwaysRelevantConstraint() const;
+
+	const SchemaResultType& GetClientNonAuthInterestResultType() const { return ClientNonAuthInterestResultType; }
+	const SchemaResultType& GetClientAuthInterestResultType() const { return ClientAuthInterestResultType; }
+	static void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId,
+														 const Query& QueryToAdd);
+
+	const FrequencyConstraints& GetClientCheckoutRadiusConstraint() { return ClientCheckoutRadiusConstraint; }
+	QueryConstraint CreateActorVisibilityConstraint() const;
+
 protected:
 	// Shared constraints and result types are created at initialization and reused throughout the lifetime of the factory.
 	void CreateAndCacheInterestState();
@@ -70,14 +86,6 @@ protected:
 	void AddServerGameplayDebuggerCategoryReplicatorActorInterest(Interest& OutInterest,
 																  const AGameplayDebuggerCategoryReplicator& Replicator) const;
 #endif
-	// The components clients need to see on entities they have authority over that they don't already see through authority.
-	void AddClientSelfInterest(Interest& OutInterest) const;
-	// The components servers need to see on entities they have authority over that they don't already see through authority.
-	void AddServerSelfInterest(Interest& OutInterest) const;
-
-	// Add the always relevant and the always interested query.
-	void AddClientAlwaysRelevantQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,
-									  const QueryConstraint& LevelConstraint) const;
 
 	void AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const;
 	FrequencyToConstraintsMap GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;
@@ -86,15 +94,10 @@ protected:
 
 	void AddNetCullDistanceQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const;
 
-	static void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId,
-														 const Query& QueryToAdd);
-
 	// System Defined Constraints
 	bool ShouldAddNetCullDistanceInterest(const AActor* InActor) const;
 	QueryConstraint CreateGDKSnapshotEntitiesConstraint() const;
-	QueryConstraint CreateClientAlwaysRelevantConstraint() const;
 	QueryConstraint CreateServerAlwaysRelevantConstraint() const;
-	QueryConstraint CreateActorVisibilityConstraint() const;
 
 	// Only checkout entities that are in loaded sub-levels
 	QueryConstraint CreateLevelConstraints(const AActor* InActor) const;

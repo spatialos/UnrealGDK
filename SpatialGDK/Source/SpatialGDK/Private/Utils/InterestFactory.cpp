@@ -12,6 +12,7 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/Interest/NetCullDistanceInterest.h"
+#include "Utils/SpatialStatics.h"
 
 #include "Engine/Classes/GameFramework/Actor.h"
 #include "Engine/World.h"
@@ -292,14 +293,17 @@ void InterestFactory::AddClientPlayerControllerActorInterest(Interest& OutIntere
 {
 	const QueryConstraint LevelConstraint = CreateLevelConstraints(InActor);
 
-	AddClientAlwaysRelevantQuery(OutInterest, InActor, InInfo, LevelConstraint);
+	AddClientAlwaysRelevantQuery(OutInterest, LevelConstraint);
 
-	AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
-
-	// Either add the NCD interest because there are no user interest queries, or because the user interest specified we should.
-	if (ShouldAddNetCullDistanceInterest(InActor))
+	if (!USpatialStatics::IsStrategyWorkerEnabled())
 	{
-		AddNetCullDistanceQueries(OutInterest, LevelConstraint);
+		AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
+
+		// Either add the NCD interest because there are no user interest queries, or because the user interest specified we should.
+		if (ShouldAddNetCullDistanceInterest(InActor))
+		{
+			AddNetCullDistanceQueries(OutInterest, LevelConstraint);
+		}
 	}
 }
 
@@ -384,8 +388,7 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest) const
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, LoadBalanceQuery);
 }
 
-void InterestFactory::AddClientAlwaysRelevantQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,
-												   const QueryConstraint& LevelConstraint) const
+void InterestFactory::AddClientAlwaysRelevantQuery(Interest& OutInterest, const QueryConstraint& LevelConstraint) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 

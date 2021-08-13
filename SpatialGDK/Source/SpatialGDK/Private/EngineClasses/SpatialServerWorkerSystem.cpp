@@ -21,11 +21,6 @@ bool USpatialServerWorkerSystem::ShouldCreateSubsystem(UObject* Outer) const
 	return false;
 }
 
-TArray<SpatialGDK::ComponentData> USpatialServerWorkerSystem::GetServerWorkerData()
-{
-	return TArray<SpatialGDK::ComponentData>();
-}
-
 void USpatialServerWorkerSystem::UpdateServerWorkerData(TArray<SpatialGDK::ComponentUpdate> Updates)
 {
 	if (Impl == nullptr)

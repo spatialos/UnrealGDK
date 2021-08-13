@@ -20,15 +20,17 @@ FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InP
 											   const FSubView& InServerWorkerView, TUniquePtr<FLoadBalancingStrategy> InStrategy)
 	: LBView(InLBView)
 	, PartitionsMgr(MoveTemp(InPartitionsMgr))
+	, ActorInfo(ActorSetSystem, PCData)
 	, DataStorages(InLBView)
 	, UserDataStorages(InLBView)
 	, ServerWorkerDataStorages(InServerWorkerView)
 	, Strategy(MoveTemp(InStrategy))
 {
-	Strategy->Init(UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
+	Strategy->Init(ActorInfo, UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
 	DataStorages.DataStorages.Add(&AuthACKView);
 	DataStorages.DataStorages.Add(&NetOwningClientView);
 	DataStorages.DataStorages.Add(&SetMemberView);
+	DataStorages.DataStorages.Add(&PCData);
 
 	UpdatesToConsider = DataStorages.GetComponentsToWatch();
 	UpdatesToConsider = UpdatesToConsider.Union(UserDataStorages.GetComponentsToWatch());
@@ -98,7 +100,7 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 	ActorSetSystem.Update(SetMemberView, RemovedEntities);
 	SetMemberView.ClearModified();
 
-	Strategy->Advance(Connection);
+	Strategy->Advance(Connection, LBView);
 }
 
 void FSpatialStrategySystem::ClearUserStorages()
@@ -153,7 +155,7 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	}
 
 	// Ask the Strategy about the entities that need migration.
-	FMigrationContext Ctx(ActorSetSystem, MigratingEntities, ModifiedEntities, DataStorages.EntitiesRemoved);
+	FMigrationContext Ctx(MigratingEntities, ModifiedEntities, DataStorages.EntitiesRemoved);
 	Strategy->CollectEntitiesToMigrate(Ctx);
 
 	// Clear the buffer of modified entities now that the strategy has been informed.
@@ -236,8 +238,11 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 		if (AuthACK.AssignmentCounter == AuthIntent.AssignmentCounter)
 		{
 			AuthorityDelegation& AuthDelegation = AuthorityDelegationView.FindChecked(EntityToMigrate);
-
 			AuthDelegation.Delegations.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthIntent.PartitionId);
+			if (!PCData.GetObjects().Contains(EntityToMigrate))
+			{
+				AuthDelegation.Delegations.Add(SpatialConstants::INTEREST_AUTH_COMPONENT_SET_ID, AuthIntent.PartitionId);
+			}
 			MigratingEntities.Remove(EntityToMigrate);
 		}
 	}

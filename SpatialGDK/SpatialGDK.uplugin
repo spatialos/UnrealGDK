@@ -30,6 +30,20 @@
       ]
     },
     {
+      "Name": "ScavengersHubGameFramework",
+      "Type": "Runtime",
+      "LoadingPhase": "Default",
+      "WhitelistPlatforms": [
+        "Win64",
+        "Linux",
+        "Mac",
+        "XboxOne",
+        "PS4",
+        "IOS",
+        "Android"
+      ]
+    },
+    {
       "Name": "SpatialGDKEditor",
       "Type": "Editor",
       "LoadingPhase": "Default",

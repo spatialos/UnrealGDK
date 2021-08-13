@@ -6,10 +6,12 @@
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/ActorSetSystem.h"
+#include "LoadBalancing/EntitySpatialScene.h"
 #include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/LegacyLoadBalancingCommon.h"
 #include "LoadBalancing/LegacyLoadbalancingComponents.h"
 #include "LoadBalancing/PartitionManager.h"
+#include "LoadBalancing/PlayerInterestManager.h"
 #include "Schema/DebugComponent.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLegacyLoadBalancing)
@@ -32,11 +34,14 @@ class FCustomWorkerAssignmentStorage : public TLBDataStorage<LegacyLB_CustomWork
 {
 };
 
-FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, SpatialVirtualWorkerTranslator& InTranslator)
+FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, SpatialVirtualWorkerTranslator& InTranslator,
+										   InterestFactory& InterestF)
 	: Translator(InTranslator)
 {
 	ExpectedWorkers = LegacyLBStrat.GetMinimumRequiredWorkers();
 	VirtualWorkerIdToHandle.SetNum(ExpectedWorkers);
+	SpatialScene = MakeUnique<FEntitySpatialScene>();
+	PlayerInterest = MakeUnique<FPlayerInterestManager>(*SpatialScene, InterestF);
 
 	bDirectAssignment = !LegacyLBStrat.IsStrategyWorkerAware();
 	if (bDirectAssignment)
@@ -56,9 +61,42 @@ FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, S
 
 FLegacyLoadBalancing::~FLegacyLoadBalancing() {}
 
-void FLegacyLoadBalancing::Advance(ISpatialOSWorker& Connection)
+void FLegacyLoadBalancing::Advance(ISpatialOSWorker& Connection, const FSubView& LBDataSubView)
 {
 	CommandsHandler.ProcessOps(Connection.GetWorkerMessages());
+
+	for (auto const& Delta : LBDataSubView.GetViewDelta().EntityDeltas)
+	{
+		switch (Delta.Type)
+		{
+		case EntityDelta::ADD:
+		{
+			const FVector* Pos = PositionStorage->GetPositions().Find(Delta.EntityId);
+			bool bIsPC = ActorInfo->PCData.GetObjects().Contains(Delta.EntityId);
+			if (Pos)
+			{
+				SpatialScene->Add(Delta.EntityId, *Pos, bIsPC);
+				if (bIsPC)
+				{
+					PlayerInterest->AddPlayer(Connection, Delta.EntityId);
+				}
+			}
+		}
+		break;
+		case EntityDelta::REMOVE:
+			SpatialScene->Remove(Delta.EntityId);
+			break;
+		}
+	}
+
+	for (Worker_EntityId Modified : PositionStorage->GetModifiedEntities())
+	{
+		const FVector* Pos = PositionStorage->GetPositions().Find(Modified);
+		if (ensure(Pos != nullptr))
+		{
+			SpatialScene->Update(Modified, *Pos);
+		}
+	}
 }
 
 void FLegacyLoadBalancing::QueryTranslation(ISpatialOSWorker& Connection)
@@ -113,10 +151,15 @@ void FLegacyLoadBalancing::Flush(ISpatialOSWorker& Connection)
 	{
 		QueryTranslation(Connection);
 	}
+
+	PlayerInterest->UpdatePlayersInterest(Connection, ActorInfo->ActorSets);
 }
 
-void FLegacyLoadBalancing::Init(TArray<FLBDataStorage*>& OutLoadBalancingData, TArray<FLBDataStorage*>& OutServerWorkerData)
+void FLegacyLoadBalancing::Init(FActorInformation& InActorInfo, TArray<FLBDataStorage*>& OutLoadBalancingData,
+								TArray<FLBDataStorage*>& OutServerWorkerData)
 {
+	ActorInfo = &InActorInfo;
+
 	if (PositionStorage)
 	{
 		OutLoadBalancingData.Add(PositionStorage.Get());
@@ -133,6 +176,7 @@ void FLegacyLoadBalancing::Init(TArray<FLBDataStorage*>& OutLoadBalancingData, T
 	{
 		OutLoadBalancingData.Add(DebugCompStorage.Get());
 	}
+
 	if (ServerWorkerCustomAssignment)
 	{
 		OutServerWorkerData.Add(ServerWorkerCustomAssignment.Get());
@@ -392,7 +436,7 @@ TOptional<TPair<Worker_EntityId, uint32>> FLegacyLoadBalancing::EvaluateDebugCom
 
 void FLegacyLoadBalancing::EvaluateDebugComponent(Worker_EntityId EntityId, FMigrationContext& Ctx)
 {
-	auto NewAssignment = EvaluateDebugComponent(EntityId, Ctx.ActorSets);
+	auto NewAssignment = EvaluateDebugComponent(EntityId, ActorInfo->ActorSets);
 	if (NewAssignment)
 	{
 		ToRefresh.Remove(NewAssignment->Key);

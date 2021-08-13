@@ -26,18 +26,30 @@ struct FPartitionDesc : TSharedFromThis<FPartitionDesc>
 using FPartitionHandle = TSharedPtr<FPartitionDesc>;
 
 class FActorSetSystem;
+class FPlayerControllerData;
+
+struct FActorInformation
+{
+	FActorInformation(FActorSetSystem& InActorSets, FPlayerControllerData& InPCData)
+		: ActorSets(InActorSets)
+		, PCData(InPCData)
+	{
+	}
+
+	FActorSetSystem& ActorSets;
+	FPlayerControllerData& PCData;
+};
 
 struct FMigrationContext
 {
-	FMigrationContext(FActorSetSystem& InActorSets, const TSet<Worker_EntityId_Key>& InMigratingEntities,
-					  const TSet<Worker_EntityId_Key>& InModifiedEntities, const TSet<Worker_EntityId_Key>& InDeletedEntities)
-		: ActorSets(InActorSets)
-		, MigratingEntities(InMigratingEntities)
+	FMigrationContext(const TSet<Worker_EntityId_Key>& InMigratingEntities, const TSet<Worker_EntityId_Key>& InModifiedEntities,
+					  const TSet<Worker_EntityId_Key>& InDeletedEntities)
+		: MigratingEntities(InMigratingEntities)
 		, ModifiedEntities(InModifiedEntities)
 		, DeletedEntities(InDeletedEntities)
 	{
 	}
-	FActorSetSystem& ActorSets;
+
 	const TSet<Worker_EntityId_Key>& MigratingEntities;
 	const TSet<Worker_EntityId_Key>& ModifiedEntities;
 	const TSet<Worker_EntityId_Key>& DeletedEntities;

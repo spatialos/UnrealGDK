@@ -138,13 +138,23 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 		   *Actor->GetName(), *NetDriver->LoadBalanceStrategy->GetName());
 
 	AuthorityDelegationMap DelegationMap;
-	DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
 	if (!SpatialSettings->bRunStrategyWorker)
 	{
+		DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
+		DelegationMap.Add(SpatialConstants::INTEREST_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
 		DelegationMap.Add(SpatialConstants::LB_DELEGATION_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
 	}
 	else
 	{
+		DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
+		if (Actor->IsA<APlayerController>())
+		{
+			DelegationMap.Add(SpatialConstants::INTEREST_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
+		}
+		else
+		{
+			DelegationMap.Add(SpatialConstants::INTEREST_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
+		}
 		DelegationMap.Add(SpatialConstants::LB_DELEGATION_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
 		DelegationMap.Add(SpatialConstants::STRATEGY_WORKER_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
 	}

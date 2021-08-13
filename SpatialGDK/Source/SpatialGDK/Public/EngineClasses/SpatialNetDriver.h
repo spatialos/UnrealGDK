@@ -95,6 +95,7 @@ class FSpatialServerStartupHandler;
 class FSpatialClientStartupHandler;
 class FPartitionSystemImpl;
 class FServerWorkerSystemImpl;
+class FImposterSystemImpl;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -242,6 +243,7 @@ public:
 	TUniquePtr<SpatialGDK::FSpatialStrategySystem> StrategySystem;
 	TUniquePtr<SpatialGDK::FPartitionSystemImpl> PartitionSystemImpl;
 	TUniquePtr<SpatialGDK::FServerWorkerSystemImpl> ServerWorkerSystemImpl;
+	TUniquePtr<SpatialGDK::FImposterSystemImpl> ImposterSystemImpl;
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialGDK::FSpatialHandoverManager> HandoverManager;
 	TUniquePtr<SpatialGDK::UnrealServerInterestFactory> InterestFactory;

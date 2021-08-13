@@ -16,6 +16,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSettings, Log, All);
 class ASpatialDebugger;
 class USpatialPartitionSystem;
 class USpatialServerWorkerSystem;
+class USpatialImposterSystem;
 
 /**
  * Enum that maps Unreal's log verbosity to allow use in settings.
@@ -357,6 +358,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL ServerWorkerSystem to use"))
 	TSubclassOf<USpatialServerWorkerSystem> ServerWorkerSystemClass;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL ImposterSystem to use"))
+	TSubclassOf<USpatialImposterSystem> ImposterSystemClass;
 
 #if WITH_EDITOR
 	void SetMultiWorkerEditorEnabled(const bool bIsEnabled);

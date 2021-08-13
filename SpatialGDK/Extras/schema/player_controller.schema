@@ -1,6 +1,15 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
+import "improbable/standard_library.schema";
+
 component PlayerController {
     id = 9991;
+}
+
+component_set InterestAuthSet {
+  id = 9914;
+  components = [
+	improbable.Interest,
+  ];
 }

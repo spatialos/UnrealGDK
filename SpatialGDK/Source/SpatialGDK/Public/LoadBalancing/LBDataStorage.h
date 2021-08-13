@@ -7,7 +7,7 @@
 
 namespace SpatialGDK
 {
-class FLBDataStorage
+class SPATIALGDK_API FLBDataStorage
 {
 public:
 	virtual ~FLBDataStorage() = default;
@@ -49,7 +49,7 @@ protected:
 	TSet<Worker_ComponentId> Components;
 };
 
-struct FLBDataCollection
+struct SPATIALGDK_API FLBDataCollection
 {
 	FLBDataCollection(const FSubView& InSubView)
 		: SubView(InSubView)
@@ -63,7 +63,7 @@ struct FLBDataCollection
 	const FSubView& SubView;
 };
 
-class FSpatialPositionStorage : public FLBDataStorage
+class SPATIALGDK_API FSpatialPositionStorage : public FLBDataStorage
 {
 public:
 	FSpatialPositionStorage();

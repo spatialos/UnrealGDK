@@ -62,6 +62,8 @@ public class SpatialGDK : ModuleRules
             PublicDependencyModuleNames.Add("PerfCounters");
         }
 
+        
+
         var WorkerLibraryDir = Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString());
 
         string LibPrefix = "libimprobable_";
@@ -178,5 +180,9 @@ public class SpatialGDK : ModuleRules
             Log.TraceInformation("Didn't find trace libraries at {0} and {1}, disabling trace functionality.", TraceStaticLibPath, TraceDynamicLibPath);
             PublicDefinitions.Add("TRACE_LIB_ACTIVE=0");
         }
+
+        PrivateIncludePaths.Add("F:/Dev/bullet3-3.17/src");
+        PublicAdditionalLibraries.Add("F:/Dev/Bullet_Build/lib/RelWithDebInfo/BulletCollision_RelWithDebugInfo.lib");
+        PublicAdditionalLibraries.Add("F:/Dev/Bullet_Build/lib/RelWithDebInfo/LinearMath_RelWithDebugInfo.lib");
     }
 }

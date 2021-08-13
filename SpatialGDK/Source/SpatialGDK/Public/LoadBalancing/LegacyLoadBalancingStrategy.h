@@ -16,16 +16,21 @@ class FDirectAssignmentStorage;
 class FDebugComponentStorage;
 class FCustomWorkerAssignmentStorage;
 class FActorSetSystem;
+class FEntitySpatialScene;
+class FPlayerInterestManager;
+class FPlayerControllerData;
+class InterestFactory;
 
 class FLegacyLoadBalancing : public FLoadBalancingStrategy
 {
 public:
-	FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, SpatialVirtualWorkerTranslator& InTranslator);
+	FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, SpatialVirtualWorkerTranslator& InTranslator, InterestFactory& InterestF);
 	~FLegacyLoadBalancing();
 
-	virtual void Init(TArray<FLBDataStorage*>& OutLoadBalancingData, TArray<FLBDataStorage*>& OutServerWorkerData) override;
+	virtual void Init(FActorInformation& ActorInfo, TArray<FLBDataStorage*>& OutLoadBalancingData,
+					  TArray<FLBDataStorage*>& OutServerWorkerData) override;
 
-	virtual void Advance(ISpatialOSWorker& Connection) override;
+	virtual void Advance(ISpatialOSWorker& Connection, const FSubView& LBDataSubview) override;
 	virtual void Flush(ISpatialOSWorker& Connection) override;
 
 	virtual void OnWorkersConnected(TArrayView<FLBWorkerHandle> ConnectedWorkers) override;
@@ -66,8 +71,14 @@ protected:
 	TMap<Worker_EntityId_Key, int32> Assignment;
 	bool bDirectAssignment = false;
 
-	Worker_EntityId WorkerForCustomAssignment = 0;
+	Worker_EntityId WorkerForCustomAssignment = SpatialConstants::INVALID_ENTITY_ID;
 	// --- Load Balancing ---
+
+	// +++ EXPERIMENTAL STUFF +++
+	TUniquePtr<FEntitySpatialScene> SpatialScene;
+	TUniquePtr<FPlayerInterestManager> PlayerInterest;
+	FActorInformation* ActorInfo;
+	// --- EXPERIMENTAL STUFF ---
 };
 
 } // namespace SpatialGDK

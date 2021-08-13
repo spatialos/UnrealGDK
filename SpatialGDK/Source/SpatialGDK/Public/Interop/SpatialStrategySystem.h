@@ -7,6 +7,7 @@
 #include "LoadBalancing/ActorSetSystem.h"
 #include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/LoadBalancingTypes.h"
+#include "LoadBalancing/PlayerInterestManager.h"
 #include "Schema/ActorSetMember.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/CrossServerEndpoint.h"
@@ -49,7 +50,9 @@ private:
 	TLBDataStorage<AuthorityIntentACK> AuthACKView;
 	TLBDataStorage<NetOwningClientWorker> NetOwningClientView;
 	TLBDataStorage<ActorSetMember> SetMemberView;
+	FPlayerControllerData PCData;
 	FActorSetSystem ActorSetSystem;
+	FActorInformation ActorInfo;
 	FLBDataCollection DataStorages;
 	FLBDataCollection UserDataStorages;
 	FLBDataCollection ServerWorkerDataStorages;

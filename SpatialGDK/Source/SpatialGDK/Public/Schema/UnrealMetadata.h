@@ -69,6 +69,10 @@ struct UnrealMetadata : AbstractMutableComponent
 		return Data;
 	}
 
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override {}
+
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update) {}
+
 	FORCEINLINE UClass* GetNativeEntityClass()
 	{
 		if (NativeClass.IsValid())
