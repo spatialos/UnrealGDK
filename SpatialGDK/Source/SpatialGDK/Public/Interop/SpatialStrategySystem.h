@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 
+#include "LoadBalancing/ActorSetSystem.h"
 #include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/LoadBalancingTypes.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/CrossServerEndpoint.h"
 #include "Schema/NetOwningClientWorker.h"
@@ -37,6 +39,8 @@ public:
 	void Destroy(ISpatialOSWorker& Connection);
 
 private:
+	void ClearUserStorages();
+
 	const FSubView& LBView;
 
 	TUniquePtr<FPartitionManager> PartitionsMgr;
@@ -44,6 +48,8 @@ private:
 	// +++ Components watched to implement the strategy +++
 	TLBDataStorage<AuthorityIntentACK> AuthACKView;
 	TLBDataStorage<NetOwningClientWorker> NetOwningClientView;
+	TLBDataStorage<ActorSetMember> SetMemberView;
+	FActorSetSystem ActorSetSystem;
 	FLBDataCollection DataStorages;
 	FLBDataCollection UserDataStorages;
 	TSet<Worker_ComponentId> UpdatesToConsider;
@@ -58,6 +64,7 @@ private:
 	TUniquePtr<FLoadBalancingStrategy> Strategy;
 	TSet<Worker_EntityId_Key> MigratingEntities;
 	TMap<Worker_EntityId_Key, FPartitionHandle> PendingMigrations;
+	TMap<Worker_EntityId_Key, FPartitionHandle> EntityAssignment;
 	// --- Migration data ---
 
 	void UpdateStrategySystemInterest(ISpatialOSWorker& Connection);

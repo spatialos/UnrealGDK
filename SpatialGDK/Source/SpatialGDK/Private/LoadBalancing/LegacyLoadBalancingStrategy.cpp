@@ -27,8 +27,8 @@ FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, S
 	}
 	else
 	{
-		PositionStorage = MakeUnique<SpatialGDK::FSpatialPositionStorage>();
-		GroupStorage = MakeUnique<SpatialGDK::FActorGroupStorage>();
+		PositionStorage = MakeUnique<FSpatialPositionStorage>();
+		GroupStorage = MakeUnique<FActorGroupStorage>();
 		LegacyLBStrat.GetLegacyLBInformation(LBContext);
 	}
 }
