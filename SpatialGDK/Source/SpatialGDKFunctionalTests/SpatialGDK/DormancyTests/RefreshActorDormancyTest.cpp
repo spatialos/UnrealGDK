@@ -2,11 +2,11 @@
 
 #include "RefreshActorDormancyTest.h"
 
-#include "RefreshActorDormancyTestActor.h"
 #include "Engine/NetDriver.h"
 #include "Engine/NetworkObjectList.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Net/UnrealNetwork.h"
+#include "RefreshActorDormancyTestActor.h"
 
 // This test checks whether changes on a dormant actor are replicated when the actor becomes awake.
 
@@ -30,11 +30,10 @@ void ARefreshActorDormancyTest::PrepareTest()
 	AddStep(TEXT("ServerSpawnNonDormatActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		DormancyActor = SpawnActor<ARefreshActorDormancyTestActor>(FActorSpawnParameters(), /*bRegisterAsAutoDestroy*/ true);
 		FTimerManager& TimerManager = GetWorld()->GetTimerManager();
-		TimerManager.SetTimerForNextTick(
-			[this]() {
-				DormancyActor->SetNetDormancy(DORM_DormantAll);
-				FinishStep();
-			});
+		TimerManager.SetTimerForNextTick([this]() {
+			DormancyActor->SetNetDormancy(DORM_DormantAll);
+			FinishStep();
+		});
 	});
 
 	// Step 2 - Client check NetDormancy is DORM_DormantAll

@@ -8,5 +8,5 @@
 
 ARefreshActorDormancyTestActor::ARefreshActorDormancyTestActor()
 {
-	NetDormancy = DORM_Awake; 
+	NetDormancy = DORM_Awake;
 }

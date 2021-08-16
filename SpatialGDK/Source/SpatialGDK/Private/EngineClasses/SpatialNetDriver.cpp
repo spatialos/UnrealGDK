@@ -3061,7 +3061,6 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 			ActorSystem->AddEntityToRefreshDormancy(EntityId, bMakeDormant);
 			return;
 		}
-
 	}
 
 	const bool bHasAuthority = HasServerAuthority(EntityId);
