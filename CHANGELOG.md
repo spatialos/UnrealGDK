@@ -7,19 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Note**: Since GDK for Unreal v0.10.0, the changelog is published in both English and Chinese. The Chinese version of each changelog is shown after its English version.<br>
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
-## [`x.y.z`] - Unreleased
 
-## [`0.14.0`] - 2021-06-18
-
-### Breaking changes:
-
-### Features:
-
-### Bug fixes:
-
-### Internal:
-
-## [`0.14.0-rc`] - Unreleased
+## [`0.14.0`] - 2021-08-16
 
 ### Breaking changes:
 - The `Handover` variable specifier has been deprecated. It should be replaced with the standard `Replicated` variable specifier and restricting the replication with the new `COND_ServerOnly` replication condition in `GetLifetimeReplicatedProps`. `Handover` variables will try to replicate using the new replication condition, but support will be removed in the next release.
