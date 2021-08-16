@@ -8,7 +8,6 @@
 #include "Net/UnrealNetwork.h"
 #include "RefreshActorDormancyTestActor.h"
 
-
 ARefreshActorDormancyTest::ARefreshActorDormancyTest()
 {
 	Author = TEXT("Ajanth Sutharsan");
