@@ -791,6 +791,11 @@ void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 	ActorDataStore.Remove(EntityId);
 }
 
+void ActorSystem::AddEntityToRefreshDormancy(Worker_EntityId EntityId, bool bMakeDormant)
+{
+	EntitiesMapToRefreshDormancy.Emplace(EntityId, bMakeDormant);
+}
+
 bool ActorSystem::HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const
 {
 	return EntitiesToRetireOnAuthorityGain.ContainsByPredicate([EntityId](const DeferredRetire& Retire) {
@@ -2492,6 +2497,13 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Cast<APlayerController>(Actor));
 		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
 		CommandsHandler.ClaimPartition(NetDriver->Connection->GetCoordinator(), ClientSystemEntityId, Op.entity_id);
+	}
+
+	if (EntitiesMapToRefreshDormancy.Contains(EntityId))
+	{
+		bool bMakeDormant = EntitiesMapToRefreshDormancy[EntityId];
+		EntitiesMapToRefreshDormancy.Remove(EntityId);
+		NetDriver->RefreshActorDormancy(Actor, bMakeDormant);
 	}
 }
 

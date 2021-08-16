@@ -3048,11 +3048,26 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s) without entity id"), *Actor->GetName());
 		return;
 	}
+	if (!Connection->GetCoordinator().HasEntity(EntityId))
+	{
+		USpatialActorChannel* ActorChannel = GetActorChannelByEntityId(EntityId);
+		if (ActorChannel == nullptr)
+		{
+			return;
+		}
+
+		if (!ActorChannel->bCreatedEntity)
+		{
+			ActorSystem->AddEntityToRefreshDormancy(EntityId, bMakeDormant);
+			return;
+		}
+
+	}
 
 	const bool bHasAuthority = HasServerAuthority(EntityId);
 	if (bHasAuthority == false)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s) without authority"), *Actor->GetName());
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Unable to flush dormancy on actor (%s) without authority"), *Actor->GetName());
 		return;
 	}
 

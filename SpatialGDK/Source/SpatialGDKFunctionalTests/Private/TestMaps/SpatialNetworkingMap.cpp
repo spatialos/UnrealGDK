@@ -10,6 +10,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/DormancyTests/DynamicActorAwakeChangePropertyTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DormancyTests/DynamicActorDormantAllChangePropertyTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DormancyTests/DynamicActorSetToAwakeTest.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/DormancyTests/RefreshActorDormancyTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DormancyTests/InitiallyDormantDynamicActorTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DynamicSubobjectsTest/DynamicSubObjectTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DynamicSubobjectsTest/DynamicSubObjectsTest.h"
@@ -56,6 +57,7 @@ void USpatialNetworkingMap::CreateCustomContentForMap()
 	AddActorToLevel<ADynamicActorDormantAllChangePropertyTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicActorAwakeChangePropertyTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicActorAwakeAfterDormantChangePropertyTest>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ARefreshActorDormancyTest>(CurrentLevel, FTransform::Identity);
 
 	AddActorToLevel<AUnresolvedReferenceTest>(CurrentLevel, FTransform::Identity);
 	// Add test helpers
