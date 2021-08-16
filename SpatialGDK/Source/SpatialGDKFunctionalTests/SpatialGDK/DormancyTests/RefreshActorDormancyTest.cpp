@@ -8,7 +8,6 @@
 #include "Net/UnrealNetwork.h"
 #include "RefreshActorDormancyTestActor.h"
 
-// This test checks whether changes on a dormant actor are replicated when the actor becomes awake.
 
 ARefreshActorDormancyTest::ARefreshActorDormancyTest()
 {

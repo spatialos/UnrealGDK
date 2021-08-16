@@ -6,11 +6,6 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
 #include "RefreshActorDormancyTestActor.generated.h"
 
-/**
- * A Helper actor for the dormancy tests.
- * Has a TestIntProp to see if it replicates when it should/shouldn't.
- */
-
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ARefreshActorDormancyTestActor : public AReplicatedTestActorBase
 {
