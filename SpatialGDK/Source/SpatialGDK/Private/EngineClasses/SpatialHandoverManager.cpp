@@ -102,6 +102,8 @@ void FSpatialHandoverManager::HandleChange(Worker_EntityId EntityId, const LBCom
 	{
 		if (OwnedPartitions.Contains(Components.Intent.PartitionId))
 		{
+			// TODO : Think about the need to maybe clear the handover array if there was a lock.
+			// A locked actor means that it remains in the actor to handover array.
 			ActorsToACK.Add(EntityId);
 		}
 		else
