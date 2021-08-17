@@ -7,6 +7,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -33,6 +34,151 @@ DECLARE_CYCLE_STAT(TEXT("AddUserDefinedQueries"), STAT_InterestFactoryAddUserDef
 
 namespace SpatialGDK
 {
+	struct MyQuery
+	{
+		TArray<Worker_ComponentId> Components;
+		TArray<Worker_ComponentSetId> ComponentSets;
+		TArray<Worker_EntityId> Entities;
+	};
+
+	struct ChangeInterestRequest
+	{
+		Worker_EntityId SystemEntityId;
+		TArray<MyQuery> QueriesToAdd;
+		TArray<MyQuery> QueriesToRemove;
+		bool bOverwrite = false;
+
+		void Clear()
+		{
+			QueriesToAdd.Empty();
+			QueriesToRemove.Empty();
+			bOverwrite = false;
+		}
+
+		bool IsEmpty() const
+		{
+			return QueriesToAdd.Num() == 0 && QueriesToRemove.Num() == 0;
+		}
+
+		void DebugOutput() const
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Interest diff: client entity id %lld"), SystemEntityId);
+
+			for (const auto& Query : QueriesToAdd)
+			{
+				FString EntitiesString;
+				for (const auto& EntityId : Query.Entities)
+				{
+					EntitiesString += FString::Format(TEXT("{0} "), {EntityId});
+				}
+
+				UE_LOG(LogTemp, Warning, TEXT("Interest diff: add %s"), *EntitiesString);
+
+				FString ComponentsString;
+				for (const auto& Component : Query.Components)
+				{
+					ComponentsString += FString::Format(TEXT("{0} "), { Component });
+				}
+
+				UE_LOG(LogTemp, Warning, TEXT("Interest diff: components %s"), *ComponentsString);
+
+				FString ComponentSetsString;
+				for (const auto& ComponentSet : Query.ComponentSets)
+				{
+					ComponentSetsString += FString::Format(TEXT("{0} "), { ComponentSet });
+				}
+
+				UE_LOG(LogTemp, Warning, TEXT("Interest diff: component sets %s"), *ComponentSetsString);
+			}
+
+			for (const auto& Query : QueriesToRemove)
+			{
+				FString EntitiesString;
+				for (const auto& EntityId : Query.Entities)
+				{
+					EntitiesString += FString::Format(TEXT("{0} "), { EntityId });
+				}
+
+				UE_LOG(LogTemp, Warning, TEXT("Interest diff: remove %s"), *EntitiesString);
+
+				FString ComponentsString;
+				for (const auto& Component : Query.Components)
+				{
+					ComponentsString += FString::Format(TEXT("{0} "), { Component });
+				}
+
+				UE_LOG(LogTemp, Warning, TEXT("Interest diff: components %s"), *ComponentsString);
+
+				FString ComponentSetsString;
+				for (const auto& ComponentSet : Query.ComponentSets)
+				{
+					ComponentSetsString += FString::Format(TEXT("{0} "), { ComponentSet });
+				}
+
+				UE_LOG(LogTemp, Warning, TEXT("Interest diff: component sets %s"), *ComponentSetsString);
+			}
+
+			UE_LOG(LogTemp, Warning, TEXT("Interest diff: overwrite %d"), bOverwrite);
+		}
+
+		void CreateRequest(Worker_CommandRequest& CommandRequest) const
+		{
+			/*
+				type ResultType {
+				  list<uint32> components = 1;
+				  list<uint32> component_sets = 2;
+				}
+
+				type Query {
+				  ResultType result_type = 1;
+				  list<int64> entities = 2;
+				}
+
+				type ChangeInterestRequest {
+				  int64 worker_entity_id = 1;
+				  list<Query> queries_to_add = 2;
+				  list<Query> queries_to_remove = 3;
+				  bool overwrite = 4;
+				}
+			*/
+
+			CommandRequest.component_id = SpatialConstants::WORKER_COMPONENT_ID;
+			CommandRequest.command_index = SpatialConstants::WORKER_CHANGE_INTEREST_COMMAND_ID;
+			CommandRequest.schema_type = Schema_CreateCommandRequest();
+
+			Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
+
+			Schema_AddEntityId(RequestObject, 1, SystemEntityId);
+
+			if (QueriesToAdd.Num() > 0)
+			{
+				for (const MyQuery& Query : QueriesToAdd)
+				{
+					Schema_Object* QueriesToAddObject = Schema_AddObject(RequestObject, 2);
+					Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToAddObject, 1);
+					Schema_AddUint32List(ResultTypeObject, 1, Query.Components.GetData(), Query.Components.Num());
+					Schema_AddUint32List(ResultTypeObject, 2, Query.ComponentSets.GetData(), Query.ComponentSets.Num());
+					Schema_AddEntityIdList(QueriesToAddObject, 2, Query.Entities.GetData(), Query.Entities.Num());
+				}
+			}
+
+			if (QueriesToRemove.Num() > 0)
+			{
+				for (const MyQuery& Query : QueriesToRemove)
+				{
+					Schema_Object* QueriesToRemoveObject = Schema_AddObject(RequestObject, 3);
+					Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToRemoveObject, 1);
+					Schema_AddUint32List(ResultTypeObject, 1, Query.Components.GetData(), Query.Components.Num());
+					Schema_AddUint32List(ResultTypeObject, 2, Query.ComponentSets.GetData(), Query.ComponentSets.Num());
+					Schema_AddEntityIdList(QueriesToRemoveObject, 2, Query.Entities.GetData(), Query.Entities.Num());
+				}
+			}
+
+			Schema_AddBool(RequestObject, 4, bOverwrite);
+		}
+	};
+
+
 InterestFactory::InterestFactory(USpatialClassInfoManager* InClassInfoManager)
 	: ClassInfoManager(InClassInfoManager)
 {
@@ -267,7 +413,7 @@ Interest UnrealServerInterestFactory::CreateInterest(AActor* InActor, const FCla
 	{
 		if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
 		{
-			AddClientInterestEntityIdQuery(ResultInterest, InActor);
+			//CreateClientInterestDiff(InActor);
 		}
 		else
 		{
@@ -363,26 +509,130 @@ void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(I
 }
 #endif
 
-void UnrealServerInterestFactory::AddClientInterestEntityIdQuery(Interest& OutInterest, const AActor* InActor) const
+bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor, Worker_CommandRequest& Request, const bool bOverwrite) const
 {
 	const APlayerController* PlayerController = Cast<APlayerController>(InActor);
 	if (!ensure(GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
 		|| !ensureMsgf(PlayerController != nullptr, TEXT("Only PCs can use client entity interest: %s"), *GetNameSafe(InActor)))
 	{
-		return;
+		return false;
 	}
 
-	Query RepGraphEntityIdQuery = Query();
-	RepGraphEntityIdQuery.ResultComponentIds = ClientNonAuthInterestResultType.ComponentIds;
-	RepGraphEntityIdQuery.ResultComponentSetIds = ClientNonAuthInterestResultType.ComponentSetsIds;
+// 	Query RepGraphEntityIdQuery = Query();
+// 	RepGraphEntityIdQuery.ResultComponentIds = ClientNonAuthInterestResultType.ComponentIds;
+// 	RepGraphEntityIdQuery.ResultComponentSetIds = ClientNonAuthInterestResultType.ComponentSetsIds;
 
 	// If and when the Runtime has a better interest changing API, we can ask for a diff here instead.
 	TArray<Worker_EntityId> ClientInterestedEntities = GetClientInterestedEntityIds(PlayerController);
+
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(PlayerController->GetNetDriver());
 
 	// MAKE DEBUGGING EASIER, REVERT ME
 #if WITH_EDITOR
 	ClientInterestedEntities.Sort();
 #endif
+
+	static ChangeInterestRequest ChangeInterestRequestData;
+	ChangeInterestRequestData.Clear();
+
+	if (USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PlayerController->NetConnection))
+	{
+		TSet<Worker_EntityId> FullInterested(ClientInterestedEntities);
+		TSet<Worker_EntityId> Add = FullInterested.Difference(NetConnection->EntityInterestCache);
+		TSet<Worker_EntityId> Remove = NetConnection->EntityInterestCache.Difference(FullInterested);
+		NetConnection->EntityInterestCache = FullInterested;
+
+		if (bOverwrite)
+		{
+			Add = FullInterested;
+			Remove.Empty();
+		}
+
+		ChangeInterestRequestData.SystemEntityId = NetConnection->ConnectionClientWorkerSystemEntityId;
+
+		if (Add.Num() > 0)
+		{
+			MyQuery Query{};
+			Query.Components = ClientNonAuthInterestResultType.ComponentIds;
+			Query.ComponentSets = ClientNonAuthInterestResultType.ComponentSetsIds;
+			Query.Entities = Add.Array();
+
+			ChangeInterestRequestData.QueriesToAdd.Emplace(Query);
+		}
+
+		if (Remove.Num() > 0)
+		{
+			MyQuery Query{};
+			Query.Components = ClientNonAuthInterestResultType.ComponentIds;
+			Query.ComponentSets = ClientNonAuthInterestResultType.ComponentSetsIds;
+			Query.Entities = Remove.Array();
+
+			ChangeInterestRequestData.QueriesToRemove.Emplace(Query);
+		}
+
+		ChangeInterestRequestData.bOverwrite = bOverwrite;
+
+		// Add auth interest
+		TSet<Worker_EntityId> FullAuth;
+		const Worker_EntityId PCEntityId = PackageMap->GetEntityIdFromObject(PlayerController);
+		const Worker_EntityId PawnEntityId = PackageMap->GetEntityIdFromObject(PlayerController->GetPawn());
+
+		if (NetDriver->Connection->GetView().Find(PCEntityId) == nullptr)
+		{
+			UE_LOG(LogInterestFactory, Warning, TEXT("Skipping PC actor %s (%lld) because entity not created"),
+				*GetNameSafe(PlayerController), PCEntityId);
+		}
+		else
+		{
+			FullAuth.Add(PCEntityId);
+		}
+
+		if (NetDriver->Connection->GetView().Find(PawnEntityId) == nullptr)
+		{
+			UE_LOG(LogInterestFactory, Warning, TEXT("Skipping Pawn actor %s (%lld) because entity not created"),
+				*GetNameSafe(PlayerController->AcknowledgedPawn), PawnEntityId);
+		}
+		else
+		{
+			FullAuth.Add(PawnEntityId);
+		}
+		Add = FullAuth.Difference(NetConnection->EntityAuthCache);
+		Remove = NetConnection->EntityAuthCache.Difference(FullAuth);
+		NetConnection->EntityAuthCache = FullAuth;
+
+		if (bOverwrite)
+		{
+			Add = FullAuth;
+			Remove.Empty();
+		}
+
+		if (Add.Num() > 0)
+		{
+			MyQuery Query{};
+			Query.Components = ClientAuthInterestResultType.ComponentIds;
+			Query.Components.Push(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID);
+			Query.ComponentSets = ClientAuthInterestResultType.ComponentSetsIds;
+			Query.Entities = Add.Array();
+
+			ChangeInterestRequestData.QueriesToAdd.Emplace(Query);
+		}
+
+		if (Remove.Num() > 0)
+		{
+			MyQuery Query{};
+			Query.Components = ClientAuthInterestResultType.ComponentIds;
+			Query.Components.Push(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID);
+			Query.ComponentSets = ClientAuthInterestResultType.ComponentSetsIds;
+			Query.Entities = Remove.Array();
+
+			ChangeInterestRequestData.QueriesToRemove.Emplace(Query);
+		}
+	}
+
+	if (ChangeInterestRequestData.IsEmpty())
+	{
+		return false;
+	}
 
 	UMetricsExport* MetricsExport =
 		Cast<UMetricsExport>(InActor->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
@@ -393,14 +643,17 @@ void UnrealServerInterestFactory::AddClientInterestEntityIdQuery(Interest& OutIn
 		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("total_interested_entities"), ClientInterestedEntities.Num());
 	}
 
-	for (Worker_EntityId EntityId : ClientInterestedEntities)
-	{
-		QueryConstraint Constraint;
-		Constraint.EntityIdConstraint = EntityId;
-		RepGraphEntityIdQuery.Constraint.OrConstraint.Add(Constraint);
-	}
-
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, RepGraphEntityIdQuery);
+// 	for (Worker_EntityId EntityId : ClientInterestedEntities)
+// 	{
+// 		QueryConstraint Constraint;
+// 		Constraint.EntityIdConstraint = EntityId;
+// 		RepGraphEntityIdQuery.Constraint.OrConstraint.Add(Constraint);
+// 	}
+// 
+// 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, RepGraphEntityIdQuery);
+	ChangeInterestRequestData.DebugOutput();
+	ChangeInterestRequestData.CreateRequest(Request);
+	return true;
 }
 
 TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityIds(const APlayerController* InPlayerController) const
@@ -408,6 +661,7 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 	TArray<Worker_EntityId> InterestedEntityIdList{};
 
 	UNetConnection* NetConnection = InPlayerController->NetConnection;
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(NetConnection->Driver);
 	USpatialReplicationGraph* RepGraph = Cast<USpatialReplicationGraph>(NetConnection->Driver->GetReplicationDriver());
 	if (RepGraph == nullptr)
 	{
@@ -446,6 +700,13 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 		{
 			UE_LOG(LogInterestFactory, Error, TEXT("Frame %u. Failed getting entity ID for %s when creating client entity interest"),
 				   RepGraph->GetReplicationGraphFrame(), *GetNameSafe(Actor));
+			continue;
+		}
+
+		if (NetDriver->Connection->GetView().Find(EntityId) == nullptr)
+		{
+			UE_LOG(LogInterestFactory, Warning, TEXT("Frame %u. Skipping actor %s (%lld) because entity not created"),
+				RepGraph->GetReplicationGraphFrame(), *GetNameSafe(Actor), EntityId);
 			continue;
 		}
 

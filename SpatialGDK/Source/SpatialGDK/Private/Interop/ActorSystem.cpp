@@ -510,13 +510,25 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 
-						// Flush PC interest on handover
-						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries
-							&& GetDefault<USpatialGDKSettings>()->bRefreshClientInterestOnHandover)
-						{
-							Channel->MarkInterestDirty();
-						}
+ 						// Flush PC interest on handover
+ 						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries
+ 							&& GetDefault<USpatialGDKSettings>()->bRefreshClientInterestOnHandover)
+ 						{
+							UE_LOG(LogTemp, Warning, TEXT("Auth gained, marking interest dirty. (%s)"), *Actor->GetName());
+ 							Channel->MarkInterestDirty();
+							Channel->MarkOverwriteInterest();
+ 						}
 					}
+
+// 					if (Channel != nullptr)
+// 					{
+// 						// Flush PC interest on handover
+// 						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries
+// 							&& GetDefault<USpatialGDKSettings>()->bRefreshClientInterestOnHandover)
+// 						{
+// 							Channel->MarkInterestDirty();
+// 						}
+// 					}
 
 					if (!bDormantActor)
 					{
@@ -2251,7 +2263,7 @@ void ActorSystem::RegisterChannelForPositionUpdate(USpatialActorChannel* Channel
 	ChannelsToUpdatePosition.Add(Channel);
 }
 
-void ActorSystem::UpdateInterestComponent(AActor* Actor)
+void ActorSystem::UpdateInterestComponent(AActor* Actor, const bool bOverwriteInterest)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ActorSystemUpdateInterestComponent);
 
@@ -2266,6 +2278,21 @@ void ActorSystem::UpdateInterestComponent(AActor* Actor)
 		NetDriver->InterestFactory->CreateInterestUpdate(Actor, NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Actor), EntityId);
 
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+
+	if (Actor->IsA(APlayerController::StaticClass()) && GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
+	{
+		Worker_CommandRequest CommandRequest{};
+		const bool bRequestValid = NetDriver->InterestFactory->CreateClientInterestDiff(Actor, CommandRequest, bOverwriteInterest);
+
+		if (bRequestValid)
+		{
+			const Worker_EntityId SystemEntityId = Cast<USpatialNetConnection>(Actor->GetNetConnection())->ConnectionClientWorkerSystemEntityId;
+
+			NetDriver->Connection->SendCommandRequest(SystemEntityId, &CommandRequest, RETRY_MAX_TIMES, {});
+
+			UE_LOG(LogTemp, Warning, TEXT("Interest diff: worker entity id %lld"), SystemEntityId);
+		}
+	}
 }
 
 void ActorSystem::SendInterestBucketComponentChange(Worker_EntityId EntityId, Worker_ComponentId OldComponent,

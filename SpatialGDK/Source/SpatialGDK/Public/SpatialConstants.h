@@ -255,6 +255,7 @@ const Schema_FieldId WORKER_TYPE_ID = 2;
 // WorkerEntity command IDs
 const Schema_FieldId WORKER_DISCONNECT_COMMAND_ID = 1;
 const Schema_FieldId WORKER_CLAIM_PARTITION_COMMAND_ID = 2;
+const Schema_FieldId WORKER_CHANGE_INTEREST_COMMAND_ID = 3;
 
 // SpatialDebugger Field IDs.
 const Schema_FieldId SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID = 1;

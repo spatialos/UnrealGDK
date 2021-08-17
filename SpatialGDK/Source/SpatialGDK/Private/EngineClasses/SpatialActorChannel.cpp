@@ -208,6 +208,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bCreatingNewEntity(false)
 	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
 	, bInterestDirty(false)
+	, bInterestOverwrite(false)
 	, bNetOwned(false)
 	, NetDriver(nullptr)
 	, EventTracer(nullptr)
@@ -226,6 +227,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	bCreatingNewEntity = false;
 	EntityId = SpatialConstants::INVALID_ENTITY_ID;
 	bInterestDirty = false;
+	bInterestOverwrite = false;
 	bNetOwned = false;
 	bIsAuthClient = false;
 	bIsAuthServer = false;
@@ -698,6 +700,13 @@ int64 USpatialActorChannel::ReplicateActor()
 		if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries && Actor->IsA<APlayerController>())
 		{
 			CheckForClientEntityInterestUpdate();
+
+			if (GetInterestDirty())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Refresh interest (%s)"), *Actor->GetName());
+				NetDriver->ActorSystem->UpdateInterestComponent(Actor, GetOverwriteInterest());
+				ClearOverwriteInterest();
+			}
 		}
 		// Classic interest flow
 		else if (NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))

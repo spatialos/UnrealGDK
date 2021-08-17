@@ -123,6 +123,8 @@ public:
 	// Returns false if we could not get an owner's entityId in the Actor's owner chain.
 	bool DoOwnersHaveEntityId(const AActor* Actor) const;
 
+	bool CreateClientInterestDiff(const AActor* InActor, Worker_CommandRequest& Request, const bool bOverwrite) const;
+
 private:
 	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
@@ -134,7 +136,6 @@ private:
 
 	void AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase) * Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
-	void AddClientInterestEntityIdQuery(Interest& OutInterest, const AActor* InActor) const;
 	TArray<Worker_EntityId> GetClientInterestedEntityIds(const APlayerController* InPlayerController) const;
 
 	USpatialPackageMapClient* PackageMap;
