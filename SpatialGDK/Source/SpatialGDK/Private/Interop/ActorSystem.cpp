@@ -2347,6 +2347,10 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 			OnEntityCreated(Op, SpanId);
 		});
 
+		if (EntityId != 0)
+		{
+			CreateEntityRequestsInFlight.Add(EntityId);
+		}
 		CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
 	}
 	else
@@ -2388,6 +2392,11 @@ bool ActorSystem::HasPendingOpsForChannel(const USpatialActorChannel& ActorChann
 		});
 
 	return bHasPendingCreateEntityRequests;
+}
+
+bool ActorSystem::IsCreateEntityRequestInFlight(Worker_EntityId EntityId) const
+{
+	return CreateEntityRequestsInFlight.Contains(EntityId);
 }
 
 void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpatialGDKSpanId CreateOpSpan)
@@ -2438,6 +2447,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 			   TEXT("Create entity request succeeded. "
 					"Actor %s, request id: %d, entity id: %lld, message: %s"),
 			   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		CreateEntityRequestsInFlight.Remove(Op.entity_id);
 		break;
 	case WORKER_STATUS_CODE_TIMEOUT:
 		if (bEntityIsInView)
