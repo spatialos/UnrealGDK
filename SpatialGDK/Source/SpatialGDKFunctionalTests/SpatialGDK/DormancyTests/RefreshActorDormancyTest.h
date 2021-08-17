@@ -23,5 +23,8 @@ public:
 
 private:
 	UPROPERTY(Replicated)
-	ARefreshActorDormancyTestActor* DormancyActor;
+	ARefreshActorDormancyTestActor* DormantToAwakeActor;
+
+	UPROPERTY(Replicated)
+	ARefreshActorDormancyTestActor* AwakeToDormantActor;
 };

@@ -13,4 +13,14 @@ class SPATIALGDKFUNCTIONALTESTS_API ARefreshActorDormancyTestActor : public ARep
 
 public:
 	ARefreshActorDormancyTestActor();
+	void FlushDormancy();
+	void SetupForTest(bool bGoToAwakeState);
+	virtual bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
+
+private:
+	bool bfirstRep = true;
+	bool bIsSetDormancyComplete = false;
+	bool bSetupForTest = false;
+	ENetDormancy FinalDormancyState;
+	FDelegateHandle PostTickFlushDelegateHandle;
 };

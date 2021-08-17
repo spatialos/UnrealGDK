@@ -17,7 +17,8 @@ void ARefreshActorDormancyTest::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ThisClass, DormancyActor);
+	DOREPLIFETIME(ThisClass, DormantToAwakeActor);
+	DOREPLIFETIME(ThisClass, AwakeToDormantActor);
 }
 
 void ARefreshActorDormancyTest::PrepareTest()
@@ -26,17 +27,18 @@ void ARefreshActorDormancyTest::PrepareTest()
 
 	// Step 1 - Spawn dormancy actor which is non dormant and change NetDormancy to DORM_DormantAll after a tick
 	AddStep(TEXT("ServerSpawnNonDormatActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		DormancyActor = SpawnActor<ARefreshActorDormancyTestActor>(FActorSpawnParameters(), /*bRegisterAsAutoDestroy*/ true);
-		FTimerManager& TimerManager = GetWorld()->GetTimerManager();
-		TimerManager.SetTimerForNextTick([this]() {
-			DormancyActor->SetNetDormancy(DORM_DormantAll);
-			FinishStep();
-		});
+		DormantToAwakeActor = SpawnActor<ARefreshActorDormancyTestActor>(FActorSpawnParameters(), /*bRegisterAsAutoDestroy*/ true);
+		AwakeToDormantActor = SpawnActor<ARefreshActorDormancyTestActor>(FActorSpawnParameters(), /*bRegisterAsAutoDestroy*/ true);
+		DormantToAwakeActor->SetupForTest(true);
+		AwakeToDormantActor->SetupForTest(false);
+		FinishStep();
 	});
 
 	// Step 2 - Client check NetDormancy is DORM_DormantAll
-	AddStep(("ClientAssertDormancyTestState"), FWorkerDefinition::AllClients, nullptr, [this]() {
-		AssertEqual_Int(DormancyActor->NetDormancy, DORM_DormantAll, TEXT("Dormancy on ARefreshActorDormancyTestActor"));
-		FinishStep();
-	});
+	AddStep(("ClientAssertDormancyTestState"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireEqual_Int(DormantToAwakeActor->NetDormancy, DORM_Awake, TEXT("DormantToAwakeActor is Awake"));
+			RequireEqual_Int(AwakeToDormantActor->NetDormancy, DORM_DormantAll, TEXT("AwakeToDormantActor is Dormant"));
+			FinishStep();
+		}, 5.0f);
 }

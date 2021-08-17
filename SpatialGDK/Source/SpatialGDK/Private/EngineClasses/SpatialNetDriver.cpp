@@ -3056,7 +3056,7 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 			return;
 		}
 
-		if (!ActorChannel->bCreatedEntity)
+		if (ActorChannel->bCreatedEntity)
 		{
 			ActorSystem->AddEntityToRefreshDormancy(EntityId, bMakeDormant);
 			return;
