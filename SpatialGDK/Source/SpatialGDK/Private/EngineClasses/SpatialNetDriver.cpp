@@ -3058,7 +3058,12 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 
 		if (ActorChannel->bCreatedEntity)
 		{
-			ActorSystem->AddEntityToRefreshDormancy(EntityId, bMakeDormant);
+			ActorSystem->RefreshActorDormancyOnEntityCreation(EntityId, bMakeDormant);
+			return;
+		}
+		else
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Entity should be checked out for actor (%s)"), *Actor->GetName());
 			return;
 		}
 	}

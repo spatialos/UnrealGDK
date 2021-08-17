@@ -791,7 +791,7 @@ void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 	ActorDataStore.Remove(EntityId);
 }
 
-void ActorSystem::AddEntityToRefreshDormancy(Worker_EntityId EntityId, bool bMakeDormant)
+void ActorSystem::RefreshActorDormancyOnEntityCreation(Worker_EntityId EntityId, bool bMakeDormant)
 {
 	EntitiesMapToRefreshDormancy.Emplace(EntityId, bMakeDormant);
 }
@@ -2499,7 +2499,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 		CommandsHandler.ClaimPartition(NetDriver->Connection->GetCoordinator(), ClientSystemEntityId, Op.entity_id);
 	}
 
-	if (EntitiesMapToRefreshDormancy.Contains(EntityId))
+	if (static_cast<Worker_StatusCode>(Op.status_code) == WORKER_STATUS_CODE_SUCCESS && EntitiesMapToRefreshDormancy.Contains(EntityId))
 	{
 		bool bMakeDormant = EntitiesMapToRefreshDormancy[EntityId];
 		EntitiesMapToRefreshDormancy.Remove(EntityId);

@@ -25,17 +25,17 @@ void ARefreshActorDormancyTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	// Step 1 - Spawn dormancy actor which is non dormant and change NetDormancy to DORM_DormantAll after a tick
-	AddStep(TEXT("ServerSpawnNonDormatActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		DormantToAwakeActor = SpawnActor<ARefreshActorDormancyTestActor>(FActorSpawnParameters(), /*bRegisterAsAutoDestroy*/ true);
-		AwakeToDormantActor = SpawnActor<ARefreshActorDormancyTestActor>(FActorSpawnParameters(), /*bRegisterAsAutoDestroy*/ true);
-		DormantToAwakeActor->SetupForTest(true);
-		AwakeToDormantActor->SetupForTest(false);
+	// Step 1 - Spawn dormancy actor which is non dormant and dormant initially and then become dormant and non dormant respectively
+	AddStep(TEXT("ServerSpawnDormantAndNonDormatActors"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		DormantToAwakeActor = SpawnActor<ARefreshActorDormancyTestActor>(FActorSpawnParameters(), true);
+		AwakeToDormantActor = SpawnActor<ARefreshActorDormancyTestActor>(FActorSpawnParameters(), true);
+		DormantToAwakeActor->SetInitiallyDormant(true);
+		AwakeToDormantActor->SetInitiallyDormant(false);
 		FinishStep();
 	});
 
-	// Step 2 - Client check NetDormancy is DORM_DormantAll
-	AddStep(("ClientAssertDormancyTestState"), FWorkerDefinition::AllClients, nullptr, nullptr,
+	// Step 2 - Client check NetDormancy is DORM_Awake for DormantToAwakeActor and DORM_DormantAll for AwakeToDormantActor
+	AddStep(("ClientAssertDormancyTestStates"), FWorkerDefinition::AllClients, nullptr, nullptr,
 			[this](float DeltaTime) {
 				RequireEqual_Int(DormantToAwakeActor->NetDormancy, DORM_Awake, TEXT("DormantToAwakeActor is Awake"));
 				RequireEqual_Int(AwakeToDormantActor->NetDormancy, DORM_DormantAll, TEXT("AwakeToDormantActor is Dormant"));

@@ -87,7 +87,7 @@ public:
 	void OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpatialGDKSpanId CreateOpSpan);
 	bool HasPendingOpsForChannel(const USpatialActorChannel& ActorChannel) const;
 
-	void AddEntityToRefreshDormancy(Worker_EntityId EntityId, bool bMakeDormant);
+	void RefreshActorDormancyOnEntityCreation(Worker_EntityId EntityId, bool bMakeDormant);
 
 	static Worker_ComponentData CreateLevelComponentData(const AActor& Actor, const UWorld& NetDriverWorld,
 														 const USpatialClassInfoManager& ClassInfoManager);
@@ -134,7 +134,6 @@ private:
 
 	void EntityAdded(Worker_EntityId EntityId);
 	void EntityRemoved(Worker_EntityId EntityId);
-
 	void RefreshEntity(const Worker_EntityId EntityId);
 	void ApplyFullState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor);
 

@@ -6,26 +6,21 @@
 #include "Engine/Classes/Materials/Material.h"
 #include "Net/UnrealNetwork.h"
 
-ARefreshActorDormancyTestActor::ARefreshActorDormancyTestActor()
+void ARefreshActorDormancyTestActor::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
 {
-	NetDormancy = DORM_Initial;
-}
-
-bool ARefreshActorDormancyTestActor::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
-{
-	if (bSetupForTest && bIsSetDormancyComplete)
+	if (PostTickFlushDelegateHandle.IsValid() && bIsSetDormancyComplete)
 	{
 		GetWorld()->OnPostTickFlush().Remove(PostTickFlushDelegateHandle);
-		bIsSetDormancyComplete = false;
+		PostTickFlushDelegateHandle.Reset();
 	}
 
-	if (bSetupForTest && bfirstRep)
+	if (bSetupDormancyStateForTest && bFirstRep)
 	{
 		PostTickFlushDelegateHandle = GetWorld()->OnPostTickFlush().AddUObject(this, &ARefreshActorDormancyTestActor::FlushDormancy);
-		bfirstRep = false;
+		bFirstRep = false;
 	}
 
-	return Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
+	Super::PreReplication(ChangedPropertyTracker);
 }
 
 void ARefreshActorDormancyTestActor::FlushDormancy()
@@ -37,10 +32,10 @@ void ARefreshActorDormancyTestActor::FlushDormancy()
 	}
 }
 
-void ARefreshActorDormancyTestActor::SetupForTest(bool bGoToAwakeState)
+void ARefreshActorDormancyTestActor::SetInitiallyDormant(bool bInitiallyDormant)
 {
-	ENetDormancy OriginalDormancyState = bGoToAwakeState ? DORM_DormantAll : DORM_Awake;
-	FinalDormancyState = bGoToAwakeState ? DORM_Awake : DORM_DormantAll;
-	bSetupForTest = true;
+	ENetDormancy OriginalDormancyState = bInitiallyDormant ? DORM_DormantAll : DORM_Awake;
+	FinalDormancyState = bInitiallyDormant ? DORM_Awake : DORM_DormantAll;
+	bSetupDormancyStateForTest = true;
 	SetNetDormancy(OriginalDormancyState);
 }
