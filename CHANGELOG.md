@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 
-## [`0.14.0`] - 2021-08-16
+## [`0.14.0`] - 2021-08-17
 
 ### Breaking changes:
 - The `Handover` variable specifier has been deprecated. It should be replaced with the standard `Replicated` variable specifier and restricting the replication with the new `COND_ServerOnly` replication condition in `GetLifetimeReplicatedProps`. `Handover` variables will try to replicate using the new replication condition, but support will be removed in the next release.
