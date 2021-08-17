@@ -36,9 +36,10 @@ void ARefreshActorDormancyTest::PrepareTest()
 
 	// Step 2 - Client check NetDormancy is DORM_DormantAll
 	AddStep(("ClientAssertDormancyTestState"), FWorkerDefinition::AllClients, nullptr, nullptr,
-		[this](float DeltaTime) {
-			RequireEqual_Int(DormantToAwakeActor->NetDormancy, DORM_Awake, TEXT("DormantToAwakeActor is Awake"));
-			RequireEqual_Int(AwakeToDormantActor->NetDormancy, DORM_DormantAll, TEXT("AwakeToDormantActor is Dormant"));
-			FinishStep();
-		}, 5.0f);
+			[this](float DeltaTime) {
+				RequireEqual_Int(DormantToAwakeActor->NetDormancy, DORM_Awake, TEXT("DormantToAwakeActor is Awake"));
+				RequireEqual_Int(AwakeToDormantActor->NetDormancy, DORM_DormantAll, TEXT("AwakeToDormantActor is Dormant"));
+				FinishStep();
+			},
+			5.0f);
 }

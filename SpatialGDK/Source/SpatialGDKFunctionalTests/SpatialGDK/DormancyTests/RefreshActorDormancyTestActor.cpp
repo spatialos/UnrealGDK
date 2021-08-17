@@ -11,8 +11,7 @@ ARefreshActorDormancyTestActor::ARefreshActorDormancyTestActor()
 	NetDormancy = DORM_Initial;
 }
 
-bool ARefreshActorDormancyTestActor::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch,
-															  FReplicationFlags* RepFlags)
+bool ARefreshActorDormancyTestActor::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
 {
 	if (bSetupForTest && bIsSetDormancyComplete)
 	{
@@ -24,7 +23,6 @@ bool ARefreshActorDormancyTestActor::ReplicateSubobjects(UActorChannel* Channel,
 	{
 		PostTickFlushDelegateHandle = GetWorld()->OnPostTickFlush().AddUObject(this, &ARefreshActorDormancyTestActor::FlushDormancy);
 		bfirstRep = false;
-		
 	}
 
 	return Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
@@ -37,8 +35,6 @@ void ARefreshActorDormancyTestActor::FlushDormancy()
 		SetNetDormancy(FinalDormancyState);
 		bIsSetDormancyComplete = true;
 	}
-	
-	
 }
 
 void ARefreshActorDormancyTestActor::SetupForTest(bool bGoToAwakeState)
@@ -48,7 +44,3 @@ void ARefreshActorDormancyTestActor::SetupForTest(bool bGoToAwakeState)
 	bSetupForTest = true;
 	SetNetDormancy(OriginalDormancyState);
 }
-
-
-
-
