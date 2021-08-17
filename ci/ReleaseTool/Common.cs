@@ -76,6 +76,9 @@ namespace ReleaseTool
                 case "UnrealGDKEngineNetTest":
                 case "TestGymBuildKite":
                     return UpdateVersionFile(gitClient, versionDecorated, UnrealGDKVersionFile, logger);
+                case "UnrealGDKBuild":
+                    // TODO: Update engine.py automatically if we ever get to it
+                    return false;
                 default:
                     throw new ArgumentException($"Invalid gitRepoName: '{gitRepoName}'");
             }

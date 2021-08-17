@@ -27,8 +27,7 @@ public:
 	};
 
 	SpatialVirtualWorkerTranslator() = delete;
-	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy, USpatialNetDriver* InNetDriver,
-								   PhysicalWorkerName InLocalPhysicalWorkerName);
+	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy, PhysicalWorkerName InLocalPhysicalWorkerName);
 
 	// Returns true if the Translator has received the information needed to map virtual workers to physical workers.
 	// Currently that is only the number of virtual workers desired.
@@ -47,12 +46,13 @@ public:
 	Worker_PartitionId GetPartitionEntityForVirtualWorker(VirtualWorkerId Id) const;
 	Worker_EntityId GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const;
 
-	// On receiving a version of the translation state, apply that to the internal mapping.
-	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);
-
-	USpatialNetDriver* NetDriver;
-
 	TWeakObjectPtr<UAbstractLBStrategy> LoadBalanceStrategy;
+
+	static void ApplyMappingFromSchema(TMap<VirtualWorkerId, WorkerInformation>& VirtualToPhysicalWorkerMapping,
+									   const Schema_Object& Schema);
+
+	// Serialization and deserialization of the mapping.
+	void ApplyMappingFromSchema(Schema_Object* Object);
 
 private:
 	TMap<VirtualWorkerId, WorkerInformation> VirtualToPhysicalWorkerMapping;
@@ -63,10 +63,4 @@ private:
 	PhysicalWorkerName LocalPhysicalWorkerName;
 	VirtualWorkerId LocalVirtualWorkerId;
 	Worker_PartitionId LocalPartitionId;
-
-	// Serialization and deserialization of the mapping.
-	void ApplyMappingFromSchema(Schema_Object* Object);
-
-	void UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName WorkerName, Worker_PartitionId PartitionEntityId,
-					   Worker_EntityId ServerWorkerEntityId);
 };

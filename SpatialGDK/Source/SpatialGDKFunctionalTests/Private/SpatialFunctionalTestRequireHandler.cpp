@@ -74,7 +74,13 @@ FString GetTransformAsString(const FTransform& Transform)
 }
 } // namespace
 
-FString GenerateStatusMessage(bool bPassed, FString Received, FString Expected, FString Tolerance = FString(), bool bNotEqual = false)
+SpatialFunctionalTestRequireHandler::SpatialFunctionalTestRequireHandler()
+	: NextOrder(0)
+{
+}
+
+FString SpatialFunctionalTestRequireHandler::GenerateStatusMessage(bool bPassed, FString Received, FString Expected, FString Tolerance,
+																   bool bNotEqual)
 {
 	if (bNotEqual)
 	{
@@ -102,9 +108,21 @@ FString GenerateStatusMessage(bool bPassed, FString Received, FString Expected, 
 	}
 }
 
-SpatialFunctionalTestRequireHandler::SpatialFunctionalTestRequireHandler()
-	: NextOrder(0)
+bool SpatialFunctionalTestRequireHandler::RequireValid(const UObject* Object, const FString& Msg)
 {
+	bool bPassed = IsValid(Object);
+	FString StatusMsg;
+	if (bPassed)
+	{
+		StatusMsg = FString::Printf(TEXT("Received valid actor %s as expected."), *Object->GetName());
+	}
+	else
+	{
+		StatusMsg = FString::Printf(TEXT("Unexpectedly received invalid actor %s."), *GetNameSafe(Object));
+	}
+
+	GenericRequire(Msg, bPassed, StatusMsg);
+	return bPassed;
 }
 
 bool SpatialFunctionalTestRequireHandler::RequireTrue(bool bCheckTrue, const FString& Msg)
@@ -353,27 +371,31 @@ void SpatialFunctionalTestRequireHandler::LogAndClearStepRequires()
 		return A.Order < B.Order;
 	});
 
-	const FString& WorkerName = OwnerTest->GetLocalFlowController()->GetDisplayName();
-
-	for (const auto& Require : RequiresOrdered)
+	ASpatialFunctionalTestFlowController* FlowController = OwnerTest->GetLocalFlowController();
+	if (FlowController)
 	{
-		FString Msg;
-		if (Require.bPassed)
-		{
-			Msg = FString::Printf(TEXT("%s [Passed] %s : \"%s\""), *WorkerName, *Require.Msg, *Require.StatusMsg);
-			UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
-			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
-		}
-		else
-		{
-			Msg = FString::Printf(TEXT("%s [Failed] %s : %s"), *WorkerName, *Require.Msg, *Require.StatusMsg);
-			UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Msg);
-			UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Msg);
-		}
-	}
+		const FString& WorkerName = FlowController->GetDisplayName();
 
-	NextOrder = 0;
-	Requires.Empty();
+		for (const auto& Require : RequiresOrdered)
+		{
+			FString Msg;
+			if (Require.bPassed)
+			{
+				Msg = FString::Printf(TEXT("%s [Passed] %s : \"%s\""), *WorkerName, *Require.Msg, *Require.StatusMsg);
+				UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
+				UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
+			}
+			else
+			{
+				Msg = FString::Printf(TEXT("%s [Failed] %s : %s"), *WorkerName, *Require.Msg, *Require.StatusMsg);
+				UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Msg);
+				UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Msg);
+			}
+		}
+
+		NextOrder = 0;
+		Requires.Empty();
+	}
 }
 
 bool SpatialFunctionalTestRequireHandler::HasFails()

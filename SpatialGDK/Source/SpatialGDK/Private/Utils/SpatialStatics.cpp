@@ -139,6 +139,12 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 	return SpatialGDK::GetColorForWorkerName(WorkerName);
 }
 
+bool USpatialStatics::IsStrategyWorkerEnabled()
+{
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	return SpatialGDKSettings->bRunStrategyWorker;
+}
+
 bool USpatialStatics::IsMultiWorkerEnabled()
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
@@ -226,17 +232,14 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 
 	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 	{
-		// Calling IsActorGroupOwnerForClass before NotifyBeginPlay has been called (when NetDriver is ready) is invalid.
-		if (!SpatialNetDriver->IsReady())
-		{
-			UE_LOG(LogSpatial, Error,
-				   TEXT("Called IsActorGroupOwnerForClass before NotifyBeginPlay has been called is invalid. Actor class: %s"),
-				   *GetNameSafe(ActorClass));
-			return true;
-		}
-
 		if (const ULayeredLBStrategy* LBStrategy = GetLayeredLBStrategy(SpatialNetDriver))
 		{
+			if (!LBStrategy->IsReady())
+			{
+				UE_LOG(LogSpatial, Error, TEXT("Called IsActorGroupOwnerForClass before LBStrategy is ready. Actor class: %s"),
+					   *GetNameSafe(ActorClass));
+				return true;
+			}
 			return LBStrategy->CouldHaveAuthority(ActorClass);
 		}
 	}
@@ -415,16 +418,9 @@ void USpatialStatics::SpatialSwitchHasAuthority(const AActor* Target, ESpatialHa
 		return;
 	}
 
-	if (!ensureAlwaysMsgf(Target->GetNetDriver() != nullptr,
-						  TEXT("Called SpatialSwitchHasAuthority for %s but couldn't access NetDriver through Actor."),
-						  *GetNameSafe(Target)))
-	{
-		return;
-	}
-
 	// A static UFunction does not have the Target parameter, here it is recreated by adding our own Target parameter
 	// that is defaulted to self and hidden so that the user does not need to set it
-	const bool bIsServer = Target->GetNetDriver()->IsServer();
+	const bool bIsServer = Target->GetWorld() ? Target->GetWorld()->IsServer() : false;
 	const bool bHasAuthority = Target->HasAuthority();
 
 	if (bHasAuthority && bIsServer)

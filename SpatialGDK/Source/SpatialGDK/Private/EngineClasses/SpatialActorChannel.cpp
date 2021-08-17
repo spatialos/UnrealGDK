@@ -18,6 +18,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineStats.h"
+#include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/GlobalStateManager.h"
@@ -25,6 +26,7 @@
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ActorOwnership.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -210,6 +212,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, EventTracer(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
 	, TimeWhenPositionLastUpdated(0.0)
+	, bIsAutonomousProxyOnAuthority(false)
 {
 }
 
@@ -229,6 +232,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	TimeWhenPositionLastUpdated = 0.0;
 	AuthorityReceivedTimestamp = 0;
 	bNeedOwnerInterestUpdate = false;
+	bIsAutonomousProxyOnAuthority = false;
 
 	PendingDynamicSubobjects.Empty();
 	SavedInterestBucketComponentID = SpatialConstants::INVALID_COMPONENT_ID;
@@ -378,6 +382,14 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	return Super::Close(Reason);
 }
 
+void USpatialActorChannel::OnHandoverAuthorityGained()
+{
+	UpdateShadowData();
+
+	SavedInterestBucketComponentID =
+		NetDriver->ClassInfoManager->GetExistingInterestBucketComponentId(NetDriver->Connection->GetView()[EntityId]);
+}
+
 void USpatialActorChannel::UpdateShadowData()
 {
 	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Called UpdateShadowData but Actor was nullptr")))
@@ -421,7 +433,20 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 	const int32 CmdCount = Replicator.RepLayout->Cmds.Num();
 	for (uint16 CmdIdx = 0; CmdIdx < CmdCount; ++CmdIdx)
 	{
-		const auto& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
+		const FRepLayoutCmd& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
+		const FRepChangedParent& Parent = Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
+
+		// HACK: Need special case here because the gdk relies on the whole of the RepMovement struct being replicated to the client to
+		// decide whether to replicate physics. see: ComponentReader::ApplySchemaObject
+
+		// UNR-5843 TODO: fix this so we no longer need this special handling, for instance by replicating bRepPhysics as a separate always
+		// replicated field.
+		const bool bRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
+
+		if (!Parent.Active && !bRepActorMovement)
+		{
+			continue;
+		}
 
 		InitialRepChanged.Add(Cmd.RelativeHandle);
 
@@ -682,9 +707,14 @@ int64 USpatialActorChannel::ReplicateActor()
 			// so we know what subobjects are relevant for replication when creating the entity.
 			Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 
+			// Get initial interest bucket component.
+			SavedInterestBucketComponentID = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
+
 			NetDriver->ActorSystem->SendCreateEntityRequest(*this, ReplicationBytesWritten);
 
 			bCreatedEntity = true;
+
+			SetAutonomousProxyOnAuthority(Actor->RemoteRole == ROLE_AutonomousProxy);
 
 			// We preemptively set the Actor role to SimulatedProxy if load balancing is disabled
 			// (since the legacy behaviour is to wait until Spatial tells us we have authority)
@@ -736,13 +766,8 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		FOutBunch DummyOutBunch;
 
-		// Actor::ReplicateSubobjects is overridable and enables the Actor to replicate any subobjects directly, via a
-		// call back into SpatialActorChannel::ReplicateSubobject, as well as issues a call to UActorComponent::ReplicateSubobjects
-		// on any of its replicating actor components. This allows the component to replicate any of its subobjects directly via
-		// the same SpatialActorChannel::ReplicateSubobject.
-		Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
-
-		// Look for deleted subobjects
+		// Look for deleted subobjects before trying to replicate existing ones; this will free the removed Unreal components' bound Spatial
+		// components for reuse.
 		for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
 		{
 			if (!RepComp.Value()->GetWeakObjectPtr().IsValid())
@@ -761,6 +786,12 @@ int64 USpatialActorChannel::ReplicateActor()
 				RepComp.RemoveCurrent();
 			}
 		}
+
+		// Actor::ReplicateSubobjects is overridable and enables the Actor to replicate any subobjects directly, via a
+		// call back into SpatialActorChannel::ReplicateSubobject, as well as issues a call to UActorComponent::ReplicateSubobjects
+		// on any of its replicating actor components. This allows the component to replicate any of its subobjects directly via
+		// the same SpatialActorChannel::ReplicateSubobject.
+		Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 	}
 
 #if USE_NETWORK_PROFILER
@@ -830,7 +861,8 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	SCOPE_CYCLE_UOBJECT(ReplicateSubobjectSpecificClass, Object);
 
 	bool bCreatedReplicator = false;
-
+	// Set here because FindOrCreateReplicator will remove the replicator from the dormancy map
+	const bool bPreviouslyDormant = Connection->DormantReplicatorMap.Contains(Object);
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object, &bCreatedReplicator).Get();
 
 	// If we're creating an entity, don't try replicating
@@ -840,7 +872,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	}
 
 	// New subobject that hasn't been replicated before
-	if (bCreatedReplicator)
+	if (bCreatedReplicator && !bPreviouslyDormant)
 	{
 		// Attach to to the entity
 		DynamicallyAttachSubobject(Object);
@@ -979,6 +1011,11 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 		NetDriver->AddActorChannel(EntityId, this);
 		NetDriver->UnregisterDormantEntityId(EntityId);
 	}
+
+	if (Actor != nullptr)
+	{
+		SetAutonomousProxyOnAuthority(Actor->RemoteRole == ROLE_AutonomousProxy);
+	}
 }
 
 bool USpatialActorChannel::TryResolveActor()
@@ -996,30 +1033,30 @@ bool USpatialActorChannel::TryResolveActor()
 	return true;
 }
 
-FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
+FObjectReplicator* USpatialActorChannel::GetObjectReplicatorForSpatialUpdate(UObject* TargetObject)
 {
 	// If there is no NetGUID for this object, we will crash in FObjectReplicator::StartReplicating, so we verify this here.
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
+	NetDriver->PackageMap->SlowCheckMapsConsistency(TargetObject);
+
 	if (ObjectNetGUID.IsDefault() || !ObjectNetGUID.IsValid())
 	{
 		// SpatialReceiver tried to resolve this object in the PackageMap, but it didn't propagate to GuidCache.
 		// This could happen if the UnrealObjectRef was already mapped to a different object that's been destroyed.
-		UE_LOG(LogSpatialActorChannel, Error, TEXT("PreReceiveSpatialUpdate: NetGUID is invalid! Object: %s"),
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("GetObjectReplicatorForSpatialUpdate: NetGUID is invalid! Object: %s"),
 			   *TargetObject->GetPathName());
 		return nullptr;
 	}
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
-	TargetObject->PreNetReceive();
 
 	return &Replicator;
 }
 
-void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-													const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds)
+void USpatialActorChannel::InvokeRepNotifies(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+											 const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
-	TargetObject->PostNetReceive();
 
 	Replicator.RepState->GetReceivingRepState()->RepNotifies = RepNotifies;
 
@@ -1074,27 +1111,28 @@ void USpatialActorChannel::UpdateSpatialPosition()
 		}
 	}
 
-	if (!SatisfiesSpatialPositionUpdateRequirements())
+	FVector NewSpatialActorPosition;
+	if (!SatisfiesSpatialPositionUpdateRequirements(NewSpatialActorPosition))
 	{
 		return;
 	}
 
-	LastPositionSinceUpdate = SpatialGDK::GetActorSpatialPosition(Actor);
-	TimeWhenPositionLastUpdated = NetDriver->GetElapsedTime();
-
-	SendPositionUpdate(Actor, EntityId, LastPositionSinceUpdate);
+	SendPositionUpdate(Actor, EntityId, NewSpatialActorPosition);
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
 		if (APawn* Pawn = PlayerController->GetPawn())
 		{
-			SendPositionUpdate(Pawn, NetDriver->PackageMap->GetEntityIdFromObject(Pawn), LastPositionSinceUpdate);
+			SendPositionUpdate(Pawn, NetDriver->PackageMap->GetEntityIdFromObject(Pawn), NewSpatialActorPosition);
 		}
 	}
 }
 
 void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition)
 {
+	LastPositionSinceUpdate = NewPosition;
+	TimeWhenPositionLastUpdated = NetDriver->GetElapsedTime();
+
 	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->HasServerAuthority(InEntityId))
 	{
 		FWorkerComponentUpdate Update = SpatialGDK::Position::CreatePositionUpdate(SpatialGDK::Coordinates::FromFVector(NewPosition));
@@ -1108,7 +1146,7 @@ void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId I
 }
 
 void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
-															   const FObjectReferencesMap& RefMap, UObject* Object)
+															   const FObjectReferencesMap& RefMap, const UObject* Object) const
 {
 	// Prevent rep notify callbacks from being issued when unresolved obj references exist inside UStructs.
 	// This prevents undefined behaviour when engine rep callbacks are issued where they don't expect unresolved objects in native flow.
@@ -1139,6 +1177,11 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPER
 		}
 		return false;
 	});
+}
+
+Worker_ComponentId USpatialActorChannel::GetInterestComponentId() const
+{
+	return SavedInterestBucketComponentID;
 }
 
 void USpatialActorChannel::ServerProcessOwnershipChange()
@@ -1175,8 +1218,11 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		FWorkerComponentUpdate Update = CurrentNetOwningClientData->CreateNetOwningClientWorkerUpdate();
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 
-		// Notify the load balance enforcer of a potential short circuit if we are the delegation authoritative worker.
-		NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+		if (NetDriver->LoadBalanceEnforcer)
+		{
+			// Notify the load balance enforcer of a potential short circuit if we are the delegation authoritative worker.
+			NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+		}
 
 		bUpdatedThisActor = true;
 	}
@@ -1209,6 +1255,17 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	if (!bUpdatedThisActor)
 	{
 		return;
+	}
+
+	const bool bShouldWriteLoadBalancingData = IsValid(Connection) && USpatialStatics::IsStrategyWorkerEnabled();
+
+	if (bShouldWriteLoadBalancingData)
+	{
+		if (ensureAlwaysMsgf(IsValid(Actor), TEXT("Tried to process ownership changes for invalid channel Actor. Entity: %lld"), EntityId))
+		{
+			const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*NetDriver->PackageMap, *Actor);
+			NetDriver->Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
+		}
 	}
 
 	// Changes to NetConnection and InterestBucket for an Actor also affect all descendants which we
@@ -1269,11 +1326,11 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 	}
 }
 
-bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements()
+bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition)
 {
 	// Check that the Actor satisfies both lower thresholds OR either of the maximum thresholds
-	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
-	const float DistanceTravelledSinceLastUpdateSquared = FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate);
+	OutNewSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
+	const float DistanceTravelledSinceLastUpdateSquared = FVector::DistSquared(OutNewSpatialPosition, LastPositionSinceUpdate);
 
 	// If the Actor did not travel at all, then we consider its position to be up to date and we early out.
 	if (FMath::IsNearlyZero(DistanceTravelledSinceLastUpdateSquared))

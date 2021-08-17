@@ -14,7 +14,7 @@ namespace SpatialGDK
 // SpatialDebugger on clients but which would not normally be available to clients.
 struct SPATIALGDK_API ActorSetMember
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_ID;
 
 	ActorSetMember(Worker_EntityId InLeaderEntityId)
 		: ActorSetId(InLeaderEntityId)
@@ -28,11 +28,15 @@ struct SPATIALGDK_API ActorSetMember
 
 	ActorSetMember(const ComponentData& Data) { ApplySchema(Data.GetFields()); }
 
+	ActorSetMember(Schema_ComponentData* Data) { ApplySchema(Schema_GetComponentDataFields(Data)); }
+
 	ComponentData CreateComponentData() const { return CreateComponentDataHelper(*this); }
 
 	ComponentUpdate CreateComponentUpdate() const { return CreateComponentUpdateHelper(*this); }
 
 	void ApplyComponentUpdate(const ComponentUpdate& Update) { ApplySchema(Update.GetFields()); }
+
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update) { ApplySchema(Schema_GetComponentUpdateFields(Update)); }
 
 	void ApplySchema(Schema_Object* Schema)
 	{

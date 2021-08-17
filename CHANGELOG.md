@@ -8,6 +8,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 
+## [`x.y.z`] - Unreleased
+
+### Breaking changes:
+- SpatialSwitchHasAuthority now respects World's version of IsServer which assumes server status when NetDriver is null.
+
+### Features:
+- Add support DOREPLIFETIME_ACTIVE_OVERRIDE for replication conditions, with the exception of TArray's this should now work the same as in native.
+- Pre and PostNetReceive are now called on an object a maximum of a single time in a given tick. This matches native much closer.
+- The GDK has been upgraded to use version 15.2.0 of SpatialOS.
+
+### Bug fixes:
+- Fix `A functional test is already running error` that would sometimes occur when re-running multi-server functional tests.
+- When data for both an actor and its subobjects are received in a given tick, rep notifies will now be called on updated properties after the data has been applied for both the actor and its subobjects.
+- Fixed an issue around actors being destroyed between entity creation and receiving a confirmation thereof.
+- Rep notifies for a parent actor are now called before child subobject rep notifies, and, for a given object, rep notifies are called in ascending RepIndex order.
+- Fixed a double Spatial component add if an Unreal component is added and destroyed in between actor's replications.
+- Fixed Actor Dormancy issue, we now correctly update if we set an actor awake and update properties on it on the same tick.
+- Fixed IsActorGroupOwnerForClass logging an error if NetDriver was not ready.
+
+### Internal:
+- Modified startup flow to only create ActorSystem, RPCService and some others after startup has otherwise finished; removed initial op reordering.
+- Unused worker types will no longer generate worker configuration files.
+- Fixed an issue that could cause SpatialNetGuidCache and native's NetGuidCache to become out of sync.
+- Add helpers to the test framework - `SpawnActor`, `RequireValid`, `GetFlowPlayerController`, `RequireEqual_Enum`, and `RequireNotEqual_Enum`.
+- Refactored startup to be all in a couple classes, `FSpatialServerStartupHandler` and `FSpatialClientStartupHandler`.
+- Newly torn off channels are now conditionally closed after all updates in a given tick have been applied.
+
 ## [`0.14.0`] - 2021-08-16
 
 ### Breaking changes:
@@ -27,8 +54,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `StopInsights` command to `SpatialExecServerCmd`, which takes no additional parameters and disables any Insight capturing on the target worker
   - Example usage: "SpatialExecServerCmd local StopInsights
 - Renamed `StartInsights` command args - `trace` -> `channel` and `tracefile` -> `file`
+- Added bEventTracingEnabledWithEditor setting to separate out the ability to enable Event Tracing in Editor builds from non-Editor builds.
 
 ### Bug fixes:
+- An issue with `AActor::SetAutonomousProxy` has been fixed, where actors that were manually set as `AutonomousProxy` could get downgraded to `SimulatedProxy`. The functions `SetAutonomousProxyOnAuthority` and `IsAutonomousProxyOnAuthority` have been added to USpatialActorChannel, along with a change to `ActorSystem::HandleActorAuthority` which will upgrade an actor's role from `SimulatedProxy` to `AutonomousProxy` if the actor gains Authority when `IsAutonomousProxyOnAuthority` is true.
 - Added a pop-up message when schema generation fails, which suggests running a Clean and Generate to fix a bad schema state.
 - Fixed a bug that left the SchemaDatabase.uasset file locked after a failed schema generation.
 - Fixed an issue with migration diagnostic logging failing, when the actor did not have authority.
@@ -53,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A test was calling `SetReplicates` on an actor over which it did not have authority. This was causing warnings to be triggered. We've fixed this by reverting the actor's role at the end of the test, so that the actor is not left in an unexpected state.
 - Added support for clients to disconnect during a test in the automated test framework.
 - Modified ActorSystem's Ownership and Simulated Subviews to take player ownership into account.
+- Fixed an issue with registering spatial flow controllers in the Spatial Testing Framework.
 
 ## [`0.13.1`] - 2021-06-02
 

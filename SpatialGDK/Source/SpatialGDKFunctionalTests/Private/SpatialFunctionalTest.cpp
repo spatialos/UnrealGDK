@@ -286,9 +286,9 @@ const FSpatialFunctionalTestStepDefinition ASpatialFunctionalTest::GetStepDefini
 	return DummyStepDefinition;
 }
 
-int ASpatialFunctionalTest::GetNumberOfServerWorkers()
+int32 ASpatialFunctionalTest::GetNumberOfServerWorkers() const
 {
-	int Counter = 0;
+	int32 Counter = 0;
 	for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
 	{
 		if (FlowController != nullptr && FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
@@ -299,9 +299,9 @@ int ASpatialFunctionalTest::GetNumberOfServerWorkers()
 	return Counter;
 }
 
-int ASpatialFunctionalTest::GetNumberOfClientWorkers()
+int32 ASpatialFunctionalTest::GetNumberOfClientWorkers() const
 {
-	int Counter = 0;
+	int32 Counter = 0;
 	for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
 	{
 		if (FlowController != nullptr && FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
@@ -342,6 +342,26 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 						{
 							++NumRegisteredClients;
 						}
+					}
+					else
+					{
+						// Output reason why the flow controller was not ready
+						FString ReasonForTimeout;
+						if (!FlowController->IsActorReady())
+						{
+							ReasonForTimeout += FString::Printf(TEXT("Spatial flow controller was not ready. "));
+						}
+						if (FlowController->OwningTest == nullptr)
+						{
+							ReasonForTimeout += FString::Printf(TEXT("Owning test was not set. "));
+						}
+						else if (!FlowController->OwningTest->HasPreparedTest())
+						{
+							ReasonForTimeout += FString::Printf(TEXT("Owning test was not ready. "));
+						}
+						UE_LOG(LogSpatialGDKFunctionalTests, Warning,
+							   TEXT("Spatial flow controller %s was not ready to run test because: %s"), *FlowController->GetName(),
+							   *ReasonForTimeout);
 					}
 				}
 
@@ -423,32 +443,28 @@ void ASpatialFunctionalTest::CrossServerFinishTest_Implementation(EFunctionalTes
 	FinishTest(TestResult, Message);
 }
 
-void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowController* FlowController)
+void ASpatialFunctionalTest::SetLocalFlowController(ASpatialFunctionalTestFlowController* FlowController)
 {
 	if (FlowController->IsLocalController())
 	{
-		if (LocalFlowController != nullptr)
-		{
-			checkf(LocalFlowController == FlowController,
-				   TEXT("OwningTest already had different LocalFlowController, this shouldn't happen"));
-			return;
-		}
+		checkf(LocalFlowController == nullptr || LocalFlowController == FlowController,
+			   TEXT("OwningTest already had a LocalFlowController, this shouldn't happen"));
 		LocalFlowController = FlowController;
 	}
+}
 
-	if (!HasAuthority())
+void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowController* FlowController)
+{
+	if (HasAuthority())
 	{
-		// FlowControllers invoke this on each worker's local context when checkout and ready, we only want to act in the authority
-		return;
+		if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
+		{
+			// Since Clients can spawn on any worker we need to centralize the assignment of their ids to the Test Authority.
+			FlowControllerSpawner.AssignClientFlowControllerId(FlowController);
+		}
+		checkf(!FlowControllers.Contains(FlowController), TEXT("Auth test already registered this flow controller, this shouldn't happen"));
+		FlowControllers.Add(FlowController);
 	}
-
-	if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
-	{
-		// Since Clients can spawn on any worker we need to centralize the assignment of their ids to the Test Authority.
-		FlowControllerSpawner.AssignClientFlowControllerId(FlowController);
-	}
-
-	FlowControllers.Add(FlowController);
 }
 
 void ASpatialFunctionalTest::DeregisterFlowController(ASpatialFunctionalTestFlowController* FlowController)
@@ -654,7 +670,8 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddStep(const FStr
 	return StepDefinitions[StepDefinitions.Num() - 1];
 }
 
-ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(ESpatialFunctionalTestWorkerType WorkerType, int WorkerId)
+ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(const ESpatialFunctionalTestWorkerType WorkerType,
+																				const int WorkerId)
 {
 	ensureMsgf(WorkerType != ESpatialFunctionalTestWorkerType::All, TEXT("Trying to call GetFlowController with All WorkerType"));
 	for (auto* FlowController : FlowControllers)
@@ -662,6 +679,39 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(
 		if (FlowController->WorkerDefinition.Type == WorkerType && FlowController->WorkerDefinition.Id == WorkerId)
 		{
 			return FlowController;
+		}
+	}
+	return nullptr;
+}
+
+APlayerController* ASpatialFunctionalTest::GetFlowPlayerController(const ESpatialFunctionalTestWorkerType WorkerType, const int WorkerId)
+{
+	if (ASpatialFunctionalTestFlowController* FlowController = GetFlowController(WorkerType, WorkerId))
+	{
+		return Cast<APlayerController>(FlowController->GetOwner());
+	}
+	return nullptr;
+}
+
+APlayerController* ASpatialFunctionalTest::GetLocalFlowPlayerController()
+{
+	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
+	if (ensureAlwaysMsgf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server.")))
+	{
+		return Cast<APlayerController>(FlowController->GetOwner());
+	}
+	return nullptr;
+}
+
+APawn* ASpatialFunctionalTest::GetLocalFlowPawn()
+{
+	APlayerController* PlayerController = GetLocalFlowPlayerController();
+	if (IsValid(PlayerController))
+	{
+		APawn* PlayerCharacter = PlayerController->GetPawn();
+		if (IsValid(PlayerCharacter))
+		{
+			return PlayerCharacter;
 		}
 	}
 	return nullptr;
@@ -732,17 +782,17 @@ void ASpatialFunctionalTest::PrepareTestAfterBeginPlay()
 		PrepareTest();
 	}
 
-	// Currently PrepareTest() happens before FlowControllers are registered,
-	// but that is most likely because of the bug that forces us to delay their registration.
-	if (LocalFlowController != nullptr)
+	// This setting of ready to run test is required for tests to be able to
+	// rerun, since the flow controllers are set to be not ready on test finish.
+	if (LocalFlowController != nullptr && !LocalFlowController->IsReadyToRunTest())
 	{
-		LocalFlowController->SetReadyToRunTest(true);
+		LocalFlowController->TrySetReadyToRunTest();
 	}
 }
 
 void ASpatialFunctionalTest::OnReplicated_bFinishedTest()
 {
-	if (!HasAuthority())
+	if (bFinishedTest && !HasAuthority())
 	{
 		// The server that started this test has to call this in order for the test to properly finish.
 		NotifyTestFinishedObserver();
@@ -792,30 +842,6 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 			FoundActor->SetLifeSpan(0.01f);
 		}
 	}
-}
-
-APlayerController* ASpatialFunctionalTest::GetFlowPlayerController()
-{
-	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
-	if (ensureAlwaysMsgf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server.")))
-	{
-		return Cast<APlayerController>(FlowController->GetOwner());
-	}
-	return nullptr;
-}
-
-APawn* ASpatialFunctionalTest::GetFlowPawn()
-{
-	APlayerController* PlayerController = GetFlowPlayerController();
-	if (IsValid(PlayerController))
-	{
-		APawn* PlayerCharacter = PlayerController->GetPawn();
-		if (IsValid(PlayerCharacter))
-		{
-			return PlayerCharacter;
-		}
-	}
-	return nullptr;
 }
 
 namespace

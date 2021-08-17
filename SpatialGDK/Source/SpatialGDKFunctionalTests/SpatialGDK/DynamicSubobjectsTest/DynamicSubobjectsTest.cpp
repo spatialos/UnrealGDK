@@ -96,10 +96,11 @@ void ADynamicSubobjectsTest::PrepareTest()
 	AddStep(
 		TEXT("DynamicSubobjectsTestClientCheckPossesion"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-			APawn* PlayerCharacter = GetFlowPawn();
+			APawn* PlayerCharacter = GetLocalFlowPawn();
 			if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid")))
 			{
-				RequireTrue(PlayerCharacter == GetFlowPlayerController()->AcknowledgedPawn, TEXT("The client should possess the pawn."));
+				RequireTrue(PlayerCharacter == GetLocalFlowPlayerController()->AcknowledgedPawn,
+							TEXT("The client should possess the pawn."));
 				FinishStep();
 			}
 		},
@@ -155,7 +156,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckFirstMovement"), FWorkerDefinition::Client(1), nullptr, nullptr,
 			[this](float DeltaTime) {
-				APawn* PlayerCharacter = GetFlowPawn();
+				APawn* PlayerCharacter = GetLocalFlowPawn();
 
 				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should not be nullptr")))
 				{
@@ -243,7 +244,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckSecondMovement"), FWorkerDefinition::Client(1), nullptr, nullptr,
 			[this](float DeltaTime) {
-				APawn* PlayerCharacter = GetFlowPawn();
+				APawn* PlayerCharacter = GetLocalFlowPawn();
 
 				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid")))
 				{

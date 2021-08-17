@@ -117,11 +117,23 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	GSM.entity_id = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
 	Interest SelfInterest;
+
 	Query AuthoritySelfQuery = {};
 	AuthoritySelfQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
 	AuthoritySelfQuery.Constraint.bSelfConstraint = true;
-	SelfInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
-	SelfInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(AuthoritySelfQuery);
+
+	Query SkeletonEntityManifestsQuery = {};
+	SkeletonEntityManifestsQuery.ResultComponentIds = { SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID };
+	SkeletonEntityManifestsQuery.Constraint.ComponentConstraint = SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID;
+
+	Query WorkerPartitionEntitiesQuery = {};
+	WorkerPartitionEntitiesQuery.ResultComponentIds = { SpatialConstants::WORKER_PARTITION_TAG_COMPONENT_ID };
+	WorkerPartitionEntitiesQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_PARTITION_TAG_COMPONENT_ID;
+
+	TArray<Query>& Queries = SelfInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID).Queries;
+	Queries.Add(AuthoritySelfQuery);
+	Queries.Add(SkeletonEntityManifestsQuery);
+	Queries.Add(WorkerPartitionEntitiesQuery);
 
 	TArray<FWorkerComponentData> Components;
 
@@ -223,12 +235,26 @@ bool CreateStrategyPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, StrategyPartitionEntity.entity_id);
 
 	Interest ServerInterest;
-	Query ServerQuery = {};
-	ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID,
-									   SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID };
-	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID;
-	ServerInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
-	ServerInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(ServerQuery);
+	ComponentSetInterest& InterestSet = ServerInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
+
+	{
+		Query ServerQuery = {};
+		ServerQuery.ResultComponentIds = { SpatialConstants::SERVER_WORKER_COMPONENT_ID };
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
+		InterestSet.Queries.Add(ServerQuery);
+	}
+	{
+		Query ServerQuery = {};
+		ServerQuery.ResultComponentIds = { SpatialConstants::WORKER_COMPONENT_ID };
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
+		InterestSet.Queries.Add(ServerQuery);
+	}
+	{
+		Query ServerQuery = {};
+		ServerQuery.ResultComponentIds = { SpatialConstants::PARTITION_ACK_COMPONENT_ID };
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::PARTITION_ACK_COMPONENT_ID;
+		InterestSet.Queries.Add(ServerQuery);
+	}
 
 	Components.Add(Position(DeploymentOrigin).CreateComponentData());
 	Components.Add(Metadata(TEXT("StrategyPartitionEntity")).CreateComponentData());

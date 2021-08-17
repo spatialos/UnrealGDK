@@ -102,6 +102,7 @@ enum class ESchemaDatabaseVersion : uint8
 	InitialOnlyDataAdded,
 	FieldIDsAdded,
 	HandoverToServerOnlyChanged,
+	DoRepLifetimeActiveOverrideSupported,
 
 	// Add new versions here
 
@@ -153,6 +154,9 @@ public:
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TArray<FFieldIDs> FieldIdsArray;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<FFieldIDs> ListIdsArray;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<uint32, FComponentIDs> ComponentSetIdToComponentIds;

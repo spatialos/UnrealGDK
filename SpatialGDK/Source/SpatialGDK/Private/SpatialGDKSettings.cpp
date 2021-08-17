@@ -196,11 +196,14 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseFrameTimeAsLoad(false)
 	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
+	, bEventTracingEnabled(false)
+	, bEventTracingEnabledWithEditor(false)
 	, ServicesRegion(EServicesRegion::Default)
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning) // Deprecated - UNR-4348
 	, LocalWorkerLogLevel(WorkerLogLevel)
 	, CloudWorkerLogLevel(WorkerLogLevel)
 	, bEnableMultiWorker(true)
+	, bRunStrategyWorker(false)
 	, DefaultRPCRingBufferSize(32)
 	, CrossServerRPCImplementation(ECrossServerRPCImplementation::SpatialCommand)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
@@ -224,7 +227,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableCrossLayerActorSpawning(true)
 	, StartupLogRate(5.0f)
 	, ActorMigrationLogRate(5.0f)
-	, bEventTracingEnabled(false)
 	, EventTracingSamplingSettingsClass(UEventTracingSamplingSettings::StaticClass())
 	, EventTracingSingleLogMaxFileSizeBytes(DefaultEventTracingFileSize)
 	, bEnableEventTracingRotatingLogs(false)
@@ -257,7 +259,12 @@ void USpatialGDKSettings::PostInitProperties()
 							 TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"),
 							 TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
+#if WITH_EDITOR
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideEventTracingEnabled"), TEXT("Event tracing in-editor enabled"),
+							 bEventTracingEnabledWithEditor);
+#else
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideEventTracingEnabled"), TEXT("Event tracing enabled"), bEventTracingEnabled);
+#endif
 	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"),
 									   OverrideMultiWorkerSettingsClass);
 	CheckCmdLineOverrideOptionalStringWithCallback(
@@ -276,6 +283,8 @@ void USpatialGDKSettings::PostInitProperties()
 		});
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
+
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("The strategy worker is %s."), bRunStrategyWorker ? TEXT("enabled") : TEXT("disabled"));
 }
 
 #if WITH_EDITOR
@@ -395,4 +404,12 @@ void USpatialGDKSettings::SetMultiWorkerEditorEnabled(bool bIsEnabled)
 }
 #endif // WITH_EDITOR
 
+bool USpatialGDKSettings::GetEventTracingEnabled() const
+{
+#if WITH_EDITOR
+	return bEventTracingEnabledWithEditor;
+#else
+	return bEventTracingEnabled;
+#endif
+}
 #undef LOCTEXT_NAMESPACE

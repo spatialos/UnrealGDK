@@ -16,7 +16,7 @@ namespace SpatialGDK
 // points to the PlayerController entity that owns a given actor.
 struct ActorOwnership
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_ID;
 
 	explicit ActorOwnership(Worker_EntityId InLeaderEntityId)
 		: OwnerActorEntityId(InLeaderEntityId)

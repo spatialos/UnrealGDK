@@ -254,14 +254,19 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 	return UpdatesToSend;
 }
 
-TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId)
+TArray<Worker_ComponentId> SpatialRPCService::GetRPCComponents()
 {
 	static TArray<Worker_ComponentId> EndpointComponentIds = { SpatialConstants::MULTICAST_RPCS_COMPONENT_ID,
 															   SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID };
 
+	return EndpointComponentIds;
+}
+
+TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId)
+{
 	TArray<FWorkerComponentData> Components;
 
-	for (Worker_ComponentId EndpointComponentId : EndpointComponentIds)
+	for (Worker_ComponentId EndpointComponentId : GetRPCComponents())
 	{
 		const EntityComponentId EntityComponent = { EntityId, EndpointComponentId };
 
@@ -797,7 +802,12 @@ void SpatialRPCService::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTarg
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
-		SpanId = EventTracer->TraceEvent(PUSH_RPC_EVENT_NAME, "", EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1,
+		// If the stack is empty we want to create a trace event such that it is a root event. This means giving it no causes.
+		// If the stack has an item, an event was created in project space and should be used as the cause of this "push RPC" events.
+		const bool bStackEmpty = EventTracer->IsStackEmpty();
+		const int32 NumCauses = bStackEmpty ? 0 : 1;
+		const Trace_SpanIdType* Causes = bStackEmpty ? nullptr : EventTracer->GetFromStack().GetConstId();
+		SpanId = EventTracer->TraceEvent(PUSH_RPC_EVENT_NAME, "", Causes, NumCauses,
 										 [TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
 											 EventBuilder.AddObject(TargetObject);
 											 EventBuilder.AddFunction(Function);
