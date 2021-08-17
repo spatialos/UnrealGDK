@@ -66,7 +66,7 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunc
 	Writer->WriteValue(TEXT("entity_creation"), WorkerConfig.WorkerPermissions.bAllowEntityCreation);
 	Writer->WriteValue(TEXT("entity_deletion"), WorkerConfig.WorkerPermissions.bAllowEntityDeletion);
 	Writer->WriteValue(TEXT("system_entity_command"), true);
-	//Writer->WriteValue(TEXT("disconnect_worker"), WorkerConfig.WorkerPermissions.bDisconnectWorker);
+	// Writer->WriteValue(TEXT("disconnect_worker"), WorkerConfig.WorkerPermissions.bDisconnectWorker);
 	Writer->WriteValue(TEXT("reserve_entity_id"), WorkerConfig.WorkerPermissions.bReserveEntityID);
 	Writer->WriteValue(TEXT("entity_query"), WorkerConfig.WorkerPermissions.bAllowEntityQuery);
 	Writer->WriteObjectEnd();

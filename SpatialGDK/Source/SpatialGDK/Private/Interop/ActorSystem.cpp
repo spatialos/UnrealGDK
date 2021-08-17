@@ -510,25 +510,15 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 
- 						// Flush PC interest on handover
- 						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries
- 							&& GetDefault<USpatialGDKSettings>()->bRefreshClientInterestOnHandover)
- 						{
+						// Flush PC interest on handover
+						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries
+							&& GetDefault<USpatialGDKSettings>()->bRefreshClientInterestOnHandover)
+						{
 							UE_LOG(LogTemp, Warning, TEXT("Auth gained, marking interest dirty. (%s)"), *Actor->GetName());
- 							Channel->MarkInterestDirty();
+							Channel->MarkInterestDirty();
 							Channel->MarkOverwriteInterest();
- 						}
+						}
 					}
-
-// 					if (Channel != nullptr)
-// 					{
-// 						// Flush PC interest on handover
-// 						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries
-// 							&& GetDefault<USpatialGDKSettings>()->bRefreshClientInterestOnHandover)
-// 						{
-// 							Channel->MarkInterestDirty();
-// 						}
-// 					}
 
 					if (!bDormantActor)
 					{
@@ -2286,7 +2276,8 @@ void ActorSystem::UpdateInterestComponent(AActor* Actor, const bool bOverwriteIn
 
 		if (bRequestValid)
 		{
-			const Worker_EntityId SystemEntityId = Cast<USpatialNetConnection>(Actor->GetNetConnection())->ConnectionClientWorkerSystemEntityId;
+			const Worker_EntityId SystemEntityId =
+				Cast<USpatialNetConnection>(Actor->GetNetConnection())->ConnectionClientWorkerSystemEntityId;
 
 			NetDriver->Connection->SendCommandRequest(SystemEntityId, &CommandRequest, RETRY_MAX_TIMES, {});
 
