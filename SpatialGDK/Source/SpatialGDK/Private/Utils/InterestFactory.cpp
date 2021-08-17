@@ -38,7 +38,7 @@ struct MyQuery
 {
 	TArray<Worker_ComponentId> Components;
 	TArray<Worker_ComponentSetId> ComponentSets;
-	TArray<Worker_EntityId> Entities;
+	TArray<Worker_EntityId_Key> Entities;
 
 	void DebugOutput(const FString& DiffType) const
 	{
@@ -151,7 +151,7 @@ struct ChangeInterestRequest
 				Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToAddObject, 1);
 				Schema_AddUint32List(ResultTypeObject, 1, Query.Components.GetData(), Query.Components.Num());
 				Schema_AddUint32List(ResultTypeObject, 2, Query.ComponentSets.GetData(), Query.ComponentSets.Num());
-				Schema_AddEntityIdList(QueriesToAddObject, 2, Query.Entities.GetData(), Query.Entities.Num());
+				Schema_AddEntityIdList(QueriesToAddObject, 2, (const Worker_EntityId*)Query.Entities.GetData(), Query.Entities.Num());
 			}
 		}
 
@@ -163,7 +163,7 @@ struct ChangeInterestRequest
 				Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToRemoveObject, 1);
 				Schema_AddUint32List(ResultTypeObject, 1, Query.Components.GetData(), Query.Components.Num());
 				Schema_AddUint32List(ResultTypeObject, 2, Query.ComponentSets.GetData(), Query.ComponentSets.Num());
-				Schema_AddEntityIdList(QueriesToRemoveObject, 2, Query.Entities.GetData(), Query.Entities.Num());
+				Schema_AddEntityIdList(QueriesToRemoveObject, 2, (const Worker_EntityId*)Query.Entities.GetData(), Query.Entities.Num());
 			}
 		}
 
@@ -530,9 +530,14 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 
 	if (USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PlayerController->NetConnection))
 	{
-		TSet<Worker_EntityId> FullInterested(ClientInterestedEntities);
-		TSet<Worker_EntityId> Add = FullInterested.Difference(NetConnection->EntityInterestCache);
-		TSet<Worker_EntityId> Remove = NetConnection->EntityInterestCache.Difference(FullInterested);
+		TSet<Worker_EntityId_Key> FullInterested;
+		FullInterested.Reserve(ClientInterestedEntities.Num());
+		for (auto EntityId : ClientInterestedEntities)
+		{
+			FullInterested.Add(EntityId);
+		}
+		TSet<Worker_EntityId_Key> Add = FullInterested.Difference(NetConnection->EntityInterestCache);
+		TSet<Worker_EntityId_Key> Remove = NetConnection->EntityInterestCache.Difference(FullInterested);
 		NetConnection->EntityInterestCache = FullInterested;
 
 		if (bOverwrite)
@@ -566,7 +571,7 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 		ChangeInterestRequestData.bOverwrite = bOverwrite;
 
 		// Add auth interest
-		TSet<Worker_EntityId> FullAuth;
+		TSet<Worker_EntityId_Key> FullAuth;
 		const Worker_EntityId PCEntityId = PackageMap->GetEntityIdFromObject(PlayerController);
 		const Worker_EntityId PawnEntityId = PackageMap->GetEntityIdFromObject(PlayerController->GetPawn());
 
