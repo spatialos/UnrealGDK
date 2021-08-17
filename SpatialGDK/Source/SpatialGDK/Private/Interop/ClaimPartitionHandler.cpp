@@ -11,8 +11,8 @@ DEFINE_LOG_CATEGORY_STATIC(LogClaimPartitionHandler, Log, All);
 
 namespace SpatialGDK
 {
-	Worker_RequestId FClaimPartitionHandler::ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId,
-											Worker_PartitionId PartitionToClaim)
+Worker_RequestId FClaimPartitionHandler::ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId,
+														Worker_PartitionId PartitionToClaim)
 {
 	UE_LOG(LogClaimPartitionHandler, Log,
 		   TEXT("SendClaimPartitionRequest. SystemWorkerEntityId: %lld. "
@@ -30,7 +30,7 @@ namespace SpatialGDK
 }
 
 Worker_RequestId FClaimPartitionHandler::ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId,
-											Worker_PartitionId PartitionToClaim, FSystemEntityCommandDelegate Delegate)
+														Worker_PartitionId PartitionToClaim, FSystemEntityCommandDelegate Delegate)
 {
 	UE_LOG(LogClaimPartitionHandler, Log,
 		   TEXT("SendClaimPartitionRequest. SystemWorkerEntityId: %lld. "
