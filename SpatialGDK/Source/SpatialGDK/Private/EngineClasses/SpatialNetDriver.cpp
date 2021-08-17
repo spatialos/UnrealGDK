@@ -28,7 +28,6 @@
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSubviews.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
@@ -66,7 +65,6 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "LoadBalancing/PartitionManager.h"
 #include "Schema/ActorOwnership.h"
-#include "Schema/ActorSetMember.h"
 #include "Schema/SpatialDebugging.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -153,7 +151,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 		if (GameInstance != nullptr)
 		{
-			if (GameInstance->GetSpatialWorkerType() == SpatialConstants::RoutingWorkerType)
+			if (GameInstance->GetSpatialWorkerType() == SpatialConstants::RoutingWorkerType
+				|| GameInstance->GetSpatialWorkerType() == SpatialConstants::StrategyWorkerType)
 			{
 				NetServerMaxTickRate = 120;
 			}
@@ -1259,23 +1258,10 @@ void USpatialNetDriver::NotifyStreamingLevelUnload(class ULevel* Level)
 
 void USpatialNetDriver::ProcessOwnershipChanges()
 {
-	const bool bShouldWriteLoadBalancingData =
-		IsValid(Connection) && GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents;
-
 	for (Worker_EntityId EntityId : OwnershipChangedEntities)
 	{
 		if (USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId))
 		{
-			if (bShouldWriteLoadBalancingData)
-			{
-				if (ensureAlwaysMsgf(IsValid(Channel->Actor),
-									 TEXT("Tried to process ownership changes for invalid channel Actor. Entity: %lld"), EntityId))
-				{
-					const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, *Channel->Actor);
-					Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
-				}
-			}
-
 			Channel->ServerProcessOwnershipChange();
 		}
 	}
@@ -2123,34 +2109,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 					ActorsHandedOver.Add(Actor);
 					EntitiesHandedOver.Add(EntityId);
-
-					AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
-					if (HierarchyRoot->HasAuthority())
-					{
-						TFunction<void(AActor*)> ForceReplicateChildren;
-						ForceReplicateChildren = [&](AActor* HierarchyActor) {
-							if (HierarchyActor != Actor)
-							{
-								if (FNetworkObjectInfo const* ActorInfo = FindNetworkObjectInfo(HierarchyActor))
-								{
-									if (!ActorInfo->bPendingNetUpdate)
-									{
-										LoadBalancingContext.AddActorToReplicate(HierarchyActor);
-									}
-								}
-
-								if (USpatialActorChannel* Channel = GetOrCreateSpatialActorChannel(HierarchyActor))
-								{
-									Channel->ForcePositionReplication();
-								}
-							}
-							for (AActor* ChildActor : HierarchyActor->Children)
-							{
-								ForceReplicateChildren(ChildActor);
-							}
-						};
-						ForceReplicateChildren(HierarchyRoot);
-					}
 				}
 			}
 		}
@@ -2225,6 +2183,23 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 					Actor->RemoteRole = ROLE_Authority;
 
 					Actor->OnAuthorityLost();
+				}
+
+				for (auto EntityId : HandoverManager->GetActorsToCheckForAuth())
+				{
+					TWeakObjectPtr<UObject> ObjectPtr = PackageMap->GetObjectFromEntityId(EntityId);
+					AActor* Actor = Cast<AActor>(ObjectPtr.Get());
+					if (Actor == nullptr || Actor->HasAuthority())
+					{
+						continue;
+					}
+					else if (Actor != nullptr)
+					{
+						Actor->Role = ROLE_Authority;
+						Actor->RemoteRole = ROLE_SimulatedProxy;
+
+						Actor->OnAuthorityGained();
+					}
 				}
 			}
 			HandoverManager->Flush(Connection->GetCoordinator(), EntitiesHandedOver);

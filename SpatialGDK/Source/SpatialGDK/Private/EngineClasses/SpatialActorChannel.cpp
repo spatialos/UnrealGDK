@@ -20,6 +20,7 @@
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineStats.h"
 #include "GameFramework/GameStateBase.h"
+#include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/GlobalStateManager.h"
@@ -27,6 +28,7 @@
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ActorOwnership.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -1264,6 +1266,17 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	if (!bUpdatedThisActor)
 	{
 		return;
+	}
+
+	const bool bShouldWriteLoadBalancingData = IsValid(Connection) && USpatialStatics::IsStrategyWorkerEnabled();
+
+	if (bShouldWriteLoadBalancingData)
+	{
+		if (ensureAlwaysMsgf(IsValid(Actor), TEXT("Tried to process ownership changes for invalid channel Actor. Entity: %lld"), EntityId))
+		{
+			const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*NetDriver->PackageMap, *Actor);
+			NetDriver->Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
+		}
 	}
 
 	// Changes to NetConnection and InterestBucket for an Actor also affect all descendants which we
