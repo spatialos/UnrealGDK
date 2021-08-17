@@ -23,7 +23,6 @@
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
@@ -92,7 +91,7 @@ ERPCType GetRPCType(UFunction* RemoteFunction)
 	{
 		return ERPCType::NetMulticast;
 	}
-	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetCrossServer))
+	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetCrossServer | FUNC_NetWriteFence))
 	{
 		return ERPCType::CrossServer;
 	}
@@ -139,6 +138,19 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 #else
 	GEngine->NetworkRemapPath(NetDriver, ClassPath, false /*bIsReading*/);
 #endif
+
+	if (!bHandoverActive.IsSet())
+	{
+		if (NetDriver->LoadBalanceStrategy != nullptr)
+		{
+			bHandoverActive = NetDriver->LoadBalanceStrategy->RequiresHandoverData();
+		}
+		else
+		{
+			UE_LOG(LogSpatialClassInfoManager, Log, TEXT("Load Balancing Strategy not set, handover will be disabled."));
+			bHandoverActive = false;
+		}
+	}
 
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;
@@ -200,24 +212,9 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	}
 
-	const bool bTrackHandoverProperties = ShouldTrackHandoverProperties();
 	for (TFieldIterator<GDK_PROPERTY(Property)> PropertyIt(Class); PropertyIt; ++PropertyIt)
 	{
 		GDK_PROPERTY(Property)* Property = *PropertyIt;
-
-		if (bTrackHandoverProperties && (Property->PropertyFlags & CPF_Handover))
-		{
-			for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
-			{
-				FHandoverPropertyInfo HandoverInfo;
-				HandoverInfo.Handle = Info->HandoverProperties.Num() + 1; // 1-based index
-				HandoverInfo.Offset = Property->GetOffset_ForGC() + Property->ElementSize * ArrayIdx;
-				HandoverInfo.ArrayIdx = ArrayIdx;
-				HandoverInfo.Property = Property;
-
-				Info->HandoverProperties.Add(HandoverInfo);
-			}
-		}
 
 		if (Property->PropertyFlags & CPF_AlwaysInterested)
 		{
@@ -230,26 +227,6 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 				Info->InterestProperties.Add(InterestInfo);
 			}
 		}
-	}
-
-	if (bTrackHandoverProperties)
-	{
-		uint32 Offset = 0;
-
-		for (FHandoverPropertyInfo& PropertyInfo : Info->HandoverProperties)
-		{
-			if (PropertyInfo.ArrayIdx == 0) // For static arrays, the first element will handle the whole array
-			{
-				// Make sure we conform to Unreal's alignment requirements
-				Offset = Align(Offset, PropertyInfo.Property->GetMinAlignment());
-
-				PropertyInfo.ShadowOffset = Offset;
-
-				Offset += PropertyInfo.Property->GetSize();
-			}
-		}
-
-		Info->HandoverPropertiesSize = Offset;
 	}
 
 	if (bIsActorClass)
@@ -266,13 +243,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 {
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 		Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
-
-		if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
-		{
-			return;
-		}
-
-		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		if (IsComponentIdForTypeValid(ComponentId, Type))
 		{
 			Info->SchemaComponents[Type] = ComponentId;
 			ComponentToClassInfoMap.Add(ComponentId, Info);
@@ -303,13 +274,8 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 		ActorSubobjectInfo->SubobjectName = SubobjectSchemaData.Name;
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-			if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
-			{
-				return;
-			}
-
 			Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
-			if (ComponentId != 0)
+			if (IsComponentIdForTypeValid(ComponentId, Type))
 			{
 				ActorSubobjectInfo->SchemaComponents[Type] = ComponentId;
 				ComponentToClassInfoMap.Add(ComponentId, ActorSubobjectInfo);
@@ -331,12 +297,16 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 		SpecificDynamicSubobjectInfo->bDynamicSubobject = true;
 
 		int32 Offset = DynamicSubobjectData.SchemaComponents[SCHEMA_Data];
-		check(Offset != SpatialConstants::INVALID_COMPONENT_ID);
+		if (!ensureAlwaysMsgf(Offset != SpatialConstants::INVALID_COMPONENT_ID,
+							  TEXT("Failed to get dynamic subobject data offset when constructing subobject. Is Schema up to date?")))
+		{
+			continue;
+		}
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 			Worker_ComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];
 
-			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+			if (IsComponentIdForTypeValid(ComponentId, Type))
 			{
 				SpecificDynamicSubobjectInfo->SchemaComponents[Type] = ComponentId;
 				ComponentToClassInfoMap.Add(ComponentId, SpecificDynamicSubobjectInfo);
@@ -349,18 +319,10 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 	}
 }
 
-bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
+bool USpatialClassInfoManager::IsComponentIdForTypeValid(const Worker_ComponentId ComponentId, const ESchemaComponentType Type) const
 {
-	// There's currently a bug that lets handover data get sent to clients in the initial
-	// burst of data for an entity, which leads to log spam in the SpatialReceiver. By tracking handover
-	// properties on clients, we can prevent that spam. Cannot be removed yet because of Kraken,
-	// UNR-4358 will remove this in a squid-only world.
-	if (!NetDriver->IsServer())
-	{
-		return true;
-	}
-
-	return USpatialStatics::IsHandoverEnabled(NetDriver);
+	// If handover is inactive, mark server only components as invalid.
+	return ComponentId != SpatialConstants::INVALID_COMPONENT_ID && (Type != SCHEMA_ServerOnly || bHandoverActive.Get(false));
 }
 
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
@@ -494,14 +456,14 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHier
 	return OutComponentIds;
 }
 
-bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
+bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, ObjectOffset& OutOffset)
 {
 	if (!ComponentToOffsetMap.Contains(ComponentId))
 	{
 		TryCreateClassInfoForComponentId(ComponentId);
 	}
 
-	if (uint32* Offset = ComponentToOffsetMap.Find(ComponentId))
+	if (ObjectOffset* Offset = ComponentToOffsetMap.Find(ComponentId))
 	{
 		OutOffset = *Offset;
 		return true;
@@ -641,7 +603,11 @@ void USpatialClassInfoManager::QuitGame()
 
 Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(const AActor* Actor) const
 {
-	check(Actor);
+	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Trying to compute Actor interest component ID for nullptr Actor")))
+	{
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	}
+
 	const AActor* ActorForRelevancy = Actor;
 	// bAlwaysRelevant takes precedence over bNetUseOwnerRelevancy - see AActor::IsNetRelevantFor
 	while (!ActorForRelevancy->bAlwaysRelevant && ActorForRelevancy->bNetUseOwnerRelevancy && ActorForRelevancy->GetOwner() != nullptr)

@@ -21,6 +21,9 @@ void UTestHandoverComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, ReplicatedTestProperty);
+
+	DOREPLIFETIME_CONDITION(ThisClass, HandoverTestProperty, COND_ServerOnly);
+	DOREPLIFETIME_CONDITION(ThisClass, HandoverTestStruct, COND_ServerOnly);
 }
 
 AHandoverReplicationTestCube::AHandoverReplicationTestCube()
@@ -100,6 +103,10 @@ void AHandoverReplicationTestCube::GetLifetimeReplicatedProps(TArray<FLifetimePr
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, ReplicatedTestProperty);
+
+	DOREPLIFETIME_CONDITION(ThisClass, HandoverTestProperty, COND_ServerOnly);
+	DOREPLIFETIME_CONDITION(ThisClass, HandoverTestStruct, COND_ServerOnly);
+	DOREPLIFETIME_CONDITION(ThisClass, TestStage, COND_ServerOnly);
 }
 
 /**

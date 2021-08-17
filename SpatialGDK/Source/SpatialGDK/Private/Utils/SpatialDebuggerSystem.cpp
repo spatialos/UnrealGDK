@@ -91,7 +91,11 @@ void SpatialDebuggerSystem::UpdateSpatialDebuggingData(Worker_EntityId EntityId,
 
 void SpatialDebuggerSystem::OnEntityAdded(const Worker_EntityId EntityId)
 {
-	check(NetDriver != nullptr);
+	if (!ensureAlwaysMsgf(NetDriver != nullptr, TEXT("NetDriver was nullptr in OnEntityAdded %lld callback"), EntityId))
+	{
+		return;
+	}
+
 	if (NetDriver->IsServer())
 	{
 		if (SubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
@@ -102,7 +106,10 @@ void SpatialDebuggerSystem::OnEntityAdded(const Worker_EntityId EntityId)
 		return;
 	}
 
-	check(!EntityActorMapping.Contains(EntityId));
+	if (!ensureAlwaysMsgf(!EntityActorMapping.Contains(EntityId), TEXT("NetDriver was nullptr in OnEntityAdded %lld callback"), EntityId))
+	{
+		return;
+	}
 
 	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
 	{
@@ -162,12 +169,21 @@ void SpatialDebuggerSystem::ActorAuthorityGained(const Worker_EntityId EntityId)
 void SpatialDebuggerSystem::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
 {
 	TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
-	check(DebuggingInfo.IsSet());
+	if (!ensureAlwaysMsgf(DebuggingInfo.IsSet(),
+						  TEXT("Failed to process auth intent change for entity %lld because debugging info was invalid"), EntityId))
+	{
+		return;
+	}
+
 	DebuggingInfo->IntentVirtualWorkerId = NewIntentVirtualWorkerId;
 
 	const PhysicalWorkerName* NewAuthoritativePhysicalWorkerName =
 		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(NewIntentVirtualWorkerId);
-	check(NewAuthoritativePhysicalWorkerName != nullptr);
+	if (!ensureAlwaysMsgf(NewAuthoritativePhysicalWorkerName != nullptr, TEXT("Failed to get physical worker name for virtual worker %u"),
+						  NewIntentVirtualWorkerId))
+	{
+		return;
+	}
 
 	DebuggingInfo->IntentColor = GetColorForWorkerName(*NewAuthoritativePhysicalWorkerName);
 	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();

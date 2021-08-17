@@ -40,8 +40,13 @@ void SpatialVirtualWorkerTranslationManager::SetNumberOfVirtualWorkers(const uin
 
 void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthOp)
 {
-	check(AuthOp.component_set_id == SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID
-		  || AuthOp.component_set_id == SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID);
+	if (!ensureAlwaysMsgf(AuthOp.component_set_id == SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID
+							  || AuthOp.component_set_id == SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID,
+						  TEXT("Translation managed handled unexpected component set auth op. Entity: %lld. Set: %u"), AuthOp.entity_id,
+						  AuthOp.component_set_id))
+	{
+		return;
+	}
 
 	const bool bAuthoritative = AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE;
 

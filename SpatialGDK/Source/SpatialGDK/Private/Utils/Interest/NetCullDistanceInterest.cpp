@@ -249,7 +249,11 @@ TMap<UClass*, float> NetCullDistanceInterest::GetActorTypeToRadius()
 	// Can't do inline removal since the sorted order is only guaranteed when the map isn't changed.
 	for (const auto& ActorInterestDistance : DiscoveredInterestDistancesSquared)
 	{
-		check(ActorInterestDistance.Key);
+		if (!ensureAlwaysMsgf(ActorInterestDistance.Key != nullptr,
+							  TEXT("Failed to add an ActorInterestDistance setting because the relevant UCLass was nullptr")))
+		{
+			continue;
+		}
 
 		// Spatial distance works in meters, whereas unreal distance works in cm^2. Here we do the dimensionally strange conversion between
 		// the two.
@@ -327,7 +331,12 @@ float NetCullDistanceInterest::NetCullDistanceSquaredToSpatialDistance(float Net
 void NetCullDistanceInterest::AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint,
 														   USpatialClassInfoManager* ClassInfoManager)
 {
-	check(ClassInfoManager);
+	if (!ensureAlwaysMsgf(ClassInfoManager != nullptr,
+						  TEXT("Failed to add type hierarchy constraint to interset because the ClassInfoManager was nullptr")))
+	{
+		return;
+	}
+
 	TArray<Worker_ComponentId> ComponentIds = ClassInfoManager->GetComponentIdsForClassHierarchy(BaseType);
 	for (Worker_ComponentId ComponentId : ComponentIds)
 	{

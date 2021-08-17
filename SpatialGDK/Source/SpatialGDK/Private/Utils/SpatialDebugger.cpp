@@ -80,7 +80,10 @@ void ASpatialDebugger::BeginPlay()
 {
 	Super::BeginPlay();
 
-	check(NetDriver != nullptr);
+	if (!ensureAlwaysMsgf(NetDriver != nullptr, TEXT("Failed to call BeginPlay on SpatialDebugger. NetDriver was nullptr")))
+	{
+		return;
+	}
 
 	NetDriver->RegisterSpatialDebugger(this);
 
@@ -92,7 +95,10 @@ void ASpatialDebugger::BeginPlay()
 		{
 			AActor* PresentActor = PresentActorPair.Value.Get();
 
-			check(IsValid(PresentActor));
+			if (!ensureAlwaysMsgf(IsValid(PresentActor), TEXT("Actor was invalid when iterating through debugger system")))
+			{
+				continue;
+			}
 
 			OnEntityAdded(PresentActor);
 		}
@@ -120,7 +126,10 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	check(NetDriver != nullptr);
+	if (!ensureAlwaysMsgf(NetDriver != nullptr, TEXT("Failed to call SpatialDebugger::Tick. NetDriver was nullptr")))
+	{
+		return;
+	}
 
 	if (!NetDriver->IsServer())
 	{
@@ -219,7 +228,12 @@ void ASpatialDebugger::CreateWorkerRegions()
 	}
 	SpawnParams.bHideFromSceneOutliner = true;
 #endif
-	check(World != nullptr);
+
+	if (!ensureAlwaysMsgf(World != nullptr, TEXT("Failed to call SpatialDebugger::CreateWorkerRegions. World was nullptr")))
+	{
+		return;
+	}
+
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	for (const FWorkerRegionInfo& WorkerRegionData : WorkerRegions)
 	{
@@ -265,7 +279,11 @@ void ASpatialDebugger::Destroyed()
 
 void ASpatialDebugger::LoadIcons()
 {
-	check(NetDriver != nullptr && !NetDriver->IsServer());
+	if (!ensureAlwaysMsgf(NetDriver != nullptr && !NetDriver->IsServer(),
+						  TEXT("Failed to call SpatialDebugger::LoadIcons. NetDriver was nullptr OR running on server")))
+	{
+		return;
+	}
 
 	UTexture2D* DefaultTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture"));
 
@@ -432,7 +450,11 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 {
 	SCOPE_CYCLE_COUNTER(STAT_DrawTag);
 
-	check(NetDriver != nullptr && !NetDriver->IsServer());
+	if (!ensureAlwaysMsgf(NetDriver != nullptr && !NetDriver->IsServer(),
+						  TEXT("Failed to call SpatialDebugger::DrawTag. NetDriver was nullptr OR running on server")))
+	{
+		return;
+	}
 
 	// TODO: UNR-5481 - Fix this hack for fixing spatial debugger crash after client travel
 	if (!NetDriver->Connection->HasValidCoordinator())
@@ -578,7 +600,11 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 {
 	SCOPE_CYCLE_COUNTER(STAT_DrawDebug);
 
-	check(NetDriver != nullptr && !NetDriver->IsServer());
+	if (!ensureAlwaysMsgf(NetDriver != nullptr && !NetDriver->IsServer(),
+						  TEXT("Failed to call SpatialDebugger::DrawDebug. NetDriver was nullptr OR running on server")))
+	{
+		return;
+	}
 
 #if WITH_EDITOR
 	// Prevent one client's data rendering in another client's view in PIE when using UDebugDrawService.  Lifted from EQSRenderingComponent.
@@ -868,7 +894,11 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 
 void ASpatialDebugger::SpatialToggleDebugger()
 {
-	check(NetDriver != nullptr && !NetDriver->IsServer());
+	if (!ensureAlwaysMsgf(NetDriver != nullptr && !NetDriver->IsServer(),
+						  TEXT("Failed to call SpatialDebugger::SpatialToggleDebugger. NetDriver was nullptr OR running on server")))
+	{
+		return;
+	}
 
 	if (DrawDebugDelegateHandle.IsValid())
 	{
@@ -932,7 +962,11 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 	WorkerRegions.Empty();
 
 	const UWorld* World = GEditor->GetEditorWorldContext().World();
-	check(World != nullptr);
+
+	if (!ensureAlwaysMsgf(World != nullptr, TEXT("Failed to EditorInitialiseWorkerRegions. Couldn't access World from GEditor")))
+	{
+		return;
+	}
 
 	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
 		USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
@@ -984,6 +1018,9 @@ void ASpatialDebugger::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 
 SpatialDebuggerSystem* ASpatialDebugger::GetDebuggerSystem() const
 {
-	check(NetDriver->SpatialDebuggerSystem.IsValid());
+	if (!ensureAlwaysMsgf(NetDriver->SpatialDebuggerSystem.IsValid(), TEXT("Failed to access invalid debugger system")))
+	{
+		return nullptr;
+	}
 	return NetDriver->SpatialDebuggerSystem.Get();
 }

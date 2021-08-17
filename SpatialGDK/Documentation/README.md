@@ -1,3 +1,3 @@
 # The SpatialOS GDK for Unreal documentation 
 
-The GDK's documentation is available at https://documentation.improbable.io/gdk-for-unreal/docs. 
+The GDK's documentation is available at https://networking.docs.improbable.io/gdk-for-unreal/. 

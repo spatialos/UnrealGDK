@@ -101,6 +101,7 @@ enum class ESchemaDatabaseVersion : uint8
 	AlwaysWriteRPCAdded,
 	InitialOnlyDataAdded,
 	FieldIDsAdded,
+	HandoverToServerOnlyChanged,
 
 	// Add new versions here
 

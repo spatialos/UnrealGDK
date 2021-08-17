@@ -2,6 +2,7 @@
 
 #include "SpatialFunctionalTestFlowController.h"
 
+#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "GameFramework/PlayerController.h"
@@ -225,6 +226,11 @@ void ASpatialFunctionalTestFlowController::SetReadyToRunTest(bool bIsReady)
 			ServerSetReadyToRunTest(bIsReady);
 		}
 	}
+}
+
+void ASpatialFunctionalTestFlowController::DeregisterFlowController()
+{
+	OwningTest->DeregisterFlowController(this);
 }
 
 void ASpatialFunctionalTestFlowController::ClientStartStep_Implementation(int StepIndex)

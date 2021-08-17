@@ -23,7 +23,9 @@ public class SpatialGDKFunctionalTests : ModuleRules
                 "FunctionalTesting",
                 "HTTP",
                 "UnrealEd",
-                "EngineSettings"
+                "EngineSettings",
+                "InputCore",
+                "Slate"
             });
     }
 }

@@ -21,6 +21,8 @@ private:
 public:
 	ATestPossessionPlayerController();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	void RemotePossessOnServer(APawn* InPawn);
 
 	void RemovePossessionComponent();
@@ -39,10 +41,10 @@ public:
 private:
 	VirtualWorkerId GetCurrentWorkerId();
 
-	UPROPERTY(Handover)
+	UPROPERTY(Replicated)
 	uint32 BeforePossessionWorkerId;
 
-	UPROPERTY(Handover)
+	UPROPERTY(Replicated)
 	uint32 AfterPossessionWorkerId;
 
 	TArray<ActorLockToken> Tokens;

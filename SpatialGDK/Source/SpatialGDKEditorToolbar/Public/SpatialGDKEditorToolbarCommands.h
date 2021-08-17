@@ -22,6 +22,7 @@ public:
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSchema;
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSchemaFull;
 	TSharedPtr<FUICommandInfo> DeleteSchemaDatabase;
+	TSharedPtr<FUICommandInfo> CleanGenerateSchema;
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSnapshot;
 	TSharedPtr<FUICommandInfo> StartNative;
 	TSharedPtr<FUICommandInfo> StartLocalSpatialDeployment;

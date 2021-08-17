@@ -13,7 +13,7 @@ void SpatialRoutingSystem::ProcessUpdate(Worker_EntityId Entity, const Component
 {
 	switch (Change.ComponentId)
 	{
-	case SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID:
 		switch (Change.Type)
 		{
 		case ComponentChange::COMPLETE_UPDATE:
@@ -29,11 +29,11 @@ void SpatialRoutingSystem::ProcessUpdate(Worker_EntityId Entity, const Component
 		}
 		OnSenderChanged(Entity, Components);
 		break;
-	case SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID:
 		check(Change.Type == ComponentChange::COMPLETE_UPDATE);
 		break;
-	case SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID:
 		switch (Change.Type)
 		{
 		case ComponentChange::COMPLETE_UPDATE:
@@ -100,7 +100,7 @@ void SpatialRoutingSystem::OnSenderChanged(Worker_EntityId SenderId, RoutingComp
 	{
 		const CrossServer::RPCSlots& Slots = SlotToClear.Value;
 		{
-			EntityComponentId SenderPair(SenderId, SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID);
+			EntityComponentId SenderPair(SenderId, SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID);
 			Components.SenderACKState.ACKAlloc.FreeSlot(Slots.ACKSlot);
 
 			GetOrCreateComponentUpdate(SenderPair);
@@ -131,7 +131,7 @@ void SpatialRoutingSystem::ClearReceiverSlot(Worker_EntityId Receiver, CrossServ
 	CrossServer::SentRPCEntry* SentRPC = ReceiverComponents.ReceiverState.Mailbox.Find(RPCKey);
 	check(SentRPC != nullptr);
 
-	EntityComponentId ReceiverPair(Receiver, SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID);
+	EntityComponentId ReceiverPair(Receiver, SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID);
 
 	check(SentRPC->DestinationSlot.IsSet());
 	uint32 SlotIdx = SentRPC->DestinationSlot.GetValue();
@@ -179,7 +179,7 @@ void SpatialRoutingSystem::TransferRPCsToReceiver(Worker_EntityId ReceiverId, Ro
 			check(Element.IsSet());
 
 			Schema_ComponentUpdate* ReceiverUpdate =
-				GetOrCreateComponentUpdate(EntityComponentId(ReceiverId, SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID));
+				GetOrCreateComponentUpdate(EntityComponentId(ReceiverId, SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID));
 			Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(ReceiverUpdate);
 
 			const uint32 SlotIdx = FreeSlot.GetValue();
@@ -209,7 +209,7 @@ void SpatialRoutingSystem::WriteACKToSender(CrossServer::RPCKey RPCKey, RoutingC
 		if (TOptional<uint32_t> ReservedSlot = SenderComponents.SenderACKState.ACKAlloc.ReserveSlot())
 		{
 			Slots->ACKSlot = ReservedSlot.GetValue();
-			EntityComponentId SenderPair(RPCKey.Get<0>(), SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID);
+			EntityComponentId SenderPair(RPCKey.Get<0>(), SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID);
 			Schema_ComponentUpdate* Update = GetOrCreateComponentUpdate(SenderPair);
 			Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update);
 
@@ -324,11 +324,11 @@ void SpatialRoutingSystem::Advance(SpatialOSWorkerInterface* Connection)
 			{
 				switch (ComponentDesc.GetComponentId())
 				{
-				case SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID:
+				case SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID:
 					Components.Sender = CrossServerEndpoint(ComponentDesc.GetUnderlying());
 					// TODO : Should inspect the component if we were reloading a snapshot
 					break;
-				case SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID:
+				case SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID:
 				{
 					CrossServerEndpointACK TempView(ComponentDesc.GetUnderlying());
 					for (int32 SlotIdx = 0; SlotIdx < TempView.ACKArray.Num(); ++SlotIdx)
@@ -344,7 +344,7 @@ void SpatialRoutingSystem::Advance(SpatialOSWorkerInterface* Connection)
 					}
 				}
 				break;
-				case SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID:
+				case SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID:
 				{
 					CrossServerEndpoint TempView(ComponentDesc.GetUnderlying());
 					for (int32 SlotIdx = 0; SlotIdx < TempView.ReliableRPCBuffer.RingBuffer.Num(); ++SlotIdx)
@@ -372,7 +372,7 @@ void SpatialRoutingSystem::Advance(SpatialOSWorkerInterface* Connection)
 					}
 				}
 				break;
-				case SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID:
+				case SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID:
 					Components.ReceiverACK = CrossServerEndpointACK(ComponentDesc.GetUnderlying());
 					// TODO : Should inspect the component if we were reloading a snapshot
 					break;
@@ -385,9 +385,9 @@ void SpatialRoutingSystem::Advance(SpatialOSWorkerInterface* Connection)
 		{
 			ReceiversToInspect.Remove(Delta.EntityId);
 			PendingComponentUpdatesToSend.Remove(
-				EntityComponentId(Delta.EntityId, SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID));
+				EntityComponentId(Delta.EntityId, SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID));
 			PendingComponentUpdatesToSend.Remove(
-				EntityComponentId(Delta.EntityId, SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID));
+				EntityComponentId(Delta.EntityId, SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID));
 
 			if (RoutingComponents* Components = RoutingWorkerView.Find(Delta.EntityId))
 			{
@@ -443,7 +443,7 @@ void SpatialRoutingSystem::Flush(SpatialOSWorkerInterface* Connection)
 
 		if (RoutingComponents* Components = RoutingWorkerView.Find(Entity))
 		{
-			if (CompId == SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID)
+			if (CompId == SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID)
 			{
 				RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::CrossServer);
 
@@ -455,7 +455,7 @@ void SpatialRoutingSystem::Flush(SpatialOSWorkerInterface* Connection)
 				});
 			}
 
-			if (CompId == SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID)
+			if (CompId == SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID)
 			{
 				Components->SenderACKState.ACKAlloc.ForeachClearedSlot([&](uint32_t ToClear) {
 					Schema_AddComponentUpdateClearedField(Entry.Value, ToClear + 1);

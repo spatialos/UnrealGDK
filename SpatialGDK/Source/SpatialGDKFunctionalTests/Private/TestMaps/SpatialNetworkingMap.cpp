@@ -1,8 +1,13 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "TestMaps/SpatialNetworkingMap.h"
+
+#include "SpatialGDK/StaticSubobjectsTest/StaticSubobjectTestActor.h"
+#include "SpatialGDK/StaticSubobjectsTest/StaticSubobjectsTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DormancyAndTombstoneTest/DormancyAndTombstoneTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DormancyAndTombstoneTest/DormancyTestActor.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/DynamicSubobjectsTest/DynamicSubObjectTestActor.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/DynamicSubobjectsTest/DynamicSubObjectsTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RegisterAutoDestroyActorsTest/RegisterAutoDestroyActorsTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestPossession/SpatialTestPossession.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestPossession/SpatialTestRepossession.h"
@@ -35,9 +40,13 @@ void USpatialNetworkingMap::CreateCustomContentForMap()
 	AddActorToLevel<ADormancyAndTombstoneTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ASpatialTestSingleServerDynamicComponents>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ASpatialTestMultipleOwnership>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ADynamicSubobjectsTest>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<AStaticSubobjectsTest>(CurrentLevel, FTransform::Identity);
 
 	// Add test helpers
 	// Unfortunately, the nature of some tests requires them to have actors placed in the level, to trigger some Unreal behavior
 	AddActorToLevel<ADormancyTestActor>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<AReplicatedVisibilityTestActor>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ADynamicSubObjectTestActor>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<AStaticSubobjectTestActor>(CurrentLevel, FTransform(FVector(-20000.0f, -20000.0f, 40.0f)));
 }

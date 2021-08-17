@@ -3,12 +3,14 @@
 #include "CrossServerPossessionGameMode.h"
 
 #include "GameFramework/PlayerStart.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPawnBase_RepGraphAlwaysReplicate.h"
 #include "TestPossessionPlayerController.h"
 
 ACrossServerPossessionGameMode::ACrossServerPossessionGameMode()
 	: PlayersSpawned(0)
 	, bInitializedSpawnPoints(false)
 {
+	DefaultPawnClass = ATestPawnBase_RepGraphAlwaysReplicate::StaticClass();
 	PlayerControllerClass = ATestPossessionPlayerController::StaticClass();
 }
 

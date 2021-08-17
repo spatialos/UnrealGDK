@@ -159,10 +159,12 @@ void USpatialNetDriverDebugContext::Reset()
 
 USpatialNetDriverDebugContext::DebugComponentAuthData& USpatialNetDriverDebugContext::GetAuthDebugComponent(AActor* Actor)
 {
-	check(Actor && Actor->HasAuthority());
+	ensureAlwaysMsgf(Actor && Actor->HasAuthority(), TEXT("Called GetAuthDebugComponent without authority. Actor: %s"),
+					 *GetNameSafe(Actor));
+
 	SpatialGDK::DebugComponent* DbgComp = nullptr;
 
-	Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+	const Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 	if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 	{
 		DbgComp = DebugComponents.Find(Entity);
@@ -213,7 +215,10 @@ void USpatialNetDriverDebugContext::AddComponent(Worker_EntityId EntityId)
 	const SpatialGDK::ComponentData* Data = Element.Components.FindByPredicate([](const SpatialGDK::ComponentData& Component) {
 		return Component.GetComponentId() == SpatialConstants::GDK_DEBUG_COMPONENT_ID;
 	});
-	check(Data != nullptr);
+	if (!ensureAlwaysMsgf(Data != nullptr, TEXT("Failed to access Debug component data for entity %lld"), EntityId))
+	{
+		return;
+	}
 	SpatialGDK::DebugComponent& DbgComp = DebugComponents.Add(EntityId, SpatialGDK::DebugComponent(Data->GetUnderlying()));
 
 	if (!IsSetIntersectionEmpty(SemanticInterest, DbgComp.ActorTags))
@@ -231,7 +236,12 @@ void USpatialNetDriverDebugContext::RemoveComponent(Worker_EntityId EntityId)
 void USpatialNetDriverDebugContext::ApplyComponentUpdate(Worker_EntityId Entity, Schema_ComponentUpdate* Update)
 {
 	SpatialGDK::DebugComponent* DbgComp = DebugComponents.Find(Entity);
-	check(DbgComp);
+
+	if (!ensureAlwaysMsgf(DbgComp != nullptr, TEXT("Failed to ApplyComponentUpdate for debug context because component data wasn't found")))
+	{
+		return;
+	}
+
 	DbgComp->ApplyComponentUpdate(Update);
 
 	if (IsSetIntersectionEmpty(SemanticInterest, DbgComp->ActorTags))

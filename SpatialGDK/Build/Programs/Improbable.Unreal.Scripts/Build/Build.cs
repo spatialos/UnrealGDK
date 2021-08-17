@@ -13,6 +13,8 @@ namespace Improbable
 {
     public static class Build
     {
+        static string runUATBatPath;
+
         public static void Main(string[] args)
         {
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
@@ -101,7 +103,7 @@ namespace Improbable
                 Console.WriteLine("Engine is at: " + unrealEngine);
             }
 
-            string runUATBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\RunUAT.bat");
+            runUATBatPath = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\RunUAT.bat");
             string buildBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\Build.bat");
 
             if (gameName == baseGameName + "Editor")
@@ -141,17 +143,12 @@ exit /b !ERRORLEVEL!";
                     StartEditorScript, new UTF8Encoding(false));
 
                 // The runtime currently requires all workers to be in zip files. Zip the batch file.
-                Common.RunRedirected(runUATBat, new[]
-                {
-                    "ZipUtils",
-                    "-add=" + Quote(windowsEditorPath),
-                    "-archive=" + Quote(Path.Combine(outputDir, "UnrealEditor@Windows.zip")),
-                });
+                Zip(Quote(windowsEditorPath), Quote(Path.Combine(outputDir, "UnrealEditor@Windows.zip")));
             }
             else if (gameName == baseGameName)
             {
                 Common.WriteHeading(" > Building client.");
-                Common.RunRedirected(runUATBat, new[]
+                Common.RunRedirected(runUATBatPath, new[]
                 {
                     "BuildCookRun",
                     noBuild ? "-nobuild" : "-build",
@@ -184,17 +181,12 @@ exit /b !ERRORLEVEL!";
 
                 RenameExeForLauncher(windowsTargetPath, baseGameName);
 
-                Common.RunRedirected(runUATBat, new[]
-                {
-                    "ZipUtils",
-                    "-add=" + Quote(windowsTargetPath),
-                    "-archive=" + Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")),
-                });
+                Zip(Quote(windowsTargetPath), Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")));
             }
             else if (gameName == baseGameName + "SimulatedPlayer") // This is for internal use only. We do not support Linux clients.
             {
                 Common.WriteHeading(" > Building simulated player.");
-                Common.RunRedirected(runUATBat, new[]
+                Common.RunRedirected(runUATBatPath, new[]
                 {
                     "BuildCookRun",
                     noBuild ? "-nobuild" : "-build",
@@ -250,17 +242,12 @@ exit /b !ERRORLEVEL!";
                 }
 
                 var archiveFileName = "UnrealSimulatedPlayer@Linux.zip";
-                Common.RunRedirected(runUATBat, new[]
-                {
-                    "ZipUtils",
-                    "-add=" + Quote(linuxSimulatedPlayerPath),
-                    "-archive=" + Quote(Path.Combine(outputDir, archiveFileName)),
-                });
+                Zip(Quote(linuxSimulatedPlayerPath), Quote(Path.Combine(outputDir, archiveFileName)));
             }
             else if (gameName == baseGameName + "Server")
             {
                 Common.WriteHeading(" > Building worker.");
-                Common.RunRedirected(runUATBat, new[]
+                Common.RunRedirected(runUATBatPath, new[]
                 {
                     "BuildCookRun",
                     noBuild ? "-nobuild" : "-build",
@@ -301,17 +288,12 @@ exit /b !ERRORLEVEL!";
                     LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetUnrealWorkerShellScript(baseGameName), Path.Combine(serverPath, "StartWorker.sh"));
                 }
 
-                Common.RunRedirected(runUATBat, new[]
-                {
-                    "ZipUtils",
-                    "-add=" + Quote(serverPath),
-                    "-archive=" + Quote(Path.Combine(outputDir, $"UnrealWorker@{assemblyPlatform}.zip"))
-                });
+                Zip(Quote(serverPath), Quote(Path.Combine(outputDir, $"UnrealWorker@{assemblyPlatform}.zip")));
             }
             else if (gameName == baseGameName + "Client")
             {
                 Common.WriteHeading(" > Building client.");
-                Common.RunRedirected(runUATBat, new[]
+                Common.RunRedirected(runUATBatPath, new[]
                 {
                     "BuildCookRun",
                     noBuild ? "-nobuild" : "-build",
@@ -346,12 +328,7 @@ exit /b !ERRORLEVEL!";
 
                 RenameExeForLauncher(windowsClientPath, baseGameName + "Client");
 
-                Common.RunRedirected(runUATBat, new[]
-                {
-                    "ZipUtils",
-                    "-add=" + Quote(windowsClientPath),
-                    "-archive=" + Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")),
-                });
+                Zip(Quote(windowsClientPath), Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")));
             }
             else
             {
@@ -366,6 +343,18 @@ exit /b !ERRORLEVEL!";
                 });
             }
         }
+
+        private static void Zip(string pathToItem, string compressedOutputPath)
+        {
+            Common.RunRedirected(runUATBatPath, new[]
+            {
+                    "ZipUtils",
+                    "-NoP4",
+                    "-add=" + pathToItem,
+                    "-archive=" + compressedOutputPath,
+            });
+        }
+
 
         private static string Quote(string toQuote)
         {

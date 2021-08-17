@@ -63,6 +63,15 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 	});
 
 	AddStep(
+		TEXT("Wait for actor to be ready"), FWorkerDefinition::Server(1),
+		[this]() -> bool {
+			return SpawnedPawn->IsActorReady();
+		},
+		[this]() {
+			FinishStep();
+		});
+
+	AddStep(
 		TEXT("Post spawn check connections on server 2"), FWorkerDefinition::Server(2), nullptr, nullptr,
 		[this](float delta) {
 			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());

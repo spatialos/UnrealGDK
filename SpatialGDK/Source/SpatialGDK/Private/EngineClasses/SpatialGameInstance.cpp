@@ -98,16 +98,16 @@ void USpatialGameInstance::CreateNewSpatialConnectionManager()
 
 void USpatialGameInstance::DestroySpatialConnectionManager()
 {
-	if (SpatialConnectionManager != nullptr)
-	{
-		SpatialConnectionManager->DestroyConnection();
-		SpatialConnectionManager = nullptr;
-	}
-
 	if (GlobalStateManager != nullptr)
 	{
 		GlobalStateManager->ConditionalBeginDestroy();
 		GlobalStateManager = nullptr;
+	}
+
+	if (SpatialConnectionManager != nullptr)
+	{
+		SpatialConnectionManager->DestroyConnection();
+		SpatialConnectionManager = nullptr;
 	}
 }
 
@@ -247,10 +247,6 @@ void USpatialGameInstance::HandleOnConnected(USpatialNetDriver& NetDriver)
 	SetSpatialWorkerId(SpatialConnectionManager->GetWorkerConnection()->GetWorkerId());
 #if TRACE_LIB_ACTIVE
 	SpatialLatencyTracer->SetWorkerId(GetSpatialWorkerId());
-
-	USpatialWorkerConnection* WorkerConnection = SpatialConnectionManager->GetWorkerConnection();
-	WorkerConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
-	WorkerConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
 #endif
 
 	OnSpatialConnected.Broadcast();

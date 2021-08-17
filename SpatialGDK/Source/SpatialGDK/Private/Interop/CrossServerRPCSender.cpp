@@ -50,7 +50,7 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef InTargetObjectRef,
 	}
 	else
 	{
-		Coordinator->SendEntityCommandRequest(InTargetObjectRef.Entity, MoveTemp(CommandRequest), TOptional<uint32>(), SpanId);
+		Coordinator->SendEntityCommandRequest(InTargetObjectRef.Entity, MoveTemp(CommandRequest), NO_RETRIES, SpanId);
 	}
 
 #if !UE_BUILD_SHIPPING

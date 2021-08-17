@@ -79,10 +79,10 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 		}
 
 		const bool bNetOwnerHasAuth = NetOwner->HasAuthority();
+		const bool bShouldHaveAuthority = NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*NetOwner);
 
 		// Load balance if we are not supposed to be on this worker, or if we are separated from our owner.
-		if ((!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*NetOwner) || !bNetOwnerHasAuth)
-			&& !NetDriver->LockingPolicy->IsLocked(Actor))
+		if ((!bShouldHaveAuthority || !bNetOwnerHasAuth) && !NetDriver->LockingPolicy->IsLocked(Actor))
 		{
 			uint64 HierarchyAuthorityReceivedTimestamp = GetLatestAuthorityChangeFromHierarchy(NetOwner);
 
@@ -124,6 +124,13 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 				{
 					UE_LOG(LogSpatialLoadBalancingHandler, Error,
 						   TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
+				}
+				else if (!bShouldHaveAuthority && NewAuthVirtualWorkerId == NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId())
+				{
+					UE_LOG(LogSpatialLoadBalancingHandler, Error,
+						   TEXT("ShouldHaveAuthority returned false for actor %s, but WhoShouldHaveAuthority returned this worker's id. "
+								"Actor will not be migrated."),
+						   *Actor->GetName());
 				}
 				else
 				{
