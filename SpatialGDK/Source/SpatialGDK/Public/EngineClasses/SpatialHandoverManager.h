@@ -27,6 +27,7 @@ public:
 	void Advance();
 
 	const TSet<Worker_EntityId_Key>& GetActorsToHandover() { return ActorsToHandover; }
+	const TSet<Worker_EntityId_Key>& GetActorsToCheckForAuth() { return ActorsToACK; }
 
 	void Flush(ISpatialOSWorker& Connection, const TSet<Worker_EntityId_Key>& ActorsReleased);
 
