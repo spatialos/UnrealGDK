@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Gameplay Debugger now supports multi-worker environments.
 - Add support DOREPLIFETIME_ACTIVE_OVERRIDE for replication conditions, with the exception of TArray's this should now work the same as in native.
 - Added a debug mode to detect non-auth modification of data, enable/disable with the SpatialGDKSettings flag bSpatialAuthorityDebugger (disabled by default).
+- Pre and PostNetReceive are now called on an object a maximum of a single time in a given tick. This matches native much closer.
+- The GDK has been upgraded to use version 15.2.0 of SpatialOS.
 
 ### Bug fixes:
 - Fix `A functional test is already running error` that would sometimes occur when re-running multi-server functional tests.
@@ -23,11 +25,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue around actors being destroyed between entity creation and receiving a confirmation thereof.
 - Rep notifies for a parent actor are now called before child subobject rep notifies, and, for a given object, rep notifies are called in ascending RepIndex order.
 - Fixed a double Spatial component add if an Unreal component is added and destroyed in between actor's replications.
+- Fixed Actor Dormancy issue, we now correctly update if we set an actor awake and update properties on it on the same tick.
+- Fixed IsActorGroupOwnerForClass logging an error if NetDriver was not ready.
 
 ### Internal:
 - Modified startup flow to only create ActorSystem, RPCService and some others after startup has otherwise finished; removed initial op reordering.
 - Unused worker types will no longer generate worker configuration files.
 - Fixed an issue that could cause SpatialNetGuidCache and native's NetGuidCache to become out of sync.
+- Add helpers to the test framework - `SpawnActor`, `RequireValid`, `GetFlowPlayerController`, `RequireEqual_Enum`, and `RequireNotEqual_Enum`.
+- Refactored startup to be all in a couple classes, `FSpatialServerStartupHandler` and `FSpatialClientStartupHandler`.
+- Newly torn off channels are now conditionally closed after all updates in a given tick have been applied.
 
 ## [`0.14.0-rc`] - Unreleased
 

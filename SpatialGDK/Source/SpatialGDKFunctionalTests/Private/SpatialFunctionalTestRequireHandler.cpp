@@ -74,7 +74,13 @@ FString GetTransformAsString(const FTransform& Transform)
 }
 } // namespace
 
-FString GenerateStatusMessage(bool bPassed, FString Received, FString Expected, FString Tolerance = FString(), bool bNotEqual = false)
+SpatialFunctionalTestRequireHandler::SpatialFunctionalTestRequireHandler()
+	: NextOrder(0)
+{
+}
+
+FString SpatialFunctionalTestRequireHandler::GenerateStatusMessage(bool bPassed, FString Received, FString Expected, FString Tolerance,
+																   bool bNotEqual)
 {
 	if (bNotEqual)
 	{
@@ -102,9 +108,21 @@ FString GenerateStatusMessage(bool bPassed, FString Received, FString Expected, 
 	}
 }
 
-SpatialFunctionalTestRequireHandler::SpatialFunctionalTestRequireHandler()
-	: NextOrder(0)
+bool SpatialFunctionalTestRequireHandler::RequireValid(const UObject* Object, const FString& Msg)
 {
+	bool bPassed = IsValid(Object);
+	FString StatusMsg;
+	if (bPassed)
+	{
+		StatusMsg = FString::Printf(TEXT("Received valid actor %s as expected."), *Object->GetName());
+	}
+	else
+	{
+		StatusMsg = FString::Printf(TEXT("Unexpectedly received invalid actor %s."), *GetNameSafe(Object));
+	}
+
+	GenericRequire(Msg, bPassed, StatusMsg);
+	return bPassed;
 }
 
 bool SpatialFunctionalTestRequireHandler::RequireTrue(bool bCheckTrue, const FString& Msg)

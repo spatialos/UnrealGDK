@@ -198,7 +198,7 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 
 	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents)
+	if (USpatialStatics::IsStrategyWorkerEnabled())
 	{
 		const auto AddComponentData = [&ComponentDatas](ComponentData Data) {
 			Worker_ComponentData ComponentData;
@@ -211,7 +211,6 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 		};
 
 		AddComponentData(GetActorSetData(*NetDriver->PackageMap, *Actor).CreateComponentData());
-		AddComponentData(GetActorGroupData(*NetDriver->LoadBalanceStrategy, *Actor).CreateComponentData());
 	}
 }
 
@@ -522,6 +521,9 @@ TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(cons
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_SHADOW_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
+
+	// Worker partitions need this tag so startup handler can distinguish between them and any other partitions.
+	Components.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::WORKER_PARTITION_TAG_COMPONENT_ID));
 
 	return Components;
 }

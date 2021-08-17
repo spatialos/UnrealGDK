@@ -168,8 +168,9 @@ const Worker_ComponentId PARTITION_AUTH_TAG_COMPONENT_ID = 2012;
 const Worker_ComponentId SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID = 2013;
 const Worker_ComponentId SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID = 2014;
 const Worker_ComponentId SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID = 2015;
+const Worker_ComponentId WORKER_PARTITION_TAG_COMPONENT_ID = 2016;
 // Add component ids above here, this should always be last and be equal to the previous component id
-const Worker_ComponentId LAST_EC_COMPONENT_ID = 2015;
+const Worker_ComponentId LAST_EC_COMPONENT_ID = 2016;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
@@ -441,7 +442,7 @@ extern const TArray<Worker_ComponentId> KnownEntityAuthorityComponents;
 //
 
 constexpr uint32 SPATIAL_SNAPSHOT_SCHEMA_HASH = 679237978;
-constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 4;
+constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 5;
 constexpr uint64 SPATIAL_SNAPSHOT_VERSION = ((((uint64)SPATIAL_SNAPSHOT_SCHEMA_HASH) << 32) | SPATIAL_SNAPSHOT_VERSION_INC);
 
 } // namespace SpatialConstants

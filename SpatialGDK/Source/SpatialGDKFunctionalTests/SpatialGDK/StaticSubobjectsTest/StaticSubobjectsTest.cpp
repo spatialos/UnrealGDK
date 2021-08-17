@@ -99,9 +99,9 @@ void AStaticSubobjectsTest::PrepareTest()
 	AddStep(
 		TEXT("StaticSubobjectsTestClientCheckPawnPossesion"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-			APawn* PlayerPawn = GetFlowPawn();
+			APawn* PlayerPawn = GetLocalFlowPawn();
 			RequireTrue(IsValid(PlayerPawn), TEXT("PlayerCharacter should be valid"));
-			RequireTrue(PlayerPawn == GetFlowPlayerController()->AcknowledgedPawn, TEXT("The client should possess the pawn."));
+			RequireTrue(PlayerPawn == GetLocalFlowPlayerController()->AcknowledgedPawn, TEXT("The client should possess the pawn."));
 			FinishStep();
 		},
 		StepTimeLimit);
@@ -200,7 +200,12 @@ void AStaticSubobjectsTest::PrepareTest()
 		FinishStep();
 	});
 
-	// Step 18 - Server Cleanup.
+	// Step 18 - In preparation for cleanup
+	MoveClientPawn(PawnSpawnLocation);
+
+	WaitForRelevancyUpdateIfInNative();
+
+	// Step 19 - Server Cleanup.
 	AddStep(TEXT("StaticSubobjectsTestServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Possess the original pawn, so that the spawned character can get destroyed correctly
 		ASpatialFunctionalTestFlowController* ClientOneFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
@@ -231,7 +236,7 @@ void AStaticSubobjectsTest::MoveClientPawn(FVector& ToLocation)
 	AddStep(
 		TEXT("StaticSubobjectsTestClientCheckMovement"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this, &ToLocation](float DeltaTime) {
-			APawn* PlayerCharacter = GetFlowPawn();
+			APawn* PlayerCharacter = GetLocalFlowPawn();
 
 			if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid")))
 			{

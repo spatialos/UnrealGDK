@@ -18,6 +18,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineStats.h"
+#include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/GlobalStateManager.h"
@@ -25,6 +26,7 @@
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ActorOwnership.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -434,8 +436,9 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 		const FRepLayoutCmd& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
 		const FRepChangedParent& Parent = Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
 
-		// HACK: Need special case here because the gdk relies on the whole of the RepMovement struct being replicated to the client to decide whether to replicate physics.
-		// see: ComponentReader::ApplySchemaObject
+		// HACK: Need special case here because the gdk relies on the whole of the RepMovement struct being replicated to the client to
+		// decide whether to replicate physics. see: ComponentReader::ApplySchemaObject
+
 		// UNR-5843 TODO: fix this so we no longer need this special handling, for instance by replicating bRepPhysics as a separate always
 		// replicated field.
 		const bool bRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
@@ -858,7 +861,8 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	SCOPE_CYCLE_UOBJECT(ReplicateSubobjectSpecificClass, Object);
 
 	bool bCreatedReplicator = false;
-
+	// Set here because FindOrCreateReplicator will remove the replicator from the dormancy map
+	const bool bPreviouslyDormant = Connection->DormantReplicatorMap.Contains(Object);
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object, &bCreatedReplicator).Get();
 
 	// If we're creating an entity, don't try replicating
@@ -868,7 +872,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	}
 
 	// New subobject that hasn't been replicated before
-	if (bCreatedReplicator)
+	if (bCreatedReplicator && !bPreviouslyDormant)
 	{
 		// Attach to to the entity
 		DynamicallyAttachSubobject(Object);
@@ -1029,7 +1033,7 @@ bool USpatialActorChannel::TryResolveActor()
 	return true;
 }
 
-FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
+FObjectReplicator* USpatialActorChannel::GetObjectReplicatorForSpatialUpdate(UObject* TargetObject)
 {
 	// If there is no NetGUID for this object, we will crash in FObjectReplicator::StartReplicating, so we verify this here.
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
@@ -1039,19 +1043,18 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	{
 		// SpatialReceiver tried to resolve this object in the PackageMap, but it didn't propagate to GuidCache.
 		// This could happen if the UnrealObjectRef was already mapped to a different object that's been destroyed.
-		UE_LOG(LogSpatialActorChannel, Error, TEXT("PreReceiveSpatialUpdate: NetGUID is invalid! Object: %s"),
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("GetObjectReplicatorForSpatialUpdate: NetGUID is invalid! Object: %s"),
 			   *TargetObject->GetPathName());
 		return nullptr;
 	}
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
-	TargetObject->PreNetReceive();
 
 	return &Replicator;
 }
 
-void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-													const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds)
+void USpatialActorChannel::InvokeRepNotifies(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+											 const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 
@@ -1252,6 +1255,17 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	if (!bUpdatedThisActor)
 	{
 		return;
+	}
+
+	const bool bShouldWriteLoadBalancingData = IsValid(Connection) && USpatialStatics::IsStrategyWorkerEnabled();
+
+	if (bShouldWriteLoadBalancingData)
+	{
+		if (ensureAlwaysMsgf(IsValid(Actor), TEXT("Tried to process ownership changes for invalid channel Actor. Entity: %lld"), EntityId))
+		{
+			const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*NetDriver->PackageMap, *Actor);
+			NetDriver->Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
+		}
 	}
 
 	// Changes to NetConnection and InterestBucket for an Actor also affect all descendants which we

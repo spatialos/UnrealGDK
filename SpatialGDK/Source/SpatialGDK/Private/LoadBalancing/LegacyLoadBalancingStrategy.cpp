@@ -6,7 +6,11 @@
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/LBDataStorage.h"
+#include "LoadBalancing/LegacyLoadBalancingCommon.h"
+#include "LoadBalancing/LegacyLoadbalancingComponents.h"
 #include "LoadBalancing/PartitionManager.h"
+
+DEFINE_LOG_CATEGORY(LogSpatialLegacyLoadBalancing)
 
 namespace SpatialGDK
 {
@@ -23,8 +27,8 @@ FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, S
 	}
 	else
 	{
-		PositionStorage = MakeUnique<SpatialGDK::FSpatialPositionStorage>();
-		GroupStorage = MakeUnique<SpatialGDK::FActorGroupStorage>();
+		PositionStorage = MakeUnique<FSpatialPositionStorage>();
+		GroupStorage = MakeUnique<FActorGroupStorage>();
 		LegacyLBStrat.GetLegacyLBInformation(LBContext);
 	}
 }
@@ -55,8 +59,7 @@ void FLegacyLoadBalancing::QueryTranslation(ISpatialOSWorker& Connection)
 	TranslationQuery.constraint = TranslationConstraint;
 
 	WorkerTranslationRequest = Connection.SendEntityQueryRequest(EntityQuery(TranslationQuery), RETRY_UNTIL_COMPLETE);
-	CommandsHandler.AddRequest(*WorkerTranslationRequest, [this](const Worker_EntityQueryResponseOp& Op)
-	{
+	CommandsHandler.AddRequest(*WorkerTranslationRequest, [this](const Worker_EntityQueryResponseOp& Op) {
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			return;
@@ -69,12 +72,11 @@ void FLegacyLoadBalancing::QueryTranslation(ISpatialOSWorker& Connection)
 			if (Data.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
 			{
 				Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-				Translator.ApplyVirtualWorkerManagerData(ComponentObject);
+				Translator.ApplyMappingFromSchema(ComponentObject);
 				bTranslatorIsReady = true;
 				for (uint32 VirtualWorker = 0; VirtualWorker < ExpectedWorkers; ++VirtualWorker)
 				{
-					if (Translator.GetServerWorkerEntityForVirtualWorker(VirtualWorker + 1)
-						== SpatialConstants::INVALID_ENTITY_ID)
+					if (Translator.GetServerWorkerEntityForVirtualWorker(VirtualWorker + 1) == SpatialConstants::INVALID_ENTITY_ID)
 					{
 						bTranslatorIsReady = false;
 					}
@@ -161,7 +163,26 @@ void FLegacyLoadBalancing::TickPartitions(FPartitionManager& PartitionMgr)
 
 					FString PartitionName =
 						FString::Printf(TEXT("Layer : %s, Cell (%f,%f)"), *Layer.Name.ToString(), CellCenter.X, CellCenter.Y);
-					Partitions[Cell.WorkerId - 1] = PartitionMgr.CreatePartition(PartitionName, nullptr, Constraint);
+
+					TArray<ComponentData> Components;
+
+					LegacyLB_GridCell GridCellComp;
+					GridCellComp.Center = Center3D;
+					GridCellComp.Edge_length = FVector(EdgeLengths2D.X, EdgeLengths2D.Y, FLT_MAX);
+
+					Components.Add(GridCellComp.CreateComponentData());
+
+					LegacyLB_Layer LayerComp;
+					LayerComp.Layer = &Layer - LBContext.Layers.GetData();
+
+					Components.Add(LayerComp.CreateComponentData());
+
+					LegacyLB_VirtualWorkerAssignment VirtualWorkerComp;
+					VirtualWorkerComp.Virtual_worker_id = Cell.WorkerId;
+
+					Components.Add(VirtualWorkerComp.CreateComponentData());
+
+					Partitions[Cell.WorkerId - 1] = PartitionMgr.CreatePartition(PartitionName, nullptr, Constraint, MoveTemp(Components));
 				}
 			}
 		}
@@ -169,8 +190,15 @@ void FLegacyLoadBalancing::TickPartitions(FPartitionManager& PartitionMgr)
 		{
 			for (VirtualWorkerId i = 1; i <= ExpectedWorkers; ++i)
 			{
-				Partitions.Add(
-					PartitionMgr.CreatePartition(FString::Printf(TEXT("VirtualWorker Partition %i"), i), nullptr, QueryConstraint()));
+				TArray<ComponentData> Components;
+
+				LegacyLB_VirtualWorkerAssignment VirtualWorkerComp;
+				VirtualWorkerComp.Virtual_worker_id = i;
+
+				Components.Add(VirtualWorkerComp.CreateComponentData());
+
+				Partitions.Add(PartitionMgr.CreatePartition(FString::Printf(TEXT("VirtualWorker Partition %i"), i), nullptr,
+															QueryConstraint(), MoveTemp(Components)));
 			}
 		}
 

@@ -196,20 +196,22 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath, const TraceS
 
 	TraceItemsData& SourceTraceItems = TraceItems.FindOrAdd(Source);
 
-	uint32_t BytesToRead = 1;
-	int8_t ReturnCode = 1;
-	while (BytesToRead != 0 && ReturnCode == 1)
+	int64_t BytesRead = 1;
+	while (BytesRead > 0)
 	{
-		BytesToRead = Trace_GetNextSerializedItemSize(Stream.Get());
-		if (BytesToRead == 0)
+		Trace_Item* Item = Trace_Item_GetThreadLocal();
+		BytesRead = Trace_DeserializeItemFromStream(Stream.Get(), Item);
+
+		if (BytesRead == 0)
 		{
 			break;
 		}
 
-		Trace_Item* Item = Trace_Item_GetThreadLocal();
-		if (BytesToRead != 0)
+		if (BytesRead == WORKER_RESULT_FAILURE)
 		{
-			ReturnCode = Trace_DeserializeItemFromStream(Stream.Get(), Item, BytesToRead);
+			UE_LOG(LogEventTracingTest, Error, TEXT("Failed to deserialize with error code %lld (%s)"), BytesRead,
+				   ANSI_TO_TCHAR(Trace_GetLastError()));
+			break;
 		}
 
 		if (Item != nullptr)

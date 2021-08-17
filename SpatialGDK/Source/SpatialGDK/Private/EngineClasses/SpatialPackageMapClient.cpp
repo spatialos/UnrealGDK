@@ -187,11 +187,13 @@ void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealOb
 		const FNetworkGUID ObjectNetGUID = GetNetGUIDFromObject(Object);
 		if (!ObjectNetGUID.IsValid())
 		{
-			// TODO UNR-5844: Remove this workaround if we have not seen this warning triggered.
-			UE_LOG(LogSpatialPackageMap, Warning,
-				   TEXT("SpatialGuidCache has a NetGUID mapping which native's GuidCache does not have for object: %s with NetGUID: %u. "
-						"Removing existing mapping from SpatialGuidCache and recreating."),
-				   *Object->GetName(), NetGUID.Value);
+			// TODO UNR-5844: Remove this workaround if we have not seen this ensure triggered.
+			ensureAlwaysMsgf(
+				false,
+				TEXT("SpatialGuidCache has a NetGUID mapping which native's GuidCache does not have for object: %s with NetGUID: %u. "
+					 "Removing existing mapping from SpatialGuidCache and recreating."),
+				*Object->GetName(), NetGUID.Value);
+
 			RemoveSubobject(ObjectRef);
 			SpatialGuidCache->AssignNewSubobjectNetGUID(Object, ObjectRef);
 		}

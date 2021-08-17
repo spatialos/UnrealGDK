@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+
+#include "EngineClasses/SpatialPartitionSystem.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RPCContainer.h"
 
@@ -353,6 +355,9 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL Run the strategy worker"))
 	bool bRunStrategyWorker;
 
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL PartitionSystem to use"))
+	TSubclassOf<USpatialPartitionSystem> PartitionSystemClass;
+
 #if WITH_EDITOR
 	void SetMultiWorkerEditorEnabled(const bool bIsEnabled);
 	FORCEINLINE bool IsMultiWorkerEditorEnabled() const { return bEnableMultiWorker; }
@@ -551,12 +556,6 @@ public:
 		*/
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Enable Initial Only Replication Condition"))
 	bool bEnableInitialOnlyReplicationCondition;
-
-	/*
-	 * Enables writing of ActorSetMember and ActorGroupMember components to load balancing entities
-	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication")
-	bool bEnableStrategyLoadBalancingComponents;
 
 	/**	-- EXPERIMENTAL --
 		Enables skeleton entities. If enabled, skeleton entities for level actors would be created during startup.
