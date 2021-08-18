@@ -213,7 +213,6 @@ private:
 
 	TSet<Worker_EntityId_Key> CreateEntityRequestsInFlight;
 
-
 	TMap<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>> CreateEntityRequestIdToActorChannel;
 
 	TMap<Worker_EntityId_Key, TSet<Worker_ComponentId>> PendingDynamicSubobjectComponents;
