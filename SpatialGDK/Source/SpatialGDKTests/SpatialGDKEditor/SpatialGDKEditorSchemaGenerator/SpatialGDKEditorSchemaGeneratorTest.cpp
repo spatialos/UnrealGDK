@@ -1106,6 +1106,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	SpatialGDKEditor::Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
 	SpatialGDKEditor::Schema::GenerateSchemaForRPCEndpoints(SchemaGenerationFolder);
 	SpatialGDKEditor::Schema::GenerateSchemaForNCDs(SchemaGenerationFolder);
+	SpatialGDKEditor::Schema::CreateServerWorkerAuthoritySet(FString(), SchemaGenerationFolder);
 
 	// Run the schema compiler
 	FString SchemaJsonPath;
