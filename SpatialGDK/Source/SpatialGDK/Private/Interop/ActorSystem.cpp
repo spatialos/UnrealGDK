@@ -2283,6 +2283,10 @@ void ActorSystem::UpdateInterestComponent(AActor* Actor, const bool bOverwriteIn
 
 			UE_LOG(LogTemp, Warning, TEXT("Interest diff: worker entity id %lld"), SystemEntityId);
 		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Interest diff: refresh request but no diff detected (%s)"), *Actor->GetName());
+		}
 	}
 }
 

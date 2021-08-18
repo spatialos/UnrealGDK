@@ -477,7 +477,7 @@ public:
 	bool bUseClientEntityInterestQueries;
 
 	/**
-	 * How many times per second will a client's entity ID list query be updated.
+	 * How many times per second will a client's entity ID list query be updated (set to 0 to ignore).
 	 */
 	UPROPERTY(EditAnywhere, config, Category = "Client Entity Interest", meta = (EditCondition = "bUseEntityIdListClientQueries"))
 	float ClientEntityIdListQueryUpdateFrequency;
