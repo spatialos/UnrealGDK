@@ -207,7 +207,6 @@ private:
 
 	TSet<Worker_EntityId_Key> PresentEntities;
 
-	// Only the ones we know the EntityId for beforehand.
 	TSet<Worker_EntityId_Key> CreateEntityRequestsInFlight;
 
 	TMap<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>> CreateEntityRequestIdToActorChannel;
