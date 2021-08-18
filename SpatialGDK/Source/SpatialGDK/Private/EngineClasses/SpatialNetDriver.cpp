@@ -3050,14 +3050,14 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 
 	if (!Connection->GetCoordinator().HasEntity(EntityId))
 	{
-		if (ActorSystem->IsCreateEntityRequestInFlight(EntityId))
+		if (ActorSystem != nullptr && ActorSystem->IsCreateEntityRequestInFlight(EntityId))
 		{
 			ActorSystem->RefreshActorDormancyOnEntityCreation(EntityId, bMakeDormant);
 			return;
 		}
 		else
 		{
-			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Entity should be checked out for actor (%s)"), *Actor->GetName());
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s), entity (%lld) not in view"), *Actor->GetName(), EntityId);
 			return;
 		}
 	}
