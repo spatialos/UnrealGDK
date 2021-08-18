@@ -2401,6 +2401,8 @@ bool ActorSystem::IsCreateEntityRequestInFlight(Worker_EntityId EntityId) const
 
 void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpatialGDKSpanId CreateOpSpan)
 {
+	CreateEntityRequestsInFlight.Remove(Op.entity_id);
+
 	TWeakObjectPtr<USpatialActorChannel> BoundActorChannel;
 
 	if (!ensure(CreateEntityRequestIdToActorChannel.RemoveAndCopyValue(Op.request_id, BoundActorChannel)))
@@ -2449,7 +2451,6 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 					"Actor %s, request id: %d, entity id: %lld, message: %s"),
 			   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		ensure(EntityId == Op.entity_id);
-		CreateEntityRequestsInFlight.Remove(Op.entity_id);
 		break;
 	case WORKER_STATUS_CODE_TIMEOUT:
 		if (bEntityIsInView)
