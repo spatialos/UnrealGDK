@@ -2347,7 +2347,7 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 			OnEntityCreated(Op, SpanId);
 		});
 
-		if (EntityId != 0)
+		if (ensure(EntityId != SpatialConstants::INVALID_ENTITY_ID))
 		{
 			CreateEntityRequestsInFlight.Add(EntityId);
 		}
@@ -2418,6 +2418,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 
 	AActor* Actor = Channel.Actor;
 	const Worker_EntityId EntityId = Channel.GetEntityId();
+	ensure(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
 	if (EventTracer != nullptr)
 	{
@@ -2447,6 +2448,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 			   TEXT("Create entity request succeeded. "
 					"Actor %s, request id: %d, entity id: %lld, message: %s"),
 			   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		ensure(EntityId == Op.entity_id);
 		CreateEntityRequestsInFlight.Remove(Op.entity_id);
 		break;
 	case WORKER_STATUS_CODE_TIMEOUT:
