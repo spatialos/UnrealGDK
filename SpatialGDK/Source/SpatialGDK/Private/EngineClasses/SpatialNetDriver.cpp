@@ -776,6 +776,14 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 void USpatialNetDriver::OnActorSpawned(AActor* Actor) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	// Allocate entity ids for dynamically spawned actors
+	if (Actor->GetIsReplicated() && Actor->HasAuthority() && Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType)
+		&& IsReady())
+	{
+		PackageMap->TryResolveObjectAsEntity(Actor);
+	}
+
 	if (SpatialGDKSettings->bEnableCrossLayerActorSpawning)
 	{
 		return;
@@ -3038,6 +3046,21 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s) without entity id"), *Actor->GetName());
 		return;
+	}
+
+	if (!Connection->GetCoordinator().HasEntity(EntityId))
+	{
+		if (ActorSystem != nullptr && ActorSystem->IsCreateEntityRequestInFlight(EntityId))
+		{
+			ActorSystem->RefreshActorDormancyOnEntityCreation(EntityId, bMakeDormant);
+			return;
+		}
+		else
+		{
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s), entity (%lld) not in view"),
+				   *Actor->GetName(), EntityId);
+			return;
+		}
 	}
 
 	const bool bHasAuthority = HasServerAuthority(EntityId);

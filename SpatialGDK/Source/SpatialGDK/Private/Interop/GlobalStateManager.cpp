@@ -290,6 +290,12 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 
 	UE_LOG(LogGlobalStateManager, Verbose, TEXT("GSM updated actor authority: %s %s."), *Actor->GetPathName(),
 		   bAuthoritative ? TEXT("authoritative") : TEXT("not authoritative"));
+
+	// Allocate entity ids for all startup actors
+	if (Actor->HasAuthority())
+	{
+		NetDriver->PackageMap->TryResolveObjectAsEntity(Actor);
+	}
 }
 
 Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
