@@ -115,7 +115,6 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, DebugCtx(nullptr)
 	, GameplayDebuggerCtx(nullptr)
 	, LoadBalanceEnforcer(nullptr)
-	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
 	, bWaitingToSpawn(false)
