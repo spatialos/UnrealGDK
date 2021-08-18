@@ -115,7 +115,6 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, DebugCtx(nullptr)
 	, GameplayDebuggerCtx(nullptr)
 	, LoadBalanceEnforcer(nullptr)
-	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
 	, bWaitingToSpawn(false)
@@ -3048,22 +3047,17 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s) without entity id"), *Actor->GetName());
 		return;
 	}
+
 	if (!Connection->GetCoordinator().HasEntity(EntityId))
 	{
-		USpatialActorChannel* ActorChannel = GetActorChannelByEntityId(EntityId);
-		if (ActorChannel == nullptr)
-		{
-			return;
-		}
-
-		if (ActorChannel->bCreatedEntity)
+		if (ActorSystem->IsCreateEntityRequestInFlight(EntityId))
 		{
 			ActorSystem->RefreshActorDormancyOnEntityCreation(EntityId, bMakeDormant);
 			return;
 		}
 		else
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Entity should be checked out for actor (%s)"), *Actor->GetName());
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Entity should be checked out for actor (%s)"), *Actor->GetName());
 			return;
 		}
 	}
