@@ -42,7 +42,7 @@ void ARefreshActorDormancyTest::PrepareTest()
 					RequireEqual_Int(DormantToAwakeActor->NetDormancy, DORM_Awake, TEXT("DormantToAwakeActor is Awake"));
 					RequireEqual_Int(AwakeToDormantActor->NetDormancy, DORM_DormantAll, TEXT("AwakeToDormantActor is Dormant"));
 					FinishStep();
-				}	
+				}
 			},
 			5.0f);
 }
