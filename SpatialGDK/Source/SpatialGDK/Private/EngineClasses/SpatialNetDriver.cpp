@@ -3057,7 +3057,8 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 		}
 		else
 		{
-			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s), entity (%lld) not in view"), *Actor->GetName(), EntityId);
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s), entity (%lld) not in view"),
+				   *Actor->GetName(), EntityId);
 			return;
 		}
 	}
