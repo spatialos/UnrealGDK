@@ -267,9 +267,11 @@ public:
 
 	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
-	void MarkOverwriteInterest() { bInterestOverwrite = true; }
-	bool GetOverwriteInterest() const { return bInterestOverwrite; }
-	void ClearOverwriteInterest() { bInterestOverwrite = false; }
+
+	void MarkClientInterestDirty(const bool bOverwrite = false);
+	void ClearClientInterest();
+	bool GetClientInterestDirty() const { return bClientInterestDirty; }
+	bool GetClientInterestOverwrite() const { return bClientInterestOverwrite; }
 
 	// Call when a subobject is deleted to unmap its references and cleanup its cached informations.
 	// NB : ObjectPtr might be a dangling pointer.
@@ -319,7 +321,8 @@ public:
 private:
 	Worker_EntityId EntityId;
 	bool bInterestDirty;
-	bool bInterestOverwrite;
+	bool bClientInterestDirty;
+	bool bClientInterestOverwrite;
 
 	bool bIsAuthServer;
 	bool bIsAuthClient;

@@ -75,7 +75,8 @@ public:
 	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 	void ProcessPositionUpdates();
 	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
-	void UpdateInterestComponent(AActor* Actor, const bool bOverwriteInterest = false);
+	void UpdateInterestComponent(AActor* Actor);
+	void UpdateClientInterest(AActor* Actor, const bool bOverwrite);
 	void SendInterestBucketComponentChange(Worker_EntityId EntityId, Worker_ComponentId OldComponent,
 										   Worker_ComponentId NewComponent) const;
 	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo,

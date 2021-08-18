@@ -210,7 +210,8 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bCreatingNewEntity(false)
 	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
 	, bInterestDirty(false)
-	, bInterestOverwrite(false)
+	, bClientInterestDirty(false)
+	, bClientInterestOverwrite(false)
 	, bNetOwned(false)
 	, NetDriver(nullptr)
 	, EventTracer(nullptr)
@@ -229,7 +230,8 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	bCreatingNewEntity = false;
 	EntityId = SpatialConstants::INVALID_ENTITY_ID;
 	bInterestDirty = false;
-	bInterestOverwrite = false;
+	bClientInterestDirty = false;
+	bClientInterestOverwrite = false;
 	bNetOwned = false;
 	bIsAuthClient = false;
 	bIsAuthServer = false;
@@ -703,11 +705,11 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			CheckForClientEntityInterestUpdate();
 
-			if (GetInterestDirty())
+			if (GetClientInterestDirty())
 			{
 				// UE_LOG(LogTemp, Warning, TEXT("Refresh interest (%s)"), *Actor->GetName());
-				NetDriver->ActorSystem->UpdateInterestComponent(Actor, GetOverwriteInterest());
-				ClearOverwriteInterest();
+				NetDriver->ActorSystem->UpdateClientInterest(Actor, GetClientInterestOverwrite());
+				ClearClientInterest();
 			}
 		}
 		// Classic interest flow
@@ -1321,6 +1323,18 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	}
 }
 
+void USpatialActorChannel::MarkClientInterestDirty(const bool bOverwrite /*= false*/)
+{
+	bClientInterestDirty = true;
+	bClientInterestOverwrite |= bOverwrite;
+}
+
+void USpatialActorChannel::ClearClientInterest()
+{
+	bClientInterestDirty = false;
+	bClientInterestOverwrite = false;
+}
+
 void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object,
 											  const TWeakObjectPtr<UObject>& ObjectWeakPtr)
 {
@@ -1409,7 +1423,7 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 	RepGraphConnection->RepGraphRequestedInterestChange = false;
 	NetConnection->TimeWhenClientInterestLastUpdated = CurrentTime;
 
-	MarkInterestDirty();
+	MarkClientInterestDirty();
 }
 
 bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition) const

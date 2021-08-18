@@ -515,8 +515,8 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 							&& GetDefault<USpatialGDKSettings>()->bRefreshClientInterestOnHandover)
 						{
 							UE_LOG(LogTemp, Warning, TEXT("Auth gained, marking interest dirty. (%s)"), *Actor->GetName());
-							Channel->MarkInterestDirty();
-							Channel->MarkOverwriteInterest();
+							// Potentially just be doing this on the NetOwner/PlayerController
+							Channel->MarkClientInterestDirty(/*bOverwrite*/ true);
 						}
 					}
 
@@ -2253,7 +2253,7 @@ void ActorSystem::RegisterChannelForPositionUpdate(USpatialActorChannel* Channel
 	ChannelsToUpdatePosition.Add(Channel);
 }
 
-void ActorSystem::UpdateInterestComponent(AActor* Actor, const bool bOverwriteInterest)
+void ActorSystem::UpdateInterestComponent(AActor* Actor)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ActorSystemUpdateInterestComponent);
 
@@ -2268,11 +2268,14 @@ void ActorSystem::UpdateInterestComponent(AActor* Actor, const bool bOverwriteIn
 		NetDriver->InterestFactory->CreateInterestUpdate(Actor, NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Actor), EntityId);
 
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+}
 
+void ActorSystem::UpdateClientInterest(AActor* Actor, const bool bOverwrite)
+{
 	if (Actor->IsA(APlayerController::StaticClass()) && GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
 	{
 		Worker_CommandRequest CommandRequest{};
-		const bool bRequestValid = NetDriver->InterestFactory->CreateClientInterestDiff(Actor, CommandRequest, bOverwriteInterest);
+		const bool bRequestValid = NetDriver->InterestFactory->CreateClientInterestDiff(Actor, CommandRequest, bOverwrite);
 
 		if (bRequestValid)
 		{
@@ -2281,12 +2284,16 @@ void ActorSystem::UpdateInterestComponent(AActor* Actor, const bool bOverwriteIn
 
 			NetDriver->Connection->SendCommandRequest(SystemEntityId, &CommandRequest, RETRY_MAX_TIMES, {});
 
-			UE_LOG(LogTemp, Warning, TEXT("Interest diff: worker entity id %lld"), SystemEntityId);
+			UE_LOG(LogActorSystem, Warning, TEXT("Interest diff: worker entity id %lld"), SystemEntityId);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Interest diff: refresh request but no diff detected (%s)"), *Actor->GetName());
+			UE_LOG(LogActorSystem, Warning, TEXT("Interest diff: refresh request but no diff detected (%s)"), *Actor->GetName());
 		}
+	}
+	else
+	{
+		UE_LOG(LogActorSystem, Warning, TEXT("Called UpdateClientInterst on non-PlayerController (%s)"), *Actor->GetName());
 	}
 }
 
