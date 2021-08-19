@@ -575,25 +575,16 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 		const Worker_EntityId PCEntityId = PackageMap->GetEntityIdFromObject(PlayerController);
 		const Worker_EntityId PawnEntityId = PackageMap->GetEntityIdFromObject(PlayerController->GetPawn());
 
-		if (NetDriver->Connection->GetView().Find(PCEntityId) == nullptr)
-		{
-			UE_LOG(LogInterestFactory, Warning, TEXT("Skipping PC actor %s (%lld) because entity not created"),
-				   *GetNameSafe(PlayerController), PCEntityId);
-		}
-		else
+		if (PCEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			FullAuth.Add(PCEntityId);
 		}
 
-		if (NetDriver->Connection->GetView().Find(PawnEntityId) == nullptr)
-		{
-			UE_LOG(LogInterestFactory, Warning, TEXT("Skipping Pawn actor %s (%lld) because entity not created"),
-				   *GetNameSafe(PlayerController->AcknowledgedPawn), PawnEntityId);
-		}
-		else
+		if (PawnEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			FullAuth.Add(PawnEntityId);
 		}
+
 		Add = FullAuth.Difference(NetConnection->EntityAuthCache);
 		Remove = NetConnection->EntityAuthCache.Difference(FullAuth);
 		NetConnection->EntityAuthCache = FullAuth;
@@ -608,7 +599,6 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 		{
 			MyQuery Query{};
 			Query.Components = ClientAuthInterestResultType.ComponentIds;
-			Query.Components.Push(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID);
 			Query.ComponentSets = ClientAuthInterestResultType.ComponentSetsIds;
 			Query.Entities = Add.Array();
 
@@ -619,7 +609,6 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 		{
 			MyQuery Query{};
 			Query.Components = ClientAuthInterestResultType.ComponentIds;
-			Query.Components.Push(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID);
 			Query.ComponentSets = ClientAuthInterestResultType.ComponentSetsIds;
 			Query.Entities = Remove.Array();
 
@@ -698,13 +687,6 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 		{
 			UE_LOG(LogInterestFactory, Error, TEXT("Frame %u. Failed getting entity ID for %s when creating client entity interest"),
 				   RepGraph->GetReplicationGraphFrame(), *GetNameSafe(Actor));
-			continue;
-		}
-
-		if (NetDriver->Connection->GetView().Find(EntityId) == nullptr)
-		{
-			UE_LOG(LogInterestFactory, Warning, TEXT("Frame %u. Skipping actor %s (%lld) because entity not created"),
-				   RepGraph->GetReplicationGraphFrame(), *GetNameSafe(Actor), EntityId);
 			continue;
 		}
 
