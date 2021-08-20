@@ -87,6 +87,9 @@ public:
 	void SendCreateEntityRequest(USpatialActorChannel& ActorChannel, uint32& OutBytesWritten);
 	void OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpatialGDKSpanId CreateOpSpan);
 	bool HasPendingOpsForChannel(const USpatialActorChannel& ActorChannel) const;
+	bool IsCreateEntityRequestInFlight(Worker_EntityId EntityId) const;
+
+	void RefreshActorDormancyOnEntityCreation(Worker_EntityId EntityId, bool bMakeDormant);
 
 	static Worker_ComponentData CreateLevelComponentData(const AActor& Actor, const UWorld& NetDriverWorld,
 														 const USpatialClassInfoManager& ClassInfoManager);
@@ -209,6 +212,10 @@ private:
 	FCommandsHandler CommandsHandler;
 
 	TSet<Worker_EntityId_Key> PresentEntities;
+
+	TMap<Worker_EntityId_Key, bool> EntitiesMapToRefreshDormancy;
+
+	TSet<Worker_EntityId_Key> CreateEntityRequestsInFlight;
 
 	TMap<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>> CreateEntityRequestIdToActorChannel;
 

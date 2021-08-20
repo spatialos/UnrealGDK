@@ -20,6 +20,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialHandoverManager.h"
 #include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriverAuthorityDebugger.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialNetDriverGameplayDebuggerContext.h"
 #include "EngineClasses/SpatialNetDriverRPC.h"
@@ -27,6 +28,7 @@
 #include "EngineClasses/SpatialPartitionSystem.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
+#include "EngineClasses/SpatialShadowActor.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/ActorSubviews.h"
 #include "Interop/ActorSystem.h"
@@ -114,8 +116,8 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, LoadBalanceStrategy(nullptr)
 	, DebugCtx(nullptr)
 	, GameplayDebuggerCtx(nullptr)
+	, AuthorityDebugger(nullptr)
 	, LoadBalanceEnforcer(nullptr)
-	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
 	, bWaitingToSpawn(false)
@@ -139,6 +141,14 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 #endif
 
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
+
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST) && ENGINE_MINOR_VERSION >= 26
+	if (GetDefault<USpatialGDKSettings>()->bSpatialAuthorityDebugger)
+	{
+		AuthorityDebugger = NewObject<USpatialNetDriverAuthorityDebugger>();
+		AuthorityDebugger->Init(*this);
+	}
+#endif
 }
 
 USpatialNetDriver::~USpatialNetDriver() = default;
@@ -790,11 +800,11 @@ void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-	// Assign dynamically spawned replicated Actors an entity ID on spawn.
-	if (SpatialGDKSettings->bUseClientEntityInterestQueries && Actor->GetIsReplicated() && Actor->HasAuthority()
-		&& Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) && World->GetWorldSettings()->GetGSMReadyForPlay())
+	// Allocate entity ids for dynamically spawned actors
+	if (Actor->GetIsReplicated() && Actor->HasAuthority() && Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType)
+		&& IsReady())
 	{
-		GetOrCreateSpatialActorChannel(Actor);
+		PackageMap->TryResolveObjectAsEntity(Actor);
 	}
 
 	if (SpatialGDKSettings->bEnableCrossLayerActorSpawning)
@@ -2415,7 +2425,12 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			SpatialMetrics->TickMetrics(GetElapsedTime());
 		}
-
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+		if (AuthorityDebugger != nullptr)
+		{
+			AuthorityDebugger->CheckUnauthorisedDataChanges();
+		}
+#endif
 		if (AsyncPackageLoadFilter != nullptr)
 		{
 			AsyncPackageLoadFilter->ProcessActorsFromAsyncLoading();
@@ -3059,6 +3074,21 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s) without entity id"), *Actor->GetName());
 		return;
+	}
+
+	if (!Connection->GetCoordinator().HasEntity(EntityId))
+	{
+		if (ActorSystem != nullptr && ActorSystem->IsCreateEntityRequestInFlight(EntityId))
+		{
+			ActorSystem->RefreshActorDormancyOnEntityCreation(EntityId, bMakeDormant);
+			return;
+		}
+		else
+		{
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s), entity (%lld) not in view"),
+				   *Actor->GetName(), EntityId);
+			return;
+		}
 	}
 
 	const bool bHasAuthority = HasServerAuthority(EntityId);

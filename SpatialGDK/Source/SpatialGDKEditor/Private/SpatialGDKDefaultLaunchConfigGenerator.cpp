@@ -69,6 +69,8 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunc
 	// Writer->WriteValue(TEXT("disconnect_worker"), WorkerConfig.WorkerPermissions.bDisconnectWorker);
 	Writer->WriteValue(TEXT("reserve_entity_id"), WorkerConfig.WorkerPermissions.bReserveEntityID);
 	Writer->WriteValue(TEXT("entity_query"), WorkerConfig.WorkerPermissions.bAllowEntityQuery);
+	Writer->WriteValue(TEXT("disable_entity_query_restricted_components"),
+					   WorkerConfig.WorkerPermissions.bDisableEntityQueryRestrictedComponents);
 	Writer->WriteObjectEnd();
 
 	if (WorkerConfig.NumEditorInstances > 0)
@@ -131,6 +133,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 		ClientWorker.WorkerPermissions.bDisconnectWorker = false;
 		ClientWorker.WorkerPermissions.bReserveEntityID = false;
 		ClientWorker.WorkerPermissions.bAllowEntityQuery = true;
+		ClientWorker.WorkerPermissions.bDisableEntityQueryRestrictedComponents = true;
 		WriteWorkerSection(Writer, ClientWorker);
 
 		// For cloud configs we always add the SimulatedPlayerCoordinator and DeploymentManager.

@@ -291,10 +291,10 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 	UE_LOG(LogGlobalStateManager, Verbose, TEXT("GSM updated actor authority: %s %s."), *Actor->GetPathName(),
 		   bAuthoritative ? TEXT("authoritative") : TEXT("not authoritative"));
 
-	// Proactively assign entity IDs for all locally authoritative startup ACtors
-	if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries && Actor->HasAuthority())
+	// Allocate entity ids for all startup actors
+	if (Actor->HasAuthority())
 	{
-		NetDriver->GetOrCreateSpatialActorChannel(Actor);
+		NetDriver->PackageMap->TryResolveObjectAsEntity(Actor);
 	}
 }
 
