@@ -20,6 +20,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialHandoverManager.h"
 #include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriverAuthorityDebugger.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialNetDriverGameplayDebuggerContext.h"
 #include "EngineClasses/SpatialNetDriverRPC.h"
@@ -27,8 +28,8 @@
 #include "EngineClasses/SpatialPartitionSystem.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
+#include "EngineClasses/SpatialShadowActor.h"
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSubviews.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
@@ -66,7 +67,6 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "LoadBalancing/PartitionManager.h"
 #include "Schema/ActorOwnership.h"
-#include "Schema/ActorSetMember.h"
 #include "Schema/SpatialDebugging.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -116,8 +116,8 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, LoadBalanceStrategy(nullptr)
 	, DebugCtx(nullptr)
 	, GameplayDebuggerCtx(nullptr)
+	, AuthorityDebugger(nullptr)
 	, LoadBalanceEnforcer(nullptr)
-	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
 	, bWaitingToSpawn(false)
@@ -141,6 +141,14 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 #endif
 
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
+
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST) && ENGINE_MINOR_VERSION >= 26
+	if (GetDefault<USpatialGDKSettings>()->bSpatialAuthorityDebugger)
+	{
+		AuthorityDebugger = NewObject<USpatialNetDriverAuthorityDebugger>();
+		AuthorityDebugger->Init(*this);
+	}
+#endif
 }
 
 USpatialNetDriver::~USpatialNetDriver() = default;
@@ -153,7 +161,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 		if (GameInstance != nullptr)
 		{
-			if (GameInstance->GetSpatialWorkerType() == SpatialConstants::RoutingWorkerType)
+			if (GameInstance->GetSpatialWorkerType() == SpatialConstants::RoutingWorkerType
+				|| GameInstance->GetSpatialWorkerType() == SpatialConstants::StrategyWorkerType)
 			{
 				NetServerMaxTickRate = 120;
 			}
@@ -778,6 +787,14 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 void USpatialNetDriver::OnActorSpawned(AActor* Actor) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	// Allocate entity ids for dynamically spawned actors
+	if (Actor->GetIsReplicated() && Actor->HasAuthority() && Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType)
+		&& IsReady())
+	{
+		PackageMap->TryResolveObjectAsEntity(Actor);
+	}
+
 	if (SpatialGDKSettings->bEnableCrossLayerActorSpawning)
 	{
 		return;
@@ -1239,23 +1256,10 @@ void USpatialNetDriver::NotifyStreamingLevelUnload(class ULevel* Level)
 
 void USpatialNetDriver::ProcessOwnershipChanges()
 {
-	const bool bShouldWriteLoadBalancingData =
-		IsValid(Connection) && GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents;
-
 	for (Worker_EntityId EntityId : OwnershipChangedEntities)
 	{
 		if (USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId))
 		{
-			if (bShouldWriteLoadBalancingData)
-			{
-				if (ensureAlwaysMsgf(IsValid(Channel->Actor),
-									 TEXT("Tried to process ownership changes for invalid channel Actor. Entity: %lld"), EntityId))
-				{
-					const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, *Channel->Actor);
-					Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
-				}
-			}
-
 			Channel->ServerProcessOwnershipChange();
 		}
 	}
@@ -2103,34 +2107,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 					ActorsHandedOver.Add(Actor);
 					EntitiesHandedOver.Add(EntityId);
-
-					AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
-					if (HierarchyRoot->HasAuthority())
-					{
-						TFunction<void(AActor*)> ForceReplicateChildren;
-						ForceReplicateChildren = [&](AActor* HierarchyActor) {
-							if (HierarchyActor != Actor)
-							{
-								if (FNetworkObjectInfo const* ActorInfo = FindNetworkObjectInfo(HierarchyActor))
-								{
-									if (!ActorInfo->bPendingNetUpdate)
-									{
-										LoadBalancingContext.AddActorToReplicate(HierarchyActor);
-									}
-								}
-
-								if (USpatialActorChannel* Channel = GetOrCreateSpatialActorChannel(HierarchyActor))
-								{
-									Channel->ForcePositionReplication();
-								}
-							}
-							for (AActor* ChildActor : HierarchyActor->Children)
-							{
-								ForceReplicateChildren(ChildActor);
-							}
-						};
-						ForceReplicateChildren(HierarchyRoot);
-					}
 				}
 			}
 		}
@@ -2205,6 +2181,23 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 					Actor->RemoteRole = ROLE_Authority;
 
 					Actor->OnAuthorityLost();
+				}
+
+				for (auto EntityId : HandoverManager->GetActorsToCheckForAuth())
+				{
+					TWeakObjectPtr<UObject> ObjectPtr = PackageMap->GetObjectFromEntityId(EntityId);
+					AActor* Actor = Cast<AActor>(ObjectPtr.Get());
+					if (Actor == nullptr || Actor->HasAuthority())
+					{
+						continue;
+					}
+					else if (Actor != nullptr)
+					{
+						Actor->Role = ROLE_Authority;
+						Actor->RemoteRole = ROLE_SimulatedProxy;
+
+						Actor->OnAuthorityGained();
+					}
 				}
 			}
 			HandoverManager->Flush(Connection->GetCoordinator(), EntitiesHandedOver);
@@ -2420,7 +2413,12 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			SpatialMetrics->TickMetrics(GetElapsedTime());
 		}
-
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+		if (AuthorityDebugger != nullptr)
+		{
+			AuthorityDebugger->CheckUnauthorisedDataChanges();
+		}
+#endif
 		if (AsyncPackageLoadFilter != nullptr)
 		{
 			AsyncPackageLoadFilter->ProcessActorsFromAsyncLoading();
@@ -3064,6 +3062,21 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s) without entity id"), *Actor->GetName());
 		return;
+	}
+
+	if (!Connection->GetCoordinator().HasEntity(EntityId))
+	{
+		if (ActorSystem != nullptr && ActorSystem->IsCreateEntityRequestInFlight(EntityId))
+		{
+			ActorSystem->RefreshActorDormancyOnEntityCreation(EntityId, bMakeDormant);
+			return;
+		}
+		else
+		{
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s), entity (%lld) not in view"),
+				   *Actor->GetName(), EntityId);
+			return;
+		}
 	}
 
 	const bool bHasAuthority = HasServerAuthority(EntityId);

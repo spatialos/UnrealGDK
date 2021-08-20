@@ -208,14 +208,12 @@ struct FPartitionManager::Impl
 	bool WaitForPartitionIdAvailable(ISpatialOSWorker& Connection)
 	{
 		// Ask for more ids if we run out.
-		if (FirstPartitionId == 0
-		|| CurPartitionId >= FirstPartitionId + k_PartitionsReserveRange)
+		if (FirstPartitionId == 0 || CurPartitionId >= FirstPartitionId + k_PartitionsReserveRange)
 		{
 			if (!PartitionReserveRequest.IsSet())
 			{
 				PartitionReserveRequest = Connection.SendReserveEntityIdsRequest(Impl::k_PartitionsReserveRange, RETRY_UNTIL_COMPLETE);
-				CommandsHandler.AddRequest(*PartitionReserveRequest, [this](const Worker_ReserveEntityIdsResponseOp& Op)
-				{
+				CommandsHandler.AddRequest(*PartitionReserveRequest, [this](const Worker_ReserveEntityIdsResponseOp& Op) {
 					PartitionReserveRequest.Reset();
 					if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 					{
@@ -265,12 +263,11 @@ struct FPartitionManager::Impl
 						Connection.SendCreateEntityRequest(MoveTemp(Components), PartitionEntity, SpatialGDK::RETRY_UNTIL_COMPLETE);
 					PartitionState.CreationRequest = RequestId;
 					PartitionCreationRequests.Add(RequestId, PartitionEntry);
-					CommandsHandler.AddRequest(RequestId, [this](const Worker_CreateEntityResponseOp& Op)
-					{
+					CommandsHandler.AddRequest(RequestId, [this](const Worker_CreateEntityResponseOp& Op) {
 						if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 						{
 							UE_LOG(LogSpatialPartitionManager, Error, TEXT("Partition entity creation failed: \"%s\". Entity: %lld."),
-								UTF8_TO_TCHAR(Op.message), Op.entity_id);
+								   UTF8_TO_TCHAR(Op.message), Op.entity_id);
 						}
 						else
 						{
@@ -310,24 +307,24 @@ struct FPartitionManager::Impl
 						Worker_EntityId SystemWorkerEntityId = PartitionState.UserAssignment->State->SystemWorkerId;
 
 						PartitionState.RequestedAssignment = PartitionState.UserAssignment;
-						PartitionState.AssignmentRequest = CommandsHandler.ClaimPartition(Connection, SystemWorkerEntityId, PartitionState.Id,
-						[this, PartitionEntry](const Worker_CommandResponseOp& Op)
-						{
-							if(Partitions.Contains(PartitionEntry))
-							{ 
-								FPartitionInternalState& State = *PartitionEntry->State;
-								if (State.AssignmentRequest.IsSet() && State.AssignmentRequest.GetValue() == Op.request_id)
+						PartitionState.AssignmentRequest = CommandsHandler.ClaimPartition(
+							Connection, SystemWorkerEntityId, PartitionState.Id,
+							[this, PartitionEntry](const Worker_CommandResponseOp& Op) {
+								if (Partitions.Contains(PartitionEntry))
 								{
-									if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+									FPartitionInternalState& State = *PartitionEntry->State;
+									if (State.AssignmentRequest.IsSet() && State.AssignmentRequest.GetValue() == Op.request_id)
 									{
-										UE_LOG(LogSpatialPartitionManager, Error, TEXT("Claim partition %llu failed : %s"), State.Id,
-											UTF8_TO_TCHAR(Op.message));
+										if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+										{
+											UE_LOG(LogSpatialPartitionManager, Error, TEXT("Claim partition %llu failed : %s"), State.Id,
+												   UTF8_TO_TCHAR(Op.message));
+										}
+										State.CurrentAssignment = State.RequestedAssignment;
+										State.AssignmentRequest.Reset();
 									}
-									State.CurrentAssignment = State.RequestedAssignment;
-									State.AssignmentRequest.Reset();
 								}
-							}
-						});
+							});
 					}
 				}
 			}
@@ -420,10 +417,9 @@ FPartitionManager::FPartitionManager(Worker_EntityId InStrategyWorkerEntityId, V
 
 void FPartitionManager::Init(ISpatialOSWorker& Connection)
 {
-	m_Impl->StrategyWorkerRequest =  m_Impl->CommandsHandler.ClaimPartition(Connection, 
-		m_Impl->StrategyWorkerEntityId, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID,
-		[this](const Worker_CommandResponseOp& Op)
-		{
+	m_Impl->StrategyWorkerRequest = m_Impl->CommandsHandler.ClaimPartition(
+		Connection, m_Impl->StrategyWorkerEntityId, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID,
+		[this](const Worker_CommandResponseOp& Op) {
 			if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 			{
 				UE_LOG(LogSpatialPartitionManager, Error, TEXT("Claim Strategy partition failed : %s"), UTF8_TO_TCHAR(Op.message));
