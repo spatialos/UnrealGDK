@@ -707,7 +707,6 @@ int64 USpatialActorChannel::ReplicateActor()
 
 			if (GetClientInterestDirty())
 			{
-				// UE_LOG(LogTemp, Warning, TEXT("Refresh interest (%s)"), *Actor->GetName());
 				NetDriver->ActorSystem->UpdateClientInterest(Actor, GetClientInterestOverwrite());
 				ClearClientInterest();
 			}

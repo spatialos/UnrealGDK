@@ -2283,7 +2283,7 @@ void ActorSystem::UpdateClientInterest(AActor* Actor, const bool bOverwrite)
 
 			NetDriver->Connection->SendCommandRequest(SystemEntityId, &CommandRequest, RETRY_MAX_TIMES, {});
 
-			UE_LOG(LogActorSystem, Warning, TEXT("Interest diff: worker entity id %lld"), SystemEntityId);
+			UE_LOG(LogActorSystem, Log, TEXT("Interest diff: worker entity id %lld"), SystemEntityId);
 		}
 		else
 		{
