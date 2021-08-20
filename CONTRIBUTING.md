@@ -13,7 +13,7 @@ We welcome any and all
 
 ## Coding standards
 
-See the [GDK for Unreal C++ coding standards guide](https://documentation.improbable.io/gdk-for-unreal/docs/coding-standards).
+See the [GDK for Unreal C++ coding standards guide](https://networking.docs.improbable.io/gdk-for-unreal/v0.14.0/get-involved/contribute-to-the-gdk/coding-standards).
 
 ## Branches
 Most of our active development is in the `master` branch, so we prefer to take pull requests there. If you're contributing to our [Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.26-SpatialOSUnrealGDK), please target your pull requests at the `4.26-SpatialOSUnrealGDK` branch, which is our development branch in that repo.

@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialNetDriverAuthorityDebugger.h"
 #include "GameFramework/PlayerState.h"
 #include "Interop/InitialOnlyFilter.h"
 #include "Interop/SpatialReceiver.h"
@@ -266,7 +267,6 @@ void ActorSystem::ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate)
 				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
 																		? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
 																		: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
-
 				AuthorityLost(EntityId, AuthorityComponentSet);
 			}
 		}
@@ -309,6 +309,13 @@ void ActorSystem::Advance()
 			EntityRemoved(Delta.EntityId);
 
 			const int32 EntitiesRemoved = PresentEntities.Remove(Delta.EntityId);
+
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+			if (NetDriver->AuthorityDebugger != nullptr)
+			{
+				NetDriver->AuthorityDebugger->RemoveSpatialShadowActor(Delta.EntityId);
+			}
+#endif
 		}
 	}
 
@@ -387,6 +394,27 @@ void ActorSystem::Advance()
 	}
 
 	CommandsHandler.ProcessOps(*ActorSubView->GetViewDelta().WorkerMessages);
+
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+	for (const EntityDelta& Delta : ActorSubView->GetViewDelta().EntityDeltas)
+	{
+		if (Delta.Type == EntityDelta::REMOVE) {}
+		else if (Delta.Type == EntityDelta::ADD)
+		{
+			if (NetDriver->AuthorityDebugger != nullptr)
+			{
+				NetDriver->AuthorityDebugger->AddSpatialShadowActor(Delta.EntityId);
+			}
+		}
+		else if (Delta.Type == EntityDelta::UPDATE)
+		{
+			if (NetDriver->AuthorityDebugger != nullptr)
+			{
+				NetDriver->AuthorityDebugger->UpdateSpatialShadowActor(Delta.EntityId);
+			}
+		}
+	}
+#endif
 }
 
 UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)
@@ -798,6 +826,11 @@ void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 	}
 
 	ActorDataStore.Remove(EntityId);
+}
+
+void ActorSystem::RefreshActorDormancyOnEntityCreation(Worker_EntityId EntityId, bool bMakeDormant)
+{
+	EntitiesMapToRefreshDormancy.Emplace(EntityId, bMakeDormant);
 }
 
 bool ActorSystem::HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const
@@ -2367,6 +2400,10 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 			OnEntityCreated(Op, SpanId);
 		});
 
+		if (ensure(EntityId != SpatialConstants::INVALID_ENTITY_ID))
+		{
+			CreateEntityRequestsInFlight.Add(EntityId);
+		}
 		CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
 	}
 	else
@@ -2410,8 +2447,15 @@ bool ActorSystem::HasPendingOpsForChannel(const USpatialActorChannel& ActorChann
 	return bHasPendingCreateEntityRequests;
 }
 
+bool ActorSystem::IsCreateEntityRequestInFlight(Worker_EntityId EntityId) const
+{
+	return CreateEntityRequestsInFlight.Contains(EntityId);
+}
+
 void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpatialGDKSpanId CreateOpSpan)
 {
+	CreateEntityRequestsInFlight.Remove(Op.entity_id);
+
 	TWeakObjectPtr<USpatialActorChannel> BoundActorChannel;
 
 	if (!ensure(CreateEntityRequestIdToActorChannel.RemoveAndCopyValue(Op.request_id, BoundActorChannel)))
@@ -2429,6 +2473,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 
 	AActor* Actor = Channel.Actor;
 	const Worker_EntityId EntityId = Channel.GetEntityId();
+	ensure(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
 	if (EventTracer != nullptr)
 	{
@@ -2458,6 +2503,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 			   TEXT("Create entity request succeeded. "
 					"Actor %s, request id: %d, entity id: %lld, message: %s"),
 			   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		ensure(EntityId == Op.entity_id);
 		break;
 	case WORKER_STATUS_CODE_TIMEOUT:
 		if (bEntityIsInView)
@@ -2513,23 +2559,17 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
 		CommandsHandler.ClaimPartition(NetDriver->Connection->GetCoordinator(), ClientSystemEntityId, Op.entity_id);
 	}
+
+	if (static_cast<Worker_StatusCode>(Op.status_code) == WORKER_STATUS_CODE_SUCCESS && EntitiesMapToRefreshDormancy.Contains(EntityId))
+	{
+		bool bMakeDormant = EntitiesMapToRefreshDormancy[EntityId];
+		EntitiesMapToRefreshDormancy.Remove(EntityId);
+		NetDriver->RefreshActorDormancy(Actor, bMakeDormant);
+	}
 }
 
 void ActorSystem::DestroyActor(AActor* Actor, const Worker_EntityId EntityId)
 {
-	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
-	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
-	// is currently owned by this worker before issuing an entity delete request. If the associated entity is still authoritative
-	// on this server, we need to make sure this worker doesn't issue an entity delete request, as this entity is really
-	// transitioning to the same server as the actor we're currently operating on, and is just a few frames behind.
-	// We make the assumption that if we're destroying actors here (due to a remove entity op), then this is only due to two
-	// situations;
-	// 1. Actor's entity has been transitioned to another server
-	// 2. The Actor was deleted on another server
-	// In neither situation do we want to delete associated entities, so prevent them from being issued.
-	// TODO: fix this with working sets (UNR-411)
-	NetDriver->StartIgnoringAuthoritativeDestruction();
-
 	// Clean up the actor channel. For clients, this will also call destroy on the actor.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
@@ -2559,7 +2599,6 @@ void ActorSystem::DestroyActor(AActor* Actor, const Worker_EntityId EntityId)
 	{
 		UE_LOG(LogActorSystem, Error, TEXT("Failed to destroy actor in RemoveActor %s %lld"), *Actor->GetName(), EntityId);
 	}
-	NetDriver->StopIgnoringAuthoritativeDestruction();
 
 	check(NetDriver->PackageMap->GetObjectFromEntityId(EntityId) == nullptr);
 }

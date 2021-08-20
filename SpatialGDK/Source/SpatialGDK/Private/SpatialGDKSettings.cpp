@@ -202,6 +202,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning) // Deprecated - UNR-4348
 	, LocalWorkerLogLevel(WorkerLogLevel)
 	, CloudWorkerLogLevel(WorkerLogLevel)
+	, bSpatialAuthorityDebugger(false)
 	, bEnableMultiWorker(true)
 	, bRunStrategyWorker(false)
 	, DefaultRPCRingBufferSize(32)

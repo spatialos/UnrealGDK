@@ -257,11 +257,6 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		return;
 	}
 
-	if (!NetDriver->IsAuthoritativeDestructionAllowed())
-	{
-		return;
-	}
-
 	const bool bHasAuthority = NetDriver->HasServerAuthority(EntityId);
 	if (Actor != nullptr)
 	{
@@ -286,7 +281,7 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 				NetDriver->ActorSystem->RetireEntity(EntityId, Actor->IsNetStartupActor());
 			}
 		}
-		else if (bCreatedEntity) // We have not gained authority yet
+		else if (NetDriver->ActorSystem->IsCreateEntityRequestInFlight(EntityId)) // We have not gained authority yet
 		{
 			if (ensureMsgf(Actor->HasAuthority(), TEXT("EntityId %lld Actor %s doesn't have authority, can't disable replication"),
 						   EntityId, *Actor->GetName()))
@@ -726,14 +721,6 @@ int64 USpatialActorChannel::ReplicateActor()
 			bCreatedEntity = true;
 
 			SetAutonomousProxyOnAuthority(Actor->RemoteRole == ROLE_AutonomousProxy);
-
-			// We preemptively set the Actor role to SimulatedProxy if load balancing is disabled
-			// (since the legacy behaviour is to wait until Spatial tells us we have authority)
-			if (NetDriver->LoadBalanceStrategy == nullptr)
-			{
-				Actor->Role = ROLE_SimulatedProxy;
-				Actor->RemoteRole = ROLE_Authority;
-			}
 		}
 		else
 		{
