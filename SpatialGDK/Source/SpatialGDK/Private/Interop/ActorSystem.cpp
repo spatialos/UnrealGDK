@@ -516,14 +516,16 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries
 							&& GetDefault<USpatialGDKSettings>()->bRefreshClientInterestOnHandover)
 						{
-							Worker_EntityId ControllerEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor->GetNetConnection()->PlayerController);
+							Worker_EntityId ControllerEntityId =
+								NetDriver->PackageMap->GetEntityIdFromObject(Actor->GetNetConnection()->PlayerController);
 							if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 							{
 								MarkClientInterestDirty(ControllerEntityId, /*bOVerwrite*/ true);
 							}
 							else
 							{
-								UE_LOG(LogActorSystem, Warning, TEXT("Failed to get player controller to update client interest (%s)"), *Actor->GetName());
+								UE_LOG(LogActorSystem, Warning, TEXT("Failed to get player controller to update client interest (%s)"),
+									   *Actor->GetName());
 							}
 						}
 					}
