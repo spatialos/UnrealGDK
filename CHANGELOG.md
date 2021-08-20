@@ -7,13 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Note**: Since GDK for Unreal v0.10.0, the changelog is published in both English and Chinese. The Chinese version of each changelog is shown after its English version.<br>
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
+
 ## [`x.y.z`] - Unreleased
 
 ### Breaking changes:
 - SpatialSwitchHasAuthority now respects World's version of IsServer which assumes server status when NetDriver is null.
 
 ### Features:
-- Gameplay Debugger now supports multi-worker environments.
 - Add support DOREPLIFETIME_ACTIVE_OVERRIDE for replication conditions, with the exception of TArray's this should now work the same as in native.
 - Added a debug mode to detect non-auth modification of data, enable/disable with the SpatialGDKSettings flag bSpatialAuthorityDebugger (disabled by default).
 - Pre and PostNetReceive are now called on an object a maximum of a single time in a given tick. This matches native much closer.
@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactored startup to be all in a couple classes, `FSpatialServerStartupHandler` and `FSpatialClientStartupHandler`.
 - Newly torn off channels are now conditionally closed after all updates in a given tick have been applied.
 
-## [`0.14.0-rc`] - Unreleased
+## [`0.14.0`] - 2021-08-16
 
 ### Breaking changes:
 - The `Handover` variable specifier has been deprecated. It should be replaced with the standard `Replicated` variable specifier and restricting the replication with the new `COND_ServerOnly` replication condition in `GetLifetimeReplicatedProps`. `Handover` variables will try to replicate using the new replication condition, but support will be removed in the next release.
@@ -238,7 +238,7 @@ These functions and structs can be referenced in both code and blueprints and it
   - Inspector URL is now http://localhost:33333/inspector-v2
   - Inspector version can be overridden in the SpatialGDKEditorSettings under `Inspector Version Override`
 - The SpatialNetDriver can disconnect a client worker when given the system entity ID for that client and does so when `GameMode::PreLogin` returns with a non-empty error message.
-- Unreal Engine version 4.26.0 is supported! Refer to https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date for versioning information and how to upgrade.
+- Unreal Engine version 4.26.0 is supported! Refer to https://networking.docs.improbable.io/gdk-for-unreal/v0.14.0/workflows/keep-your-gdk-up-to-date for versioning information and how to upgrade.
 - Running with an out-of-date schema database reports a version warning when attempting to launch in editor.
 - Reworked schema generation (incremental and full) pop-ups to be clearer. 
 - Added cross-server variants of ability activation functions on the Ability System Component.
@@ -292,7 +292,7 @@ These functions and structs can be referenced in both code and blueprints and it
 ## [`0.11.0`] - 2020-09-03
 
 ### Breaking changes:
-- We no longer support Unreal Engine version 4.23. We recommend that you upgrade to the newest version 4.25 to continue receiving updates. See [Unreal Engine Version Support](https://documentation.improbable.io/gdk-for-unreal/docs/versioning-scheme#section-unreal-engine-version-support) for more information on versions. Follow the instructions in [Update your GDK](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to update to 4.25.
+- We no longer support Unreal Engine version 4.23. We recommend that you upgrade to the newest version 4.25 to continue receiving updates. See [Unreal Engine Version Support](https://networking.docs.improbable.io/gdk-for-unreal/v0.14.0/support/versioning-scheme#section-unreal-engine-version-support) for more information on versions. Follow the instructions in [Update your GDK](https://networking.docs.improbable.io/gdk-for-unreal/v0.14.0/workflows/keep-your-gdk-up-to-date) to update to 4.25.
 - We have removed multi-worker settings from the `SpatialWorldSettings` properties and added them to a new class `USpatialMultiWorkerSettings`. To update your project, create a derived `USpatialMultiWorkerSettings` class mimicking your previous configuration. Then, in your level’s World settings, select that class as the `Multi-worker settings class` property.
 - The `-nocompile` flag used with `Buildworker.bat` is now split into two. Use the following flags:
   - `-nobuild` to skip building the game binaries.
@@ -770,7 +770,7 @@ Features listed in this section are not ready to use. However, in the spirit of 
 1. Run `Setup.bat`, which is located in the root directory of the `UnrealEngine` repository.
 1. Run `GenerateProjectFiles.bat`, which is in the same root directory.
 
-For more information, check the [Keep your GDK up to date](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) SpatialOS documentation.
+For more information, check the [Keep your GDK up to date](https://networking.docs.improbable.io/gdk-for-unreal/v0.14.0/workflows/keep-your-gdk-up-to-date) SpatialOS documentation.
 
 ### Features:
 - You can now call `SpatialToggleMetricsDisplay` from the console in your Unreal clients in order to view metrics. `bEnableMetricsDisplay` must be enabled on clients where you want to use this feature.

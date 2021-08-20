@@ -259,10 +259,6 @@ public:
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
-	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
-	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
-	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
-
 #if !UE_BUILD_SHIPPING
 	int32 GetConsiderListSize() const { return ConsiderListSize; }
 #endif
@@ -320,7 +316,6 @@ private:
 
 	FTimerManager TimerManager;
 
-	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;
 	bool bPersistSpatialConnection;
 	bool bWaitingToSpawn;
