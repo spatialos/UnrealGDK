@@ -9,7 +9,6 @@
 DEFINE_LOG_CATEGORY(LogSpatialNetDriverAuthorityDebugger);
 
 const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedActors = {
-	TEXT("DefaultPawn"),							// Controller and PlayerState
 	TEXT("SpatialFunctionalTestFlowController"),	// OwningTest
 	TEXT("LockingPlayerController_C"),				// Multiple
 	TEXT("TestPossessionPlayerController"),			// Multiple
@@ -22,15 +21,15 @@ const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedActors = {
 	TEXT("SpatialTestSingleServerDynamicComponents"),
 	TEXT("PlayerDisconnectController"), // Multiple
 	TEXT("AlwaysInterestedTest"),		// OtherInterestedInThisReplicatedActor
-	TEXT("CubeWithReferences"),			// Multiple
-	TEXT("BP_EventTracerCharacter_C")	// PlayerState
+	TEXT("CubeWithReferences")			// Multiple
 };
 const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedProperties = {
 	TEXT("Controller"),					// Multiple - BP_EventTracerCharacter_C, TestPawnBase_RepGraphAlwaysReplicate, TestPossessionPawn
 	TEXT("ReplicatedWorldTimeSeconds"), // Multiple - GameStateBase, SpatialAuthorityTestGameState
 	TEXT("Owner"),						// CrossServerAndClientOrchestrationFlowController
 	TEXT("CurrentStepIndex"),			// Multiple
-	TEXT("bActorEnableCollision")		// SpatialWorldSettings
+	TEXT("bActorEnableCollision"),		// SpatialWorldSettings
+	TEXT("PlayerState")					// Multiple - BP_EventTracerCharacter_C, TestPawnBase_RepGraphAlwaysReplicate, DefaultPawn
 };
 
 void USpatialNetDriverAuthorityDebugger::Init(USpatialNetDriver& InNetDriver)
