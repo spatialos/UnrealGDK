@@ -35,6 +35,8 @@ public:
 	void ClearImpl() { Impl = nullptr; }
 
 private:
-	virtual TArray<SpatialGDK::ComponentData> GetServerWorkerInitialData();
-	SpatialGDK::FServerWorkerSystemImpl* Impl = nullptr;
+	virtual TArray<SpatialGDK::ComponentData> GetServerWorkerInitialData()
+		PURE_VIRTUAL(GetServerWorkerData, return TArray<SpatialGDK::ComponentData>();)
+
+			SpatialGDK::FServerWorkerSystemImpl* Impl = nullptr;
 };

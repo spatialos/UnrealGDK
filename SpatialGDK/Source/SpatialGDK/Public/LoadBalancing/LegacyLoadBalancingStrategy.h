@@ -60,7 +60,7 @@ protected:
 	TMap<Worker_EntityId_Key, int32> Assignment;
 	bool bDirectAssignment = false;
 
-	Worker_EntityId WorkerForCustomAssignment = 0;
+	Worker_EntityId WorkerForCustomAssignment = SpatialConstants::INVALID_ENTITY_ID;
 	// --- Load Balancing ---
 };
 
