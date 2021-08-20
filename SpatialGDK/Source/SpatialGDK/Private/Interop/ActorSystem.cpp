@@ -366,6 +366,8 @@ void ActorSystem::Advance()
 	ProcessAuthorityGains(EntityAuthSubView);
 	ProcessAuthorityGains(EntityOwnershipSubView);
 
+	ProcessClientInterestUpdates();
+
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
 	{
 		if (Delta.Type == EntityDelta::ADD || Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
@@ -514,8 +516,15 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries
 							&& GetDefault<USpatialGDKSettings>()->bRefreshClientInterestOnHandover)
 						{
-							// Potentially just be doing this on the NetOwner/PlayerController
-							Channel->MarkClientInterestDirty(/*bOverwrite*/ true);
+							Worker_EntityId ControllerEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor->GetNetConnection()->PlayerController);
+							if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+							{
+								MarkClientInterestDirty(ControllerEntityId, /*bOVerwrite*/ true);
+							}
+							else
+							{
+								UE_LOG(LogActorSystem, Warning, TEXT("Failed to get player controller to update client interest (%s)"), *Actor->GetName());
+							}
 						}
 					}
 
@@ -769,6 +778,12 @@ void ActorSystem::DestroySubObject(const FUnrealObjectRef& ObjectRef, UObject& O
 			NetDriver->PackageMap->RemoveSubobject(ObjectRef);
 		}
 	}
+}
+
+void ActorSystem::MarkClientInterestDirty(Worker_EntityId EntityId, bool bOverwrite)
+{
+	bool& bMapOverwrite = ClientInterestDirty.FindOrAdd(EntityId);
+	bMapOverwrite |= bOverwrite;
 }
 
 void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
@@ -1944,6 +1959,22 @@ void ActorSystem::CleanUpTornOffChannels()
 		}
 	}
 	EntityChannelsToSetTornOff.Empty();
+}
+
+void ActorSystem::ProcessClientInterestUpdates()
+{
+	for (auto Pair : ClientInterestDirty)
+	{
+		if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Pair.Key)))
+		{
+			UpdateClientInterest(Actor, Pair.Value);
+		}
+		else
+		{
+			UE_LOG(LogActorSystem, Warning, TEXT("Failed to get actor for entity id to update client interest (%lld)"), Pair.Key);
+		}
+	}
+	ClientInterestDirty.Empty();
 }
 
 void ActorSystem::RemoveActor(const Worker_EntityId EntityId)

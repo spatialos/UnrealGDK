@@ -20,6 +20,7 @@
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "ReplicationGraph.h"
 #include "UObject/UObjectIterator.h"
 #include "Utils/MetricsExport.h"
@@ -435,6 +436,7 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 		TSet<Worker_EntityId_Key> FullAuth;
 		const Worker_EntityId PCEntityId = PackageMap->GetEntityIdFromObject(PlayerController);
 		const Worker_EntityId PawnEntityId = PackageMap->GetEntityIdFromObject(PlayerController->GetPawn());
+		const Worker_EntityId PlayerStateEntityId = PackageMap->GetEntityIdFromObject(PlayerController->PlayerState);
 
 		if (PCEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -444,6 +446,11 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 		if (PawnEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			FullAuth.Add(PawnEntityId);
+		}
+
+		if (PlayerStateEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			FullAuth.Add(PlayerStateEntityId);
 		}
 
 		Add = FullAuth.Difference(NetConnection->EntityAuthCache);

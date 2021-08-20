@@ -210,8 +210,6 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bCreatingNewEntity(false)
 	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
 	, bInterestDirty(false)
-	, bClientInterestDirty(false)
-	, bClientInterestOverwrite(false)
 	, bNetOwned(false)
 	, NetDriver(nullptr)
 	, EventTracer(nullptr)
@@ -230,8 +228,6 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	bCreatingNewEntity = false;
 	EntityId = SpatialConstants::INVALID_ENTITY_ID;
 	bInterestDirty = false;
-	bClientInterestDirty = false;
-	bClientInterestOverwrite = false;
 	bNetOwned = false;
 	bIsAuthClient = false;
 	bIsAuthServer = false;
@@ -704,15 +700,10 @@ int64 USpatialActorChannel::ReplicateActor()
 		if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries && Actor->IsA<APlayerController>())
 		{
 			CheckForClientEntityInterestUpdate();
-
-			if (GetClientInterestDirty())
-			{
-				NetDriver->ActorSystem->UpdateClientInterest(Actor, GetClientInterestOverwrite());
-				ClearClientInterest();
-			}
 		}
+
 		// Classic interest flow
-		else if (NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
+		if (NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
 		{
 			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
 			SetNeedOwnerInterestUpdate(false);
@@ -1322,18 +1313,6 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	}
 }
 
-void USpatialActorChannel::MarkClientInterestDirty(const bool bOverwrite /*= false*/)
-{
-	bClientInterestDirty = true;
-	bClientInterestOverwrite |= bOverwrite;
-}
-
-void USpatialActorChannel::ClearClientInterest()
-{
-	bClientInterestDirty = false;
-	bClientInterestOverwrite = false;
-}
-
 void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object,
 											  const TWeakObjectPtr<UObject>& ObjectWeakPtr)
 {
@@ -1422,7 +1401,7 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 	RepGraphConnection->RepGraphRequestedInterestChange = false;
 	NetConnection->TimeWhenClientInterestLastUpdated = CurrentTime;
 
-	MarkClientInterestDirty();
+	NetDriver->ActorSystem->MarkClientInterestDirty(EntityId, /*bOverwrite*/ false);
 }
 
 bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition) const

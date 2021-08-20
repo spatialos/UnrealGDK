@@ -93,6 +93,8 @@ public:
 
 	void DestroySubObject(const FUnrealObjectRef& ObjectRef, UObject& Object) const;
 
+	void MarkClientInterestDirty(Worker_EntityId EntityId, bool bOverwrite);
+
 private:
 	// Helper struct to manage FSpatialObjectRepState update cycle.
 	// TODO: move into own class.
@@ -142,6 +144,7 @@ private:
 	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
 													TArray<GDK_PROPERTY(Property) *>& RepNotifies);
 	void CleanUpTornOffChannels();
+	void ProcessClientInterestUpdates();
 
 	// Authority
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
@@ -225,6 +228,8 @@ private:
 
 	// Deserialized state store for Actor relevant components.
 	TMap<Worker_EntityId_Key, ActorData> ActorDataStore;
+
+	TMap<Worker_EntityId_Key, bool> ClientInterestDirty;
 };
 
 } // namespace SpatialGDK
