@@ -9,6 +9,7 @@
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Schema/ChangeInterest.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/GDKPropertyMacros.h"
@@ -34,143 +35,6 @@ DECLARE_CYCLE_STAT(TEXT("AddUserDefinedQueries"), STAT_InterestFactoryAddUserDef
 
 namespace SpatialGDK
 {
-struct MyQuery
-{
-	TArray<Worker_ComponentId> Components;
-	TArray<Worker_ComponentSetId> ComponentSets;
-	TArray<Worker_EntityId_Key> Entities;
-
-	void DebugOutput(const FString& DiffType) const
-	{
-		// Minimal output
-		if (Components.Find(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID) != INDEX_NONE)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Interest diff: client auth interest"));
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Interest diff: client non auth interest"));
-		}
-
-		/*
-		// Verbose output
-		FString ComponentsString;
-		for (const auto& Component : Components)
-		{
-			ComponentsString += FString::Format(TEXT("{0} "), { Component });
-		}
-
-		UE_LOG(LogTemp, Warning, TEXT("Interest diff: components %s"), *ComponentsString);
-
-		FString ComponentSetsString;
-		for (const auto& ComponentSet : ComponentSets)
-		{
-			ComponentSetsString += FString::Format(TEXT("{0} "), { ComponentSet });
-		}
-
-		UE_LOG(LogTemp, Warning, TEXT("Interest diff: component sets %s"), *ComponentSetsString);
-		*/
-
-		FString EntitiesString;
-		for (const auto& EntityId : Entities)
-		{
-			EntitiesString += FString::Format(TEXT("{0} "), { EntityId });
-		}
-
-		UE_LOG(LogTemp, Warning, TEXT("Interest diff: %s %s"), *DiffType, *EntitiesString);
-	}
-};
-
-struct ChangeInterestRequest
-{
-	Worker_EntityId SystemEntityId;
-	TArray<MyQuery> QueriesToAdd;
-	TArray<MyQuery> QueriesToRemove;
-	bool bOverwrite = false;
-
-	void Clear()
-	{
-		QueriesToAdd.Empty();
-		QueriesToRemove.Empty();
-		bOverwrite = false;
-	}
-
-	bool IsEmpty() const { return QueriesToAdd.Num() == 0 && QueriesToRemove.Num() == 0; }
-
-	void DebugOutput() const
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Interest diff: client entity id %lld"), SystemEntityId);
-
-		for (const auto& Query : QueriesToAdd)
-		{
-			Query.DebugOutput(TEXT("ADD"));
-		}
-
-		for (const auto& Query : QueriesToRemove)
-		{
-			Query.DebugOutput(TEXT("REMOVE"));
-		}
-
-		UE_LOG(LogTemp, Warning, TEXT("Interest diff: overwrite %d"), bOverwrite);
-	}
-
-	void CreateRequest(Worker_CommandRequest& CommandRequest) const
-	{
-		/*
-			type ResultType {
-			  list<uint32> components = 1;
-			  list<uint32> component_sets = 2;
-			}
-
-			type Query {
-			  ResultType result_type = 1;
-			  list<int64> entities = 2;
-			}
-
-			type ChangeInterestRequest {
-			  int64 worker_entity_id = 1;
-			  list<Query> queries_to_add = 2;
-			  list<Query> queries_to_remove = 3;
-			  bool overwrite = 4;
-			}
-		*/
-
-		CommandRequest.component_id = SpatialConstants::WORKER_COMPONENT_ID;
-		CommandRequest.command_index = SpatialConstants::WORKER_CHANGE_INTEREST_COMMAND_ID;
-		CommandRequest.schema_type = Schema_CreateCommandRequest();
-
-		Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
-
-		Schema_AddEntityId(RequestObject, 1, SystemEntityId);
-
-		if (QueriesToAdd.Num() > 0)
-		{
-			for (const MyQuery& Query : QueriesToAdd)
-			{
-				Schema_Object* QueriesToAddObject = Schema_AddObject(RequestObject, 2);
-				Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToAddObject, 1);
-				Schema_AddUint32List(ResultTypeObject, 1, Query.Components.GetData(), Query.Components.Num());
-				Schema_AddUint32List(ResultTypeObject, 2, Query.ComponentSets.GetData(), Query.ComponentSets.Num());
-				Schema_AddEntityIdList(QueriesToAddObject, 2, (const Worker_EntityId*)Query.Entities.GetData(), Query.Entities.Num());
-			}
-		}
-
-		if (QueriesToRemove.Num() > 0)
-		{
-			for (const MyQuery& Query : QueriesToRemove)
-			{
-				Schema_Object* QueriesToRemoveObject = Schema_AddObject(RequestObject, 3);
-				Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToRemoveObject, 1);
-				Schema_AddUint32List(ResultTypeObject, 1, Query.Components.GetData(), Query.Components.Num());
-				Schema_AddUint32List(ResultTypeObject, 2, Query.ComponentSets.GetData(), Query.ComponentSets.Num());
-				Schema_AddEntityIdList(QueriesToRemoveObject, 2, (const Worker_EntityId*)Query.Entities.GetData(), Query.Entities.Num());
-			}
-		}
-
-		Schema_AddBool(RequestObject, 4, bOverwrite);
-	}
-};
-
 InterestFactory::InterestFactory(USpatialClassInfoManager* InClassInfoManager)
 	: ClassInfoManager(InClassInfoManager)
 {
@@ -526,6 +390,7 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 
 	if (USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PlayerController->NetConnection))
 	{
+		// Add non-auth interest
 		TSet<Worker_EntityId_Key> FullInterested;
 		FullInterested.Reserve(ClientInterestedEntities.Num());
 		for (auto EntityId : ClientInterestedEntities)
@@ -546,7 +411,7 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 
 		if (Add.Num() > 0)
 		{
-			MyQuery Query{};
+			ChangeInterestQuery Query{};
 			Query.Components = ClientNonAuthInterestResultType.ComponentIds;
 			Query.ComponentSets = ClientNonAuthInterestResultType.ComponentSetsIds;
 			Query.Entities = Add.Array();
@@ -556,7 +421,7 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 
 		if (Remove.Num() > 0)
 		{
-			MyQuery Query{};
+			ChangeInterestQuery Query{};
 			Query.Components = ClientNonAuthInterestResultType.ComponentIds;
 			Query.ComponentSets = ClientNonAuthInterestResultType.ComponentSetsIds;
 			Query.Entities = Remove.Array();
@@ -593,7 +458,7 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 
 		if (Add.Num() > 0)
 		{
-			MyQuery Query{};
+			ChangeInterestQuery Query{};
 			Query.Components = ClientAuthInterestResultType.ComponentIds;
 			Query.ComponentSets = ClientAuthInterestResultType.ComponentSetsIds;
 			Query.Entities = Add.Array();
@@ -603,7 +468,7 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 
 		if (Remove.Num() > 0)
 		{
-			MyQuery Query{};
+			ChangeInterestQuery Query{};
 			Query.Components = ClientAuthInterestResultType.ComponentIds;
 			Query.ComponentSets = ClientAuthInterestResultType.ComponentSetsIds;
 			Query.Entities = Remove.Array();

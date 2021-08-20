@@ -514,7 +514,6 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries
 							&& GetDefault<USpatialGDKSettings>()->bRefreshClientInterestOnHandover)
 						{
-							UE_LOG(LogTemp, Warning, TEXT("Auth gained, marking interest dirty. (%s)"), *Actor->GetName());
 							// Potentially just be doing this on the NetOwner/PlayerController
 							Channel->MarkClientInterestDirty(/*bOverwrite*/ true);
 						}
