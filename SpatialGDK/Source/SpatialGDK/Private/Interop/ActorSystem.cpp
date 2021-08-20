@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialNetDriverAuthorityDebugger.h"
 #include "GameFramework/PlayerState.h"
 #include "Interop/InitialOnlyFilter.h"
 #include "Interop/SpatialReceiver.h"
@@ -264,7 +265,6 @@ void ActorSystem::ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate)
 				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
 																		? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
 																		: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
-
 				AuthorityLost(EntityId, AuthorityComponentSet);
 			}
 		}
@@ -307,6 +307,13 @@ void ActorSystem::Advance()
 			EntityRemoved(Delta.EntityId);
 
 			const int32 EntitiesRemoved = PresentEntities.Remove(Delta.EntityId);
+
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+			if (NetDriver->AuthorityDebugger != nullptr)
+			{
+				NetDriver->AuthorityDebugger->RemoveSpatialShadowActor(Delta.EntityId);
+			}
+#endif
 		}
 	}
 
@@ -385,6 +392,27 @@ void ActorSystem::Advance()
 	}
 
 	CommandsHandler.ProcessOps(*ActorSubView->GetViewDelta().WorkerMessages);
+
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+	for (const EntityDelta& Delta : ActorSubView->GetViewDelta().EntityDeltas)
+	{
+		if (Delta.Type == EntityDelta::REMOVE) {}
+		else if (Delta.Type == EntityDelta::ADD)
+		{
+			if (NetDriver->AuthorityDebugger != nullptr)
+			{
+				NetDriver->AuthorityDebugger->AddSpatialShadowActor(Delta.EntityId);
+			}
+		}
+		else if (Delta.Type == EntityDelta::UPDATE)
+		{
+			if (NetDriver->AuthorityDebugger != nullptr)
+			{
+				NetDriver->AuthorityDebugger->UpdateSpatialShadowActor(Delta.EntityId);
+			}
+		}
+	}
+#endif
 }
 
 UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)
