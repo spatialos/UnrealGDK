@@ -27,8 +27,8 @@ void ARefreshActorDormancyTest::PrepareTest()
 
 	// Step 1 - Spawn dormancy actor which is non dormant and dormant initially and then become dormant and non dormant respectively
 	AddStep(TEXT("ServerSpawnDormantAndNonDormatActors"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		DormantToAwakeActor = SpawnActor<ARefreshActorDormancyTestActor>(FActorSpawnParameters(), true);
-		AwakeToDormantActor = SpawnActor<ARefreshActorDormancyTestActor>(FActorSpawnParameters(), true);
+		DormantToAwakeActor = SpawnActor<ARefreshActorDormancyTestActor>(ERegisterToAutoDestroy::Yes);
+		AwakeToDormantActor = SpawnActor<ARefreshActorDormancyTestActor>(ERegisterToAutoDestroy::Yes);
 		DormantToAwakeActor->SetInitiallyDormant(true);
 		AwakeToDormantActor->SetInitiallyDormant(false);
 		FinishStep();
