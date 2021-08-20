@@ -7,6 +7,7 @@ DEFINE_LOG_CATEGORY(LogSpatialShadowActor);
 void USpatialShadowActor::Init(AActor& InActor)
 {
 	NumReplicatedProperties = 0;
+	bIsValidHash = false;
 
 	for (TFieldIterator<FProperty> PropIt(InActor.GetClass()); PropIt; ++PropIt)
 	{
@@ -53,11 +54,24 @@ void USpatialShadowActor::CreateHash()
 			i++;
 		}
 	}
+	bIsValidHash = true;
 }
 
 void USpatialShadowActor::CheckUnauthorisedDataChanges()
 {
-	if (!IsValid(Actor) || Actor->IsPendingKillOrUnreachable() || Actor->HasAuthority())
+	if (IsPendingKillOrUnreachable() || !IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
+	{
+		return;
+	}
+
+	if (Actor->HasAuthority())
+	{
+		// Invalidate the current hash as we are no longer receiving updates whilst we have authority - set back to true after we loose authority and receive first update
+		bIsValidHash = false;
+		return;
+	}
+
+	if (!bIsValidHash)
 	{
 		return;
 	}
@@ -77,6 +91,18 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges()
 
 		if (Property->HasAnyPropertyFlags(CPF_Net) && Property->HasAnyPropertyFlags(CPF_HasGetValueTypeHash))
 		{
+			// If it's a pointer property need to check the object we are pointing to is valid before hashing - otherwise causes problems on shutdown when objects are being deleted
+			if (const FObjectProperty* ObjectProperty = Cast<FObjectProperty>(Property)) 
+			{
+				const UObject* ObjectPointer = ObjectProperty->GetObjectPropertyValue_InContainer(Actor, 0);
+				
+				if (!IsValid(ObjectPointer) || ObjectPointer->IsPendingKillOrUnreachable())
+				{
+					i++;
+					continue;
+				}
+			}
+			
 			const uint32 LatestPropertyHash = Property->GetValueTypeHash(Property->ContainerPtrToValuePtr<void>(Actor, 0));
 
 			if (ReplicatedPropertyHashes[i] != LatestPropertyHash && !USpatialNetDriverAuthorityDebugger::IsSuppressedProperty(*Property))

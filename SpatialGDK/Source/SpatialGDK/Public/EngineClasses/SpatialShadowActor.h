@@ -22,6 +22,7 @@ protected:
 	AActor* Actor;
 	int32 NumReplicatedProperties;
 	TArray<uint32> ReplicatedPropertyHashes;
+	bool bIsValidHash;
 
 	void CreateHash();
 };
