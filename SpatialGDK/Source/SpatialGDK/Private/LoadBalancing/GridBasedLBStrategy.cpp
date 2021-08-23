@@ -278,6 +278,10 @@ void UGridBasedLBStrategy::GetLegacyLBInformation(FLegacyLBContext& Ctx) const
 	{
 		Ctx.Layers.AddDefaulted();
 	}
+	if (WorkerCells.Num() > 0)
+	{
+		Ctx.Layers.Last().FirstWorkerId = VirtualWorkerIds[0];
+	}
 	for (int32 i = 0; i < WorkerCells.Num(); ++i)
 	{
 		FLegacyLBContext::Cell NewCell;
