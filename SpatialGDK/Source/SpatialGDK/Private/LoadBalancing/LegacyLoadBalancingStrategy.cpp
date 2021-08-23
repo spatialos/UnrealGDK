@@ -9,11 +9,24 @@
 #include "LoadBalancing/LegacyLoadBalancingCommon.h"
 #include "LoadBalancing/LegacyLoadbalancingComponents.h"
 #include "LoadBalancing/PartitionManager.h"
+#include "Schema/DebugComponent.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLegacyLoadBalancing)
 
 namespace SpatialGDK
 {
+class FActorGroupStorage : public TLBDataStorage<ActorGroupMember>
+{
+};
+
+class FDirectAssignmentStorage : public TLBDataStorage<AuthorityIntent>
+{
+};
+
+class FDebugComponentStorage : public TLBDataStorage<DebugComponent>
+{
+};
+
 FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, SpatialVirtualWorkerTranslator& InTranslator)
 	: Translator(InTranslator)
 {
@@ -29,6 +42,8 @@ FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, S
 	{
 		PositionStorage = MakeUnique<FSpatialPositionStorage>();
 		GroupStorage = MakeUnique<FActorGroupStorage>();
+		DebugCompStorage = MakeUnique<FDebugComponentStorage>();
+
 		LegacyLBStrat.GetLegacyLBInformation(LBContext);
 	}
 }
@@ -94,7 +109,7 @@ void FLegacyLoadBalancing::Flush(ISpatialOSWorker& Connection)
 	}
 }
 
-void FLegacyLoadBalancing::Init(TArray<FLBDataStorage*>& OutLoadBalancingData)
+void FLegacyLoadBalancing::Init(TArray<FLBDataStorage*>& OutLoadBalancingData, TArray<FLBDataStorage*>& OutServerWorkerData)
 {
 	if (PositionStorage)
 	{
@@ -107,6 +122,10 @@ void FLegacyLoadBalancing::Init(TArray<FLBDataStorage*>& OutLoadBalancingData)
 	if (AssignmentStorage)
 	{
 		OutLoadBalancingData.Add(AssignmentStorage.Get());
+	}
+	if (DebugCompStorage)
+	{
+		OutLoadBalancingData.Add(DebugCompStorage.Get());
 	}
 }
 
@@ -205,6 +224,15 @@ void FLegacyLoadBalancing::TickPartitions(FPartitionManager& PartitionMgr)
 		for (uint32 i = 0; i < ExpectedWorkers; ++i)
 		{
 			PartitionMgr.AssignPartitionTo(Partitions[i], VirtualWorkerIdToHandle[i]);
+		}
+
+		for (auto Worker : ConnectedWorkers)
+		{
+			Worker_EntityId ServerWorkerEntity = PartitionMgr.GetServerWorkerEntityIdForWorker(Worker);
+			if (WorkerForCustomAssignment == 0 || ServerWorkerEntity < WorkerForCustomAssignment)
+			{
+				WorkerForCustomAssignment = ServerWorkerEntity;
+			}
 		}
 		bCreatedPartitions = true;
 	}

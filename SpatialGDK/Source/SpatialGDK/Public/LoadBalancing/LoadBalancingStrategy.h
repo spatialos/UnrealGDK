@@ -17,7 +17,7 @@ class SPATIALGDK_API FLoadBalancingStrategy
 public:
 	virtual ~FLoadBalancingStrategy() = default;
 
-	virtual void Init(TArray<FLBDataStorage*>& OutLoadBalancingData) {}
+	virtual void Init(TArray<FLBDataStorage*>& OutLoadBalancingData, TArray<FLBDataStorage*>& OutServerWorkerData) {}
 
 	virtual void Advance(ISpatialOSWorker& Connection) {}
 	virtual void Flush(ISpatialOSWorker& Connection) {}

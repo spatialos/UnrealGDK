@@ -17,14 +17,15 @@ DEFINE_LOG_CATEGORY(LogSpatialStrategySystem);
 namespace SpatialGDK
 {
 FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionsMgr, const FSubView& InLBView,
-											   TUniquePtr<FLoadBalancingStrategy> InStrategy)
+											   const FSubView& InServerWorkerView, TUniquePtr<FLoadBalancingStrategy> InStrategy)
 	: LBView(InLBView)
 	, PartitionsMgr(MoveTemp(InPartitionsMgr))
 	, DataStorages(InLBView)
 	, UserDataStorages(InLBView)
+	, ServerWorkerDataStorages(InServerWorkerView)
 	, Strategy(MoveTemp(InStrategy))
 {
-	Strategy->Init(UserDataStorages.DataStorages);
+	Strategy->Init(UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
 	DataStorages.DataStorages.Add(&AuthACKView);
 	DataStorages.DataStorages.Add(&NetOwningClientView);
 	DataStorages.DataStorages.Add(&SetMemberView);
@@ -56,6 +57,7 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 
 	DataStorages.Advance();
 	UserDataStorages.Advance();
+	ServerWorkerDataStorages.Advance();
 
 	TSet<Worker_EntityId_Key> RemovedEntities;
 	for (const EntityDelta& Delta : LBView.GetViewDelta().EntityDeltas)
@@ -94,22 +96,8 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 	}
 
 	ActorSetSystem.Update(SetMemberView, RemovedEntities);
-	SetMemberView.ClearModified();
 
 	Strategy->Advance(Connection);
-}
-
-void FSpatialStrategySystem::ClearUserStorages()
-{
-	for (auto& Storage : UserDataStorages.DataStorages)
-	{
-		Storage->ClearModified();
-	}
-	DataStorages.EntitiesAdded.Empty();
-	DataStorages.EntitiesRemoved.Empty();
-	UserDataStorages.EntitiesAdded.Empty();
-	UserDataStorages.EntitiesRemoved.Empty();
-	ActorSetSystem.Clear();
 }
 
 void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
@@ -208,9 +196,6 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 		EntityAssignment.Remove(DeletedEntity);
 	}
 
-	// Clear the buffer of modified entities now that the strategy has been informed.
-	ClearUserStorages();
-
 	for (const auto& Migration : Ctx.EntitiesToMigrate)
 	{
 		Worker_EntityId EntityId = Migration.Key;
@@ -308,6 +293,10 @@ void FSpatialStrategySystem::UpdateStrategySystemInterest(ISpatialOSWorker& Conn
 	{
 		Query ServerQuery = {};
 		ServerQuery.ResultComponentIds = { SpatialConstants::SERVER_WORKER_COMPONENT_ID };
+		for (auto& Component : ServerWorkerDataStorages.GetComponentsToWatch())
+		{
+			ServerQuery.ResultComponentIds.Add(Component);
+		}
 		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
 		InterestSet.Queries.Add(ServerQuery);
 	}
