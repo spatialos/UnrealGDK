@@ -10,11 +10,11 @@
  *
  * The flow is as follows:
  * - Setup:
- *  - The authorative server spawns one ReplicatedTestActorSubobject (in it's OnAuthorityGained it will spawn a subobject of type
+ *  - The authoritative server spawns one ReplicatedTestActorSubobject (in it's OnAuthorityGained it will spawn a subobject of type
  * ReplicatedTestActor )
  * - Test:
- *  - All workers check that they can see exactly 1 ReplicatedTestActor and 1 ReplicatedTestActorSubobject.
- *  - The authorative server changes the replicated property of the replicated subobject.
+ *  - All workers check that they can see exactly 1 ReplicatedTestActorSubobject.
+ *  - The authoritative server changes the replicated property of the replicated subobject.
  *  - All workers check that the replicated property of the replicated subobject has changed.
  *  - The non-auth server changes the the replicated property of the replicated subobject which generates an expected error.
  *  - The client changes the replicated properties which generates an expected errors.
@@ -37,13 +37,14 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 	if (HasAuthority())
 	{
 		// Subobject property change
-		AddExpectedLogError(TEXT("ReplicatedTestActor, property changed without authority was TestReplicatedProperty!"), 2);
+		// TODO : UNR-5849 subobjects are not taken into account by the debug mode.
+		// AddExpectedLogError(TEXT("ReplicatedTestActor, property changed without authority was TestReplicatedProperty!"), 2);
 	}
 
 	AddStep(
 		TEXT("The auth server spawns one ReplicatedTestActorSubobject"), FWorkerDefinition::Server(1), nullptr,
 		[this]() {
-			TestActor = GetWorld()->SpawnActor<AReplicatedTestActorSubobject>(FVector(0.0f, 0.0f, 50.0f), FRotator::ZeroRotator,
+			TestActor = GetWorld()->SpawnActor<AReplicatedTestActorSubobject>(FVector(-200.0f, 0.0f, 50.0f), FRotator::ZeroRotator,
 																			  FActorSpawnParameters());
 			RegisterAutoDestroyActor(TestActor);
 
@@ -57,21 +58,14 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 		[this](float DeltaTime) {
 			TArray<AActor*> FoundReplicatedTestActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorSubobject::StaticClass(), FoundReplicatedTestActors);
-			TArray<AActor*> FoundReplicatedSubTestActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActor::StaticClass(), FoundReplicatedSubTestActors);
 
 			RequireEqual_Int(FoundReplicatedTestActors.Num(), 1,
 							 TEXT("The number of AReplicatedTestActorSubobject found in the world should equal 1."));
 
-			RequireEqual_Int(FoundReplicatedSubTestActors.Num(), 1,
-							 TEXT("The number of AReplicatedTestActorBasic found in the world should equal 1."));
-
-			if (FoundReplicatedTestActors.Num() == 1 && FoundReplicatedSubTestActors.Num() == 1)
+			if (FoundReplicatedTestActors.Num() == 1)
 			{
 				TestActor = Cast<AReplicatedTestActorSubobject>(FoundReplicatedTestActors[0]);
-				AReplicatedTestActor* TestSubActor = Cast<AReplicatedTestActor>(FoundReplicatedSubTestActors[0]);
 				RequireTrue(IsValid(TestActor), TEXT("The TestActor must be Valid (usable : non-null and not pending kill)."));
-				RequireTrue(IsValid(TestSubActor), TEXT("The TestSubActor must be Valid (usable : non-null and not pending kill)."));
 				FinishStep();
 			}
 		},
@@ -83,7 +77,7 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 			return IsValid(TestActor);
 		},
 		[this]() {
-			TestActor->ReplicatedSubActor->TestReplicatedProperty = 999;
+			TestActor->ReplicatedSubobject->TestReplicatedProperty = 999;
 
 			FinishStep();
 		});
@@ -95,11 +89,11 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 		},
 		nullptr,
 		[this](float DeltaTime) {
-			RequireEqual_Int(TestActor->ReplicatedSubActor->TestReplicatedProperty, 999,
+			RequireEqual_Int(TestActor->ReplicatedSubobject->TestReplicatedProperty, 999,
 							 TEXT("The ReplicatedIntProperty on subobject should equal 999."));
 			FinishStep();
 		},
-		5.0f);
+		500.0f);
 
 	// This step generates an expected error for the replicated subobject
 	AddStep(
@@ -109,7 +103,7 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 		},
 		[this]() {
 			// Subobject property
-			TestActor->ReplicatedSubActor->TestReplicatedProperty = 555;
+			TestActor->ReplicatedSubobject->TestReplicatedProperty = 555;
 
 			FinishStep();
 		});
@@ -122,7 +116,7 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 		},
 		[this]() {
 			// Subobject property
-			TestActor->ReplicatedSubActor->TestReplicatedProperty = 222;
+			TestActor->ReplicatedSubobject->TestReplicatedProperty = 222;
 
 			FinishStep();
 		});
@@ -134,7 +128,7 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 		},
 		nullptr,
 		[this](float DeltaTime) {
-			RequireEqual_Int(TestActor->ReplicatedSubActor->TestReplicatedProperty, 999,
+			RequireEqual_Int(TestActor->ReplicatedSubobject->TestReplicatedProperty, 999,
 							 TEXT("The ReplicatedIntProperty on subobject should equal 999."));
 			FinishStep();
 		},
