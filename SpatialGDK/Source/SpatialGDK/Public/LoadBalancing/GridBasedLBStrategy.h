@@ -20,6 +20,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogGridBasedLBStrategy, Log, All)
  * Divides the load between Rows * Cols number of workers, each handling a
  * square of the world (WorldWidth / Cols)cm by (WorldHeight / Rows)cm
  *
+ * Units are in SpatialOS space (meters) not Unreal's (centimeters)
+ *
  * Given a Point, for each Cell:
  * Point is inside Cell iff Min(Cell) <= Point < Max(Cell)
  *

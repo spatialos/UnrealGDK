@@ -157,7 +157,7 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 	const FBox2D Interest2D = WorkerCells[WorkerCell].ExpandBy(InterestBorder);
 
 	const FVector2D Center2D = Interest2D.GetCenter();
-	const FVector Center3D{ Center2D.X, Center2D.Y, 0.0f };
+	const FVector Center3D{ Center2D.X * 100.f, Center2D.Y * 100.f, 0.0f }; // Convert meters to centimeters to account for EdgeLength::FromFVector
 
 	const FVector2D EdgeLengths2D = Interest2D.GetSize();
 
@@ -167,7 +167,7 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 		return SpatialGDK::QueryConstraint();
 	}
 
-	const FVector EdgeLengths3D{ EdgeLengths2D.X, EdgeLengths2D.Y, FLT_MAX };
+	const FVector EdgeLengths3D{ EdgeLengths2D.X * 100.f, EdgeLengths2D.Y * 100.f, FLT_MAX }; // Convert meters to centimeters to account for EdgeLength::FromFVector
 
 	SpatialGDK::QueryConstraint Constraint;
 	Constraint.BoxConstraint =
