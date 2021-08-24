@@ -69,7 +69,7 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunc
 	// Writer->WriteValue(TEXT("disconnect_worker"), WorkerConfig.WorkerPermissions.bDisconnectWorker);
 	Writer->WriteValue(TEXT("reserve_entity_id"), WorkerConfig.WorkerPermissions.bReserveEntityID);
 	Writer->WriteValue(TEXT("entity_query"), WorkerConfig.WorkerPermissions.bAllowEntityQuery);
-	//Writer->WriteValue(TEXT("disable_entity_query_restricted_components"),
+	// Writer->WriteValue(TEXT("disable_entity_query_restricted_components"),
 	//				   WorkerConfig.WorkerPermissions.bDisableEntityQueryRestrictedComponents);
 	Writer->WriteObjectEnd();
 
