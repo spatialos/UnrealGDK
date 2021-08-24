@@ -3,23 +3,33 @@
 #include "ReplicatedTestActorSubobject.h"
 #include "Net/UnrealNetwork.h"
 
+UReplicatedSubobject::UReplicatedSubobject()
+{
+	SetIsReplicatedByDefault(true);
+	TestReplicatedProperty = 0;
+}
+
+void UReplicatedSubobject::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UReplicatedSubobject, TestReplicatedProperty);
+}
+
 AReplicatedTestActorSubobject::AReplicatedTestActorSubobject()
 {
-	ReplicatedSubActor = nullptr;
+	bReplicates = true;
+	ReplicatedSubobject = CreateDefaultSubobject<UReplicatedSubobject>("Subobject");
+}
+
+void AReplicatedTestActorSubobject::OnAuthorityGained()
+{
+	Super::OnAuthorityGained();
 }
 
 void AReplicatedTestActorSubobject::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AReplicatedTestActorSubobject, ReplicatedSubActor);
-}
-
-void AReplicatedTestActorSubobject::OnAuthorityGained()
-{
-	Super::OnAuthorityGained();
-
-	// Spawn sub-actor
-	ReplicatedSubActor = GetWorld()->SpawnActor<AReplicatedTestActor>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters());
-	ReplicatedSubActor->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+	DOREPLIFETIME(AReplicatedTestActorSubobject, ReplicatedSubobject);
 }

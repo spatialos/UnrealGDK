@@ -10,6 +10,19 @@
 class AReplicatedTestActor;
 
 UCLASS()
+class UReplicatedSubobject : public UActorComponent
+{
+	GENERATED_BODY()
+public:
+	UReplicatedSubobject();
+
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(Replicated)
+	int TestReplicatedProperty;
+};
+
+UCLASS()
 class AReplicatedTestActorSubobject : public AReplicatedTestActorBase
 {
 	GENERATED_BODY()
@@ -17,11 +30,11 @@ class AReplicatedTestActorSubobject : public AReplicatedTestActorBase
 public:
 	AReplicatedTestActorSubobject();
 
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
 	void OnAuthorityGained() override;
+
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	// Subobjects
 	UPROPERTY(Replicated)
-	AReplicatedTestActor* ReplicatedSubActor;
+	UReplicatedSubobject* ReplicatedSubobject;
 };
