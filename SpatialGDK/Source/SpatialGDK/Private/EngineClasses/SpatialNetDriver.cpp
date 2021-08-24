@@ -2305,15 +2305,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				PartitionSystemImpl->ProcessDeletionEvents();
 			}
 
-			if (ServerWorkerSystemImpl.IsValid())
-			{
-				for (auto& Update : ServerWorkerSystemImpl->PendingComponentUpdates)
-				{
-					Connection->GetCoordinator().SendComponentUpdate(WorkerEntityId, MoveTemp(Update));
-				}
-				ServerWorkerSystemImpl->PendingComponentUpdates.Empty();
-			}
-
 			if (RPCService.IsValid())
 			{
 				RPCService->AdvanceView();
