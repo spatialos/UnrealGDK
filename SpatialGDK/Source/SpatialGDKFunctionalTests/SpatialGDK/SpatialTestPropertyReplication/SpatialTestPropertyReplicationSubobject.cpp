@@ -93,7 +93,7 @@ void ASpatialTestPropertyReplicationSubobject::PrepareTest()
 							 TEXT("The ReplicatedIntProperty on subobject should equal 999."));
 			FinishStep();
 		},
-		500.0f);
+		5.0f);
 
 	// This step generates an expected error for the replicated subobject
 	AddStep(
