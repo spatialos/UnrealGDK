@@ -175,7 +175,7 @@ void FLegacyLoadBalancing::TickPartitions()
 
 					const LegacyLB_CustomWorkerAssignments* DebugWorkerInfo =
 						ServerWorkerCustomAssignment->GetObjects().Find(ServerWorkerEntity);
-					TSet<Worker_EntityId> AdditionalEntities;
+					TSet<Worker_EntityId_Key> AdditionalEntities;
 					if (DebugWorkerInfo)
 					{
 						for (const auto& DebugEntry : DebugCompStorage->GetObjects())
