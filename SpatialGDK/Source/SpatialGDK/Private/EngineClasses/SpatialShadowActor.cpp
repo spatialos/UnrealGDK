@@ -94,7 +94,7 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges()
 		{
 			// If it's a pointer property need to check the object we are pointing to is valid before hashing - otherwise causes problems on
 			// shutdown when objects are being deleted
-			if (const FObjectProperty* ObjectProperty = Cast<FObjectProperty>(Property))
+			if (const FObjectProperty* ObjectProperty = CastField<FObjectProperty>(Property))
 			{
 				const UObject* ObjectPointer = ObjectProperty->GetObjectPropertyValue_InContainer(Actor, 0);
 
