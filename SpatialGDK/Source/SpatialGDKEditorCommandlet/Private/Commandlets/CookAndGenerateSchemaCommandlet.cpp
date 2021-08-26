@@ -121,6 +121,11 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		return 0;
 	}
 
+	if (!CreateServerWorkerAuthoritySet())
+	{
+		return 0;
+	}
+
 	// Sort classes here so that batching does not have an effect on ordering.
 	ReferencedClasses.Sort([](const FSoftClassPath& A, const FSoftClassPath& B) {
 		return FNameLexicalLess()(A.GetAssetPathName(), B.GetAssetPathName());
