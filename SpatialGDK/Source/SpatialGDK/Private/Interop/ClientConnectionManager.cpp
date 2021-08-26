@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/ClientConnectionManager.h"
 
@@ -57,6 +57,8 @@ void ClientConnectionManager::OnRequestReceived(const Worker_Op&, const Worker_C
 					TWeakObjectPtr<USpatialNetConnection> ClientConnection = FindClientConnectionFromWorkerEntityId(ClientEntityId);
 					if (ClientConnection.IsValid())
 					{
+						UE_LOG(LogWorkerEntitySystem, Warning, TEXT("MCS: Player explicitly disconnected - closing connection. (%lld)"),
+							   ClientEntityId);
 						ClientConnection->CleanUp();
 					};
 				}
@@ -104,6 +106,7 @@ void ClientConnectionManager::EntityRemoved(const Worker_EntityId EntityId)
 	{
 		if (USpatialNetConnection* ClientConnection = ClientConnectionPtr.Get())
 		{
+			UE_LOG(LogWorkerEntitySystem, Warning, TEXT("MCS: Player disconnected unexpectedly - closing connection. (%lld)"), EntityId);
 			CloseClientConnection(ClientConnection);
 		}
 	}

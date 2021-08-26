@@ -1405,7 +1405,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		{
 			if (!EntityActor->IsActorReady())
 			{
-				UE_LOG(LogActorSystem, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
+				UE_LOG(LogActorSystem, Log, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
 					   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
 			}
 
@@ -1478,6 +1478,11 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 			NetDriver->OwnershipCompletenessHandler->AddPlayerEntity(EntityId);
 		}
 	}
+
+	UE_LOG(LogActorSystem, Log,
+		   TEXT("%s: Entity has been checked out on a worker which didn't spawn it. "
+				"Entity ID: %lld, actor: %s"),
+		   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetPathName());
 }
 
 void ActorSystem::RefreshEntity(const Worker_EntityId EntityId)
@@ -1979,7 +1984,7 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 
 	AActor* Actor = Cast<AActor>(WeakActor.Get());
 
-	UE_LOG(LogActorSystem, Verbose, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(),
+	UE_LOG(LogActorSystem, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(),
 		   Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
 	// Cleanup pending add components if any exist.
