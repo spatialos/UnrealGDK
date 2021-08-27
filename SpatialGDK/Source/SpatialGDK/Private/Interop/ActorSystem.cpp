@@ -2160,6 +2160,8 @@ void ActorSystem::RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor
 		UE_LOG(LogActorSystem, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"),
 			   *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
 
+		ensureAlways(Actor != nullptr);
+
 		if (EventTracer != nullptr)
 		{
 			FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(SEND_RETIRE_ENTITY_EVENT_NAME, "", /* Causes */ nullptr, /* NumCauses */ 0,
