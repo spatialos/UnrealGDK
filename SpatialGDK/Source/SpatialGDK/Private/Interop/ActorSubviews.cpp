@@ -90,9 +90,18 @@ bool MainActorSubviewSetup::IsActorEntity(const Worker_EntityId EntityId, const 
 
 	// If we see a player controller component on this entity and we're a server we should hold it back until we
 	// also have the partition component.
-	return !NetDriver.IsServer()
-		   || Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID })
-				  == Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID });
+	const bool bComplete = !NetDriver.IsServer()
+						   || Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID })
+								  == Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID });
+
+	if (NetDriver.IsServer() && !bComplete)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Controller/Partition mismatch for %lld. Controller(%d), Partition(%d)."), EntityId,
+			   Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID }),
+			   Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID }));
+	}
+
+	return bComplete;
 }
 
 TArray<FDispatcherRefreshCallback> MainActorSubviewSetup::GetCallbacks(ViewCoordinator& Coordinator)

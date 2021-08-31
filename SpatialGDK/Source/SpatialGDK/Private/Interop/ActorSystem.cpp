@@ -2158,9 +2158,10 @@ void ActorSystem::RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor
 		AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
 
 		UE_LOG(LogActorSystem, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"),
-			   *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
+			   *GetPathNameSafe(Actor), EntityId, NetDriver->HasServerAuthority(EntityId));
 
 		ensureAlways(Actor != nullptr);
+		ensureAlways(NetDriver->HasServerAuthority(EntityId));
 
 		if (EventTracer != nullptr)
 		{
