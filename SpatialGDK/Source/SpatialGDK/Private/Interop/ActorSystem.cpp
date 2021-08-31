@@ -1405,17 +1405,13 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		{
 			if (!EntityActor->IsActorReady())
 			{
-				UE_LOG(LogActorSystem, Log, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
+				UE_LOG(LogActorSystem, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
 					   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
 			}
 
 			return;
 		}
 	}
-	UE_LOG(LogActorSystem, Verbose,
-		   TEXT("%s: Entity has been checked out on a worker which didn't spawn it. "
-				"Entity ID: %lld"),
-		   *NetDriver->Connection->GetWorkerId(), EntityId);
 
 	UClass* Class = ActorComponents.Metadata.GetNativeEntityClass();
 	if (Class == nullptr)
@@ -1479,7 +1475,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		}
 	}
 
-	UE_LOG(LogActorSystem, Log,
+	UE_LOG(LogActorSystem, Verbose,
 		   TEXT("%s: Entity has been checked out on a worker which didn't spawn it. "
 				"Entity ID: %lld, actor: %s"),
 		   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetPathName());
@@ -1984,7 +1980,7 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 
 	AActor* Actor = Cast<AActor>(WeakActor.Get());
 
-	UE_LOG(LogActorSystem, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(),
+	UE_LOG(LogActorSystem, Verbose, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(),
 		   Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
 	// Cleanup pending add components if any exist.
@@ -2157,11 +2153,8 @@ void ActorSystem::RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor
 		// Actor no longer guaranteed to be in package map, but still useful for additional logging info
 		AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
 
-		UE_LOG(LogActorSystem, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"),
+		UE_LOG(LogActorSystem, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasServerAuthority: %d"),
 			   *GetPathNameSafe(Actor), EntityId, NetDriver->HasServerAuthority(EntityId));
-
-		ensureAlways(Actor != nullptr);
-		ensureAlways(NetDriver->HasServerAuthority(EntityId));
 
 		if (EventTracer != nullptr)
 		{

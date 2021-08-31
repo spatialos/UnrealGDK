@@ -57,8 +57,9 @@ void ClientConnectionManager::OnRequestReceived(const Worker_Op&, const Worker_C
 					TWeakObjectPtr<USpatialNetConnection> ClientConnection = FindClientConnectionFromWorkerEntityId(ClientEntityId);
 					if (ClientConnection.IsValid())
 					{
-						UE_LOG(LogWorkerEntitySystem, Warning, TEXT("MCS: Player explicitly disconnected - closing connection. (%lld)"),
-							   ClientEntityId);
+						UE_LOG(LogWorkerEntitySystem, Log,
+							   TEXT("Client issued disconnect command - closing connection (%s). EntityId: (%lld)"),
+							   *ClientConnection->GetPathName(), ClientEntityId);
 						ClientConnection->CleanUp();
 					};
 				}
@@ -106,7 +107,8 @@ void ClientConnectionManager::EntityRemoved(const Worker_EntityId EntityId)
 	{
 		if (USpatialNetConnection* ClientConnection = ClientConnectionPtr.Get())
 		{
-			UE_LOG(LogWorkerEntitySystem, Warning, TEXT("MCS: Player disconnected unexpectedly - closing connection. (%lld)"), EntityId);
+			UE_LOG(LogWorkerEntitySystem, Log, TEXT("Client disconnected unexpectedly - closing connection (%s). EntityId: (%lld)"),
+				   *ClientConnection->GetPathName(), EntityId);
 			CloseClientConnection(ClientConnection);
 		}
 	}
