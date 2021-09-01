@@ -541,8 +541,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 
 						// Flush PC interest on handover
-						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries
-							&& GetDefault<USpatialGDKSettings>()->bRefreshClientInterestOnHandover)
+						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
 						{
 							Worker_EntityId ControllerEntityId =
 								NetDriver->PackageMap->GetEntityIdFromObject(Actor->GetNetConnection()->PlayerController);
