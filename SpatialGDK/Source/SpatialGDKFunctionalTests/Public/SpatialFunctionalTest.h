@@ -32,6 +32,12 @@ constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// Represents test already 
 
 class ULayeredLBStrategy;
 
+enum class ERegisterToAutoDestroy
+{
+	No,
+	Yes
+};
+
 /*
  * A Spatial Functional NetTest allows you to define a series of steps, and control which server/client context they execute on
  * Servers and Clients are registered as Test Players by the framework, and request individual steps to be executed in the correct Player
@@ -139,7 +145,15 @@ public:
 	APawn* GetLocalFlowPawn();
 
 	template <class T>
-	T* SpawnActor(const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters(), const bool bRegisterAsAutoDestroy = true);
+	T* SpawnActor(const ERegisterToAutoDestroy RegisterToAutoDestroy);
+
+	template <class T>
+	T* SpawnActor(const FActorSpawnParameters& SpawnParameters);
+
+	template <class T>
+	T* SpawnActor(const FVector& Location = FVector::ZeroVector, const FRotator& Rotation = FRotator::ZeroRotator,
+				  const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters(),
+				  const ERegisterToAutoDestroy RegisterToAutoDestroy = ERegisterToAutoDestroy::Yes);
 
 	// Helper to get the local Worker Type.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
@@ -493,11 +507,25 @@ private:
 };
 
 template <class T>
-T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParameters, const bool bRegisterAsAutoDestroy)
+T* ASpatialFunctionalTest::SpawnActor(const ERegisterToAutoDestroy RegisterToAutoDestroy)
 {
-	T* Actor = GetWorld()->SpawnActor<T>(SpawnParameters);
+	return SpawnActor<T>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters(), RegisterToAutoDestroy);
+}
+
+template <class T>
+T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParameters)
+{
+	return SpawnActor<T>(FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters, ERegisterToAutoDestroy::Yes);
+}
+
+template <class T>
+T* ASpatialFunctionalTest::SpawnActor(const FVector& Location, const FRotator& Rotation, const FActorSpawnParameters& SpawnParameters,
+									  const ERegisterToAutoDestroy RegisterToAutoDestroy /*=ERegisterToAutoDestroy::Yes*/)
+{
+	T* Actor = GetWorld()->SpawnActor<T>(Location, Rotation, SpawnParameters);
 	checkf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
-	if (bRegisterAsAutoDestroy)
+
+	if (RegisterToAutoDestroy == ERegisterToAutoDestroy::Yes)
 	{
 		RegisterAutoDestroyActor(Actor);
 	}

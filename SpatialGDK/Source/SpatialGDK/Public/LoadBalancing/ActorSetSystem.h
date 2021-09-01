@@ -22,11 +22,6 @@ public:
 
 	const TSet<Worker_EntityId_Key>& GetEntitiesToEvaluate() const { return EntitiesToEvaluate; }
 	const TSet<Worker_EntityId_Key>& GetEntitiesToAttach() const { return EntitiesToAttach; }
-	void Clear()
-	{
-		EntitiesToEvaluate.Empty();
-		EntitiesToAttach.Empty();
-	}
 
 protected:
 	TMap<Worker_EntityId_Key, TSet<Worker_EntityId_Key>> ActorSets;

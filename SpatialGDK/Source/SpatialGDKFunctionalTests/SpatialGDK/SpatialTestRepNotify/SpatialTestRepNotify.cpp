@@ -49,8 +49,7 @@ void ASpatialTestRepNotify::PrepareTest()
 	 * correct repindex-based order.
 	 * */
 	AddStep(TEXT("SpatialTestRepNotifyServerSetReplicatedVariables1"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		TestActor = GetWorld()->SpawnActor<ASpatialTestRepNotifyActor>(FVector(0, 0, 0), FRotator::ZeroRotator, FActorSpawnParameters());
-		RegisterAutoDestroyActor(TestActor);
+		TestActor = SpawnActor<ASpatialTestRepNotifyActor>();
 
 		TestActor->TestSubobject->OnChangedRepNotifyInt = 400;
 		TestActor->OnChangedRepNotifyInt1 = 350;

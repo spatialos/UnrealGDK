@@ -6,6 +6,9 @@ namespace SpatialGDK
 {
 void FActorSetSystem::Update(TLBDataStorage<ActorSetMember>& Data, TSet<Worker_EntityId_Key>& DeletedEntities)
 {
+	EntitiesToEvaluate.Empty();
+	EntitiesToAttach.Empty();
+
 	for (Worker_EntityId Modified : Data.GetModifiedEntities())
 	{
 		const ActorSetMember* Membership = Data.GetObjects().Find(Modified);

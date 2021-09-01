@@ -6,6 +6,13 @@ namespace SpatialGDK
 {
 void FLBDataCollection::Advance()
 {
+	EntitiesAdded.Empty();
+	EntitiesRemoved.Empty();
+	for (auto& Storage : DataStorages)
+	{
+		Storage->ClearModified();
+	}
+
 	for (const EntityDelta& Delta : SubView.GetViewDelta().EntityDeltas)
 	{
 		switch (Delta.Type)

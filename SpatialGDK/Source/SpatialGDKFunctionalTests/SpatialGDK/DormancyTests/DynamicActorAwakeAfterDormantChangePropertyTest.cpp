@@ -28,7 +28,7 @@ void ADynamicActorAwakeAfterDormantChangePropertyTest::PrepareTest()
 
 	// Step 1 - Spawn dormancy actor and change NetDormancy to DORM_DormantAll
 	AddStep(TEXT("ServerSpawnDormancyActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		DormancyActor = SpawnActor<ADormancyTestActor>(FActorSpawnParameters(), /*bRegisterAsAutoDestroy*/ true);
+		DormancyActor = SpawnActor<ADormancyTestActor>();
 		// Going from DORM_DormInitial to DORM_DormantAll
 		DormancyActor->SetNetDormancy(DORM_DormantAll);
 		FinishStep();
