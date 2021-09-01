@@ -1371,18 +1371,29 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 	const bool bRepGraphNodeFlaggedDirty = RepGraphConnection->RepGraphRequestedInterestChange;
 	bShouldMarkInterestDirty |= bRepGraphNodeFlaggedDirty;
 
-	if (!bShouldMarkInterestDirty)
+	const float TimeSinceLastClientInterestUpdate = CurrentTime - NetConnection->TimeWhenClientInterestLastUpdated;
+
+	if (Settings->bPeriodicallyUpdateClientInterest && Settings->ClientEntityIdListQueryUpdateFrequency > 0.f)
 	{
-		return;
+		// If we've passed the X seconds threshold, mark interest dirty.
+		const float UpdateThresholdSecs = 1 / Settings->ClientEntityIdListQueryUpdateFrequency;
+		const bool bHitInterestTimeThreshold = TimeSinceLastClientInterestUpdate >= UpdateThresholdSecs;
+		bShouldMarkInterestDirty |= bHitInterestTimeThreshold;
+		if (bHitInterestTimeThreshold)
+		{
+			UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Frame %u. Hit client interest %f second threshold for %s"),
+				   RepGraph->GetReplicationGraphFrame(), UpdateThresholdSecs, *Actor->GetName());
+		}
 	}
 
 	UMetricsExport* MetricsExport =
-		Cast<UMetricsExport>(Actor->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
+		Cast<UMetricsExport>(Actor->GetWorld()->GetAuthGameMode()->GetComponentByClass(UMetricsExport::StaticClass()));
 	if (MetricsExport != nullptr)
 	{
-		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
-		MetricsExport->WriteMetricsToProtocolBuffer(*ClientIdentifier, TEXT("interest_update_frequency"),
-													1 / TimeSinceLastClientInterestUpdate);
+		MetricsExport->PushMetric(
+			TEXT("interest_update_frequency"), 1 / TimeSinceLastClientInterestUpdate,
+			TMap<FString, FString>{
+				{ TEXT("PlayerControllerEntity"), FString::Printf(TEXT("%lld"), NetConnection->GetPlayerControllerEntityId()) } });
 	}
 	RepGraphConnection->RepGraphRequestedInterestChange = false;
 	NetConnection->TimeWhenClientInterestLastUpdated = CurrentTime;

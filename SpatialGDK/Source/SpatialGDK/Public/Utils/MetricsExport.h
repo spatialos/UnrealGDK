@@ -12,6 +12,8 @@ public:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	void PushMetric(const FString& Field, float Value, const TMap<FString, FString>& Tags);
+
 	UPROPERTY(EditAnywhere, config, Category = "Influx Metrics")
 	FString InfluxDbName = "mydb";
 
@@ -27,17 +29,22 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Influx Metrics", BlueprintReadWrite)
 	bool bPrintInfluxMetricsToLog = false;
 
-	void WriteMetricsToProtocolBuffer(const FString& Worker, FString Field, float Value);
-
 private:
-	UFUNCTION(BlueprintCallable, Category = "Influx Metrics")
-	void PostLineProtocolToInfluxDBServer(const FString& Lines);
+	struct MetricData
+	{
+		FString MetricName;
+		float MetricValue;
+		TMap<FString, FString> Tags;
+	};
 
-	void FlushProtocolBufferToDatabase();
+	UFUNCTION(BlueprintCallable, Category = "Influx Metrics")
+	void ExportMetricOverHttp(const FString& Lines);
+
+	void FlushMetrics();
 	void OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
 	// Map of worker name to map of metric name mapped to value
-	TMap<FString, TMap<FString, float>> MetricsMap;
+	TArray<MetricData> MetricsToFlush;
 
 	int64 LastUpdateSendTime = 0;
 	uint32 FramesSinceLastFpsWrite = 0;
@@ -47,4 +54,5 @@ private:
 	FString DeploymentName;
 	FString WorkerType;
 	FString WorkerId;
+	FString MetricsPrefix;
 };

@@ -4,7 +4,9 @@
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "GameFramework/GameStateBase.h"
 #include "Interop/SpatialReplicationGraphLoadBalancingHandler.h"
+#include "Utils/MetricsExport.h"
 #include "Utils/SpatialActorUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReplicationGraph);
@@ -90,12 +92,27 @@ void USpatialReplicationGraph::PostReplicateActors(UNetReplicationGraphConnectio
 	{
 		LoadBalancingHandler->ProcessMigrations();
 	}
+
+	if (InterestChangeReasons.Num() != 0)
+	{
+		UMetricsExport* MetricsExport =
+			Cast<UMetricsExport>(NetDriver->GetWorld()->GetAuthGameMode()->GetComponentByClass(UMetricsExport::StaticClass()));
+		if (MetricsExport != nullptr)
+		{
+			for (const auto& InterestChange : InterestChangeReasons)
+			{
+				MetricsExport->PushMetric(
+					TEXT("total_interest_changes"), InterestChange.Value,
+					TMap<FString, FString>{ { TEXT("InterestChangeReason"), InterestChange.Key.Replace(TEXT(" "), TEXT("_")) } });
+			}
+		}
+		InterestChangeReasons.Reset();
+	}
 }
 
 // IMPROBABLE-BEGIN - Client entity list interest
 // To get a list of Actors relevant to a client, we iterate global and connection nodes.
-// This functionality lives outside the normal rep graph calls because we call a different function on rep graph nodes
-// so don't share benefit of iterating at the same time.
+// This functionality lives outside the normal rep graph calls because we call a different function on rep graph nodes.
 // Rep graph nodes need to implement a new GetClientInterestedActors function to return Actors a client is interested in.
 // We don't use the GatherReplicatedActorList function for this job because that applies things like rate limiting
 // through returning an Actor on alternating calls. For interest, we want to get a conservative list of Actors that
@@ -196,33 +213,33 @@ TArray<AActor*> USpatialReplicationGraph::ExtractClientInterestActorsFromGather(
 			// At this point the replication flow checks ReadyForNextReplication
 			// We avoid because we want interest to remain consistent vs. a per frame replication round robin.
 
-			// Do we run explicit NCD calculations run per Actor?
-			if (bUseNarrowPhaseNCDInterestCulling)
-			{
-				QUICK_SCOPE_CYCLE_COUNTER(NET_ClientEntityInterest_NarrowPhaseDistanceCalculation);
-
-				float SmallestDistanceSq = TNumericLimits<float>::Max();
-
-				// Multiple viewers exists in native Unreal to accommodate local multiplayer.
-				int32 ViewersThatSkipActor = 0;
-				for (const FNetViewer& CurViewer : Viewers)
-				{
-					const float DistSq = (GlobalActorInfo.WorldLocation - CurViewer.ViewLocation).SizeSquared();
-					SmallestDistanceSq = FMath::Min<float>(DistSq, SmallestDistanceSq);
-					if (ConnectionActorInfo.GetCullDistanceSquared() > 0.f && DistSq > ConnectionActorInfo.GetCullDistanceSquared())
-					{
-						++ViewersThatSkipActor;
-						break;
-					}
-				}
-
-				if (ViewersThatSkipActor >= Viewers.Num())
-				{
-					continue;
-				}
-
-				// At this point the replication flow uses distance from the player to affect replication priority.
-			}
+			// // Do we run explicit NCD calculations run per Actor?
+			// if (bUseNarrowPhaseNCDInterestCulling)
+			// {
+			// 	QUICK_SCOPE_CYCLE_COUNTER(NET_ClientEntityInterest_NarrowPhaseDistanceCalculation);
+			//
+			// 	float SmallestDistanceSq = TNumericLimits<float>::Max();
+			//
+			// 	// Multiple viewers exists in native Unreal to accommodate local multiplayer.
+			// 	int32 ViewersThatSkipActor = 0;
+			// 	for (const FNetViewer& CurViewer : Viewers)
+			// 	{
+			// 		const float DistSq = (GlobalActorInfo.WorldLocation - CurViewer.ViewLocation).SizeSquared();
+			// 		SmallestDistanceSq = FMath::Min<float>(DistSq, SmallestDistanceSq);
+			// 		if (ConnectionActorInfo.GetCullDistanceSquared() > 0.f && DistSq > ConnectionActorInfo.GetCullDistanceSquared())
+			// 		{
+			// 			++ViewersThatSkipActor;
+			// 			break;
+			// 		}
+			// 	}
+			//
+			// 	if (ViewersThatSkipActor >= Viewers.Num())
+			// 	{
+			// 		continue;
+			// 	}
+			//
+			// 	// At this point the replication flow uses distance from the player to affect replication priority.
+			// }
 
 			// At this point the replication flow does starvation scaling which we don't care about for interest.
 

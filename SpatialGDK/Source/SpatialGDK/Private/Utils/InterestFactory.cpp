@@ -518,18 +518,20 @@ void UnrealServerInterestFactory::AddClientInterestEntityIdQuery(Interest& OutIn
 	// If and when the Runtime has a better interest changing API, we can ask for a diff here instead.
 	TArray<Worker_EntityId> ClientInterestedEntities = GetClientInterestedEntityIds(PlayerController);
 
-	// MAKE DEBUGGING EASIER, REVERT ME
+	// MAKE DEBUGGING EASIER
 #if WITH_EDITOR
 	ClientInterestedEntities.Sort();
 #endif
 
 	UMetricsExport* MetricsExport =
-		Cast<UMetricsExport>(InActor->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
+		Cast<UMetricsExport>(InActor->GetWorld()->GetAuthGameMode()->GetComponentByClass(UMetricsExport::StaticClass()));
 	if (MetricsExport != nullptr)
 	{
 		USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PlayerController->NetConnection);
-		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
-		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("total_interested_entities"), ClientInterestedEntities.Num());
+		MetricsExport->PushMetric(
+			TEXT("total_interested_entities"), ClientInterestedEntities.Num(),
+			TMap<FString, FString>{
+				{ TEXT("PlayerControllerEntity"), FString::Printf(TEXT("%lld"), NetConnection->GetPlayerControllerEntityId()) } });
 	}
 
 	for (Worker_EntityId EntityId : ClientInterestedEntities)
@@ -560,19 +562,21 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 
 	UNetReplicationGraphConnection* ConnectionDriver =
 		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
+	USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(InPlayerController->NetConnection);
 	UMetricsExport* MetricsExport =
-		Cast<UMetricsExport>(InPlayerController->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
+		Cast<UMetricsExport>(InPlayerController->GetWorld()->GetAuthGameMode()->GetComponentByClass(UMetricsExport::StaticClass()));
 	if (MetricsExport != nullptr)
 	{
-		USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(InPlayerController->NetConnection);
-		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), SpatialNetConnection->GetPlayerControllerEntityId());
-		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("interested_spatialized_actors"),
-													ConnectionDriver->InterestedSpatializedActors.Num());
-		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("noninterested_spatialized_actors"),
-													ConnectionDriver->NoninterestedSpatializedActors.Num());
+		const TMap<FString, FString> PCTag =
+			TMap<FString, FString>{ { TEXT("PlayerControllerEntity"),
+									  FString::Printf(TEXT("%lld"), SpatialNetConnection->GetPlayerControllerEntityId()) } };
+		MetricsExport->PushMetric(TEXT("interested_spatialized_actors"), ConnectionDriver->InterestedSpatializedActors.Num(), PCTag);
+		MetricsExport->PushMetric(TEXT("noninterested_spatialized_actors"), ConnectionDriver->NoninterestedSpatializedActors.Num(), PCTag);
 	}
 
 	InterestedEntityIdList.Reserve(ClientInterestedActors.Num());
+
+	TMap<FString, uint32> InterestedActorTypes;
 
 	for (const AActor* Actor : ClientInterestedActors)
 	{
@@ -589,7 +593,19 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 			continue;
 		}
 
+		InterestedActorTypes.FindOrAdd(Actor->GetClass()->GetName()) += 1;
 		InterestedEntityIdList.Emplace(EntityId);
+	}
+
+	if (MetricsExport != nullptr)
+	{
+		for (const auto& ActorInfo : InterestedActorTypes)
+		{
+			TMap<FString, FString> Tags{ { TEXT("PlayerControllerEntity"),
+										   FString::Printf(TEXT("%lld"), SpatialNetConnection->GetPlayerControllerEntityId()) },
+										 { TEXT("Actor"), ActorInfo.Key } };
+			MetricsExport->PushMetric(TEXT("interest_actor_breakdown"), ActorInfo.Value, Tags);
+		}
 	}
 
 	UE_LOG(LogInterestFactory, Verbose, TEXT("Frame %u. Sending %i interest entities for %s"), RepGraph->GetReplicationGraphFrame(),

@@ -1,5 +1,7 @@
 #include "Utils/MetricsExport.h"
 
+#include <chrono>
+
 #include "EngineClasses/SpatialNetDriver.h"
 #include "HttpModule.h"
 #include "Interfaces/IHttpRequest.h"
@@ -58,6 +60,8 @@ void UMetricsExport::BeginPlay()
 
 	WorkerType = NetDriver->IsServer() ? TEXT("Server") : TEXT("Client");
 	WorkerId = NetDriver->Connection->GetWorkerId();
+	MetricsPrefix = FString::Printf(TEXT("worker_data,worker=%s,project=%s,deployment=%s,type=%s"), *WorkerId, *ProjectName,
+									*DeploymentName, *WorkerType);
 }
 
 void UMetricsExport::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -70,39 +74,39 @@ void UMetricsExport::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	if (TimeSinceLastUpdate > InfluxMetricsSendGapSecs)
 	{
 		const uint32 Fps = FramesSinceLastFpsWrite / (Now - LastUpdateSendTime);
-		WriteMetricsToProtocolBuffer(WorkerId, TEXT("fps"), Fps);
-		FlushProtocolBufferToDatabase();
+		PushMetric(TEXT("fps"), Fps, {});
+		FlushMetrics();
 		LastUpdateSendTime = Now;
 		FramesSinceLastFpsWrite = 0;
 	}
 }
 
-void UMetricsExport::WriteMetricsToProtocolBuffer(const FString& Worker, FString Field, float Value)
+void UMetricsExport::PushMetric(const FString& Field, float Value, const TMap<FString, FString>& Tags)
 {
-	MetricsMap.FindOrAdd(Worker).FindOrAdd(Field) = Value;
+	MetricsToFlush.Emplace(MetricData{ Field, Value, Tags });
 }
 
-void UMetricsExport::FlushProtocolBufferToDatabase()
+void UMetricsExport::FlushMetrics()
 {
-	for (const auto& WorkerMetrics : MetricsMap)
+	const auto EpochDiff = std::chrono::system_clock::now().time_since_epoch();
+	FString Timestamp = FString::Printf(TEXT("%lld"), std::chrono::duration_cast<std::chrono::nanoseconds>(EpochDiff).count());
+	for (const auto& Metric : MetricsToFlush)
 	{
-		FString Lines = "";
-
-		const FString& WorkerIdentifier = WorkerMetrics.Key;
-		Lines.Append(FString::Printf(TEXT("worker_data,worker=%s,project=%s,deployment=%s,type=%s "), *WorkerIdentifier, *ProjectName,
-									 *DeploymentName, *WorkerType));
-		const TMap<FString, float>& Metrics = WorkerMetrics.Value;
-		for (const auto& MetricKeyValue : Metrics)
+		FString Lines = MetricsPrefix;
+		for (const auto& Tag : Metric.Tags)
 		{
-			Lines.Append(FString::Printf(TEXT("%s=%f,"), *MetricKeyValue.Key, MetricKeyValue.Value));
+			Lines.Append(FString::Printf(TEXT(",%s=%s"), *Tag.Key, *Tag.Value));
 		}
-		Lines.RemoveFromEnd(TEXT(","));
-		PostLineProtocolToInfluxDBServer(Lines);
+		Lines.Append(TEXT(" "));
+		Lines.Append(FString::Printf(TEXT("%s=%f"), *Metric.MetricName, Metric.MetricValue));
+		Lines.Append(TEXT(" "));
+		Lines.Append(Timestamp);
+		ExportMetricOverHttp(Lines);
 	}
-	MetricsMap.Reset();
+	MetricsToFlush.Reset();
 }
 
-void UMetricsExport::PostLineProtocolToInfluxDBServer(const FString& Lines)
+void UMetricsExport::ExportMetricOverHttp(const FString& Lines)
 {
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = FHttpModule::Get().CreateRequest();
 	if (bPrintInfluxMetricsToLog)

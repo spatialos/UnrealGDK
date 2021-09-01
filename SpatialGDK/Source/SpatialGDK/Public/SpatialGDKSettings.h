@@ -488,6 +488,12 @@ public:
 	 * How many times per second will a client's entity ID list query be updated (set to 0 to ignore).
 	 */
 	UPROPERTY(EditAnywhere, config, Category = "Client Entity Interest", meta = (EditCondition = "bUseEntityIdListClientQueries"))
+	bool bPeriodicallyUpdateClientInterest;
+
+	/**
+	 * How many times per second will a client's entity ID list query be updated.
+	 */
+	UPROPERTY(EditAnywhere, config, Category = "Client Entity Interest", meta = (EditCondition = "bPeriodicallyUpdateClientInterest"))
 	float ClientEntityIdListQueryUpdateFrequency;
 
 	/**
