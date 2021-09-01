@@ -1439,10 +1439,6 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 			return;
 		}
 	}
-	UE_LOG(LogActorSystem, Verbose,
-		   TEXT("%s: Entity has been checked out on a worker which didn't spawn it. "
-				"Entity ID: %lld"),
-		   *NetDriver->Connection->GetWorkerId(), EntityId);
 
 	UClass* Class = ActorComponents.Metadata.GetNativeEntityClass();
 	if (Class == nullptr)
@@ -1505,6 +1501,11 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 			NetDriver->OwnershipCompletenessHandler->AddPlayerEntity(EntityId);
 		}
 	}
+
+	UE_LOG(LogActorSystem, Verbose,
+		   TEXT("%s: Entity has been checked out on a worker which didn't spawn it. "
+				"Entity ID: %lld, actor: %s"),
+		   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetPathName());
 }
 
 void ActorSystem::RefreshEntity(const Worker_EntityId EntityId)
@@ -2206,8 +2207,8 @@ void ActorSystem::RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor
 		// Actor no longer guaranteed to be in package map, but still useful for additional logging info
 		AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
 
-		UE_LOG(LogActorSystem, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"),
-			   *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
+		UE_LOG(LogActorSystem, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasServerAuthority: %d"),
+			   *GetPathNameSafe(Actor), EntityId, NetDriver->HasServerAuthority(EntityId));
 
 		if (EventTracer != nullptr)
 		{

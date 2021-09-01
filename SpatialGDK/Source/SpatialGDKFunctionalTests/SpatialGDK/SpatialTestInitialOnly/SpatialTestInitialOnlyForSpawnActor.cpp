@@ -32,23 +32,18 @@ void ASpatialTestInitialOnlyForSpawnActor::PrepareTest()
 
 	AddStep(TEXT("Init test environment"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Spawn cube
-		ASpatialTestInitialOnlySpawnActor* SpawnActor = GetWorld()->SpawnActor<ASpatialTestInitialOnlySpawnActor>(
-			FVector(-50.0f, 0.0f, 75.0f), FRotator::ZeroRotator, FActorSpawnParameters());
-
-		RegisterAutoDestroyActor(SpawnActor);
+		SpawnActor<ASpatialTestInitialOnlySpawnActor>(FVector(-50.0f, 0.0f, 75.0f));
 
 		AssertTrue(GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition, TEXT("Initial Only Enabled"));
 
 		// Spawn the TestPossessionPawn actor for Client 1 to possess.
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-		ATestPossessionPawn* TestCharacter =
-			GetWorld()->SpawnActor<ATestPossessionPawn>(FVector(0.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+		ATestPossessionPawn* TestCharacter = SpawnActor<ATestPossessionPawn>(FVector(0.0f, 0.0f, 40.0f));
 		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 
 		// Set a reference to the previous Pawn so that it can be processed back in the last step of the test
 		OriginalPawn = TPair<AController*, APawn*>(PlayerController, PlayerController->GetPawn());
 
-		RegisterAutoDestroyActor(TestCharacter);
 		PlayerController->Possess(TestCharacter);
 
 		FinishStep();

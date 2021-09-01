@@ -81,6 +81,7 @@ SPATIALGDKEDITOR_API void WriteComponentSetBySchemaType(const USchemaDatabase* S
 														const FString& SchemaOutputPath);
 
 SPATIALGDKEDITOR_API bool CreatePartitionAuthoritySet(FString SchemaInputPath = FString(), FString SchemaOutputPath = FString());
+SPATIALGDKEDITOR_API bool CreateServerWorkerAuthoritySet(FString SchemaInputPath = FString(), FString SchemaOutputPath = FString());
 
 } // namespace Schema
 } // namespace SpatialGDKEditor

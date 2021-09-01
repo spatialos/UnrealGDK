@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "RelevancyTest.h"
+#include "GameFramework/PlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/RelevancyTestActors.h"
 
@@ -39,39 +40,25 @@ void ARelevancyTest::PrepareTest()
 			AssertIsValid(GridStrategy, TEXT("Invalid LBS"));
 			const FVector WorkerPos = GridStrategy->GetWorkerEntityPosition();
 
-			AlwaysRelevantActor =
-				GetWorld()->SpawnActor<AAlwaysRelevantTestActor>(WorkerPos, FRotator::ZeroRotator, FActorSpawnParameters());
-			AlwaysRelevantServerOnlyActor =
-				GetWorld()->SpawnActor<AAlwaysRelevantServerOnlyTestActor>(WorkerPos, FRotator::ZeroRotator, FActorSpawnParameters());
+			AlwaysRelevantActor = SpawnActor<AAlwaysRelevantTestActor>(WorkerPos);
+			AlwaysRelevantServerOnlyActor = SpawnActor<AAlwaysRelevantServerOnlyTestActor>(WorkerPos);
 
-			AController* PlayerController = Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
-			if (!AssertTrue(IsValid(PlayerController), TEXT("Failed to retrieve player controller")))
-			{
-				return;
-			}
+			AController* PlayerController = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
 
 			if (PlayerController->HasAuthority())
 			{
-				OnlyRelevantToOwnerTestActor =
-					GetWorld()->SpawnActor<AOnlyRelevantToOwnerTestActor>(WorkerPos, FRotator::ZeroRotator, FActorSpawnParameters());
-				UseOwnerRelevancyTestActor =
-					GetWorld()->SpawnActor<AUseOwnerRelevancyTestActor>(WorkerPos, FRotator::ZeroRotator, FActorSpawnParameters());
+				OnlyRelevantToOwnerTestActor = SpawnActor<AOnlyRelevantToOwnerTestActor>(WorkerPos);
+				UseOwnerRelevancyTestActor = SpawnActor<AUseOwnerRelevancyTestActor>(WorkerPos);
 
 				OnlyRelevantToOwnerTestActor->SetOwner(PlayerController);
 				UseOwnerRelevancyTestActor->SetOwner(OnlyRelevantToOwnerTestActor);
 
 				ActiveActors.Add(OnlyRelevantToOwnerTestActor);
 				ActiveActors.Add(UseOwnerRelevancyTestActor);
-
-				RegisterAutoDestroyActor(OnlyRelevantToOwnerTestActor);
-				RegisterAutoDestroyActor(UseOwnerRelevancyTestActor);
 			}
 
 			ActiveActors.Add(AlwaysRelevantActor);
 			ActiveActors.Add(AlwaysRelevantServerOnlyActor);
-
-			RegisterAutoDestroyActor(AlwaysRelevantActor);
-			RegisterAutoDestroyActor(AlwaysRelevantServerOnlyActor);
 
 			FinishStep();
 		});

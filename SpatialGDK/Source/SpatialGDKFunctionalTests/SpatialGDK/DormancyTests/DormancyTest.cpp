@@ -4,11 +4,6 @@
 
 #include "DormancyTestActor.h"
 
-AActor* ADormancyTest::CreateDormancyTestActor()
-{
-	return GetWorld()->SpawnActor<ADormancyTestActor>({ 0.0f, 0.0f, 0.0f }, FRotator::ZeroRotator);
-}
-
 void ADormancyTest::RequireDormancyTestState(const TEnumAsByte<enum ENetDormancy> ExpectedNetDormancy, const int ExpectedTestIntProp,
 											 const int ExpectedCount)
 {
