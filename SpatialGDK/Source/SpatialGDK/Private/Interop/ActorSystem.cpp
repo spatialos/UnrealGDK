@@ -373,8 +373,6 @@ void ActorSystem::Advance()
 	ProcessAuthorityGains(EntityAuthSubView);
 	ProcessAuthorityGains(EntityOwnershipSubView);
 
-	ProcessClientInterestUpdates();
-
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
 	{
 		if (Delta.Type == EntityDelta::ADD || Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
@@ -417,6 +415,11 @@ void ActorSystem::Advance()
 		}
 	}
 #endif
+}
+
+void ActorSystem::Flush()
+{
+	ProcessClientInterestUpdates();
 }
 
 UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)
@@ -2336,15 +2339,24 @@ void ActorSystem::UpdateInterestComponent(AActor* Actor)
 
 void ActorSystem::UpdateClientInterest(AActor* Actor, const bool bOverwrite)
 {
-	if (Actor->IsA(APlayerController::StaticClass()) && GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
+	if (!ensure(GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries))
 	{
-		Worker_CommandRequest CommandRequest{};
-		const bool bRequestValid = NetDriver->InterestFactory->CreateClientInterestDiff(Actor, CommandRequest, bOverwrite);
+		return;
+	}
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
+	{
+		SpatialGDK::ChangeInterestRequest Request;
+		const bool bRequestValid = NetDriver->InterestFactory->CreateClientInterestDiff(PlayerController, Request, bOverwrite);
 
 		if (bRequestValid)
 		{
+			Worker_CommandRequest CommandRequest{};
+			Request.DebugOutput();
+			Request.CreateRequest(CommandRequest);
+
 			const Worker_EntityId SystemEntityId =
-				Cast<USpatialNetConnection>(Actor->GetNetConnection())->ConnectionClientWorkerSystemEntityId;
+				Cast<USpatialNetConnection>(PlayerController->GetNetConnection())->ConnectionClientWorkerSystemEntityId;
 
 			NetDriver->Connection->SendCommandRequest(SystemEntityId, &CommandRequest, RETRY_MAX_TIMES, {});
 

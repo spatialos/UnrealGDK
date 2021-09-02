@@ -268,11 +268,7 @@ Interest UnrealServerInterestFactory::CreateInterest(AActor* InActor, const FCla
 
 	if (InActor->IsA(APlayerController::StaticClass()))
 	{
-		if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
-		{
-			// AddClientInterestEntityIdQuery(InActor);
-		}
-		else
+		if (!GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
 		{
 			// Put the "main" client interest queries on the player controller
 			AddClientPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
@@ -366,12 +362,15 @@ void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(I
 }
 #endif
 
-bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor, Worker_CommandRequest& Request,
-														   const bool bOverwrite) const
+bool UnrealServerInterestFactory::CreateClientInterestDiff(const APlayerController* PlayerController,
+														   ChangeInterestRequest& ChangeInterestRequestData, const bool bOverwrite) const
 {
-	const APlayerController* PlayerController = Cast<APlayerController>(InActor);
+	USpatialNetConnection* NetConnection =
+		(PlayerController != nullptr) ? Cast<USpatialNetConnection>(PlayerController->NetConnection) : nullptr;
 	if (!ensure(GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
-		|| !ensureMsgf(PlayerController != nullptr, TEXT("Only PCs can use client entity interest: %s"), *GetNameSafe(InActor)))
+		|| !ensureMsgf(PlayerController != nullptr, TEXT("Only PCs can use client entity interest: %s"), *GetNameSafe(PlayerController))
+		|| !ensureMsgf(NetConnection != nullptr, TEXT("Failed to retieve USpatialNetConnection from controller: %s"),
+					   *GetNameSafe(PlayerController)))
 	{
 		return false;
 	}
@@ -385,10 +384,8 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 	ClientInterestedEntities.Sort();
 #endif
 
-	static ChangeInterestRequest ChangeInterestRequestData;
 	ChangeInterestRequestData.Clear();
 
-	if (USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PlayerController->NetConnection))
 	{
 		// Add non-auth interest
 		TSet<Worker_EntityId_Key> FullInterested;
@@ -397,15 +394,19 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 		{
 			FullInterested.Add(EntityId);
 		}
-		TSet<Worker_EntityId_Key> Add = FullInterested.Difference(NetConnection->EntityInterestCache);
-		TSet<Worker_EntityId_Key> Remove = NetConnection->EntityInterestCache.Difference(FullInterested);
-		NetConnection->EntityInterestCache = FullInterested;
 
+		TSet<Worker_EntityId_Key> Add, Remove;
 		if (bOverwrite)
 		{
 			Add = FullInterested;
 			Remove.Empty();
 		}
+		else
+		{
+			Add = FullInterested.Difference(NetConnection->EntityInterestCache);
+			Remove = NetConnection->EntityInterestCache.Difference(FullInterested);
+		}
+		NetConnection->EntityInterestCache = FullInterested;
 
 		ChangeInterestRequestData.SystemEntityId = NetConnection->ConnectionClientWorkerSystemEntityId;
 
@@ -452,15 +453,17 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 			FullAuth.Add(PlayerStateEntityId);
 		}
 
-		Add = FullAuth.Difference(NetConnection->EntityAuthCache);
-		Remove = NetConnection->EntityAuthCache.Difference(FullAuth);
-		NetConnection->EntityAuthCache = FullAuth;
-
 		if (bOverwrite)
 		{
 			Add = FullAuth;
 			Remove.Empty();
 		}
+		else
+		{
+			Add = FullAuth.Difference(NetConnection->EntityAuthCache);
+			Remove = NetConnection->EntityAuthCache.Difference(FullAuth);
+		}
+		NetConnection->EntityAuthCache = FullAuth;
 
 		if (Add.Num() > 0)
 		{
@@ -489,16 +492,13 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 	}
 
 	UMetricsExport* MetricsExport =
-		Cast<UMetricsExport>(InActor->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
+		Cast<UMetricsExport>(PlayerController->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
 	if (MetricsExport != nullptr)
 	{
-		USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PlayerController->NetConnection);
 		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
 		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("total_interested_entities"), ClientInterestedEntities.Num());
 	}
 
-	ChangeInterestRequestData.DebugOutput();
-	ChangeInterestRequestData.CreateRequest(Request);
 	return true;
 }
 

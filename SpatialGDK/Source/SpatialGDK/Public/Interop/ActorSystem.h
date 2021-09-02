@@ -51,6 +51,7 @@ public:
 				SpatialEventTracer* InEventTracer);
 
 	void Advance();
+	void Flush();
 
 	UnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);
 
