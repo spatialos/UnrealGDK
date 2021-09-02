@@ -376,7 +376,6 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const AActor* InActor
 		return false;
 	}
 
-	// If and when the Runtime has a better interest changing API, we can ask for a diff here instead.
 	TArray<Worker_EntityId> ClientInterestedEntities = GetClientInterestedEntityIds(PlayerController);
 
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(PlayerController->GetNetDriver());

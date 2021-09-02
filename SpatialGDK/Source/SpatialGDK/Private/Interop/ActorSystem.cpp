@@ -543,7 +543,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						// Flush PC interest on handover
 						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
 						{
-							Worker_EntityId ControllerEntityId =
+							const Worker_EntityId ControllerEntityId =
 								NetDriver->PackageMap->GetEntityIdFromObject(Actor->GetNetConnection()->PlayerController);
 							if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 							{
@@ -811,8 +811,7 @@ void ActorSystem::DestroySubObject(const FUnrealObjectRef& ObjectRef, UObject& O
 
 void ActorSystem::MarkClientInterestDirty(Worker_EntityId EntityId, bool bOverwrite)
 {
-	bool& bMapOverwrite = ClientInterestDirty.FindOrAdd(EntityId);
-	bMapOverwrite |= bOverwrite;
+	ClientInterestDirty.FindOrAdd(EntityId) |= bOverwrite;
 }
 
 void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
@@ -2349,7 +2348,7 @@ void ActorSystem::UpdateClientInterest(AActor* Actor, const bool bOverwrite)
 
 			NetDriver->Connection->SendCommandRequest(SystemEntityId, &CommandRequest, RETRY_MAX_TIMES, {});
 
-			UE_LOG(LogActorSystem, Log, TEXT("Interest diff: worker entity id %lld"), SystemEntityId);
+			UE_LOG(LogActorSystem, Verbose, TEXT("Interest diff: worker entity id %lld"), SystemEntityId);
 		}
 		else
 		{
