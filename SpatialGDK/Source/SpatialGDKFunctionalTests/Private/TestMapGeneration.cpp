@@ -79,7 +79,7 @@ bool GenerateTestMaps()
 			// Okay, must admit, not completely sure what's going on here, seems like even though the commandlet is
 			// the outer of the newly generated object, the object still gets GCed when creating a new map, so have to add
 			// to root here to prevent GC
-			TestMapObjPtr->AddToRoot(); 
+			TestMapObjPtr->AddToRoot();
 
 			UE_LOG(LogTestMapGeneration, Display, TEXT("Creating the %s."), *TestMap->GetMapName());
 			TestMap->GenerateMap();
