@@ -40,6 +40,12 @@ ACrossServerMultiPossessionTest::ACrossServerMultiPossessionTest()
 	Description = TEXT("Test Cross-Server Multi Controllers Possess 1 Pawn");
 }
 
+void ACrossServerMultiPossessionTest::CreateCustomContentForMap()
+{
+	Super::CreateCustomContentForMap();
+	SetNumberOfClients(3);
+}
+
 void ACrossServerMultiPossessionTest::PrepareTest()
 {
 	ASpatialTestRemotePossession::PrepareTest();

@@ -3,41 +3,44 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "GeneratableTestMap.h"
 #include "GenerateTestMapsCommandlet.h"
 #include "GeneratedTestMap.generated.h"
+
+enum class EMapCategory
+{
+	CI_PREMERGE,
+	CI_PREMERGE_SPATIAL_ONLY,
+	CI_NIGHTLY,
+	CI_NIGHTLY_SPATIAL_ONLY,
+	NO_CI
+};
 
 /**
  * The base class for automatically generating test maps.
  * Descend from this and your class should automatically be picked up by the GenerateTestMapsCommandlet for generation.
  */
-UCLASS(Abstract)
-class SPATIALGDKFUNCTIONALTESTS_API UGeneratedTestMap : public UObject
+UCLASS()
+class SPATIALGDKFUNCTIONALTESTS_API UGeneratedTestMap : public UObject, public IGeneratableTestMap
 {
 	GENERATED_BODY()
 
 public:
 	UGeneratedTestMap();
-	bool GenerateMap();
-	bool GenerateCustomConfig();
-	virtual bool ShouldGenerateMap() { return true; } // To control whether to generate a map from this class
-	FString GetMapName() { return MapName; }
-	static FString GetGeneratedMapFolder();
-
-protected:
-	enum class EMapCategory
-	{
-		CI_PREMERGE,
-		CI_PREMERGE_SPATIAL_ONLY,
-		CI_NIGHTLY,
-		CI_NIGHTLY_SPATIAL_ONLY,
-		NO_CI
-	};
 
 	// This constructor with arguments is the one that the descended classes should be using within their no-argument constructor.
 	UGeneratedTestMap(EMapCategory MapCategory, FString MapName);
 
-	// This is what test maps descending from this class should normally override to add their own content to the map
-	virtual void CreateCustomContentForMap() {}
+	// Should be used directly after the no argument constructor.
+	void Init(EMapCategory InMapCategory, FString InMapName);
+
+	void GenerateMap() override;
+	bool SaveMap() override;
+	bool GenerateCustomConfig() override;
+	virtual bool ShouldGenerateMap() override { return this->GetClass() != UGeneratedTestMap::StaticClass(); } // To control whether to generate a map from this class
+	FString GetMapName() override { return MapName; }
+	static FString GetGeneratedMapFolder();
 
 	// You may be asking: why do we have these two simple functions here (one private AddActorToLevel and one public)?
 	// The answer is linkers & compilers. I wanted an easy templated function that will automatically cast the result of adding an actor to
@@ -58,6 +61,16 @@ protected:
 	// Use this to override the default number of clients when running the test map.
 	void SetNumberOfClients(int32 InNumberOfClients) { NumberOfClients = InNumberOfClients; }
 
+	virtual UWorld* GetWorld() const override;
+
+	AActor* AddActorToLevel(ULevel* Level, UClass* Class, const FTransform& Transform);
+
+	void SetMapCategory(const EMapCategory InMapCategory);
+
+protected:
+	// This is what test maps descending from this class should normally override to add their own content to the map
+	virtual void CreateCustomContentForMap() {}
+
 	UPROPERTY()
 	UWorld* World;
 	UPROPERTY()
@@ -66,9 +79,7 @@ protected:
 	UMaterial* BasicShapeMaterial;
 
 private:
-	AActor* AddActorToLevel(ULevel* Level, UClass* Class, const FTransform& Transform);
 	void GenerateBaseMap();
-	bool SaveMap();
 	FString GetPathToSaveTheMap();
 
 	bool bIsValidForGeneration;
@@ -76,4 +87,6 @@ private:
 	FString MapName;
 	FString CustomConfigString;
 	TOptional<int32> NumberOfClients;
+
+	bool bIsGeneratingMap;
 };

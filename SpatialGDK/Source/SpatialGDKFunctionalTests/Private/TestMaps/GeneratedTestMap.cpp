@@ -13,7 +13,7 @@
 #include "UObject/ConstructorHelpers.h"
 
 UGeneratedTestMap::UGeneratedTestMap()
-	: bIsValidForGeneration(false)
+	: bIsValidForGeneration(false), bIsGeneratingMap(false)
 {
 	ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneAsset(TEXT("/Engine/BasicShapes/Plane.Plane"));
 	check(PlaneAsset.Succeeded());
@@ -32,18 +32,31 @@ UGeneratedTestMap::UGeneratedTestMap(EMapCategory InMapCategory, FString InMapNa
 	bIsValidForGeneration = true;
 }
 
+void UGeneratedTestMap::Init(EMapCategory InMapCategory, FString InMapName)
+{
+	MapCategory = InMapCategory;
+	MapName = InMapName;
+	bIsValidForGeneration = true;
+}
+
 AActor* UGeneratedTestMap::AddActorToLevel(ULevel* Level, UClass* Class, const FTransform& Transform)
 {
 	return GEditor->AddActor(Level, Class, Transform);
 }
 
-bool UGeneratedTestMap::GenerateMap()
+void UGeneratedTestMap::SetMapCategory(const EMapCategory InMapCategory)
+{
+	checkf(bIsGeneratingMap, TEXT("SetMapCategory should only be called between GenerateMap and SaveMap - most likely within CreateCustomContentForMap."));
+	MapCategory = InMapCategory;
+}
+
+void UGeneratedTestMap::GenerateMap()
 {
 	checkf(bIsValidForGeneration, TEXT("This test map object is not valid for map generation, please use the UGeneratedTestMap constructor "
 									   "with arguments when deriving from the base UGeneratedTestMap."));
+	bIsGeneratingMap = true;
 	GenerateBaseMap();
 	CreateCustomContentForMap();
-	return SaveMap();
 }
 
 bool UGeneratedTestMap::GenerateCustomConfig()
@@ -114,6 +127,7 @@ bool UGeneratedTestMap::SaveMap()
 {
 	const bool bSuccess = FEditorFileUtils::SaveLevel(World->GetCurrentLevel(), GetPathToSaveTheMap());
 	UE_CLOG(!bSuccess, LogGenerateTestMapsCommandlet, Error, TEXT("Failed to save the map %s."), *GetMapName());
+	bIsGeneratingMap = false;
 	return bSuccess;
 }
 
@@ -143,4 +157,10 @@ FString UGeneratedTestMap::GetPathToSaveTheMap()
 	}
 
 	return GetGeneratedMapFolder() / DirName / MapName + FPackageName::GetMapPackageExtension();
+}
+
+UWorld* UGeneratedTestMap::GetWorld() const
+{
+	checkf(bIsGeneratingMap, TEXT("GetWorld should only be called between GenerateMap and SaveMap - most likely within CreateCustomContentForMap."));
+	return World;
 }

@@ -10,6 +10,9 @@
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
 #include "SpatialFunctionalTestRequireHandler.h"
 #include "SpatialFunctionalTestStep.h"
+#include "TestMaps/GeneratedTestMap.h"
+#include "EngineClasses/SpatialWorldSettings.h"
+
 #include "SpatialFunctionalTest.generated.h"
 
 // Blueprint Delegate
@@ -44,7 +47,7 @@ enum class ERegisterToAutoDestroy
  */
 UCLASS(Blueprintable, SpatialType = NotPersistent,
 	   hidecategories = (Input, Movement, Collision, Rendering, Replication, LOD, "Utilities|Transformation"))
-class SPATIALGDKFUNCTIONALTESTS_API ASpatialFunctionalTest : public AFunctionalTest
+class SPATIALGDKFUNCTIONALTESTS_API ASpatialFunctionalTest : public AFunctionalTest, public IGeneratableTestMap
 {
 	GENERATED_BODY()
 
@@ -60,6 +63,9 @@ private:
 public:
 	ASpatialFunctionalTest();
 
+	// This constructor should be used by within the constructor of tests that wish to be standalone.
+	ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients = 1, const FVector& InTestPositionInWorld = FVector::ZeroVector);
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void BeginPlay() override;
@@ -68,7 +74,6 @@ public:
 
 	virtual void OnAuthorityGained() override;
 
-	// Should be called from the server with authority over this actor.
 	virtual void RegisterAutoDestroyActor(AActor* ActorToAutoDestroy) override;
 
 	virtual void LogStep(ELogVerbosity::Type Verbosity, const FString& Message) override;
@@ -403,6 +408,52 @@ public:
 	// Clears all the snapshots taken, not meant to be used directly.
 	static void ClearAllTakenSnapshots();
 
+	// Members used for tests that are also their own standalone map.
+
+	virtual void CreateCustomContentForMap() {}
+
+	void GenerateMap() override;
+
+	bool ShouldGenerateMap() override;
+
+	bool SaveMap() override;
+
+	template <class T>
+	T& AddActor(const FTransform& Transform = FTransform::Identity)
+	{
+		return GeneratedTestMap->AddActorToLevel<T>(GeneratedTestMap->GetWorld()->GetCurrentLevel(), Transform);
+	}
+
+	bool GenerateCustomConfig() override;
+
+	FString GetMapName() override;
+
+protected:
+	// Derived tests can call this to set the string that will be printed into the .ini file to be used with this map to override
+	// settings specifically for this test map. Should be called during constructor.
+	void SetCustomConfig(FString String);
+
+	ASpatialWorldSettings* GetWorldSettings();
+
+	// The constructor is the intended way to set the following settings, however these setters can be used if a test is not a direct descendant of ASpatialFunctionalTest and needs to modify these settings.
+	void SetMapCiCategory(const EMapCategory MapCiCategory);
+
+	void SetNumberOfClients(const int NumberOfClients);
+
+	void SetTestPositionInWorld(const FVector Position);
+
+	// Should only be used by non-leaf functional test base classes that do not want to be run as standalone tests.
+	// bIsStandaloneTest defaults to true when tests use the standalone test constructor.
+	void SetIsNotStandaloneTest();
+
+private:
+	bool bIsStandaloneTest;
+
+	UPROPERTY()
+	UGeneratedTestMap* GeneratedTestMap;
+
+	FVector TestPositionInWorld;
+
 protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }
 	void DeleteActorsRegisteredForAutoDestroy();
@@ -462,6 +513,8 @@ private:
 	// Current Step Index, < 0 if not executing any, check consts at the top.
 	UPROPERTY(ReplicatedUsing = OnReplicated_CurrentStepIndex, Transient)
 	int CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_NOT_STARTED;
+
+	void Init();
 
 	UFUNCTION()
 	void OnReplicated_CurrentStepIndex();

@@ -2,20 +2,33 @@
 
 #include "SpatialTestRemotePossession.h"
 
+#include "CrossServerPossessionGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
 #include "TestPossessionPlayerController.h"
+#include "TestWorkerSettings.h"
 
 const float ASpatialTestRemotePossession::MaxWaitTime = 2.0f;
 
 ASpatialTestRemotePossession::ASpatialTestRemotePossession()
-	: Super()
+	: ASpatialFunctionalTest(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, 1)
 	, LocationOfPawn(500.0f, 500.0f, 50.0f)
 {
 	Author = "Jay";
 	Description = TEXT("Test Actor Remote Possession");
+}
+
+void ASpatialTestRemotePossession::CreateCustomContentForMap()
+{
+	GetWorldSettings()->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
+	GetWorldSettings()->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
+
+	if (this->GetClass() == ASpatialTestRemotePossession::StaticClass())
+	{
+		SetIsNotStandaloneTest();
+	}
 }
 
 ATestPossessionPawn* ASpatialTestRemotePossession::GetPawn()

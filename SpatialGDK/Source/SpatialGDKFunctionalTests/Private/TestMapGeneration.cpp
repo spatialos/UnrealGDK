@@ -1,6 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "TestMapGeneration.h"
+
+#include "SpatialFunctionalTest.h"
 #include "SpatialGDKEditor/Public/SpatialTestSettings.h"
 #include "TestMaps/GeneratedTestMap.h"
 
@@ -52,7 +54,9 @@ bool GenerateTestMaps()
 	TArray<UClass*> TestMapClasses;
 	for (TObjectIterator<UClass> Iter; Iter; ++Iter)
 	{
-		if (Iter->IsChildOf(UGeneratedTestMap::StaticClass()) && *Iter != UGeneratedTestMap::StaticClass())
+		if (Iter->IsChildOf(UGeneratedTestMap::StaticClass())
+		|| Iter->IsChildOf(ASpatialFunctionalTest::StaticClass())
+		)
 		{
 			TestMapClasses.Add(*Iter);
 		}
@@ -60,14 +64,27 @@ bool GenerateTestMaps()
 
 	for (UClass* TestMapClass : TestMapClasses)
 	{
-		UGeneratedTestMap* TestMap = NewObject<UGeneratedTestMap>(GetTransientPackage(), TestMapClass);
-		TestMap->AddToRoot(); // Okay, must admit, not completely sure what's going on here, seems like even though the commandlet is
-							  // the outer of the newly generated object, the object still gets GCed when creating a new map, so have to add
-							  // to root here to prevent GC
+		IGeneratableTestMap* TestMap;
+		if (TestMapClass->IsChildOf(ASpatialFunctionalTest::StaticClass()))
+		{
+			TestMap = NewObject<ASpatialFunctionalTest>(GetTransientPackage(), TestMapClass);
+		}
+		else
+		{
+			TestMap = NewObject<UGeneratedTestMap>(GetTransientPackage(), TestMapClass);
+		}
+
+		UObject* TestMapObjPtr = CastChecked<UObject>(TestMap);
+
 		if (TestMap->ShouldGenerateMap())
 		{
+			TestMapObjPtr->AddToRoot(); // Okay, must admit, not completely sure what's going on here, seems like even though the commandlet is
+			// the outer of the newly generated object, the object still gets GCed when creating a new map, so have to add
+			// to root here to prevent GC
+
 			UE_LOG(LogTestMapGeneration, Display, TEXT("Creating the %s."), *TestMap->GetMapName());
-			if (!TestMap->GenerateMap())
+			TestMap->GenerateMap();
+			if (!TestMap->SaveMap())
 			{
 				bSuccess = false;
 				UE_LOG(LogTestMapGeneration, Error, TEXT("Failed to create the map for %s."), *TestMap->GetMapName());
@@ -77,8 +94,9 @@ bool GenerateTestMaps()
 				bSuccess = false;
 				UE_LOG(LogTestMapGeneration, Error, TEXT("Failed to create the custom config for %s."), *TestMap->GetMapName());
 			}
+
+			TestMapObjPtr->RemoveFromRoot();
 		}
-		TestMap->RemoveFromRoot();
 	}
 
 	// Success

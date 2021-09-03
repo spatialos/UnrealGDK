@@ -14,5 +14,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ACrossServerMultiPossessionTest : public ASp
 public:
 	ACrossServerMultiPossessionTest();
 
+	virtual void CreateCustomContentForMap() override;
+
 	virtual void PrepareTest() override;
 };
