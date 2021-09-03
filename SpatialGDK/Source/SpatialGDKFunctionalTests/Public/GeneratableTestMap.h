@@ -13,10 +13,7 @@ class IGeneratableTestMap
 	GENERATED_BODY()
 
 public:
-	virtual void GenerateMap()
-	{
-		check(false);
-	}
+	virtual void GenerateMap() { check(false); }
 
 	virtual bool SaveMap()
 	{

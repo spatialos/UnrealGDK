@@ -38,7 +38,10 @@ public:
 	void GenerateMap() override;
 	bool SaveMap() override;
 	bool GenerateCustomConfig() override;
-	virtual bool ShouldGenerateMap() override { return this->GetClass() != UGeneratedTestMap::StaticClass(); } // To control whether to generate a map from this class
+	virtual bool ShouldGenerateMap() override
+	{
+		return this->GetClass() != UGeneratedTestMap::StaticClass();
+	} // To control whether to generate a map from this class
 	FString GetMapName() override { return MapName; }
 	static FString GetGeneratedMapFolder();
 

@@ -13,7 +13,8 @@
 #include "UObject/ConstructorHelpers.h"
 
 UGeneratedTestMap::UGeneratedTestMap()
-	: bIsValidForGeneration(false), bIsGeneratingMap(false)
+	: bIsValidForGeneration(false)
+	, bIsGeneratingMap(false)
 {
 	ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneAsset(TEXT("/Engine/BasicShapes/Plane.Plane"));
 	check(PlaneAsset.Succeeded());
@@ -46,7 +47,8 @@ AActor* UGeneratedTestMap::AddActorToLevel(ULevel* Level, UClass* Class, const F
 
 void UGeneratedTestMap::SetMapCategory(const EMapCategory InMapCategory)
 {
-	checkf(bIsGeneratingMap, TEXT("SetMapCategory should only be called between GenerateMap and SaveMap - most likely within CreateCustomContentForMap."));
+	checkf(bIsGeneratingMap,
+		   TEXT("SetMapCategory should only be called between GenerateMap and SaveMap - most likely within CreateCustomContentForMap."));
 	MapCategory = InMapCategory;
 }
 
@@ -161,6 +163,7 @@ FString UGeneratedTestMap::GetPathToSaveTheMap()
 
 UWorld* UGeneratedTestMap::GetWorld() const
 {
-	checkf(bIsGeneratingMap, TEXT("GetWorld should only be called between GenerateMap and SaveMap - most likely within CreateCustomContentForMap."));
+	checkf(bIsGeneratingMap,
+		   TEXT("GetWorld should only be called between GenerateMap and SaveMap - most likely within CreateCustomContentForMap."));
 	return World;
 }

@@ -5,13 +5,13 @@
 #include "Algo/Count.h"
 #include "CoreMinimal.h"
 #include "Engine/World.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "EngineUtils.h"
 #include "FunctionalTest.h"
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
 #include "SpatialFunctionalTestRequireHandler.h"
 #include "SpatialFunctionalTestStep.h"
 #include "TestMaps/GeneratedTestMap.h"
-#include "EngineClasses/SpatialWorldSettings.h"
 
 #include "SpatialFunctionalTest.generated.h"
 
@@ -64,7 +64,8 @@ public:
 	ASpatialFunctionalTest();
 
 	// This constructor should be used by within the constructor of tests that wish to be standalone.
-	ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients = 1, const FVector& InTestPositionInWorld = FVector::ZeroVector);
+	ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients = 1,
+						   const FVector& InTestPositionInWorld = FVector::ZeroVector);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -435,7 +436,8 @@ protected:
 
 	ASpatialWorldSettings* GetWorldSettings();
 
-	// The constructor is the intended way to set the following settings, however these setters can be used if a test is not a direct descendant of ASpatialFunctionalTest and needs to modify these settings.
+	// The constructor is the intended way to set the following settings, however these setters can be used if a test is not a direct
+	// descendant of ASpatialFunctionalTest and needs to modify these settings.
 	void SetMapCiCategory(const EMapCategory MapCiCategory);
 
 	void SetNumberOfClients(const int NumberOfClients);

@@ -41,7 +41,8 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	Init();
 }
 
-ASpatialFunctionalTest::ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients /*=1*/, const FVector& InTestPositionInWorld /*=FVector::ZeroVector*/)
+ASpatialFunctionalTest::ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients /*=1*/,
+											   const FVector& InTestPositionInWorld /*=FVector::ZeroVector*/)
 	: Super()
 	, FlowControllerSpawner(this, ASpatialFunctionalTestFlowController::StaticClass())
 	, bIsStandaloneTest(true)
@@ -1190,7 +1191,6 @@ void ASpatialFunctionalTest::SetTestPositionInWorld(const FVector Position)
 {
 	TestPositionInWorld = Position;
 }
-
 
 void ASpatialFunctionalTest::SetIsNotStandaloneTest()
 {
