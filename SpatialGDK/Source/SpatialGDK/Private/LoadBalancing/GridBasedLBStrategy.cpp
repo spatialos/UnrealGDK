@@ -274,6 +274,11 @@ bool UGridBasedLBStrategy::IsStrategyWorkerAware() const
 
 void UGridBasedLBStrategy::GetLegacyLBInformation(FLegacyLBContext& Ctx) const
 {
+	if (!ensureAlwaysMsgf(VirtualWorkerIds.Num() == WorkerCells.Num(),
+						  TEXT("Found a mismatch between virtual worker count and worker cells count in load balancing strategy")))
+	{
+		return;
+	}
 	if (Ctx.Layers.Num() == 0)
 	{
 		Ctx.Layers.AddDefaulted();

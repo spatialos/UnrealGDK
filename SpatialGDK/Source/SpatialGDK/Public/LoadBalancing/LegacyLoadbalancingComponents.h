@@ -187,14 +187,14 @@ struct LegacyLB_CustomWorkerAssignments
 {
 	static constexpr Worker_ComponentId ComponentId = 180500;
 
-	LegacyLB_CustomWorkerAssignments() {}
+	LegacyLB_CustomWorkerAssignments() = default;
 
-	LegacyLB_CustomWorkerAssignments(const ComponentData& Data)
+	explicit LegacyLB_CustomWorkerAssignments(const ComponentData& Data)
 		: LegacyLB_CustomWorkerAssignments(Data.GetUnderlying())
 	{
 	}
 
-	LegacyLB_CustomWorkerAssignments(Schema_ComponentData* Data)
+	explicit LegacyLB_CustomWorkerAssignments(Schema_ComponentData* Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 		ReadFromObject(ComponentObject);

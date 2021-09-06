@@ -360,6 +360,7 @@ void USpatialNetDriverDebugContext::UpdateServerWorkerData()
 		UWorld* World = NetDriver->GetWorld();
 		if (World == nullptr)
 		{
+			// Can happen during shutdown.
 			return;
 		}
 
@@ -370,21 +371,24 @@ void USpatialNetDriverDebugContext::UpdateServerWorkerData()
 		}
 
 		USpatialServerWorkerSystem* ServerWorkerData = GameInstance->GetSubsystem<USpatialServerWorkerSystem>();
-		if (ensure(ServerWorkerData))
+		if (!ensureAlwaysMsgf(ServerWorkerData != nullptr,
+							  TEXT("Expected a ServerWorkerSystem, since the NetDriver has the implementation.")))
 		{
-			SpatialGDK::LegacyLB_CustomWorkerAssignments Assignments;
-			for (const auto& Delegation : SemanticDelegations)
-			{
-				Assignments.LabelToVirtualWorker.Add(Delegation.Key, Delegation.Value);
-			}
-			for (FName Label : SemanticInterest)
-			{
-				Assignments.AdditionalInterest.Add(Label);
-			}
-			TArray<SpatialGDK::ComponentUpdate> Updates;
-			Updates.Add(Assignments.CreateComponentUpdate());
-			ServerWorkerData->UpdateServerWorkerData(MoveTemp(Updates));
+			return;
 		}
+
+		SpatialGDK::LegacyLB_CustomWorkerAssignments Assignments;
+		for (const auto& Delegation : SemanticDelegations)
+		{
+			Assignments.LabelToVirtualWorker.Add(Delegation.Key, Delegation.Value);
+		}
+		for (const FName& Label : SemanticInterest)
+		{
+			Assignments.AdditionalInterest.Add(Label);
+		}
+		TArray<SpatialGDK::ComponentUpdate> Updates;
+		Updates.Add(Assignments.CreateComponentUpdate());
+		ServerWorkerData->UpdateServerWorkerData(MoveTemp(Updates));
 	}
 }
 

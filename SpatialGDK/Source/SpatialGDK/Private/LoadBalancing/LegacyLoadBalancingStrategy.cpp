@@ -47,9 +47,11 @@ FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, S
 	{
 		PositionStorage = MakeUnique<FSpatialPositionStorage>();
 		GroupStorage = MakeUnique<FActorGroupStorage>();
+#if !UE_BUILD_SHIPPING
 		DebugCompStorage = MakeUnique<FDebugComponentStorage>();
 
 		ServerWorkerCustomAssignment = MakeUnique<FCustomWorkerAssignmentStorage>();
+#endif //! UE_BUILD_SHIPPING
 
 		LegacyLBStrat.GetLegacyLBInformation(LBContext);
 	}
@@ -133,6 +135,7 @@ void FLegacyLoadBalancing::Init(FLoadBalancingSharedData InSharedData, TArray<FL
 	{
 		OutLoadBalancingData.Add(AssignmentStorage.Get());
 	}
+#if !UE_BUILD_SHIPPING
 	if (DebugCompStorage)
 	{
 		OutLoadBalancingData.Add(DebugCompStorage.Get());
@@ -142,6 +145,7 @@ void FLegacyLoadBalancing::Init(FLoadBalancingSharedData InSharedData, TArray<FL
 	{
 		OutServerWorkerData.Add(ServerWorkerCustomAssignment.Get());
 	}
+#endif //! UE_BUILD_SHIPPING
 }
 
 void FLegacyLoadBalancing::OnWorkersConnected(TArrayView<FLBWorkerHandle> InConnectedWorkers)
@@ -162,13 +166,14 @@ void FLegacyLoadBalancing::TickPartitions()
 
 	if (bCreatedPartitions)
 	{
+#if !UE_BUILD_SHIPPING
 		if (ServerWorkerCustomAssignment->GetModifiedEntities().Num() > 0 || DebugCompStorage->GetModifiedEntities().Num() > 0)
 		{
 			for (const auto& Layer : LBContext.Layers)
 			{
 				for (const auto& Cell : Layer.Cells)
 				{
-					uint32 WorkerIdx = Cell.WorkerId - 1;
+					const uint32 WorkerIdx = Cell.WorkerId - 1;
 					FPartitionHandle WorkerPartition = Partitions[WorkerIdx];
 					FLBWorkerHandle WorkerHandle = VirtualWorkerIdToHandle[WorkerIdx];
 					Worker_EntityId ServerWorkerEntity = PartitionMgr.GetServerWorkerEntityIdForWorker(WorkerHandle);
@@ -180,7 +185,7 @@ void FLegacyLoadBalancing::TickPartitions()
 					{
 						for (const auto& DebugEntry : DebugCompStorage->GetObjects())
 						{
-							for (FName Label : DebugEntry.Value.ActorTags)
+							for (const FName& Label : DebugEntry.Value.ActorTags)
 							{
 								if (DebugWorkerInfo->AdditionalInterest.Contains(Label))
 								{
@@ -191,7 +196,7 @@ void FLegacyLoadBalancing::TickPartitions()
 						}
 					}
 
-					FVector2D CellCenter = Cell.Region.GetCenter();
+					const FVector2D CellCenter = Cell.Region.GetCenter();
 					const FVector Center3D{ CellCenter.X, CellCenter.Y, 0.0f };
 
 					const FVector2D EdgeLengths2D = Cell.Region.GetSize();
@@ -205,6 +210,7 @@ void FLegacyLoadBalancing::TickPartitions()
 					if (AdditionalEntities.Num() > 0)
 					{
 						SpatialGDK::QueryConstraint EntitiesConstraint;
+						EntitiesConstraint.OrConstraint.Reserve(AdditionalEntities.Num());
 						for (Worker_EntityId Entity : AdditionalEntities)
 						{
 							SpatialGDK::QueryConstraint EntityQuery;
@@ -223,6 +229,7 @@ void FLegacyLoadBalancing::TickPartitions()
 				}
 			}
 		}
+#endif //! UE_BUILD_SHIPPING
 		return;
 	}
 
@@ -421,7 +428,7 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 			TSet<Worker_EntityId_Key> NotChecked;
 			ToRefresh = ToRefresh.Union(Ctx.ModifiedEntities);
 			ToRefresh = ToRefresh.Difference(Ctx.DeletedEntities);
-
+#if !UE_BUILD_SHIPPING
 			if (ServerWorkerCustomAssignment->GetModifiedEntities().Contains(WorkerForCustomAssignment))
 			{
 				for (const auto& Entry : DebugCompStorage->GetObjects())
@@ -441,6 +448,7 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 					EvaluateDebugComponent(Entity, Ctx);
 				}
 			}
+#endif //! UE_BUILD_SHIPPING
 
 			for (Worker_EntityId EntityId : ToRefresh)
 			{

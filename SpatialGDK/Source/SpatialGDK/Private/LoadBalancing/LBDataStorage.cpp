@@ -30,11 +30,11 @@ void FLBDataCollection::Advance()
 				}
 			}
 
-			for (const auto& Added : Delta.ComponentsRemoved)
+			for (const auto& Removed : Delta.ComponentsRemoved)
 			{
 				for (auto& Storage : DataStorages)
 				{
-					if (Storage->GetComponentsToWatch().Contains(Added.ComponentId))
+					if (Storage->GetComponentsToWatch().Contains(Removed.ComponentId))
 					{
 						// The removal is not communicated though...
 						Storage->OnRemoved(Delta.EntityId);
