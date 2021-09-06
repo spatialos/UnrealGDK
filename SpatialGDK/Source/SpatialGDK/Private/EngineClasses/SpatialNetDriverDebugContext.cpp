@@ -378,10 +378,13 @@ void USpatialNetDriverDebugContext::UpdateServerWorkerData()
 		}
 
 		SpatialGDK::LegacyLB_CustomWorkerAssignments Assignments;
+		Assignments.LabelToVirtualWorker.Reserve(SemanticDelegations.Num());
 		for (const auto& Delegation : SemanticDelegations)
 		{
-			Assignments.LabelToVirtualWorker.Add(Delegation.Key, Delegation.Value);
+			Assignments.LabelToVirtualWorker.Emplace(Delegation.Key, Delegation.Value);
 		}
+
+		Assignments.AdditionalInterest.Reserve(SemanticInterest.Num());
 		for (const FName& Label : SemanticInterest)
 		{
 			Assignments.AdditionalInterest.Add(Label);
