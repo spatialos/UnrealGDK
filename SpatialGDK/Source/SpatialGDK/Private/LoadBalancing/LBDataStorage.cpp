@@ -36,7 +36,9 @@ void FLBDataCollection::Advance()
 				{
 					if (Storage->GetComponentsToWatch().Contains(Removed.ComponentId))
 					{
-						// The removal is not communicated though...
+						// As opposed to all the other operations, this particular one is not mirrored anywhere.
+						// It remains to be seen if this is going to be useful, or if dynamic components are not
+						// something we should use here.
 						Storage->OnRemoved(Delta.EntityId);
 					}
 				}
