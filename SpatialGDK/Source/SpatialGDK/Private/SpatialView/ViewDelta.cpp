@@ -2,7 +2,6 @@
 
 #include "SpatialView/ViewDelta.h"
 
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "SpatialView/EntityComponentTypes.h"
 
 #include "Algo/StableSort.h"

@@ -11,19 +11,15 @@
 class FSpatialConditionMapFilter
 {
 public:
-	FSpatialConditionMapFilter(USpatialActorChannel* ActorChannel, bool bIsClient)
+	FSpatialConditionMapFilter(USpatialActorChannel* ActorChannel, bool bIsClient, ENetRole Role, bool bRepPhysics)
 	{
 		// Reconstruct replication flags on the client side.
 		FReplicationFlags RepFlags;
 		RepFlags.bReplay = 0;
 		RepFlags.bNetInitial = 1; // Interest/queries controls initial only data visibility, so if the update is there let it through
-		RepFlags.bNetSimulated = ActorChannel->Actor->Role == ROLE_SimulatedProxy;
+		RepFlags.bNetSimulated = Role == ROLE_SimulatedProxy;
 		RepFlags.bNetOwner = bIsClient;
-#if ENGINE_MINOR_VERSION <= 23
-		RepFlags.bRepPhysics = ActorChannel->Actor->ReplicatedMovement.bRepPhysics;
-#else
-		RepFlags.bRepPhysics = ActorChannel->Actor->GetReplicatedMovement().bRepPhysics;
-#endif
+		RepFlags.bRepPhysics = bRepPhysics;
 
 #if 0
 		UE_LOG(LogTemp, Verbose, TEXT("CMF Actor %s (%lld) NetOwner %d Simulated %d RepPhysics %d Client %s"),
@@ -61,6 +57,8 @@ public:
 		ConditionMap[COND_ReplayOrOwner] = bIsReplay || bIsOwner;
 		ConditionMap[COND_ReplayOnly] = bIsReplay;
 		ConditionMap[COND_SkipReplay] = !bIsReplay;
+
+		ConditionMap[COND_ServerOnly] = !bIsClient;
 
 		ConditionMap[COND_Custom] = true;
 		ConditionMap[COND_Never] = false;

@@ -68,6 +68,8 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunc
 	Writer->WriteValue(TEXT("disconnect_worker"), WorkerConfig.WorkerPermissions.bDisconnectWorker);
 	Writer->WriteValue(TEXT("reserve_entity_id"), WorkerConfig.WorkerPermissions.bReserveEntityID);
 	Writer->WriteValue(TEXT("entity_query"), WorkerConfig.WorkerPermissions.bAllowEntityQuery);
+	Writer->WriteValue(TEXT("disable_entity_query_restricted_components"),
+					   WorkerConfig.WorkerPermissions.bDisableEntityQueryRestrictedComponents);
 	Writer->WriteObjectEnd();
 
 	if (WorkerConfig.NumEditorInstances > 0)
@@ -130,6 +132,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 		ClientWorker.WorkerPermissions.bDisconnectWorker = false;
 		ClientWorker.WorkerPermissions.bReserveEntityID = false;
 		ClientWorker.WorkerPermissions.bAllowEntityQuery = true;
+		ClientWorker.WorkerPermissions.bDisableEntityQueryRestrictedComponents = true;
 		WriteWorkerSection(Writer, ClientWorker);
 
 		// For cloud configs we always add the SimulatedPlayerCoordinator and DeploymentManager.
@@ -177,6 +180,36 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 		Writer->WriteObjectEnd(); // World section end
 
 		Writer->WriteValue(TEXT("max_concurrent_workers"), LaunchConfigDescription.MaxConcurrentWorkers);
+
+		// Event tracing
+		if (SpatialGDKSettings->GetEventTracingEnabled())
+		{
+			Writer->WriteObjectStart(TEXT("event_tracing_configuration"));
+			Writer->WriteValue(TEXT("enabled"), true);
+
+			if (SpatialGDKSettings->bEnableEventTracingRotatingLogs)
+			{
+				Writer->WriteObjectStart(TEXT("rotating_event_log_file_configuration"));
+				Writer->WriteValue(TEXT("max_file_size_bytes"), SpatialGDKSettings->EventTracingRotatingLogsMaxFileSizeBytes);
+				Writer->WriteValue(TEXT("max_file_count"), SpatialGDKSettings->EventTracingRotatingLogsMaxFileCount);
+				Writer->WriteObjectEnd(); // rotating_event_log_file_configuration end
+			}
+			else
+			{
+				Writer->WriteObjectStart(TEXT("single_event_log_file_configuration"));
+				Writer->WriteValue(TEXT("max_file_size_bytes"), SpatialGDKSettings->EventTracingSingleLogMaxFileSizeBytes);
+				Writer->WriteObjectEnd(); // single_event_log_file_configuration end
+			}
+
+			Writer->WriteObjectStart(TEXT("event_filter_configuration"));
+
+			UEventTracingSamplingSettings* SamplingSettings = SpatialGDKSettings->GetEventTracingSamplingSettings();
+			Writer->WriteValue(TEXT("event_pre_filter"), *SamplingSettings->GetRuntimeEventPreFilterString());
+			Writer->WriteValue(TEXT("event_post_filter"), *SamplingSettings->GetRuntimeEventPostFilterString());
+
+			Writer->WriteObjectEnd(); // event_filter_configuration end
+			Writer->WriteObjectEnd(); // event_tracing_configuration end
+		}
 
 		Writer->WriteObjectEnd(); // End of json
 

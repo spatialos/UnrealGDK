@@ -13,10 +13,12 @@
 
 DEFINE_LOG_CATEGORY(LogLayeredLBStrategy);
 
+DEFINE_VTABLE_PTR_HELPER_CTOR(ULayeredLBStrategy);
 ULayeredLBStrategy::ULayeredLBStrategy()
 	: Super()
 {
 }
+ULayeredLBStrategy::~ULayeredLBStrategy() = default;
 
 FString ULayeredLBStrategy::ToString() const
 {
@@ -34,9 +36,11 @@ FString ULayeredLBStrategy::ToString() const
 		{
 			Description += FString::Printf(TEXT("%d = %s, "), Entry.Key, *Entry.Value.ToString());
 		}
-		check(Description.Len() > 1);
-		Description.LeftChopInline(2);
-		Description += TEXT("}");
+		if (ensureAlwaysMsgf(Description.Len() > 1, TEXT("Load balancing strategy description should be more than 1 character in length")))
+		{
+			Description.LeftChopInline(2);
+			Description += TEXT("}");
+		}
 	}
 	return Description;
 }
@@ -170,12 +174,10 @@ SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint
 		Constraint.ComponentConstraint = 0;
 		return Constraint;
 	}
-	else
-	{
-		const FName& LayerName = VirtualWorkerIdToLayerName[VirtualWorker];
-		check(LayerNameToLBStrategy.Contains(LayerName));
-		return LayerNameToLBStrategy[LayerName]->GetWorkerInterestQueryConstraint(VirtualWorker);
-	}
+
+	const FName& LayerName = VirtualWorkerIdToLayerName[VirtualWorker];
+	check(LayerNameToLBStrategy.Contains(LayerName));
+	return LayerNameToLBStrategy[LayerName]->GetWorkerInterestQueryConstraint(VirtualWorker);
 }
 
 bool ULayeredLBStrategy::RequiresHandoverData() const
@@ -192,18 +194,26 @@ bool ULayeredLBStrategy::RequiresHandoverData() const
 
 FVector ULayeredLBStrategy::GetWorkerEntityPosition() const
 {
-	check(IsReady());
+	if (!ensureAlwaysMsgf(IsReady(), TEXT("Called GetWorkerEntityPosition before load balancing strategy was ready")))
+	{
+		return FVector::ZeroVector;
+	}
+
 	if (!VirtualWorkerIdToLayerName.Contains(LocalVirtualWorkerId))
 	{
 		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for worker %d."), LocalVirtualWorkerId);
-		return FVector{ 0.f, 0.f, 0.f };
+		return FVector::ZeroVector;
 	}
-	else
+
+	const FName& LayerName = VirtualWorkerIdToLayerName[LocalVirtualWorkerId];
+
+	if (!ensureAlwaysMsgf(LayerNameToLBStrategy.Contains(LayerName),
+						  TEXT("Called GetWorkerEntityPosition but couldn't find layer %s in local map"), *LayerName.ToString()))
 	{
-		const FName& LayerName = VirtualWorkerIdToLayerName[LocalVirtualWorkerId];
-		check(LayerNameToLBStrategy.Contains(LayerName));
-		return LayerNameToLBStrategy[LayerName]->GetWorkerEntityPosition();
+		return FVector::ZeroVector;
 	}
+
+	return LayerNameToLBStrategy[LayerName]->GetWorkerEntityPosition();
 }
 
 uint32 ULayeredLBStrategy::GetMinimumRequiredWorkers() const
@@ -264,17 +274,25 @@ void ULayeredLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtual
 // Once they are pick up this code, they should be able to switch to another method and we can remove this.
 bool ULayeredLBStrategy::CouldHaveAuthority(const TSubclassOf<AActor> Class) const
 {
-	check(IsReady());
+	if (!ensureAlwaysMsgf(IsReady(), TEXT("Called CouldHaveAuthority before load balancing strategy was ready")))
+	{
+		return false;
+	}
+
 	return *VirtualWorkerIdToLayerName.Find(LocalVirtualWorkerId) == GetLayerNameForClass(Class);
 }
 
 UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 {
 	// The default strategy is guaranteed to exist as long as the strategy is ready.
-	checkf(LayerNameToLBStrategy.Contains(SpatialConstants::DefaultLayer),
-		   TEXT("Load balancing strategy does not contain default layer which is needed to render worker debug visualization. "
-				"Default layer presence should be enforced by MultiWorkerSettings edit validation. Class: %s"),
-		   *GetNameSafe(this));
+	if (!ensureAlwaysMsgf(
+			LayerNameToLBStrategy.Contains(SpatialConstants::DefaultLayer),
+			TEXT("Load balancing strategy does not contain default layer which is needed to render worker debug visualization. "
+				 "Default layer presence should be enforced by MultiWorkerSettings edit validation. Class: %s"),
+			*GetNameSafe(this)))
+	{
+		return nullptr;
+	}
 	return GetLBStrategyForLayer(SpatialConstants::DefaultLayer);
 }
 
@@ -282,7 +300,10 @@ UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForLayer(FName Layer) cons
 {
 	// Editor has the option to display the load balanced zones and could query the strategy anytime.
 #ifndef WITH_EDITOR
-	check(IsReady());
+	if (!ensureAlwaysMsgf(IsReady(), TEXT("Called GetLBStrategyForLayer before load balancing strategy was ready")))
+	{
+		return nullptr;
+	}
 #endif
 
 	if (UAbstractLBStrategy* const* Entry = LayerNameToLBStrategy.Find(Layer))
@@ -360,4 +381,55 @@ void ULayeredLBStrategy::AddStrategyForLayer(const FName& LayerName, UAbstractLB
 {
 	LayerNameToLBStrategy.Add(LayerName, LBStrategy);
 	LayerNameToLBStrategy[LayerName]->Init();
+}
+
+void ULayeredLBStrategy::GetLegacyLBInformation(FLegacyLBContext& Ctx) const
+{
+	if (!IsStrategyWorkerAware())
+	{
+		return;
+	}
+
+	TArray<FName> LayerNames;
+	LayerNames.SetNum(LayerNameToLBStrategy.Num());
+	for (const auto& Data : LayerData)
+	{
+		LayerNames[Data.Value.LayerIndex] = Data.Key;
+	}
+
+	for (FName& LayerName : LayerNames)
+	{
+		Ctx.Layers.AddDefaulted();
+		Ctx.Layers.Last().Name = LayerName;
+		const UAbstractLBStrategy* Strategy = LayerNameToLBStrategy.FindChecked(LayerName);
+		Strategy->GetLegacyLBInformation(Ctx);
+	}
+}
+
+bool ULayeredLBStrategy::IsStrategyWorkerAware() const
+{
+	for (auto Entry : LayerNameToLBStrategy)
+	{
+		if (!Entry.Value->IsA<UGridBasedLBStrategy>() || !Entry.Value->IsStrategyWorkerAware())
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+TArray<SpatialGDK::ComponentData> ULayeredLBStrategy::CreateStaticLoadBalancingData(const AActor& Actor) const
+{
+	TArray<SpatialGDK::ComponentData> ComponentData;
+	if (IsStrategyWorkerAware())
+	{
+		FName LayerName = GetLayerNameForActor(Actor);
+
+		uint32 LayerIndex = LayerData.FindChecked(LayerName).LayerIndex;
+
+		SpatialGDK::ActorGroupMember MembershipComponent(LayerIndex);
+		ComponentData.Add(MembershipComponent.CreateComponentData());
+	}
+
+	return ComponentData;
 }

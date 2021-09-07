@@ -2,8 +2,6 @@
 
 #include "SpatialView/ReceivedOpEventHandler.h"
 
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
-
 namespace SpatialGDK
 {
 FReceivedOpEventHandler::FReceivedOpEventHandler(TSharedPtr<SpatialEventTracer> EventTracer)

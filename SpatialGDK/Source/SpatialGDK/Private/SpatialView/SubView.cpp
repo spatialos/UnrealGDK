@@ -2,6 +2,7 @@
 
 #include "SpatialView/SubView.h"
 
+#include "Algo/Copy.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "Utils/ComponentFactory.h"
 
@@ -52,6 +53,19 @@ void FSubView::Advance(const ViewDelta& Delta)
 const FSubViewDelta& FSubView::GetViewDelta() const
 {
 	return SubViewDelta;
+}
+
+const TArray<Worker_EntityId>& FSubView::GetCompleteEntities() const
+{
+	return CompleteEntities;
+}
+
+void FSubView::Refresh()
+{
+	for (const Worker_EntityId_Key TaggedEntityId : TaggedEntities)
+	{
+		CheckEntityAgainstFilter(TaggedEntityId);
+	}
 }
 
 void FSubView::RefreshEntity(const Worker_EntityId EntityId)

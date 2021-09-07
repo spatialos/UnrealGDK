@@ -16,7 +16,7 @@ namespace SpatialGDK
 {
 struct UnrealMetadata : AbstractMutableComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
+	static constexpr Worker_ComponentId ComponentId = SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 
 	UnrealMetadata() = default;
 

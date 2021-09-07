@@ -20,6 +20,14 @@ void USchemaGenObjectStubCondOwnerOnly::GetLifetimeReplicatedProps(TArray<FLifet
 	DOREPLIFETIME_CONDITION(USchemaGenObjectStubCondOwnerOnly, BoolValue, COND_OwnerOnly);
 }
 
+void USchemaGenObjectStubHandOver::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(USchemaGenObjectStubHandOver, IntValue, COND_ServerOnly);
+	DOREPLIFETIME_CONDITION(USchemaGenObjectStubHandOver, BoolValue, COND_ServerOnly);
+}
+
 void USchemaGenObjectStubInitialOnly::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

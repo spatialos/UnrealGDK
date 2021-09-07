@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RPCContainer.h"
 
@@ -13,6 +14,8 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSettings, Log, All);
 
 class ASpatialDebugger;
+class USpatialPartitionSystem;
+class USpatialServerWorkerSystem;
 
 /**
  * Enum that maps Unreal's log verbosity to allow use in settings.
@@ -70,11 +73,60 @@ class SPATIALGDK_API UEventTracingSamplingSettings : public UObject
 {
 	GENERATED_BODY()
 public:
+	struct TraceQueryDeleter
+	{
+		void operator()(Trace_Query* Query) const
+		{
+			if (Query != nullptr)
+			{
+				Trace_Query_Destroy(Query);
+			}
+		}
+	};
+
+	using TraceQueryPtr = TUniquePtr<Trace_Query, TraceQueryDeleter>;
+
+	UEventTracingSamplingSettings();
+
 	UPROPERTY(EditAnywhere, Category = "Event Tracing", meta = (ClampMin = 0.0f, ClampMax = 1.0f))
-	double SamplingProbability = 1.0f;
+	double SamplingProbability;
 
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
 	TMap<FName, double> EventSamplingModeOverrides;
+
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	FString GDKEventPreFilter;
+
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	FString GDKEventPostFilter;
+
+	/* The runtime filter which is used for local/cloud editor workflows (generated configs). */
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	FString RuntimeEventPreFilter;
+
+	/* The runtime filter which is used for local/cloud editor workflows (generated configs). */
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	FString RuntimeEventPostFilter;
+
+	const FString& GetGDKEventPreFilterString() const { return GetFilterString(GDKEventPreFilter); }
+	const FString& GetGDKEventPostFilterString() const { return GetFilterString(GDKEventPostFilter); }
+	const FString& GetRuntimeEventPreFilterString() const { return GetFilterString(RuntimeEventPreFilter); }
+	const FString& GetRuntimeEventPostFilterString() const { return GetFilterString(RuntimeEventPostFilter); }
+
+	TraceQueryPtr GetGDKEventPreFilter() const { return ParseOrDefault(GDKEventPreFilter, TEXT("gdk-pre-filter")); }
+	TraceQueryPtr GetGDKEventPostFilter() const { return ParseOrDefault(GDKEventPostFilter, TEXT("gdk-post-filter")); }
+	TraceQueryPtr GetRuntimeEventPreFilter() const { return ParseOrDefault(RuntimeEventPreFilter, TEXT("runtime-pre-filter")); }
+	TraceQueryPtr GetRuntimeEventPostFilter() const { return ParseOrDefault(RuntimeEventPostFilter, TEXT("runtime-post-filter")); }
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+private:
+	static FString DefaultFilter;
+
+	static bool IsFilterValid(const FString& Str);
+	static TraceQueryPtr ParseOrDefault(const FString& Str, const TCHAR* FilterForLog);
+	static const FString& GetFilterString(const FString& Filter);
 };
 
 UCLASS(config = SpatialGDKSettings, defaultconfig)
@@ -252,6 +304,22 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 	bool bPreventClientCloudDeploymentAutoConnect;
 
+	/*
+	 * -- EXPERIMENTAL --
+	 * This will enable event tracing for the Unreal client/worker.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
+	bool bEventTracingEnabled;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * Same as bEventTracingEnabled, but used if WITH_EDITOR is defined.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
+	bool bEventTracingEnabledWithEditor;
+
+	friend class AEventTracingSettingsOverride;
+
 public:
 	bool GetPreventClientCloudDeploymentAutoConnect() const;
 
@@ -276,6 +344,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
+	/** Toggle to allow debug checking of invalid data modification on non-auth workers when using Spatial Networking */
+	UPROPERTY(config, EditAnywhere, Category = "Debug", meta = (DisplayName = "SpatialOS Networking Authority Debugger"))
+	bool bSpatialAuthorityDebugger;
+
 	/** Enables multi-worker, if false uses single worker strategy in the editor.  */
 	UPROPERTY(EditAnywhere, config, Category = "Load Balancing", meta = (DisplayName = "Enable multi-worker in editor"))
 	bool bEnableMultiWorker;
@@ -284,10 +356,18 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL Run the strategy worker"))
 	bool bRunStrategyWorker;
 
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL PartitionSystem to use"))
+	TSubclassOf<USpatialPartitionSystem> PartitionSystemClass;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL ServerWorkerSystem to use"))
+	TSubclassOf<USpatialServerWorkerSystem> ServerWorkerSystemClass;
+
 #if WITH_EDITOR
 	void SetMultiWorkerEditorEnabled(const bool bIsEnabled);
 	FORCEINLINE bool IsMultiWorkerEditorEnabled() const { return bEnableMultiWorker; }
 #endif // WITH_EDITOR
+
+	bool GetEventTracingEnabled() const;
 
 private:
 #if WITH_EDITOR
@@ -431,26 +511,41 @@ public:
 
 	/*
 	 * -- EXPERIMENTAL --
-	 * This will enable event tracing for the Unreal client/worker.
-	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
-	bool bEventTracingEnabled;
-
-	/*
-	 * -- EXPERIMENTAL --
 	 * Class containing various settings used to configure event trace sampling
 	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing", meta = (EditCondition = "bEventTracingEnabled"))
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing",
+			  meta = (EditCondition = "bEventTracingEnabled || bEventTracingEnabledWithEditor"))
 	TSubclassOf<UEventTracingSamplingSettings> EventTracingSamplingSettingsClass;
 
 	UEventTracingSamplingSettings* GetEventTracingSamplingSettings() const;
 
 	/*
 	 * -- EXPERIMENTAL --
-	 * The maximum size of the event tracing file, in bytes
+	 * The maximum size of a event log (non-rotating), synonymous with squid config behavior `event_tracing_single_log_max_file_size_bytes`
 	 */
 	UPROPERTY(Config)
-	uint64 MaxEventTracingFileSizeBytes;
+	int64 EventTracingSingleLogMaxFileSizeBytes;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * Whether to enable rotating logs, synonymous with squid config behavior `enable_event_tracing_rotating_logs`
+	 */
+	UPROPERTY(Config)
+	bool bEnableEventTracingRotatingLogs;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * Rotating log file size, synonymous with squid config behavior `event_tracing_rotating_logs_max_file_size_bytes`
+	 */
+	UPROPERTY(Config)
+	int64 EventTracingRotatingLogsMaxFileSizeBytes;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * The maximum number of rotating logs to produce, synonymous with squid config behavior `event_tracing_rotating_logs_max_file_count`
+	 */
+	UPROPERTY(Config)
+	int32 EventTracingRotatingLogsMaxFileCount;
 
 	UPROPERTY(Config)
 	bool bEnableAlwaysWriteRPCs;
@@ -466,9 +561,9 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Enable Initial Only Replication Condition"))
 	bool bEnableInitialOnlyReplicationCondition;
 
-	/*
-	 * Enables writing of ActorSetMember and ActorGroupMember components to load balancing entities
-	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication")
-	bool bEnableStrategyLoadBalancingComponents;
+	/**	-- EXPERIMENTAL --
+		Enables skeleton entities. If enabled, skeleton entities for level actors would be created during startup.
+	*/
+	UPROPERTY(EditAnywhere, Config, Category = "Startup")
+	bool bEnableSkeletonEntityCreation;
 };

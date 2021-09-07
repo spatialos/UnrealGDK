@@ -21,6 +21,9 @@ void UTestHandoverComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, ReplicatedTestProperty);
+
+	DOREPLIFETIME_CONDITION(ThisClass, HandoverTestProperty, COND_ServerOnly);
+	DOREPLIFETIME_CONDITION(ThisClass, HandoverTestStruct, COND_ServerOnly);
 }
 
 AHandoverReplicationTestCube::AHandoverReplicationTestCube()
@@ -36,21 +39,49 @@ void AHandoverReplicationTestCube::SetTestValues(int UpdatedTestPropertyValue)
 {
 	HandoverTestProperty = UpdatedTestPropertyValue;
 	ReplicatedTestProperty = UpdatedTestPropertyValue;
+	HandoverTestStruct.FirstProperty = UpdatedTestPropertyValue;
+	HandoverTestStruct.SecondProperty = UpdatedTestPropertyValue;
+	HandoverTestStruct.InnerStruct.FirstProperty = UpdatedTestPropertyValue;
+	HandoverTestStruct.InnerStruct.SecondProperty = UpdatedTestPropertyValue;
+
 	HandoverComponent->HandoverTestProperty = UpdatedTestPropertyValue;
 	HandoverComponent->ReplicatedTestProperty = UpdatedTestPropertyValue;
+	HandoverComponent->HandoverTestStruct.FirstProperty = UpdatedTestPropertyValue;
+	HandoverComponent->HandoverTestStruct.SecondProperty = UpdatedTestPropertyValue;
+	HandoverComponent->HandoverTestStruct.InnerStruct.FirstProperty = UpdatedTestPropertyValue;
+	HandoverComponent->HandoverTestStruct.InnerStruct.SecondProperty = UpdatedTestPropertyValue;
 }
 
 void AHandoverReplicationTestCube::RequireTestValues(ASpatialTestHandoverActorComponentReplication* FunctionalTest, int RequiredValue,
 													 const FString& Postfix) const
 {
+	// Handover cube (this actor)
 	FunctionalTest->RequireEqual_Int(HandoverTestProperty, RequiredValue,
 									 FString::Printf(TEXT("Handover Cube = %d: %s"), RequiredValue, *Postfix));
 	FunctionalTest->RequireEqual_Int(ReplicatedTestProperty, RequiredValue,
 									 FString::Printf(TEXT("Replicated Cube = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(HandoverTestStruct.FirstProperty, RequiredValue,
+									 FString::Printf(TEXT("Handover Cube Struct First = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(HandoverTestStruct.SecondProperty, RequiredValue,
+									 FString::Printf(TEXT("Handover Cube Struct Second = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(HandoverTestStruct.InnerStruct.FirstProperty, RequiredValue,
+									 FString::Printf(TEXT("Handover Cube Struct Inner First = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(HandoverTestStruct.InnerStruct.SecondProperty, RequiredValue,
+									 FString::Printf(TEXT("Handover Cube Struct Inner Second = %d: %s"), RequiredValue, *Postfix));
+
+	// Handover Component
 	FunctionalTest->RequireEqual_Int(HandoverComponent->HandoverTestProperty, RequiredValue,
 									 FString::Printf(TEXT("Handover Component = %d: %s"), RequiredValue, *Postfix));
 	FunctionalTest->RequireEqual_Int(HandoverComponent->ReplicatedTestProperty, RequiredValue,
 									 FString::Printf(TEXT("Replicated Component = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(HandoverComponent->HandoverTestStruct.FirstProperty, RequiredValue,
+									 FString::Printf(TEXT("Handover Component Struct First = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(HandoverComponent->HandoverTestStruct.SecondProperty, RequiredValue,
+									 FString::Printf(TEXT("Handover Component Struct Second = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(HandoverComponent->HandoverTestStruct.InnerStruct.FirstProperty, RequiredValue,
+									 FString::Printf(TEXT("Handover Component Struct Inner First = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(HandoverComponent->HandoverTestStruct.InnerStruct.SecondProperty, RequiredValue,
+									 FString::Printf(TEXT("Handover Component Struct Inner Second = %d: %s"), RequiredValue, *Postfix));
 }
 
 void AHandoverReplicationTestCube::OnAuthorityGained()
@@ -72,6 +103,10 @@ void AHandoverReplicationTestCube::GetLifetimeReplicatedProps(TArray<FLifetimePr
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, ReplicatedTestProperty);
+
+	DOREPLIFETIME_CONDITION(ThisClass, HandoverTestProperty, COND_ServerOnly);
+	DOREPLIFETIME_CONDITION(ThisClass, HandoverTestStruct, COND_ServerOnly);
+	DOREPLIFETIME_CONDITION(ThisClass, TestStage, COND_ServerOnly);
 }
 
 /**
@@ -101,9 +136,7 @@ void ASpatialTestHandoverActorComponentReplication::PrepareTest()
 	Super::PrepareTest();
 
 	AddStep(TEXT("Server 1 spawns a HandoverCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		HandoverCube = GetWorld()->SpawnActor<AHandoverReplicationTestCube>(HandoverReplicationTestValues::Server1Position,
-																			FRotator::ZeroRotator, FActorSpawnParameters());
-		RegisterAutoDestroyActor(HandoverCube);
+		HandoverCube = SpawnActor<AHandoverReplicationTestCube>(HandoverReplicationTestValues::Server1Position);
 		FinishStep();
 	});
 

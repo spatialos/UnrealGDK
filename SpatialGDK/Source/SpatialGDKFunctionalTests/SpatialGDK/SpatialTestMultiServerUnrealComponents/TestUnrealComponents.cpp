@@ -28,6 +28,7 @@ void UDataAndHandoverComponent::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, DataReplicatedVar);
+	DOREPLIFETIME_CONDITION(ThisClass, HandoverReplicatedVar, COND_ServerOnly);
 }
 
 UDataAndOwnerOnlyComponent::UDataAndOwnerOnlyComponent()

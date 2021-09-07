@@ -11,6 +11,11 @@
 
 #include "SpatialClassInfoManager.generated.h"
 
+namespace SpatialGDK
+{
+struct EntityViewElement;
+}
+
 FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(ESchemaComponentType)> Callback)
 {
 	for (int32 Type = SCHEMA_Begin; Type < SCHEMA_Count; Type++)
@@ -21,6 +26,9 @@ FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(ESchemaComponentType)
 
 FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condition)
 {
+	static_assert(SCHEMA_Count == 4,
+				  "Unexpected number of Schema type components, please make sure GetGroupFromCondition is still correct.");
+
 	switch (Condition)
 	{
 	case COND_AutonomousOnly:
@@ -29,6 +37,8 @@ FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condit
 		return SCHEMA_OwnerOnly;
 	case COND_InitialOnly:
 		return SCHEMA_InitialOnly;
+	case COND_ServerOnly:
+		return SCHEMA_ServerOnly;
 	default:
 		return SCHEMA_Data;
 	}
@@ -38,15 +48,6 @@ struct FRPCInfo
 {
 	ERPCType Type;
 	uint32 Index;
-};
-
-struct FHandoverPropertyInfo
-{
-	uint16 Handle;
-	int32 Offset;
-	uint32 ShadowOffset;
-	int32 ArrayIdx;
-	GDK_PROPERTY(Property) * Property;
 };
 
 struct FInterestPropertyInfo
@@ -65,15 +66,13 @@ struct FClassInfo
 	// Exists for all classes
 	TArray<UFunction*> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
-	uint32 HandoverPropertiesSize;
-	TArray<FHandoverPropertyInfo> HandoverProperties;
 	TArray<FInterestPropertyInfo> InterestProperties;
 
 	// For Actors and default Subobjects belonging to Actors
 	Worker_ComponentId SchemaComponents[ESchemaComponentType::SCHEMA_Count] = {};
 
 	// Only for Actors
-	TMap<uint32, TSharedRef<const FClassInfo>> SubobjectInfo;
+	TMap<ObjectOffset, TSharedRef<const FClassInfo>> SubobjectInfo;
 
 	// Only for default Subobjects belonging to Actors
 	FName SubobjectName;
@@ -110,9 +109,10 @@ public:
 	const FClassInfo& GetClassInfoByComponentId(Worker_ComponentId ComponentId);
 
 	UClass* GetClassByComponentId(Worker_ComponentId ComponentId);
-	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
+	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, ObjectOffset& OutOffset);
 	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
 	const TArray<Schema_FieldId>& GetFieldIdsByComponentId(Worker_ComponentId ComponentId);
+	const TArray<Schema_FieldId>& GetListIdsByComponentId(Worker_ComponentId ComponentId);
 
 	Worker_ComponentId GetComponentIdForClass(const UClass& Class) const;
 	TArray<Worker_ComponentId> GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;
@@ -126,6 +126,8 @@ public:
 
 	Worker_ComponentId GetComponentIdForNetCullDistance(float NetCullDistance) const;
 	Worker_ComponentId ComputeActorInterestComponentId(const AActor* Actor) const;
+	Worker_ComponentId GetExistingInterestBucketComponentId(const SpatialGDK::EntityViewElement& Entity) const;
+	bool IsInterestBucketComponentId(const Worker_ComponentId ComponentId) const;
 
 	bool IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const;
 
@@ -148,7 +150,7 @@ private:
 	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 
-	bool ShouldTrackHandoverProperties() const;
+	bool IsComponentIdForTypeValid(const Worker_ComponentId ComponentId, const ESchemaComponentType Type) const;
 
 private:
 	UPROPERTY()
@@ -158,6 +160,8 @@ private:
 		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>, false>>
 		ClassInfoMap;
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;
-	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
+	TMap<Worker_ComponentId, ObjectOffset> ComponentToOffsetMap;
 	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;
+
+	TOptional<bool> bHandoverActive;
 };

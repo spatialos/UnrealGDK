@@ -53,6 +53,9 @@ void UTestReplicationConditionsComponent_Common::GetLifetimeReplicatedProps(TArr
 	DOREPLIFETIME_CONDITION(ThisClass, CondSimulatedOnlyNoReplay_Var, COND_SimulatedOnlyNoReplay);
 	DOREPLIFETIME_CONDITION(ThisClass, CondSimulatedOrPhysicsNoReplay_Var, COND_SimulatedOrPhysics);
 	DOREPLIFETIME_CONDITION(ThisClass, CondSkipReplay_Var, COND_SkipReplay);
+
+	// Our added conditions
+	DOREPLIFETIME_CONDITION(ThisClass, CondServerOnly_Var, COND_ServerOnly);
 }
 
 ATestReplicationConditionsActor_Common::ATestReplicationConditionsActor_Common()
@@ -81,6 +84,9 @@ void ATestReplicationConditionsActor_Common::GetLifetimeReplicatedProps(TArray<F
 	DOREPLIFETIME_CONDITION(ThisClass, CondSimulatedOnlyNoReplay_Var, COND_SimulatedOnlyNoReplay);
 	DOREPLIFETIME_CONDITION(ThisClass, CondSimulatedOrPhysicsNoReplay_Var, COND_SimulatedOrPhysics);
 	DOREPLIFETIME_CONDITION(ThisClass, CondSkipReplay_Var, COND_SkipReplay);
+
+	// Our added conditions
+	DOREPLIFETIME_CONDITION(ThisClass, CondServerOnly_Var, COND_ServerOnly);
 
 	DOREPLIFETIME(ThisClass, StaticComponent);
 	DOREPLIFETIME(ThisClass, DynamicComponent);
@@ -184,6 +190,11 @@ void ATestReplicationConditionsActor_AutonomousOnly::SpawnDynamicComponents()
 		TEXT("DynamicTestReplicationConditionsComponent_AutonomousOnly"));
 }
 
+bool UTestReplicationConditionsPrimitiveComponent::IsSimulatingPhysics(FName BoneName /*= NAME_None*/) const
+{
+	return GetOwner()->GetReplicatedMovement().bRepPhysics;
+}
+
 void UTestReplicationConditionsComponent_Physics::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -194,10 +205,13 @@ void UTestReplicationConditionsComponent_Physics::GetLifetimeReplicatedProps(TAr
 
 ATestReplicationConditionsActor_Physics::ATestReplicationConditionsActor_Physics()
 {
+	UTestReplicationConditionsPrimitiveComponent* PrimitiveComponent =
+		CreateDefaultSubobject<UTestReplicationConditionsPrimitiveComponent>(TEXT("UTestReplicationConditionsPrimitiveComponent"));
+
+	SetRootComponent(PrimitiveComponent);
+
 	StaticComponent =
 		CreateDefaultSubobject<UTestReplicationConditionsComponent_Physics>(TEXT("UTestReplicationConditionsComponent_Physics"));
-
-	SetRootComponent(StaticComponent);
 }
 
 void ATestReplicationConditionsActor_Physics::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

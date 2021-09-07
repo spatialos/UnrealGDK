@@ -22,9 +22,6 @@ class SPATIALGDK_API USpatialNetConnection : public UIpConnection
 public:
 	USpatialNetConnection(const FObjectInitializer& ObjectInitializer);
 
-	// Begin NetConnection Interface
-	virtual void BeginDestroy() override;
-
 	virtual void InitBase(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket = 0,
 						  int32 InPacketOverhead = 0) override;
 	virtual void LowLevelSend(void* Data, int32 CountBits, FOutPacketTraits& Traits) override;
@@ -50,9 +47,7 @@ public:
 	///////
 	// End NetConnection Interface
 
-	void Init(Worker_EntityId InPlayerControllerEntity);
-
-	void Disable();
+	Worker_EntityId GetPlayerControllerEntityId() const;
 
 	UPROPERTY()
 	bool bReliableSpatialConnection;
@@ -61,7 +56,4 @@ public:
 	// When the corresponding PlayerController is successfully spawned, we will claim
 	// the PlayerController as a partition entity for the client worker.
 	Worker_EntityId ConnectionClientWorkerSystemEntityId;
-
-	// Player lifecycle
-	Worker_EntityId PlayerControllerEntity;
 };

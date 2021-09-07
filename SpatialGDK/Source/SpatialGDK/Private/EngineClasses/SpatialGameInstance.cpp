@@ -98,16 +98,16 @@ void USpatialGameInstance::CreateNewSpatialConnectionManager()
 
 void USpatialGameInstance::DestroySpatialConnectionManager()
 {
-	if (SpatialConnectionManager != nullptr)
-	{
-		SpatialConnectionManager->DestroyConnection();
-		SpatialConnectionManager = nullptr;
-	}
-
 	if (GlobalStateManager != nullptr)
 	{
 		GlobalStateManager->ConditionalBeginDestroy();
 		GlobalStateManager = nullptr;
+	}
+
+	if (SpatialConnectionManager != nullptr)
+	{
+		SpatialConnectionManager->DestroyConnection();
+		SpatialConnectionManager = nullptr;
 	}
 }
 
@@ -244,13 +244,9 @@ void USpatialGameInstance::Init()
 void USpatialGameInstance::HandleOnConnected(USpatialNetDriver& NetDriver)
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Successfully connected to SpatialOS"));
-	SpatialWorkerId = SpatialConnectionManager->GetWorkerConnection()->GetWorkerId();
+	SetSpatialWorkerId(SpatialConnectionManager->GetWorkerConnection()->GetWorkerId());
 #if TRACE_LIB_ACTIVE
-	SpatialLatencyTracer->SetWorkerId(SpatialWorkerId);
-
-	USpatialWorkerConnection* WorkerConnection = SpatialConnectionManager->GetWorkerConnection();
-	WorkerConnection->OnEnqueueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnEnqueueMessage);
-	WorkerConnection->OnDequeueMessage.AddUObject(SpatialLatencyTracer, &USpatialLatencyTracer::OnDequeueMessage);
+	SpatialLatencyTracer->SetWorkerId(GetSpatialWorkerId());
 #endif
 
 	OnSpatialConnected.Broadcast();
@@ -308,4 +304,9 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 	{
 		GlobalStateManager->HandleActorBasedOnLoadBalancer(Actor);
 	}
+}
+
+void USpatialGameInstance::OnWorldChanged(UWorld* OldWorld, UWorld* NewWorld)
+{
+	WorldChangedEvent.Broadcast(OldWorld, NewWorld);
 }

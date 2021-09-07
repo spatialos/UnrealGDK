@@ -6,6 +6,8 @@
 #include "SpatialFunctionalTest.h"
 #include "RegisterAutoDestroyActorsTest.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogTestRegisterAutoDestroyActors, Log, All);
+
 /**
  * These Tests are meant to test the functionality of RegisterAutoDestroyActor in Test environments.
  * Keep in mind that for it to run correctly you need to run both part 1 and 2, and in that order,

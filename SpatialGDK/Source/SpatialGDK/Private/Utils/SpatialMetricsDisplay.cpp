@@ -162,7 +162,10 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 void ASpatialMetricsDisplay::SpatialToggleStatDisplay()
 {
 #if !UE_BUILD_SHIPPING
-	check(GetNetMode() == NM_Client);
+	if (!ensureAlwaysMsgf(GetNetMode() == NM_Client, TEXT("Tried to toggle metrics stat display from a server")))
+	{
+		return;
+	}
 
 	if (DrawDebugDelegateHandle.IsValid())
 	{

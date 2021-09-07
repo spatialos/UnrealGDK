@@ -12,6 +12,7 @@
 
 #if WITH_EDITOR
 #include "HAL/PlatformFilemanager.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Misc/FileHelper.h"
 #include "Settings/LevelEditorPlaySettings.h"
 
@@ -94,7 +95,80 @@ void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, co
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName,
 		   OverrideValue.IsSet() ? *(OverrideValue.GetValue()) : TEXT("not set"));
 }
+
 } // namespace
+
+FString UEventTracingSamplingSettings::DefaultFilter = "false";
+
+UEventTracingSamplingSettings::UEventTracingSamplingSettings()
+	: SamplingProbability(1.0)
+	, GDKEventPreFilter(DefaultFilter)
+	, GDKEventPostFilter(DefaultFilter)
+	, RuntimeEventPreFilter(DefaultFilter)
+	, RuntimeEventPostFilter(DefaultFilter)
+{
+}
+
+UEventTracingSamplingSettings::TraceQueryPtr UEventTracingSamplingSettings::ParseOrDefault(const FString& Str, const TCHAR* FilterForLog)
+{
+	TraceQueryPtr Ptr;
+	if (!Str.IsEmpty())
+	{
+		Ptr.Reset(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*Str)));
+	}
+
+	if (!Ptr.IsValid())
+	{
+		UE_LOG(LogSpatialGDKSettings, Warning, TEXT("The specified query \"%s\" is invalid; defaulting to \"false\" query. %s"),
+			   FilterForLog, Trace_GetLastError());
+		Ptr.Reset(Trace_ParseSimpleQuery("false"));
+	}
+
+	return Ptr;
+}
+
+bool UEventTracingSamplingSettings::IsFilterValid(const FString& Str)
+{
+	return !Str.IsEmpty() && TraceQueryPtr(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*Str))).Get() != nullptr;
+}
+
+const FString& UEventTracingSamplingSettings::GetFilterString(const FString& Filter)
+{
+	return IsFilterValid(Filter) ? Filter : DefaultFilter;
+}
+
+#if WITH_EDITOR
+void UEventTracingSamplingSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+{
+	auto CheckQueryValid = [](const FString& QueryStr) {
+		if (!IsFilterValid(QueryStr))
+		{
+			FMessageDialog::Open(EAppMsgType::Ok,
+								 FText::Format(LOCTEXT("EventTracingSamplingSetting_QueryInvalid", "The query entered is not valid. {0}"),
+											   FText::FromString(ANSI_TO_TCHAR(Trace_GetLastError()))));
+		}
+	};
+
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
+	if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, GDKEventPreFilter))
+	{
+		CheckQueryValid(GDKEventPreFilter);
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, RuntimeEventPreFilter))
+	{
+		CheckQueryValid(RuntimeEventPreFilter);
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, GDKEventPostFilter))
+	{
+		CheckQueryValid(GDKEventPostFilter);
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, RuntimeEventPostFilter))
+	{
+		CheckQueryValid(RuntimeEventPostFilter);
+	}
+}
+#endif
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -122,11 +196,15 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseFrameTimeAsLoad(false)
 	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
+	, bEventTracingEnabled(false)
+	, bEventTracingEnabledWithEditor(false)
 	, ServicesRegion(EServicesRegion::Default)
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning) // Deprecated - UNR-4348
 	, LocalWorkerLogLevel(WorkerLogLevel)
 	, CloudWorkerLogLevel(WorkerLogLevel)
+	, bSpatialAuthorityDebugger(false)
 	, bEnableMultiWorker(true)
+	, bRunStrategyWorker(false)
 	, DefaultRPCRingBufferSize(32)
 	, CrossServerRPCImplementation(ECrossServerRPCImplementation::SpatialCommand)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
@@ -150,9 +228,11 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableCrossLayerActorSpawning(true)
 	, StartupLogRate(5.0f)
 	, ActorMigrationLogRate(5.0f)
-	, bEventTracingEnabled(false)
 	, EventTracingSamplingSettingsClass(UEventTracingSamplingSettings::StaticClass())
-	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
+	, EventTracingSingleLogMaxFileSizeBytes(DefaultEventTracingFileSize)
+	, bEnableEventTracingRotatingLogs(false)
+	, EventTracingRotatingLogsMaxFileSizeBytes(DefaultEventTracingFileSize)
+	, EventTracingRotatingLogsMaxFileCount(256)
 	, bEnableAlwaysWriteRPCs(false)
 	, bEnableInitialOnlyReplicationCondition(false)
 {
@@ -180,7 +260,12 @@ void USpatialGDKSettings::PostInitProperties()
 							 TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"),
 							 TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
+#if WITH_EDITOR
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideEventTracingEnabled"), TEXT("Event tracing in-editor enabled"),
+							 bEventTracingEnabledWithEditor);
+#else
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideEventTracingEnabled"), TEXT("Event tracing enabled"), bEventTracingEnabled);
+#endif
 	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"),
 									   OverrideMultiWorkerSettingsClass);
 	CheckCmdLineOverrideOptionalStringWithCallback(
@@ -199,6 +284,8 @@ void USpatialGDKSettings::PostInitProperties()
 		});
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
+
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("The strategy worker is %s."), bRunStrategyWorker ? TEXT("enabled") : TEXT("disabled"));
 }
 
 #if WITH_EDITOR
@@ -318,4 +405,12 @@ void USpatialGDKSettings::SetMultiWorkerEditorEnabled(bool bIsEnabled)
 }
 #endif // WITH_EDITOR
 
+bool USpatialGDKSettings::GetEventTracingEnabled() const
+{
+#if WITH_EDITOR
+	return bEventTracingEnabledWithEditor;
+#else
+	return bEventTracingEnabled;
+#endif
+}
 #undef LOCTEXT_NAMESPACE

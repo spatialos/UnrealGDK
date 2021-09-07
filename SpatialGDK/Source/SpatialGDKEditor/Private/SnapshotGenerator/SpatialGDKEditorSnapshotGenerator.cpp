@@ -36,19 +36,7 @@ TArray<Worker_ComponentData> UnpackedComponentData;
 void SetEntityData(Worker_Entity& Entity, const TArray<FWorkerComponentData>& Components)
 {
 	Entity.component_count = Components.Num();
-
-#if TRACE_LIB_ACTIVE
-	// We have to unpack these as Worker_ComponentData is not the same as FWorkerComponentData
-	UnpackedComponentData.Empty();
-	UnpackedComponentData.SetNum(Components.Num());
-	for (int i = 0, Num = Components.Num(); i < Num; i++)
-	{
-		UnpackedComponentData[i] = Components[i];
-	}
-	Entity.components = UnpackedComponentData.GetData();
-#else
 	Entity.components = Components.GetData();
-#endif
 }
 
 bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
@@ -129,11 +117,23 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	GSM.entity_id = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
 	Interest SelfInterest;
+
 	Query AuthoritySelfQuery = {};
 	AuthoritySelfQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
 	AuthoritySelfQuery.Constraint.bSelfConstraint = true;
-	SelfInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
-	SelfInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(AuthoritySelfQuery);
+
+	Query SkeletonEntityManifestsQuery = {};
+	SkeletonEntityManifestsQuery.ResultComponentIds = { SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID };
+	SkeletonEntityManifestsQuery.Constraint.ComponentConstraint = SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID;
+
+	Query WorkerPartitionEntitiesQuery = {};
+	WorkerPartitionEntitiesQuery.ResultComponentIds = { SpatialConstants::WORKER_PARTITION_TAG_COMPONENT_ID };
+	WorkerPartitionEntitiesQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_PARTITION_TAG_COMPONENT_ID;
+
+	TArray<Query>& Queries = SelfInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID).Queries;
+	Queries.Add(AuthoritySelfQuery);
+	Queries.Add(SkeletonEntityManifestsQuery);
+	Queries.Add(WorkerPartitionEntitiesQuery);
 
 	TArray<FWorkerComponentData> Components;
 
@@ -215,6 +215,7 @@ bool CreateSnapshotPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(Position(DeploymentOrigin).CreateComponentData());
 	Components.Add(Metadata(TEXT("SnapshotPartitionEntity")).CreateComponentData());
 	Components.Add(Persistence().CreateComponentData());
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_SHADOW_COMPONENT_ID));
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
 	SetEntityData(SnapshotPartitionEntity, Components);
@@ -234,12 +235,26 @@ bool CreateStrategyPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, StrategyPartitionEntity.entity_id);
 
 	Interest ServerInterest;
-	Query ServerQuery = {};
-	ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID,
-									   SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID };
-	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID;
-	ServerInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
-	ServerInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(ServerQuery);
+	ComponentSetInterest& InterestSet = ServerInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
+
+	{
+		Query ServerQuery = {};
+		ServerQuery.ResultComponentIds = { SpatialConstants::SERVER_WORKER_COMPONENT_ID };
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
+		InterestSet.Queries.Add(ServerQuery);
+	}
+	{
+		Query ServerQuery = {};
+		ServerQuery.ResultComponentIds = { SpatialConstants::WORKER_COMPONENT_ID };
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
+		InterestSet.Queries.Add(ServerQuery);
+	}
+	{
+		Query ServerQuery = {};
+		ServerQuery.ResultComponentIds = { SpatialConstants::PARTITION_ACK_COMPONENT_ID };
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::PARTITION_ACK_COMPONENT_ID;
+		InterestSet.Queries.Add(ServerQuery);
+	}
 
 	Components.Add(Position(DeploymentOrigin).CreateComponentData());
 	Components.Add(Metadata(TEXT("StrategyPartitionEntity")).CreateComponentData());
@@ -352,7 +367,7 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 			   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
 		return false;
 	}
-	
+
 	if (!CreateRoutingWorkerPartitionEntity(OutputStream))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating RoutingPartitionEntity in snapshot: %s"),

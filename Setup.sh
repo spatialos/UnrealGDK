@@ -20,6 +20,7 @@ SCHEMA_STD_COPY_DIR="$(pwd)/../../../spatial/build/dependencies/schema/standard_
 SPATIAL_DIR="$(pwd)/../../../spatial"
 DOWNLOAD_MOBILE=
 USE_CHINA_SERVICES_REGION=
+RETRIEVE_INTERNAL_PACKAGES=
 
 echo "Setup the git hooks"
 if [[ -e .git/hooks ]]; then
@@ -42,7 +43,7 @@ if [[ -e .git/hooks ]]; then
     cp -R "$(pwd)/SpatialGDK/Extras/git/." "$(pwd)/.git/hooks"
 
     # We pass Setup.sh args, such as --mobile, to the post-merge hook to run Setup.sh with the same args in future.
-    sed -i "" -e "s/SETUP_ARGS/$*/g" .git/hooks/post-merge
+    sed -i -e "s/SETUP_ARGS/$*/g" .git/hooks/post-merge
 
     # This needs to be runnable.
     chmod +x .git/hooks/pre-commit
@@ -57,6 +58,8 @@ do
             ;;
         --mobile) DOWNLOAD_MOBILE=true
             ;;
+        --internal) RETRIEVE_INTERNAL_PACKAGES=true
+            ;; 
     esac
     shift
 done
@@ -97,6 +100,11 @@ spatial package retrieve schema      standard_library                        "${
 spatial package retrieve worker_sdk  c_headers                               "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip
 spatial package retrieve worker_sdk  c-dynamic-x86_64-clang-macos            "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip
 
+if [[ -n "${RETRIEVE_INTERNAL_PACKAGES}" ]];
+then
+    spatial package retrieve internal etlog-x86_64-macos "${PINNED_CORE_SDK_VERSION}" ${DOMAIN_ENVIRONMENT_VAR:-} "${CORE_SDK_DIR}"/tools/etlog-macos.zip
+fi
+
 if [[ -n "${DOWNLOAD_MOBILE}" ]];
 then
     spatial package retrieve worker_sdk  c-static-fullylinked-arm-clang-ios      "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
@@ -111,6 +119,11 @@ unzip -oq "${CORE_SDK_DIR}"/tools/schema_compiler-x86_64-macos.zip              
 unzip -oq "${CORE_SDK_DIR}"/schema/standard_library.zip                            -d "${BINARIES_DIR}"/Programs/schema/
 unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip                               -d "${BINARIES_DIR}"/Headers/
 unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip            -d "${BINARIES_DIR}"/Mac/
+
+if [[ -n "${RETRIEVE_INTERNAL_PACKAGES}" ]];
+then
+    unzip -oq "${CORE_SDK_DIR}"/tools/etlog-macos.zip -d "${BINARIES_DIR}"/Programs/
+fi
 
 if [[ -n "${DOWNLOAD_MOBILE}" ]];
 then

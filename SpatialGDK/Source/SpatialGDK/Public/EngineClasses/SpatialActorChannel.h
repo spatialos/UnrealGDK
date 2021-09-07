@@ -120,7 +120,7 @@ public:
 
 	void UpdateRefToRepStateMap(FObjectToRepStateMap& ReplicatorMap);
 	bool MoveMappedObjectToUnmapped(const FUnrealObjectRef& ObjRef);
-	bool HasUnresolved() const { return UnresolvedRefs.Num() == 0; }
+	bool HasUnresolved() const { return UnresolvedRefs.Num() != 0; }
 
 	const FChannelObjectPair& GetChannelObjectPair() const { return ThisObj; }
 
@@ -215,6 +215,10 @@ public:
 
 	inline bool IsAuthoritativeServer() const { return bIsAuthServer; }
 
+	bool IsAutonomousProxyOnAuthority() const { return bIsAutonomousProxyOnAuthority; }
+
+	void SetAutonomousProxyOnAuthority(bool bAutonomousProxy) { bIsAutonomousProxyOnAuthority = bAutonomousProxy; }
+
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)
 	{
 		check(ObjectHasReplicator(Object));
@@ -243,24 +247,20 @@ public:
 
 	bool ReplicateSubobject(UObject* Obj, const FReplicationFlags& RepFlags);
 
-	TMap<UObject*, const FClassInfo*> GetHandoverSubobjects();
-
 	FRepChangeState CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object);
-	FHandoverChangeState CreateInitialHandoverChangeState(const FClassInfo& ClassInfo);
 
-	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an
-	// array.
-	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
-
-	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
-	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-								  const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
+	FObjectReplicator* GetObjectReplicatorForSpatialUpdate(UObject* TargetObject);
+	void InvokeRepNotifies(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+						   const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
-											 const FObjectReferencesMap& RefMap, UObject* Object);
+											 const FObjectReferencesMap& RefMap, const UObject* Object) const;
 
+	Worker_ComponentId GetInterestComponentId() const;
+	void OnHandoverAuthorityGained();
 	void UpdateShadowData();
 	void UpdateSpatialPosition();
+	void ForcePositionReplication() { TimeWhenPositionLastUpdated = 0; }
 
 	void ServerProcessOwnershipChange();
 	void ClientProcessOwnershipChange(bool bNewNetOwned);
@@ -278,6 +278,8 @@ public:
 
 	bool NeedOwnerInterestUpdate() const { return bNeedOwnerInterestUpdate; }
 
+	const FVector& GetLastUpdatedSpatialPosition() const { return LastPositionSinceUpdate; }
+
 protected:
 	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
@@ -290,12 +292,9 @@ private:
 
 	void SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition);
 
-	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
-	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
-
 	void UpdateVisibleComponent(AActor* Actor);
 
-	bool SatisfiesSpatialPositionUpdateRequirements();
+	bool SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition);
 
 	void ValidateChannelNotBroken();
 
@@ -343,15 +342,6 @@ private:
 	// ReplicationBytesWritten is reset back to 0 at the start of ReplicateActor.
 	uint32 ReplicationBytesWritten = 0;
 
-	// Shadow data for Handover properties.
-	// For each object with handover properties, we store a blob of memory which contains
-	// the state of those properties at the last time we sent them, and is used to detect
-	// when those properties change.
-	TArray<uint8>* ActorHandoverShadowData;
-	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>, FDefaultSetAllocator,
-		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>, false>>
-		HandoverShadowDataMap;
-
 	// Band-aid until we get Actor Sets.
 	// Used on server-side workers only.
 	// Record when this worker receives SpatialOS Position component authority over the Actor.
@@ -366,4 +356,7 @@ private:
 	// In case the actor's owner did not have an entity ID when trying to set interest to it
 	// We set this flag in order to try to add interest as soon as possible.
 	bool bNeedOwnerInterestUpdate;
+
+	// Track whether an Actor should have its Role upgrade to AutonomousProxy when it gains authority
+	uint8 bIsAutonomousProxyOnAuthority : 1;
 };

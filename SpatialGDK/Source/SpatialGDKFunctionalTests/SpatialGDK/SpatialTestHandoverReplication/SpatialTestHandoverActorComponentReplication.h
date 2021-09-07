@@ -20,6 +20,33 @@ enum class EHandoverReplicationTestStage
 	Final,
 };
 
+USTRUCT()
+struct FHandoverReplicationTestStructInner
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	int FirstProperty;
+
+	UPROPERTY()
+	int SecondProperty;
+};
+
+USTRUCT()
+struct FHandoverReplicationTestStruct
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	int FirstProperty;
+
+	UPROPERTY()
+	int SecondProperty;
+
+	UPROPERTY()
+	FHandoverReplicationTestStructInner InnerStruct;
+};
+
 namespace HandoverReplicationTestValues
 {
 // This value has to be zero as handover shadow state is zero-initialized
@@ -44,8 +71,11 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UPROPERTY(Handover)
+	UPROPERTY(Replicated)
 	int HandoverTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
+
+	UPROPERTY(Replicated)
+	FHandoverReplicationTestStruct HandoverTestStruct;
 
 	UPROPERTY(Replicated)
 	int ReplicatedTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
@@ -69,13 +99,16 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UPROPERTY(Handover)
+	UPROPERTY(Replicated)
 	int HandoverTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
+
+	UPROPERTY(Replicated)
+	FHandoverReplicationTestStruct HandoverTestStruct;
 
 	UPROPERTY(Replicated)
 	int ReplicatedTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
 
-	UPROPERTY(Handover)
+	UPROPERTY(Replicated)
 	EHandoverReplicationTestStage TestStage = EHandoverReplicationTestStage::Initial;
 
 	UPROPERTY()

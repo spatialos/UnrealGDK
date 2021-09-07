@@ -11,7 +11,7 @@ struct FSpatialFunctionalTestRequire
 {
 	FString Msg;
 	bool bPassed;
-	FString ErrorMsg;
+	FString StatusMsg;
 	uint32 Order; // Used to be able to log the messages in the same order they occurred at the end.
 };
 
@@ -30,6 +30,8 @@ public:
 
 	void SetOwnerTest(ASpatialFunctionalTest* SpatialFunctionalTest) { OwnerTest = SpatialFunctionalTest; }
 
+	bool RequireValid(const UObject* Object, const FString& Msg);
+
 	bool RequireTrue(bool bCheckTrue, const FString& Msg);
 	bool RequireFalse(bool bCheckFalse, const FString& Msg);
 
@@ -44,6 +46,8 @@ public:
 	bool RequireEqual(const FVector& Value, const FVector& Expected, const FString& Msg, float Tolerance);
 	bool RequireEqual(const FRotator& Value, const FRotator& Expected, const FString& Msg, float Tolerance);
 	bool RequireEqual(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance);
+	template <typename EnumType>
+	bool RequireEqual_Enum(const EnumType Value, const EnumType Expected, const FString& Msg);
 
 	bool RequireNotEqual(bool bValue, bool bNotExpected, const FString& Msg);
 	bool RequireNotEqual(int Value, int NotExpected, const FString& Msg);
@@ -53,17 +57,45 @@ public:
 	bool RequireNotEqual(const FVector& Value, const FVector& NotExpected, const FString& Msg);
 	bool RequireNotEqual(const FRotator& Value, const FRotator& NotExpected, const FString& Msg);
 	bool RequireNotEqual(const FTransform& Value, const FTransform& NotExpected, const FString& Msg);
+	template <typename EnumType>
+	bool RequireNotEqual_Enum(const EnumType Value, const EnumType NotExpected, const FString& Msg);
 
-	bool GenericRequire(const FString& Key, bool bPassed, const FString& ErrorMsg);
+	bool GenericRequire(const FString& Key, bool bPassed, const FString& StatusMsg);
 
 	void LogAndClearStepRequires();
 
 	bool HasFails();
 
 private:
+	FString GenerateStatusMessage(bool bPassed, FString Received, FString Expected, FString Tolerance = FString(), bool bNotEqual = false);
+
 	ASpatialFunctionalTest* OwnerTest;
 
 	uint32 NextOrder;
 
 	TMap<FString, FSpatialFunctionalTestRequire> Requires;
 };
+
+template <typename EnumType>
+bool SpatialFunctionalTestRequireHandler::RequireEqual_Enum(const EnumType Value, const EnumType Expected, const FString& Msg)
+{
+	const bool bPassed = Value == Expected;
+	const FString ReceivedString = UEnum::GetValueAsString(Value);
+	const FString ExpectedString = UEnum::GetValueAsString(Expected);
+	const FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString);
+
+	GenericRequire(Msg, bPassed, StatusMsg);
+	return bPassed;
+}
+
+template <typename EnumType>
+bool SpatialFunctionalTestRequireHandler::RequireNotEqual_Enum(const EnumType Value, const EnumType NotExpected, const FString& Msg)
+{
+	const bool bPassed = Value != NotExpected;
+	const FString ReceivedString = UEnum::GetValueAsString(Value);
+	const FString ExpectedString = UEnum::GetValueAsString(NotExpected);
+	const FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, FString(), true);
+
+	GenericRequire(Msg, bPassed, StatusMsg);
+	return bPassed;
+}

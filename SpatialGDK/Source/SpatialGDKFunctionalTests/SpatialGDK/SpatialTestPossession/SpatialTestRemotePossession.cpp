@@ -3,6 +3,7 @@
 #include "SpatialTestRemotePossession.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
 #include "TestPossessionPlayerController.h"
@@ -63,6 +64,13 @@ void ASpatialTestRemotePossession::PrepareTest()
 	});
 
 	ATestPossessionPlayerController::ResetCalledCounter();
+}
+
+void ASpatialTestRemotePossession::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ThisClass, OriginalPawns, COND_ServerOnly);
 }
 
 void ASpatialTestRemotePossession::AddCleanupSteps()

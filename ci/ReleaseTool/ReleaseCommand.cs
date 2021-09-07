@@ -341,7 +341,7 @@ Release notes 将同时提供中英文。要浏览中文版本，向下滚动页
 * You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
 * You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases/tag/{options.Version}).
 
-Follow **[these](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date)** steps to upgrade your GDK, Engine fork and Example Project to the latest release.
+Follow **[these](https://networking.docs.improbable.io/gdk-for-unreal/v0.14.0/workflows/keep-your-gdk-up-to-date)** steps to upgrade your GDK, Engine fork and Example Project to the latest release.
 
 You can read the full release notes [here](https://github.com/spatialos/UnrealGDK/blob/release/CHANGELOG.md) or below.
 
@@ -374,7 +374,7 @@ $@"Unreal GDK version {options.Version} has been released!
 * This Engine version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases/tag/{options.Version}).
 * You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases/tag/{options.Version}).
 
-Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
+Follow [these steps](https://networking.docs.improbable.io/gdk-for-unreal/v0.14.0/workflows/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
 
 You can read the full release notes [here](https://github.com/spatialos/UnrealGDK/blob/release/CHANGELOG.md).
 
@@ -392,7 +392,7 @@ $@"Unreal GDK version {options.Version} has been released!
 * You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases/tag/{options.Version}).
 * You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
 
-Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
+Follow [these steps](https://networking.docs.improbable.io/gdk-for-unreal/v0.14.0/workflows/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
 
 You can read the full release notes [here](https://github.com/spatialos/UnrealGDK/blob/release/CHANGELOG.md).
 
@@ -411,7 +411,7 @@ $@"Unreal GDK version {options.Version} has been released!
 * You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases/tag/{options.Version}).
 * You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
 
-Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
+Follow [these steps](https://networking.docs.improbable.io/gdk-for-unreal/v0.14.0/workflows/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
 
 You can read the full release notes [here](https://github.com/spatialos/UnrealGDK/blob/release/CHANGELOG.md).
 
@@ -429,8 +429,9 @@ $@"Unreal GDK version {options.Version} has been released!
 * You can find the corresponding UnrealGDKTestGyms version [here](https://github.com/improbable/UnrealGDKTestGyms/releases/tag/{options.Version}).
 * You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases/tag/{options.Version}).
 * You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
+* You can find the corresponding UnrealGDKBuild version(s) [here](https://github.com/improbable/UnrealGDKBuild/releases/tag/{options.Version}).
 
-Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
+Follow [these steps](https://networking.docs.improbable.io/gdk-for-unreal/v0.14.0/workflows/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
 
 You can read the full release notes [here](https://github.com/spatialos/UnrealGDK/blob/release/CHANGELOG.md).
 
@@ -446,6 +447,26 @@ $@"Unreal GDK version {options.Version} has been released!
 
 * This UnrealGDKExampleProject version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases/tag/{options.Version}).
 * You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
+
+Follow [these steps](https://networking.docs.improbable.io/gdk-for-unreal/v0.14.0/workflows/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
+
+You can read the full release notes [here](https://github.com/spatialos/UnrealGDK/blob/release/CHANGELOG.md).
+
+Join the community on our [forums](https://forums.improbable.io/), or on [Discord](https://discordapp.com/invite/vAT7RSU).
+
+Happy developing!<br>
+GDK team";
+                    break;
+                case "UnrealGDKBuild":
+                    name = $"Unreal GDK UnrealGDKBuild {options.Version}";
+                    releaseBody =
+$@"Unreal GDK version {options.Version} has been released!
+
+* This UnrealGDKBuild version corresponds to GDK version: [{options.Version}](https://github.com/spatialos/UnrealGDK/releases/tag/{options.Version}).
+* You can find the corresponding UnrealGDKTestGyms version [here](https://github.com/improbable/UnrealGDKTestGyms/releases/tag/{options.Version}).
+* You can find the corresponding UnrealGDKExampleProject version [here](https://github.com/spatialos/UnrealGDKExampleProject/releases/tag/{options.Version}).
+* You can find the corresponding UnrealEngine version(s) [here](https://github.com/improbableio/UnrealEngine/releases).
+* You can find the corresponding TestGymBuildKite version(s) [here](https://github.com/improbable/TestGymBuildKite/releases/tag/{options.Version}).
 
 Follow [these steps](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to upgrade your GDK, Unreal Engine fork and your Project to the latest release.
 

@@ -34,12 +34,14 @@ public:
 
 	virtual void BeginPlay() override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 protected:
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
 	void MarkToDestroy();
 
 public:
-	UPROPERTY(Category = Sprite, handover, EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(Category = Sprite, Replicated, EditAnywhere, BlueprintReadWrite)
 	APawn* Target;
 
 private:

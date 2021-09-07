@@ -61,6 +61,14 @@ public:
 
 	LBStrategyRegions GetLBStrategyRegions() const;
 
+	uint32 GetRows() const { return Rows; }
+	uint32 GetCols() const { return Cols; }
+	float GetWorldWidth() const { return WorldWidth; }
+	float GetWorldHeight() const { return WorldHeight; }
+
+	virtual bool IsStrategyWorkerAware() const override;
+	virtual void GetLegacyLBInformation(FLegacyLBContext& Ctx) const override;
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR

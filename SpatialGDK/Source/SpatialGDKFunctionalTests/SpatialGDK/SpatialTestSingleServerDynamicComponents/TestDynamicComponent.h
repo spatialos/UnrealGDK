@@ -28,6 +28,6 @@ public:
 	UPROPERTY(Replicated)
 	int32 InitialOnlyReplicatedVar;
 
-	UPROPERTY(Handover)
+	UPROPERTY(Replicated)
 	int32 HandoverReplicatedVar;
 };

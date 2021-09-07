@@ -34,9 +34,6 @@ class EntityComponentOpListBuilder
 public:
 	EntityComponentOpListBuilder();
 
-	// MoveTemp leaves the builder in an undefined state. This op allows the current builder to be reused.
-	EntityComponentOpListBuilder Move();
-
 	EntityComponentOpListBuilder& AddEntity(Worker_EntityId EntityId);
 	EntityComponentOpListBuilder& RemoveEntity(Worker_EntityId EntityId);
 	EntityComponentOpListBuilder& AddComponent(Worker_EntityId EntityId, ComponentData Data);
@@ -45,6 +42,8 @@ public:
 	EntityComponentOpListBuilder& SetAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId, Worker_Authority Authority,
 											   TArray<ComponentData> Components);
 	EntityComponentOpListBuilder& SetDisconnect(Worker_ConnectionStatusCode StatusCode, StringStorage DisconnectReason);
+	EntityComponentOpListBuilder& StartCriticalSection();
+	EntityComponentOpListBuilder& EndCriticalSection();
 	EntityComponentOpListBuilder& AddCreateEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
 																 Worker_StatusCode StatusCode, StringStorage Message);
 	EntityComponentOpListBuilder& AddEntityQueryCommandResponse(Worker_RequestId RequestId, TArray<OpListEntity> Results,

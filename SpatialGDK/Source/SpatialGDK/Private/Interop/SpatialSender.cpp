@@ -16,7 +16,6 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialEventTracer.h"
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
@@ -86,7 +85,8 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
 	FWorkerComponentUpdate InterestUpdate =
 		NetDriver->InterestFactory
-			->CreatePartitionInterest(NetDriver->LoadBalanceStrategy, VirtualId, NetDriver->DebugCtx != nullptr /*bDebug*/)
+			->CreatePartitionInterest(NetDriver->LoadBalanceStrategy->GetWorkerInterestQueryConstraint(VirtualId),
+									  NetDriver->DebugCtx != nullptr /*bDebug*/)
 			.CreateInterestUpdate();
 
 	Connection->SendComponentUpdate(PartitionId, &InterestUpdate);
@@ -97,41 +97,61 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 	Connection->SendComponentUpdate(PartitionId, &Update);
 }
 
-void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const
+void USpatialSender::SendAuthorityIntentUpdate(const AActor& InActor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const
 {
-	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&Actor);
-	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&InActor);
+
+	if (!ensureAlwaysMsgf(EntityId != SpatialConstants::INVALID_ENTITY_ID,
+						  TEXT("Couldn't find entity ID from package map when sending auth intent update. Actor: %s"),
+						  *GetNameSafe(&InActor)))
+	{
+		return;
+	}
 
 	TOptional<AuthorityIntent> AuthorityIntentComponent =
 		DeserializeComponent<AuthorityIntent>(NetDriver->Connection->GetCoordinator(), EntityId);
-	check(AuthorityIntentComponent.IsSet());
+
+	if (!ensureAlwaysMsgf(AuthorityIntentComponent.IsSet(),
+						  TEXT("Failed to get currnet AuthorityIntent data from view coordinator when sending update. Actor: %s"),
+						  *GetNameSafe(&InActor)))
+	{
+		return;
+	}
+
 	if (AuthorityIntentComponent->VirtualWorkerId == NewAuthoritativeVirtualWorkerId)
 	{
 		/* This seems to occur when using the replication graph, however we're still unsure the cause. */
 		UE_LOG(LogSpatialSender, Error,
 			   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
-			   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
+			   *GetNameSafe(&InActor), EntityId, NewAuthoritativeVirtualWorkerId);
 		return;
 	}
 
 	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
 	UE_LOG(LogSpatialSender, Log,
 		   TEXT("(%s) Sending AuthorityIntent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
-		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
+		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&InActor));
 
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
-		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
+		SpanId = EventTracer->TraceEvent(AUTHORITY_INTENT_UPDATE_EVENT_NAME, "", /* Causes */ nullptr, /* NumCauses */ 0,
+										 [&InActor, NewAuthoritativeVirtualWorkerId](FSpatialTraceEventDataBuilder& EventBuilder) {
+											 EventBuilder.AddObject(&InActor);
+											 EventBuilder.AddWorkerId(NewAuthoritativeVirtualWorkerId, "new_worker_id");
+										 });
 	}
 
 	Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 
-	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
-	// This should always happen with USLB.
-	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+	if (NetDriver->LoadBalanceEnforcer)
+	{
+		// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
+		// This should always happen with USLB.
+		NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+	}
 
 	if (NetDriver->SpatialDebuggerSystem.IsValid())
 	{

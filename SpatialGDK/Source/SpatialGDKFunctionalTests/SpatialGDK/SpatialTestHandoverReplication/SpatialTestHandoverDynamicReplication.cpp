@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestHandoverDynamicReplication.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -59,9 +59,7 @@ void ASpatialTestHandoverDynamicReplication::PrepareTest()
 				 "ADynamicReplicationHandoverCube) with bReplicates set to false "
 				 "inside its authority area."),
 			FWorkerDefinition::Server(1), nullptr, [this]() {
-				HandoverCube = GetWorld()->SpawnActor<ADynamicReplicationHandoverCube>(Server1Position, FRotator::ZeroRotator,
-																					   FActorSpawnParameters());
-				RegisterAutoDestroyActor(HandoverCube);
+				HandoverCube = SpawnActor<ADynamicReplicationHandoverCube>(Server1Position);
 				FinishStep();
 			});
 
@@ -90,7 +88,7 @@ void ASpatialTestHandoverDynamicReplication::PrepareTest()
 
 				AssertTrue(IsValid(NetDriver), TEXT("This test should be run with Spatial Networking"));
 
-				LoadBalancingStrategy = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy);
+				LoadBalancingStrategy = GetLoadBalancingStrategy();
 
 				AssertTrue(IsValid(HandoverCube) && IsValid(LoadBalancingStrategy), TEXT("All servers should have a valid reference to the "
 																						 "HandoverCube and the strategy"));

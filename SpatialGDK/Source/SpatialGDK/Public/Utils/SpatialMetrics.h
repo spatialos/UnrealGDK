@@ -17,6 +17,13 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialMetrics, Log, All);
 
 DECLARE_DELEGATE_RetVal(double, UserSuppliedMetric);
 
+UENUM()
+enum class ESpatialServerCommands : uint8
+{
+	StartInsights,
+	StopInsights,
+};
+
 UCLASS()
 class SPATIALGDK_API USpatialMetrics : public UObject
 {
@@ -41,8 +48,12 @@ public:
 	void OnStopRPCMetricsCommand();
 
 	UFUNCTION(Exec)
-	void SpatialModifySetting(const FString& Name, float Value);
+	void SpatialModifySetting(const FString& Name, const float Value);
 	void OnModifySettingCommand(Schema_Object* CommandPayload);
+
+	UFUNCTION(Exec)
+	void SpatialExecServerCmd(const FString& ServerName, const FString& Command, const FString& Args);
+	void OnExecServerCmdCommand(Schema_Object* CommandPayload);
 
 	void TrackSentRPC(UFunction* Function, ERPCType RPCType, int PayloadSize);
 
@@ -66,6 +77,12 @@ public:
 	void SetWorkerLoadDelegate(const UserSuppliedMetric& Delegate) { WorkerLoadDelegate = Delegate; }
 	void SetCustomMetric(const FString& Metric, const UserSuppliedMetric& Delegate);
 	void RemoveCustomMetric(const FString& Metric);
+
+private:
+	void SpatialExecServerCmd_Internal(const FString& ServerName, const ESpatialServerCommands& Command, const FString& Args);
+
+	bool StartInsightsCapture(const FString& Args);
+	bool StopInsightsCapture();
 
 private:
 	// Worker SDK metrics

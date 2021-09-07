@@ -34,10 +34,10 @@ class USchemaGenObjectStubHandOver : public UObject
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(Handover)
+	UPROPERTY(Replicated)
 	int IntValue;
 
-	UPROPERTY(Handover)
+	UPROPERTY(Replicated)
 	bool BoolValue;
 };
 

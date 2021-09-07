@@ -4,8 +4,7 @@
 
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 
-#include "Interop/ClaimPartitionHandler.h"
-#include "Interop/CreateEntityHandler.h"
+#include "Interop/SpatialCommandsHandler.h"
 
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
@@ -24,9 +23,11 @@ namespace SpatialGDK
 class ServerWorkerEntityCreator
 {
 public:
-	ServerWorkerEntityCreator(USpatialNetDriver& InNetDriver, USpatialWorkerConnection& InConnection);
+	ServerWorkerEntityCreator(USpatialNetDriver& InNetDriver, ISpatialOSWorker& InConnection);
 	void CreateWorkerEntity();
 	void ProcessOps(const TArray<Worker_Op>& Ops);
+	bool IsFinished() const;
+	Worker_EntityId GetWorkerEntityId() const;
 
 private:
 	void OnEntityCreated(const Worker_CreateEntityResponseOp& Op);
@@ -34,14 +35,16 @@ private:
 	{
 		CreatingWorkerSystemEntity,
 		ClaimingWorkerPartition,
+		Finished,
 	};
 	WorkerSystemEntityCreatorState State;
 
-	USpatialNetDriver& NetDriver;
-	USpatialWorkerConnection& Connection;
+	Worker_EntityId WorkerEntityId;
 
-	CreateEntityHandler CreateEntityHandler;
-	ClaimPartitionHandler ClaimPartitionHandler;
+	USpatialNetDriver& NetDriver;
+	ISpatialOSWorker& Connection;
+
+	FCommandsHandler CommandsHandler;
 };
 } // namespace SpatialGDK
 
@@ -86,8 +89,6 @@ public:
 													const SpatialGDK::FRetryData& RetryData) override;
 	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) override;
 
-	void CreateServerWorkerEntity();
-
 	void Advance(float DeltaTimeS);
 	bool HasDisconnected() const;
 	Worker_ConnectionStatusCode GetConnectionStatus() const;
@@ -95,6 +96,8 @@ public:
 
 	const SpatialGDK::EntityView& GetView() const;
 	SpatialGDK::ViewCoordinator& GetCoordinator() const;
+	// TODO: UNR-5481 - Fix this hack for fixing spatial debugger crash after client travel
+	bool HasValidCoordinator() const { return Coordinator.IsValid(); }
 
 	PhysicalWorkerName GetWorkerId() const;
 	Worker_EntityId GetWorkerSystemEntityId() const;
@@ -111,19 +114,10 @@ public:
 
 	void SetStartupComplete();
 
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
-	FOnEnqueueMessage OnEnqueueMessage;
-
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
-	FOnDequeueMessage OnDequeueMessage;
-
+	SpatialGDK::ISpatialOSWorker* GetSpatialWorkerInterface() const;
 	SpatialGDK::SpatialEventTracer* GetEventTracer() const { return EventTracer; }
 
 private:
-	TOptional<SpatialGDK::ServerWorkerEntityCreator> WorkerEntityCreator;
-
-	static bool IsStartupComponent(Worker_ComponentId Id);
-	static void ExtractStartupOps(SpatialGDK::OpList& OpList, SpatialGDK::ExtractedOpListData& ExtractedOpList);
 	bool StartupComplete = false;
 	SpatialGDK::SpatialEventTracer* EventTracer;
 	TUniquePtr<SpatialGDK::ViewCoordinator> Coordinator;

@@ -36,7 +36,7 @@ enum ESchemaComponentType : int32
 	// Properties
 	SCHEMA_Data, // Represents properties being replicated to all workers
 	SCHEMA_OwnerOnly,
-	SCHEMA_Handover,
+	SCHEMA_ServerOnly,
 	SCHEMA_InitialOnly,
 
 	SCHEMA_Count,
@@ -84,6 +84,7 @@ const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID = 100;
 
 const Worker_ComponentId SPAWN_DATA_COMPONENT_ID = 9999;
 const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID = 9998;
+const Worker_ComponentId GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID = 9997;
 const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID = 9996;
 const Worker_ComponentId GDK_DEBUG_COMPONENT_ID = 9995;
 const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
@@ -91,6 +92,7 @@ const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
 const Worker_ComponentId PLAYER_CONTROLLER_COMPONENT_ID = 9991;
 const Worker_ComponentId SNAPSHOT_VERSION_COMPONENT_ID = 9990;
+const Worker_ComponentId SKELETON_ENTITY_MANIFEST_COMPONENT_ID = 9989;
 
 const Worker_ComponentSetId SERVER_AUTH_COMPONENT_SET_ID = 9900;
 const Worker_ComponentSetId CLIENT_AUTH_COMPONENT_SET_ID = 9901;
@@ -101,12 +103,17 @@ const Worker_ComponentSetId GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID = 9905;
 const Worker_ComponentSetId ROUTING_WORKER_AUTH_COMPONENT_SET_ID = 9906;
 const Worker_ComponentSetId INITIAL_ONLY_COMPONENT_SET_ID = 9907;
 const Worker_ComponentSetId SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID = 9908;
+const Worker_ComponentSetId STRATEGY_WORKER_AUTH_COMPONENT_SET_ID = 9909;
+const Worker_ComponentSetId LB_DELEGATION_AUTH_COMPONENT_SET_ID = 9910;
+const Worker_ComponentSetId PARTITION_WORKER_AUTH_COMPONENT_SET_ID = 9911;
+const Worker_ComponentSetId PARTITION_METADATA_AUTH_COMPONENT_SET_ID = 9912;
+const Worker_ComponentSetId SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID = 9913;
 
 extern const FString SERVER_AUTH_COMPONENT_SET_NAME;
 extern const FString CLIENT_AUTH_COMPONENT_SET_NAME;
 extern const FString DATA_COMPONENT_SET_NAME;
 extern const FString OWNER_ONLY_COMPONENT_SET_NAME;
-extern const FString HANDOVER_COMPONENT_SET_NAME;
+extern const FString SERVER_ONLY_COMPONENT_SET_NAME;
 extern const FString ROUTING_WORKER_COMPONENT_SET_NAME;
 extern const FString INITIAL_ONLY_COMPONENT_SET_NAME;
 
@@ -120,10 +127,10 @@ const Worker_ComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID = 9979;
 const Worker_ComponentId VISIBLE_COMPONENT_ID = 9970;
 const Worker_ComponentId SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID = 9968;
 
-const Worker_ComponentId CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID = 9960;
-const Worker_ComponentId CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID = 9961;
-const Worker_ComponentId CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID = 9962;
-const Worker_ComponentId CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID = 9963;
+const Worker_ComponentId CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID = 9960;
+const Worker_ComponentId CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID = 9961;
+const Worker_ComponentId CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID = 9962;
+const Worker_ComponentId CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID = 9963;
 
 const Worker_ComponentId CLIENT_ENDPOINT_COMPONENT_ID = 9978;
 const Worker_ComponentId SERVER_ENDPOINT_COMPONENT_ID = 9977;
@@ -139,20 +146,31 @@ const Worker_ComponentId INITIAL_ONLY_PRESENCE_COMPONENT_ID = 9966;
 const Worker_ComponentId ACTOR_SET_MEMBER_COMPONENT_ID = 9965;
 const Worker_ComponentId ACTOR_GROUP_MEMBER_COMPONENT_ID = 9964;
 
+const Worker_ComponentId ACTOR_OWNERSHIP_COMPONENT_ID = 9959;
+const Worker_ComponentId AUTHORITY_INTENTV2_COMPONENT_ID = 9958;
+const Worker_ComponentId AUTHORITY_INTENT_ACK_COMPONENT_ID = 9957;
+const Worker_ComponentId PARTITION_ACK_COMPONENT_ID = 9956;
+
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
 // System query tags for entity completeness
 const Worker_ComponentId FIRST_EC_COMPONENT_ID = 2001;
 const Worker_ComponentId ACTOR_AUTH_TAG_COMPONENT_ID = 2001;
 const Worker_ComponentId ACTOR_TAG_COMPONENT_ID = 2002;
+const Worker_ComponentId ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID = 2003;
 const Worker_ComponentId LB_TAG_COMPONENT_ID = 2005;
 
 const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
 const Worker_ComponentId ROUTINGWORKER_TAG_COMPONENT_ID = 2009;
 const Worker_ComponentId STRATEGYWORKER_TAG_COMPONENT_ID = 2010;
 const Worker_ComponentId GDK_DEBUG_TAG_COMPONENT_ID = 2011;
+const Worker_ComponentId PARTITION_AUTH_TAG_COMPONENT_ID = 2012;
+const Worker_ComponentId SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID = 2013;
+const Worker_ComponentId SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID = 2014;
+const Worker_ComponentId SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID = 2015;
+const Worker_ComponentId WORKER_PARTITION_TAG_COMPONENT_ID = 2016;
 // Add component ids above here, this should always be last and be equal to the previous component id
-const Worker_ComponentId LAST_EC_COMPONENT_ID = 2011;
+const Worker_ComponentId LAST_EC_COMPONENT_ID = 2016;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
@@ -160,6 +178,9 @@ const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID = 3;
 const Schema_FieldId DEPLOYMENT_MAP_SCHEMA_HASH = 4;
 
 const Schema_FieldId SNAPSHOT_VERSION_NUMBER_ID = 1;
+
+const Schema_FieldId SKELETON_ENTITY_MANIFEST_ENTITIES_TO_POPULATE_ID = 1;
+const Schema_FieldId SKELETON_ENTITY_MANIFEST_POPULATED_SKELETON_ENTITIES_ID = 2;
 
 const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID = 1;
 
@@ -173,10 +194,16 @@ const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID = 1;
 const Schema_FieldId DEBUG_METRICS_START_RPC_METRICS_ID = 1;
 const Schema_FieldId DEBUG_METRICS_STOP_RPC_METRICS_ID = 2;
 const Schema_FieldId DEBUG_METRICS_MODIFY_SETTINGS_ID = 3;
+const Schema_FieldId DEBUG_METRICS_EXEC_SERVER_COMMAND_ID = 4;
 
 // ModifySettingPayload Field IDs
 const Schema_FieldId MODIFY_SETTING_PAYLOAD_NAME_ID = 1;
 const Schema_FieldId MODIFY_SETTING_PAYLOAD_VALUE_ID = 2;
+
+// ExecServerCommandPayload Field IDs
+const Schema_FieldId EXEC_SERVER_COMMAND_PAYLOAD_SERVER_NAME_ID = 1;
+const Schema_FieldId EXEC_SERVER_COMMAND_PAYLOAD_COMMAND_ID = 2;
+const Schema_FieldId EXEC_SERVER_COMMAND_PAYLOAD_ARGS_ID = 3;
 
 // UnrealObjectRef Field IDs
 const Schema_FieldId UNREAL_OBJECT_REF_ENTITY_ID = 1;
@@ -206,6 +233,13 @@ const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
 // AuthorityIntent codes and Field IDs.
 const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID = 1;
 
+// AuthorityIntentV2 codes and Field IDs.
+const Schema_FieldId AUTHORITY_INTENTV2_PARTITION_ID = 1;
+const Schema_FieldId AUTHORITY_INTENTV2_ASSIGNMENT_COUNTER = 2;
+
+// AuthorityIntentACK codes and Field IDs.
+const Schema_FieldId AUTHORITY_INTENT_ACK_ASSIGNMENT_COUNTER = 1;
+
 // VirtualWorkerTranslation Field IDs.
 const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID = 1;
 const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID = 1;
@@ -234,6 +268,7 @@ const Schema_FieldId SERVER_WORKER_NAME_ID = 1;
 const Schema_FieldId SERVER_WORKER_READY_TO_BEGIN_PLAY_ID = 2;
 const Schema_FieldId SERVER_WORKER_SYSTEM_ENTITY_ID = 3;
 const Schema_FieldId SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID = 1;
+const Schema_FieldId SERVER_WORKER_EXEC_SERVER_COMMAND_COMMAND_ID = 2;
 
 // SpawnPlayerRequest type IDs.
 const Schema_FieldId SPAWN_PLAYER_URL_ID = 1;
@@ -282,8 +317,8 @@ const Schema_FieldId ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID = 1;
 // ActorGroupMember field IDs
 const Schema_FieldId ACTOR_GROUP_MEMBER_COMPONENT_ACTOR_GROUP_ID = 1;
 
-// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
-const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
+// ActorOwnership field IDs
+const Schema_FieldId ACTOR_OWNERSHIP_COMPONENT_OWNER_ACTOR_ID = 1;
 
 const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
@@ -385,6 +420,8 @@ extern const TArray<FString> ClientAuthorityWellKnownSchemaImports;
 extern const TMap<Worker_ComponentId, FString> ClientAuthorityWellKnownComponents;
 extern const TMap<Worker_ComponentId, FString> RoutingWorkerComponents;
 extern const TArray<FString> RoutingWorkerSchemaImports;
+extern const TMap<Worker_ComponentId, FString> StrategyWorkerComponents;
+extern const TArray<FString> StrategyWorkerSchemaImports;
 extern const TArray<Worker_ComponentId> KnownEntityAuthorityComponents;
 
 //
@@ -405,7 +442,7 @@ extern const TArray<Worker_ComponentId> KnownEntityAuthorityComponents;
 //
 
 constexpr uint32 SPATIAL_SNAPSHOT_SCHEMA_HASH = 679237978;
-constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 3;
+constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 5;
 constexpr uint64 SPATIAL_SNAPSHOT_VERSION = ((((uint64)SPATIAL_SNAPSHOT_SCHEMA_HASH) << 32) | SPATIAL_SNAPSHOT_VERSION_INC);
 
 } // namespace SpatialConstants

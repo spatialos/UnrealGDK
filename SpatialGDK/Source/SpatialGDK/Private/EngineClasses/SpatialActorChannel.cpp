@@ -18,13 +18,15 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineStats.h"
+#include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Schema/ActorOwnership.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -56,10 +58,19 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 {
 	FSendingRepState* SendingRepState = RepState->GetSendingRepState();
 
-	check(SendingRepState->HistoryEnd >= SendingRepState->HistoryStart);
+	if (!ensureAlwaysMsgf(SendingRepState->HistoryEnd >= SendingRepState->HistoryStart,
+						  TEXT("HistoryEnd buffer index should never be smaller than HistoryStart")))
+	{
+		return;
+	}
 
 	const int32 HistoryCount = SendingRepState->HistoryEnd - SendingRepState->HistoryStart;
-	check(HistoryCount < MaxSendingChangeHistory);
+
+	if (!ensureAlwaysMsgf(HistoryCount < MaxSendingChangeHistory,
+						  TEXT("Changelist history should always be smaller than the MaxSendingChangeHistory")))
+	{
+		return;
+	}
 
 	for (int32 i = SendingRepState->HistoryStart; i < SendingRepState->HistoryEnd; i++)
 	{
@@ -67,8 +78,7 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 
 		FRepChangedHistory& HistoryItem = SendingRepState->ChangeHistory[HistoryIndex];
 
-		// All active history items should contain a change list
-		check(HistoryItem.Changed.Num() > 0);
+		ensureAlwaysMsgf(HistoryItem.Changed.Num() > 0, TEXT("All active history items should contain a change list"));
 
 		HistoryItem.Changed.Empty();
 		HistoryItem.OutPacketIdRange = FPacketIdRange();
@@ -78,7 +88,10 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 	// Remove any tiling in the history markers to keep them from wrapping over time
 	const int32 NewHistoryCount = SendingRepState->HistoryEnd - SendingRepState->HistoryStart;
 
-	check(NewHistoryCount <= MaxSendingChangeHistory);
+	if (!ensureAlwaysMsgf(NewHistoryCount <= MaxSendingChangeHistory, TEXT("NewHistoryCount greater or equal to MaxSendingChangeHistory")))
+	{
+		return;
+	}
 
 	SendingRepState->HistoryStart = SendingRepState->HistoryStart % MaxSendingChangeHistory;
 	SendingRepState->HistoryEnd = SendingRepState->HistoryStart + NewHistoryCount;
@@ -199,6 +212,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, EventTracer(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
 	, TimeWhenPositionLastUpdated(0.0)
+	, bIsAutonomousProxyOnAuthority(false)
 {
 }
 
@@ -218,14 +232,12 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	TimeWhenPositionLastUpdated = 0.0;
 	AuthorityReceivedTimestamp = 0;
 	bNeedOwnerInterestUpdate = false;
+	bIsAutonomousProxyOnAuthority = false;
 
 	PendingDynamicSubobjects.Empty();
 	SavedInterestBucketComponentID = SpatialConstants::INVALID_COMPONENT_ID;
 
 	FramesTillDormancyAllowed = 0;
-
-	ActorHandoverShadowData = nullptr;
-	HandoverShadowDataMap.Empty();
 
 	NetDriver = Cast<USpatialNetDriver>(Connection->Driver);
 	check(NetDriver);
@@ -242,11 +254,6 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		return;
 	}
 
-	if (!NetDriver->IsAuthoritativeDestructionAllowed())
-	{
-		return;
-	}
-
 	const bool bHasAuthority = NetDriver->HasServerAuthority(EntityId);
 	if (Actor != nullptr)
 	{
@@ -257,19 +264,28 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 			if (Actor->GetTearOff())
 			{
 				NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
-				// Since the entity deletion is delayed, this creates a situation,
-				// when the Actor is torn off, but still replicates.
-				// Disabling replication makes RPC calls impossible for this Actor.
-				Actor->SetReplicates(false);
+				if (ensureMsgf(Actor->HasAuthority(), TEXT("EntityId %lld Actor %s doesn't have authority, can't disable replication"),
+							   EntityId, *Actor->GetName()))
+				{
+					// Since the entity deletion is delayed, this creates a situation,
+					// when the Actor is torn off, but still replicates.
+					// Disabling replication makes RPC calls impossible for this Actor.
+					Actor->SetReplicates(false);
+				}
 			}
 			else
 			{
 				NetDriver->ActorSystem->RetireEntity(EntityId, Actor->IsNetStartupActor());
 			}
 		}
-		else if (bCreatedEntity) // We have not gained authority yet
+		else if (NetDriver->ActorSystem->IsCreateEntityRequestInFlight(EntityId)) // We have not gained authority yet
 		{
-			Actor->SetReplicates(false);
+			if (ensureMsgf(Actor->HasAuthority(), TEXT("EntityId %lld Actor %s doesn't have authority, can't disable replication"),
+						   EntityId, *Actor->GetName()))
+			{
+				Actor->SetReplicates(false);
+			}
+
 			NetDriver->ActorSystem->RetireWhenAuthoritative(
 				EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()), Actor->IsNetStartupActor(),
 				Actor->GetTearOff()); // Ensure we don't recreate the actor
@@ -346,7 +362,8 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	}
 	else if (Reason == EChannelCloseReason::Relevancy)
 	{
-		check(IsAuthoritativeServer());
+		ensureAlwaysMsgf(IsAuthoritativeServer(),
+						 TEXT("Trying to close SpatialActorChannel because of Relevancy on a non-authoritative server"));
 		// Do nothing except close actor channel - this should only get processed on auth server
 	}
 	else
@@ -360,18 +377,20 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	return Super::Close(Reason);
 }
 
-bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
+void USpatialActorChannel::OnHandoverAuthorityGained()
 {
-	check(ObjectHasReplicator(Object));
-	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
-	TSharedPtr<FRepLayout>& RepLayout = Replicator.RepLayout;
-	check(Handle - 1 < RepLayout->BaseHandleToCmdIndex.Num());
-	return RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == ERepLayoutCmdType::DynamicArray;
+	UpdateShadowData();
+
+	SavedInterestBucketComponentID =
+		NetDriver->ClassInfoManager->GetExistingInterestBucketComponentId(NetDriver->Connection->GetView()[EntityId]);
 }
 
 void USpatialActorChannel::UpdateShadowData()
 {
-	check(Actor);
+	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Called UpdateShadowData but Actor was nullptr")))
+	{
+		return;
+	}
 
 	// If this channel was responsible for creating the actor, we do not want to initialize our shadow data
 	// to the latest state since there could have been state that has changed between creation of the entity
@@ -392,16 +411,6 @@ void USpatialActorChannel::UpdateShadowData()
 		ResetShadowData(*ComponentReplicator.RepLayout, ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer,
 						ActorComponent);
 	}
-
-	// Update handover shadow data.
-	for (auto& HandoverData : HandoverShadowDataMap)
-	{
-		TArray<uint8>& ShadowDataBuffer = HandoverData.Value.Get();
-		UObject* Object = HandoverData.Key.Get();
-
-		// This updates ShadowDataBuffer to Object's current handover state.
-		GetHandoverChangeList(ShadowDataBuffer, Object);
-	}
 }
 
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
@@ -419,7 +428,20 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 	const int32 CmdCount = Replicator.RepLayout->Cmds.Num();
 	for (uint16 CmdIdx = 0; CmdIdx < CmdCount; ++CmdIdx)
 	{
-		const auto& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
+		const FRepLayoutCmd& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
+		const FRepChangedParent& Parent = Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
+
+		// HACK: Need special case here because the gdk relies on the whole of the RepMovement struct being replicated to the client to
+		// decide whether to replicate physics. see: ComponentReader::ApplySchemaObject
+
+		// UNR-5843 TODO: fix this so we no longer need this special handling, for instance by replicating bRepPhysics as a separate always
+		// replicated field.
+		const bool bRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
+
+		if (!Parent.Active && !bRepActorMovement)
+		{
+			continue;
+		}
 
 		InitialRepChanged.Add(Cmd.RelativeHandle);
 
@@ -444,17 +466,6 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 	}
 
 	return { InitialRepChanged, *Replicator.RepLayout };
-}
-
-FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(const FClassInfo& ClassInfo)
-{
-	FHandoverChangeState HandoverChanged;
-	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
-	{
-		HandoverChanged.Add(PropertyInfo.Handle);
-	}
-
-	return HandoverChanged;
 }
 
 void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
@@ -674,13 +685,6 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
-	FHandoverChangeState HandoverChangeState;
-
-	if (ActorHandoverShadowData != nullptr)
-	{
-		HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
-	}
-
 	ReplicationBytesWritten = 0;
 
 	if (!bCreatingNewEntity && NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
@@ -690,7 +694,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	// If any properties have changed, send a component update.
-	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
+	if (bCreatingNewEntity || RepChanged.Num() > 0)
 	{
 		if (bCreatingNewEntity)
 		{
@@ -698,23 +702,20 @@ int64 USpatialActorChannel::ReplicateActor()
 			// so we know what subobjects are relevant for replication when creating the entity.
 			Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 
+			// Get initial interest bucket component.
+			SavedInterestBucketComponentID = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
+
 			NetDriver->ActorSystem->SendCreateEntityRequest(*this, ReplicationBytesWritten);
 
 			bCreatedEntity = true;
 
-			// We preemptively set the Actor role to SimulatedProxy if load balancing is disabled
-			// (since the legacy behaviour is to wait until Spatial tells us we have authority)
-			if (NetDriver->LoadBalanceStrategy == nullptr)
-			{
-				Actor->Role = ROLE_SimulatedProxy;
-				Actor->RemoteRole = ROLE_Authority;
-			}
+			SetAutonomousProxyOnAuthority(Actor->RemoteRole == ROLE_AutonomousProxy);
 		}
 		else
 		{
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
 
-			NetDriver->ActorSystem->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState, ReplicationBytesWritten);
+			NetDriver->ActorSystem->SendComponentUpdates(Actor, Info, this, &RepChangeState, ReplicationBytesWritten);
 
 			bInterestDirty = false;
 		}
@@ -752,36 +753,8 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		FOutBunch DummyOutBunch;
 
-		// Actor::ReplicateSubobjects is overridable and enables the Actor to replicate any subobjects directly, via a
-		// call back into SpatialActorChannel::ReplicateSubobject, as well as issues a call to UActorComponent::ReplicateSubobjects
-		// on any of its replicating actor components. This allows the component to replicate any of its subobjects directly via
-		// the same SpatialActorChannel::ReplicateSubobject.
-		Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
-
-		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
-		{
-			UObject* Subobject = SubobjectInfoPair.Key;
-			const FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
-
-			// Handover shadow data should already exist for this object. If it doesn't, it must have
-			// started replicating after SetChannelActor was called on the owning actor.
-			TSharedRef<TArray<uint8>>* SubobjectHandoverShadowData = HandoverShadowDataMap.Find(Subobject);
-			if (SubobjectHandoverShadowData == nullptr)
-			{
-				UE_LOG(LogSpatialActorChannel, Warning, TEXT("EntityId: %lld Actor: %s HandoverShadowData not found for Subobject %s"),
-					   EntityId, *Actor->GetName(), *Subobject->GetName());
-				continue;
-			}
-
-			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
-			if (SubobjectHandoverChangeState.Num() > 0)
-			{
-				NetDriver->ActorSystem->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState,
-															 ReplicationBytesWritten);
-			}
-		}
-
-		// Look for deleted subobjects
+		// Look for deleted subobjects before trying to replicate existing ones; this will free the removed Unreal components' bound Spatial
+		// components for reuse.
 		for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
 		{
 			if (!RepComp.Value()->GetWeakObjectPtr().IsValid())
@@ -800,6 +773,12 @@ int64 USpatialActorChannel::ReplicateActor()
 				RepComp.RemoveCurrent();
 			}
 		}
+
+		// Actor::ReplicateSubobjects is overridable and enables the Actor to replicate any subobjects directly, via a
+		// call back into SpatialActorChannel::ReplicateSubobject, as well as issues a call to UActorComponent::ReplicateSubobjects
+		// on any of its replicating actor components. This allows the component to replicate any of its subobjects directly via
+		// the same SpatialActorChannel::ReplicateSubobject.
+		Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 	}
 
 #if USE_NETWORK_PROFILER
@@ -847,7 +826,10 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 		}
 	}
 
-	check(Info != nullptr);
+	if (!ensureAlwaysMsgf(Info != nullptr, TEXT("Subobject info was nullptr. Actor: %s"), *GetNameSafe(Object)))
+	{
+		return;
+	}
 
 	NetDriver->ActorSystem->SendAddComponentForSubobject(this, Object, *Info, ReplicationBytesWritten);
 }
@@ -866,7 +848,8 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	SCOPE_CYCLE_UOBJECT(ReplicateSubobjectSpecificClass, Object);
 
 	bool bCreatedReplicator = false;
-
+	// Set here because FindOrCreateReplicator will remove the replicator from the dormancy map
+	const bool bPreviouslyDormant = Connection->DormantReplicatorMap.Contains(Object);
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object, &bCreatedReplicator).Get();
 
 	// If we're creating an entity, don't try replicating
@@ -876,7 +859,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	}
 
 	// New subobject that hasn't been replicated before
-	if (bCreatedReplicator)
+	if (bCreatedReplicator && !bPreviouslyDormant)
 	{
 		// Attach to to the entity
 		DynamicallyAttachSubobject(Object);
@@ -952,7 +935,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		}
 
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
-		NetDriver->ActorSystem->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr, ReplicationBytesWritten);
+		NetDriver->ActorSystem->SendComponentUpdates(Object, Info, this, &RepChangeState, ReplicationBytesWritten);
 
 		SendingRepState->HistoryEnd++;
 	}
@@ -989,82 +972,6 @@ bool USpatialActorChannel::ReadyForDormancy(bool bSuppressLogs /*= false*/)
 	return Super::ReadyForDormancy(bSuppressLogs);
 }
 
-TMap<UObject*, const FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
-{
-	const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-
-	TMap<UObject*, const FClassInfo*> FoundSubobjects;
-
-	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
-	{
-		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
-
-		if (SubobjectInfo.HandoverProperties.Num() == 0)
-		{
-			// Not interested in this component if it has no handover properties
-			continue;
-		}
-
-		UObject* Object = nullptr;
-		if (EntityId == 0)
-		{
-			Object = Actor->GetDefaultSubobjectByName(SubobjectInfo.SubobjectName);
-		}
-		else
-		{
-			Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, SubobjectInfoPair.Key)).Get();
-		}
-
-		if (Object == nullptr)
-		{
-			continue;
-		}
-
-		FoundSubobjects.Add(Object, &SubobjectInfo);
-	}
-
-	return FoundSubobjects;
-}
-
-void USpatialActorChannel::InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object)
-{
-	const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
-
-	ShadowData.SetNumUninitialized(ClassInfo.HandoverPropertiesSize);
-	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
-	{
-		if (PropertyInfo.ArrayIdx == 0) // For static arrays, the first element will handle the whole array
-		{
-			PropertyInfo.Property->InitializeValue(ShadowData.GetData() + PropertyInfo.ShadowOffset);
-		}
-	}
-}
-
-FHandoverChangeState USpatialActorChannel::GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object)
-{
-	FHandoverChangeState HandoverChanged;
-
-	const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
-
-	uint32 ShadowDataOffset = 0;
-	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
-	{
-		ShadowDataOffset = Align(ShadowDataOffset, PropertyInfo.Property->GetMinAlignment());
-
-		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
-		uint8* StoredData = ShadowData.GetData() + ShadowDataOffset;
-		// Compare and assign.
-		if (bCreatingNewEntity || !PropertyInfo.Property->Identical(StoredData, Data))
-		{
-			HandoverChanged.Add(PropertyInfo.Handle);
-			PropertyInfo.Property->CopySingleValue(StoredData, Data);
-		}
-		ShadowDataOffset += PropertyInfo.Property->ElementSize;
-	}
-
-	return HandoverChanged;
-}
-
 void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlags Flags)
 {
 	Super::SetChannelActor(InActor, Flags);
@@ -1092,23 +999,9 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 		NetDriver->UnregisterDormantEntityId(EntityId);
 	}
 
-	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
-	check(!HandoverShadowDataMap.Contains(InActor));
-
-	// Create the shadow map, and store a quick access pointer to it
-	const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(InActor->GetClass());
-	if (Info.SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
+	if (Actor != nullptr)
 	{
-		ActorHandoverShadowData = &HandoverShadowDataMap.Add(InActor, MakeShared<TArray<uint8>>()).Get();
-		InitializeHandoverShadowData(*ActorHandoverShadowData, InActor);
-	}
-
-	for (auto& SubobjectInfoPair : GetHandoverSubobjects())
-	{
-		UObject* Subobject = SubobjectInfoPair.Key;
-
-		check(!HandoverShadowDataMap.Contains(Subobject));
-		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
+		SetAutonomousProxyOnAuthority(Actor->RemoteRole == ROLE_AutonomousProxy);
 	}
 }
 
@@ -1127,30 +1020,30 @@ bool USpatialActorChannel::TryResolveActor()
 	return true;
 }
 
-FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
+FObjectReplicator* USpatialActorChannel::GetObjectReplicatorForSpatialUpdate(UObject* TargetObject)
 {
 	// If there is no NetGUID for this object, we will crash in FObjectReplicator::StartReplicating, so we verify this here.
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
+	NetDriver->PackageMap->SlowCheckMapsConsistency(TargetObject);
+
 	if (ObjectNetGUID.IsDefault() || !ObjectNetGUID.IsValid())
 	{
 		// SpatialReceiver tried to resolve this object in the PackageMap, but it didn't propagate to GuidCache.
 		// This could happen if the UnrealObjectRef was already mapped to a different object that's been destroyed.
-		UE_LOG(LogSpatialActorChannel, Error, TEXT("PreReceiveSpatialUpdate: NetGUID is invalid! Object: %s"),
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("GetObjectReplicatorForSpatialUpdate: NetGUID is invalid! Object: %s"),
 			   *TargetObject->GetPathName());
 		return nullptr;
 	}
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
-	TargetObject->PreNetReceive();
 
 	return &Replicator;
 }
 
-void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-													const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds)
+void USpatialActorChannel::InvokeRepNotifies(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+											 const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
-	TargetObject->PostNetReceive();
 
 	Replicator.RepState->GetReceivingRepState()->RepNotifies = RepNotifies;
 
@@ -1205,31 +1098,32 @@ void USpatialActorChannel::UpdateSpatialPosition()
 		}
 	}
 
-	if (!SatisfiesSpatialPositionUpdateRequirements())
+	FVector NewSpatialActorPosition;
+	if (!SatisfiesSpatialPositionUpdateRequirements(NewSpatialActorPosition))
 	{
 		return;
 	}
 
-	LastPositionSinceUpdate = SpatialGDK::GetActorSpatialPosition(Actor);
-	TimeWhenPositionLastUpdated = NetDriver->GetElapsedTime();
-
-	SendPositionUpdate(Actor, EntityId, LastPositionSinceUpdate);
+	SendPositionUpdate(Actor, EntityId, NewSpatialActorPosition);
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
 		if (APawn* Pawn = PlayerController->GetPawn())
 		{
-			SendPositionUpdate(Pawn, NetDriver->PackageMap->GetEntityIdFromObject(Pawn), LastPositionSinceUpdate);
+			SendPositionUpdate(Pawn, NetDriver->PackageMap->GetEntityIdFromObject(Pawn), NewSpatialActorPosition);
 		}
 	}
 }
 
 void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition)
 {
+	LastPositionSinceUpdate = NewPosition;
+	TimeWhenPositionLastUpdated = NetDriver->GetElapsedTime();
+
 	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->HasServerAuthority(InEntityId))
 	{
 		FWorkerComponentUpdate Update = SpatialGDK::Position::CreatePositionUpdate(SpatialGDK::Coordinates::FromFVector(NewPosition));
-		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+		NetDriver->Connection->SendComponentUpdate(InEntityId, &Update);
 	}
 
 	for (const auto& Child : InActor->Children)
@@ -1239,15 +1133,15 @@ void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId I
 }
 
 void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
-															   const FObjectReferencesMap& RefMap, UObject* Object)
+															   const FObjectReferencesMap& RefMap, const UObject* Object) const
 {
 	// Prevent rep notify callbacks from being issued when unresolved obj references exist inside UStructs.
 	// This prevents undefined behaviour when engine rep callbacks are issued where they don't expect unresolved objects in native flow.
 	RepNotifies.RemoveAll([&](GDK_PROPERTY(Property) * Property) {
 		for (auto& ObjRef : RefMap)
 		{
-			// ParentIndex will be -1 for handover properties.
-			if (ObjRef.Value.ParentIndex < 0)
+			if (!ensureAlwaysMsgf(ObjRef.Value.ParentIndex >= 0, TEXT("ParentIndex should always be >= 0, but it was %d."),
+								  ObjRef.Value.ParentIndex))
 			{
 				continue;
 			}
@@ -1272,6 +1166,11 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPER
 	});
 }
 
+Worker_ComponentId USpatialActorChannel::GetInterestComponentId() const
+{
+	return SavedInterestBucketComponentID;
+}
+
 void USpatialActorChannel::ServerProcessOwnershipChange()
 {
 	SCOPE_CYCLE_COUNTER(STAT_ServerProcessOwnershipChange);
@@ -1287,7 +1186,12 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	bool bUpdatedThisActor = false;
 
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
-	check(NetDriver->HasServerAuthority(EntityId));
+	if (!ensureAlwaysMsgf(NetDriver->HasServerAuthority(EntityId),
+						  TEXT("Trying to process ownership change on non-auth server. Entity: %lld"), EntityId))
+	{
+		return;
+	}
+
 	TOptional<SpatialGDK::NetOwningClientWorker> CurrentNetOwningClientData =
 		SpatialGDK::DeserializeComponent<SpatialGDK::NetOwningClientWorker>(NetDriver->Connection->GetCoordinator(), EntityId);
 	const Worker_PartitionId CurrentClientPartitionId = CurrentNetOwningClientData->ClientPartitionId.IsSet()
@@ -1301,8 +1205,22 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		FWorkerComponentUpdate Update = CurrentNetOwningClientData->CreateNetOwningClientWorkerUpdate();
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 
-		// Notify the load balance enforcer of a potential short circuit if we are the delegation authoritative worker.
-		NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+		if (NetDriver->LoadBalanceEnforcer)
+		{
+			// Notify the load balance enforcer of a potential short circuit if we are the delegation authoritative worker.
+			NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+		}
+
+		bUpdatedThisActor = true;
+	}
+
+	TOptional<SpatialGDK::ActorOwnership> CurrentActorOwnershipData =
+		SpatialGDK::DeserializeComponent<SpatialGDK::ActorOwnership>(NetDriver->Connection->GetCoordinator(), EntityId);
+	const SpatialGDK::ActorOwnership NewActorOwnership = SpatialGDK::ActorOwnership::CreateFromActor(*Actor, *NetDriver->PackageMap);
+	if (CurrentActorOwnershipData != NewActorOwnership)
+	{
+		NetDriver->Connection->GetCoordinator().SendComponentUpdate(EntityId, NewActorOwnership.CreateComponentUpdate(),
+																	FSpatialGDKSpanId());
 
 		bUpdatedThisActor = true;
 	}
@@ -1324,6 +1242,17 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	if (!bUpdatedThisActor)
 	{
 		return;
+	}
+
+	const bool bShouldWriteLoadBalancingData = IsValid(Connection) && USpatialStatics::IsStrategyWorkerEnabled();
+
+	if (bShouldWriteLoadBalancingData)
+	{
+		if (ensureAlwaysMsgf(IsValid(Actor), TEXT("Tried to process ownership changes for invalid channel Actor. Entity: %lld"), EntityId))
+		{
+			const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*NetDriver->PackageMap, *Actor);
+			NetDriver->Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
+		}
 	}
 
 	// Changes to NetConnection and InterestBucket for an Actor also affect all descendants which we
@@ -1384,11 +1313,11 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 	}
 }
 
-bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements()
+bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition)
 {
 	// Check that the Actor satisfies both lower thresholds OR either of the maximum thresholds
-	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
-	const float DistanceTravelledSinceLastUpdateSquared = FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate);
+	OutNewSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
+	const float DistanceTravelledSinceLastUpdateSquared = FVector::DistSquared(OutNewSpatialPosition, LastPositionSinceUpdate);
 
 	// If the Actor did not travel at all, then we consider its position to be up to date and we early out.
 	if (FMath::IsNearlyZero(DistanceTravelledSinceLastUpdateSquared))

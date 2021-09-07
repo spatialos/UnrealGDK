@@ -13,14 +13,8 @@ public:
 	SPATIALGDKSERVICES_API static bool SpatialVersion(bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult,
 													  int32& OutExitCode);
 	SPATIALGDKSERVICES_API static bool AttemptSpatialAuth(bool bIsRunningInChina);
-	SPATIALGDKSERVICES_API static bool StartSpatialService(const FString& Version, const FString& RuntimeIP, bool bIsRunningInChina,
-														   const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode);
-	SPATIALGDKSERVICES_API static bool StopSpatialService(bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult,
-														  int32& OutExitCode);
 	SPATIALGDKSERVICES_API static bool BuildWorkerConfig(bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult,
 														 int32& OutExitCode);
-	SPATIALGDKSERVICES_API static FProcHandle LocalWorkerReplace(const FString& ServicePort, const FString& OldWorker,
-																 const FString& NewWorker, bool bIsRunningInChina, uint32* OutProcessID);
 	SPATIALGDKSERVICES_API static bool GenerateDevAuthToken(bool bIsRunningInChina, FString& OutTokenSecret, FText& OutErrorMessage);
 	SPATIALGDKSERVICES_API static bool HasDevLoginTag(const FString& DeploymentName, bool bIsRunningInChina, FText& OutErrorMessage);
 	SPATIALGDKSERVICES_API static FProcHandle StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName,
@@ -32,6 +26,7 @@ public:
 	SPATIALGDKSERVICES_API static bool GetProcessName(const FString& PID, FString& OutProcessName);
 	SPATIALGDKSERVICES_API static bool TryKillProcessWithPID(const FString& PID);
 	SPATIALGDKSERVICES_API static void TryKillProcessWithName(const FString& ProcessName);
+	SPATIALGDKSERVICES_API static void TryGracefullyKill(const FString& ProcName, const FProcHandle& ProcHandle);
 	SPATIALGDKSERVICES_API static bool FetchRuntimeBinary(const FString& RuntimeVersion, const bool bIsRunningInChina);
 	SPATIALGDKSERVICES_API static bool FetchInspectorBinary(const FString& InspectorVersion, const bool bIsRunningInChina);
 	SPATIALGDKSERVICES_API static bool FetchPackageBinary(const FString& PackageVersion, const FString& PackageExe,
@@ -43,6 +38,10 @@ public:
 																	 const int32 NumRetries = 3);
 
 private:
+#if PLATFORM_WINDOWS
+	static void TryGracefullyKillWindows(const FString& ProcName);
+#endif
+
 	// Timeout given in seconds.
 	static constexpr double ProcessTimeoutTime = 120.0;
 };

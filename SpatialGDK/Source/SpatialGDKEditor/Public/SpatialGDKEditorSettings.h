@@ -47,6 +47,7 @@ struct FWorkerPermissionsSection
 		, bDisconnectWorker(true)
 		, bReserveEntityID(true)
 		, bAllowEntityQuery(true)
+		, bDisableEntityQueryRestrictedComponents(false)
 	{
 	}
 
@@ -66,10 +67,14 @@ struct FWorkerPermissionsSection
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow entity ID reservations"))
 	bool bReserveEntityID;
 
-	/** Controls which components can be returned from entity queries that the worker instance performs. If an entity query specifies other
-	 * components to be returned, the query will fail. */
+	/** Controls whether the worker is allowed to make queries for entities in the deployment. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow entity queries"))
 	bool bAllowEntityQuery;
+
+	/** Disables entity queries from the worker for restricted components, like the system worker entities, which may contain sensitive
+	 * information. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Disable entity queries on restricted components"))
+	bool bDisableEntityQueryRestrictedComponents;
 };
 
 USTRUCT()
@@ -134,7 +139,7 @@ struct FSpatialLaunchConfigDescription
 	const FString& GetDefaultTemplateForRuntimeVariant() const;
 
 	/** Use default template for deployments. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Use Default Template"))
 	bool bUseDefaultTemplateForRuntimeVariant;
 
 	/** Deployment template. */

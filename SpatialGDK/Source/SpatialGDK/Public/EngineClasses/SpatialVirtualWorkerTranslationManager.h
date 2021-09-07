@@ -3,9 +3,7 @@
 #pragma once
 
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/ClaimPartitionHandler.h"
-#include "Interop/CreateEntityHandler.h"
-#include "Interop/EntityQueryHandler.h"
+#include "Interop/SpatialCommandsHandler.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
@@ -43,49 +41,31 @@ public:
 		Worker_EntityId SimulatingWorkerSystemEntityId;
 	};
 
-	SpatialVirtualWorkerTranslationManager(SpatialOSWorkerInterface* InConnection, SpatialVirtualWorkerTranslator* InTranslator);
+	SpatialVirtualWorkerTranslationManager(SpatialOSWorkerInterface* InConnection, USpatialNetDriver* NetDriver,
+										   SpatialVirtualWorkerTranslator* InTranslator);
 
 	void SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers);
 
-	// The translation manager only cares about changes to the authority of the translation mapping.
-	void AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthChangeOp);
-
-	void SpawnPartitionEntitiesForVirtualWorkerIds();
-	void ReclaimPartitionEntities();
 	const TArray<PartitionInfo>& GetAllPartitions() const { return Partitions; };
 
 	void Advance(const TArray<Worker_Op>& Ops);
 
 	SpatialVirtualWorkerTranslator* Translator;
 
+	using FVirtualToPhysicalWorkerMapping = TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation>;
+
+	const FVirtualToPhysicalWorkerMapping& GetVirtualWorkerMapping() const;
+
 private:
 	SpatialOSWorkerInterface* Connection;
+	USpatialNetDriver* NetDriver;
 
 	TArray<VirtualWorkerId> VirtualWorkersToAssign;
 	TArray<PartitionInfo> Partitions;
-	TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation> VirtualToPhysicalWorkerMapping;
+	FVirtualToPhysicalWorkerMapping VirtualToPhysicalWorkerMapping;
 	uint32 NumVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;
 
-	SpatialGDK::CreateEntityHandler CreateEntityHandler;
-	SpatialGDK::ClaimPartitionHandler ClaimPartitionHandler;
-	SpatialGDK::EntityQueryHandler QueryHandler;
-
-	// Serialization and deserialization of the mapping.
-	void WriteMappingToSchema(Schema_Object* Object) const;
-
-	// The following methods are used to query the Runtime for all worker entities and update the mapping
-	// based on the response.
-	void QueryForServerWorkerEntities();
-	void ServerWorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op);
-	bool AllServerWorkersAreReady(const Worker_EntityQueryResponseOp& Op, uint32& ServerWorkersNotReady);
-	void AssignPartitionsToEachServerWorkerFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
-	void SendVirtualWorkerMappingUpdate() const;
-
-	void AssignPartitionToWorker(const PhysicalWorkerName& WorkerName, const Worker_EntityId& ServerWorkerEntityId,
-								 const Worker_EntityId& SystemEntityId, const PartitionInfo& Partition);
-
-	void SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker);
-	void OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker);
+	SpatialGDK::FCommandsHandler CommandsHandler;
 };

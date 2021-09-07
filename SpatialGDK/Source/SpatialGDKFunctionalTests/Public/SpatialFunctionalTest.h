@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Algo/Count.h"
 #include "CoreMinimal.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -30,6 +31,12 @@ constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// Represents test already 
 } // namespace
 
 class ULayeredLBStrategy;
+
+enum class ERegisterToAutoDestroy
+{
+	No,
+	Yes
+};
 
 /*
  * A Spatial Functional NetTest allows you to define a series of steps, and control which server/client context they execute on
@@ -106,7 +113,9 @@ public:
 
 	// # FlowController related APIs.
 
+	void SetLocalFlowController(ASpatialFunctionalTestFlowController* FlowController);
 	void RegisterFlowController(ASpatialFunctionalTestFlowController* FlowController);
+	void DeregisterFlowController(ASpatialFunctionalTestFlowController* FlowController);
 
 	// Get all the FlowControllers registered in this Test.
 	const TArray<ASpatialFunctionalTestFlowController*>& GetFlowControllers() const { return FlowControllers; }
@@ -117,9 +126,34 @@ public:
 	// clang-format on
 	ASpatialFunctionalTestFlowController* GetFlowController(ESpatialFunctionalTestWorkerType WorkerType, int WorkerId);
 
+	// clang-format off
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (WorkerId = "1",
+		ToolTip = "Returns the PlayerController owning a FlowController for a specific Server / Client.\nKeep in mind that WorkerIds start from 1, and the Server's WorkerId will match their VirtualWorkerId while the Client's will be based on the order they connect.\n\n'All' Worker type will soft assert as it isn't supported."))
+	// clang-format on
+	APlayerController* GetFlowPlayerController(const ESpatialFunctionalTestWorkerType WorkerType, const int WorkerId);
+
 	// Get the FlowController that is Local to this instance.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	ASpatialFunctionalTestFlowController* GetLocalFlowController();
+
+	// Get the player controller owning the current flow controller.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	APlayerController* GetLocalFlowPlayerController();
+
+	// Get the pawn that belongs to the PlayerController associated with the current flow controller.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	APawn* GetLocalFlowPawn();
+
+	template <class T>
+	T* SpawnActor(const ERegisterToAutoDestroy RegisterToAutoDestroy);
+
+	template <class T>
+	T* SpawnActor(const FActorSpawnParameters& SpawnParameters);
+
+	template <class T>
+	T* SpawnActor(const FVector& Location = FVector::ZeroVector, const FRotator& Rotation = FRotator::ZeroRotator,
+				  const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters(),
+				  const ERegisterToAutoDestroy RegisterToAutoDestroy = ERegisterToAutoDestroy::Yes);
 
 	// Helper to get the local Worker Type.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
@@ -142,7 +176,7 @@ public:
 		ToolTip = "Adds a Test Step. Check GetAllWorkers(), GetAllServerWorkers() and GetAllClientWorkers() for convenience.\n\nIf you split the Worker pin you can define if you want to run on Server, Client or All.\n\nWorker Ids start from 1.\nIf you pass 0 it will run on all the Servers / Clients (there's also a convenience function GetAllWorkersId())\n\nIf you choose WorkerType 'All' it runs on all Servers and Clients (hence WorkerId is ignored).\n\nKeep in mind you can split the Worker pin for convenience."))
 	// clang-format on
 	void AddStepBlueprint(const FString& StepName, const FWorkerDefinition& Worker, const FStepIsReadyDelegate& IsReadyEvent,
-						  const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
+						  const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 20.0f);
 
 	// Add Steps for Blueprints and C++.
 
@@ -167,7 +201,7 @@ public:
 	 */
 	FSpatialFunctionalTestStepDefinition& AddStep(const FString& StepName, const FWorkerDefinition& Worker,
 												  FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr,
-												  FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
+												  FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 20.0f);
 
 	// Start Running a Step.
 	void StartStep(const int StepIndex);
@@ -185,11 +219,11 @@ public:
 
 	// Convenience function that goes over all FlowControllers and counts how many are Servers.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
-	int GetNumberOfServerWorkers();
+	int32 GetNumberOfServerWorkers() const;
 
 	// Convenience function that goes over all FlowControllers and counts how many are Clients.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
-	int GetNumberOfClientWorkers();
+	int32 GetNumberOfClientWorkers() const;
 
 	// Convenience function that returns the Id used for executing steps on all Servers / Clients.
 	// clang-format off
@@ -256,6 +290,9 @@ public:
 
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	bool RequireValid(const UObject* Object, const FString& Msg) { return RequireHandler.RequireValid(Object, Msg); }
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
 	bool RequireTrue(bool bCheckTrue, const FString& Msg) { return RequireHandler.RequireTrue(bCheckTrue, Msg); }
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
@@ -291,29 +328,36 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Transform)"), Category = "Spatial Functional Test")
 	bool RequireEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance = 1.e-4) { return RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
 
+	template<typename EnumType>
+	bool RequireEqual_Enum(const EnumType Value, const EnumType Expected, const FString& Msg) { return RequireHandler.RequireEqual_Enum(Value, Expected, Msg); }
+
+
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Bool)"), Category = "Spatial Functional Test")
 	bool RequireNotEqual_Bool(bool bValue, bool bNotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(bValue, bNotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Int)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Int(int Value, int Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Int(int Value, int NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Float)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Float(float Value, float Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Float(float Value, float NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (String)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_String(const FString& Value, const FString& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Name)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Name(const FName& Value, const FName& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Vector)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Vector(const FVector& Value, const FVector& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Rotator)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Rotator(const FRotator& Value, const FRotator& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Transform)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Transform(const FTransform& Value, const FTransform& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
+
+	template<typename EnumType>
+	bool RequireNotEqual_Enum(const EnumType Value, const EnumType NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual_Enum(Value, NotExpected, Msg); }
 	// clang-format on
 
 	// # Snapshot APIs.
@@ -335,6 +379,17 @@ public:
 	// Allows you to know if the current deployment was started from a previously taken snapshot.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	bool WasLoadedFromTakenSnapshot();
+
+	template <typename ActorType>
+	static int32 CountActors(UWorld* World)
+	{
+		int32 Count = 0;
+		for (const ActorType* Actor : TActorRange<ActorType>(World))
+		{
+			++Count;
+		}
+		return Count;
+	}
 
 	// Get the path of the taken snapshot for this world's map. Returns an empty string if it's using the default snapshot.
 	static FString GetTakenSnapshotPath(UWorld* World);
@@ -450,3 +505,29 @@ private:
 	// will check if there's a snapshot for them, and if so launch with it instead of the default snapshot.
 	static TMap<FString, FString> TakenSnapshots;
 };
+
+template <class T>
+T* ASpatialFunctionalTest::SpawnActor(const ERegisterToAutoDestroy RegisterToAutoDestroy)
+{
+	return SpawnActor<T>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters(), RegisterToAutoDestroy);
+}
+
+template <class T>
+T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParameters)
+{
+	return SpawnActor<T>(FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters, ERegisterToAutoDestroy::Yes);
+}
+
+template <class T>
+T* ASpatialFunctionalTest::SpawnActor(const FVector& Location, const FRotator& Rotation, const FActorSpawnParameters& SpawnParameters,
+									  const ERegisterToAutoDestroy RegisterToAutoDestroy /*=ERegisterToAutoDestroy::Yes*/)
+{
+	T* Actor = GetWorld()->SpawnActor<T>(Location, Rotation, SpawnParameters);
+	checkf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
+
+	if (RegisterToAutoDestroy == ERegisterToAutoDestroy::Yes)
+	{
+		RegisterAutoDestroyActor(Actor);
+	}
+	return Actor;
+}

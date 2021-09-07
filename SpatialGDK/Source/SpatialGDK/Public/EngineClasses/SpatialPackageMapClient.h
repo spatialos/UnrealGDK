@@ -17,14 +17,13 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageMap, Log, All);
 
 class USpatialNetDriver;
 class UEntityPool;
-class FTimerManager;
 
 UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()
 public:
-	void Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager);
+	void Init(USpatialNetDriver& NetDriver);
 
 	void Advance();
 
@@ -34,7 +33,7 @@ public:
 	bool IsEntityIdPendingCreation(Worker_EntityId EntityId) const;
 	void RemovePendingCreationEntityId(Worker_EntityId EntityId);
 
-	bool ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
+	bool ResolveEntityActorAndSubobjects(Worker_EntityId EntityId, AActor* Actor);
 	void ResolveSubobject(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
 	void RemoveEntityActor(Worker_EntityId EntityId);
@@ -58,10 +57,6 @@ public:
 	AActor* GetUniqueActorInstanceByClassRef(const FUnrealObjectRef& ClassRef);
 	AActor* GetUniqueActorInstanceByClass(UClass* Class) const;
 
-	FNetworkGUID* GetRemovedDynamicSubobjectNetGUID(const FUnrealObjectRef& ObjectRef);
-	void AddRemovedDynamicSubobjectObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID);
-	void ClearRemovedDynamicSubobjectObjectRefs(const Worker_EntityId& InEntityId);
-
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
 
@@ -77,6 +72,7 @@ public:
 	TSet<FNetworkGUID> PendingReferences;
 
 	Worker_EntityId AllocateNewEntityId() const;
+	void SlowCheckMapsConsistency(const UObject* Object) const;
 
 private:
 	UPROPERTY()
@@ -86,7 +82,6 @@ private:
 
 	// Entities that have been assigned on this server and not created yet
 	TSet<Worker_EntityId_Key> PendingCreationEntityIds;
-	TMap<FUnrealObjectRef, FNetworkGUID> RemovedDynamicSubobjectObjectRefs;
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
@@ -111,6 +106,8 @@ public:
 	// This function is ONLY used in SpatialPackageMapClient::UnregisterActorObjectRefOnly
 	// to undo the unintended registering of objects when looking them up with static paths.
 	void UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef);
+
+	void SlowCheckMapsConsistency(const UObject* Object) const;
 
 private:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRefInternal(const FUnrealObjectRef& ObjectRef);

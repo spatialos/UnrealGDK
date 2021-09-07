@@ -8,6 +8,7 @@
 #include "SpatialView/CriticalSectionFilter.h"
 #include "SpatialView/Dispatcher.h"
 #include "SpatialView/ReceivedOpEventHandler.h"
+#include "SpatialView/SpatialOSWorker.h"
 #include "SpatialView/SubView.h"
 #include "SpatialView/WorkerView.h"
 
@@ -17,7 +18,7 @@ namespace SpatialGDK
 {
 class SpatialEventTracer;
 
-class ViewCoordinator
+class ViewCoordinator : public ISpatialOSWorker
 {
 public:
 	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, TSharedPtr<SpatialEventTracer> EventTracer,
@@ -33,7 +34,6 @@ public:
 
 	void Advance(float DeltaTimeS);
 	const ViewDelta& GetViewDelta() const;
-	const EntityView& GetView() const;
 	void FlushMessagesToSend();
 
 	// Create a subview with the specified tag, filter, and refresh callbacks.
@@ -49,34 +49,40 @@ public:
 	// In the future when there could be an unbounded number of user systems this should probably be revisited.
 	void RefreshEntityCompleteness(Worker_EntityId EntityId);
 
-	const FString& GetWorkerId() const;
-	Worker_EntityId GetWorkerSystemEntityId() const;
+	virtual const TArray<EntityDelta>& GetEntityDeltas() const override;
+	virtual const TArray<Worker_Op>& GetWorkerMessages() const override;
+	virtual const EntityView& GetView() const override;
 
-	const ComponentData* GetComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+	virtual const FString& GetWorkerId() const override;
 
-	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId);
-	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
-	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis = {});
-	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-											 TOptional<uint32> TimeoutMillis = {}, const FSpatialGDKSpanId& SpanId = {});
-	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis = {},
-											 const FSpatialGDKSpanId& SpanId = {});
-	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis = {});
-	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis = {},
-											  const FSpatialGDKSpanId& SpanId = {});
-	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const FSpatialGDKSpanId& SpanId);
-	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const FSpatialGDKSpanId& SpanId);
-	void SendMetrics(SpatialMetrics Metrics);
-	void SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message);
+	virtual Worker_EntityId GetWorkerSystemEntityId() const override;
 
-	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, FRetryData RetryData);
-	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-											 FRetryData RetryData, const FSpatialGDKSpanId& SpanId);
-	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData, const FSpatialGDKSpanId& SpanId);
-	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, FRetryData RetryData);
-	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData,
-											  const FSpatialGDKSpanId& SpanId);
+	virtual const ComponentData* GetComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override;
+
+	virtual void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId = {}) override;
+	virtual void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId = {}) override;
+	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+									 const FSpatialGDKSpanId& SpanId = {}) override;
+
+	virtual Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData = NO_RETRIES,
+													  const FSpatialGDKSpanId& SpanId = {}) override;
+	virtual void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response,
+										   const FSpatialGDKSpanId& SpanId = {}) override;
+	virtual void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const FSpatialGDKSpanId& SpanId = {}) override;
+
+	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, FRetryData RetryData = NO_RETRIES) override;
+	virtual Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
+													 FRetryData RetryData = NO_RETRIES, const FSpatialGDKSpanId& SpanId = {}) override;
+	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData = NO_RETRIES,
+													 const FSpatialGDKSpanId& SpanId = {}) override;
+	virtual Worker_RequestId SendEntityQueryRequest(EntityQuery Query, FRetryData RetryData = NO_RETRIES) override;
+
+	virtual void SendMetrics(SpatialMetrics Metrics) override;
+	virtual void SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message) override;
+
+	virtual bool HasEntity(Worker_EntityId EntityId) const override;
+	virtual bool HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const override;
+	virtual bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId) const override;
 
 	CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
 	CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
@@ -95,10 +101,6 @@ public:
 	FDispatcherRefreshCallback CreateAuthorityChangeRefreshCallback(
 		Worker_ComponentId ComponentId,
 		const FAuthorityChangeRefreshPredicate& RefreshPredicate = FSubView::NoAuthorityChangeRefreshPredicate);
-
-	bool HasEntity(Worker_EntityId EntityId) const;
-	bool HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
-	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId) const;
 
 private:
 	WorkerView View;

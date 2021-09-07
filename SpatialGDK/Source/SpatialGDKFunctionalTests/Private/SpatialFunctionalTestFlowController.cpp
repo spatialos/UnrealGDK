@@ -2,6 +2,7 @@
 
 #include "SpatialFunctionalTestFlowController.h"
 
+#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "GameFramework/PlayerController.h"
@@ -29,7 +30,6 @@ ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const
 #endif
 	OwningTest = nullptr;
 	bHasAckFinishedTest = true;
-	bReadyToRegisterWithTest = false;
 	bIsReadyToRunTest = false;
 }
 
@@ -37,32 +37,26 @@ void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray<FLi
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bReadyToRegisterWithTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bIsReadyToRunTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bHasAckFinishedTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, OwningTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, WorkerDefinition);
 }
 
-void ASpatialFunctionalTestFlowController::BeginPlay()
+void ASpatialFunctionalTestFlowController::OnActorReady(bool bHasAuthority)
 {
-	Super::BeginPlay();
-
-	if (HasAuthority())
+	if (bHasAuthority)
 	{
-		// Super hack
-		FTimerHandle Handle;
-		GetWorldTimerManager().SetTimer(
-			Handle,
-			[this]() {
-				bReadyToRegisterWithTest = true;
-				OnReadyToRegisterWithTest();
-			},
-			1.0f, false);
+		// Registration of authoritative flow controllers (server and client)
+		OwningTest->RegisterFlowController(this);
+		TrySetReadyToRunTest();
 	}
 }
 
-void ASpatialFunctionalTestFlowController::OnAuthorityGained() {}
+void ASpatialFunctionalTestFlowController::OnClientOwnershipGained()
+{
+	TrySetReadyToRunTest();
+}
 
 void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
 {
@@ -84,28 +78,28 @@ void ASpatialFunctionalTestFlowController::CrossServerSetWorkerId_Implementation
 	WorkerDefinition.Id = NewWorkerId;
 }
 
-void ASpatialFunctionalTestFlowController::OnReadyToRegisterWithTest()
-{
-	TryRegisterFlowControllerWithOwningTest();
-}
-
 void ASpatialFunctionalTestFlowController::OnRep_OwningTest()
 {
-	TryRegisterFlowControllerWithOwningTest();
+	// Register replicated flow controllers (server and client)
+	OwningTest->RegisterFlowController(this);
 }
 
-void ASpatialFunctionalTestFlowController::TryRegisterFlowControllerWithOwningTest()
+void ASpatialFunctionalTestFlowController::TrySetReadyToRunTest()
 {
-	if (!bReadyToRegisterWithTest || OwningTest == nullptr)
+	if (IsLocalController())
 	{
-		return;
-	}
-
-	OwningTest->RegisterFlowController(this);
-
-	if (OwningTest->HasPreparedTest())
-	{
-		SetReadyToRunTest(true);
+		if (IsActorReady() && OwningTest != nullptr && OwningTest->HasPreparedTest()
+			&& (WorkerDefinition.Type != ESpatialFunctionalTestWorkerType::Client || IsOwnedByClient()))
+		{
+			OwningTest->SetLocalFlowController(this);
+			SetReadyToRunTest(true);
+		}
+		else
+		{
+			GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
+				TrySetReadyToRunTest();
+			});
+		}
 	}
 }
 
@@ -225,6 +219,11 @@ void ASpatialFunctionalTestFlowController::SetReadyToRunTest(bool bIsReady)
 			ServerSetReadyToRunTest(bIsReady);
 		}
 	}
+}
+
+void ASpatialFunctionalTestFlowController::DeregisterFlowController()
+{
+	OwningTest->DeregisterFlowController(this);
 }
 
 void ASpatialFunctionalTestFlowController::ClientStartStep_Implementation(int StepIndex)

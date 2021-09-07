@@ -10,6 +10,7 @@
 #include "GeneralProjectSettings.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "LoadBalancing/GameplayDebuggerLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "SpatialConstants.h"
@@ -43,6 +44,22 @@ bool CanProcessActor(const AActor* Actor)
 
 	return true;
 }
+
+const ULayeredLBStrategy* GetLayeredLBStrategy(const USpatialNetDriver* NetDriver)
+{
+	if (const ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy))
+	{
+		return LayeredLBStrategy;
+	}
+	if (const UGameplayDebuggerLBStrategy* DebuggerLBStrategy = Cast<UGameplayDebuggerLBStrategy>(NetDriver->LoadBalanceStrategy))
+	{
+		if (const ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(DebuggerLBStrategy->GetWrappedStrategy()))
+		{
+			return LayeredLBStrategy;
+		}
+	}
+	return nullptr;
+}
 } // anonymous namespace
 
 bool USpatialStatics::IsSpatialNetworkingEnabled()
@@ -73,10 +90,7 @@ bool USpatialStatics::IsHandoverEnabled(const UObject* WorldContextObject)
 			return true;
 		}
 
-		if (const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy))
-		{
-			return LBStrategy->RequiresHandoverData();
-		}
+		return SpatialNetDriver->LoadBalanceStrategy->RequiresHandoverData();
 	}
 	return true;
 }
@@ -123,6 +137,12 @@ float USpatialStatics::GetFullFrequencyNetCullDistanceRatio()
 FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName)
 {
 	return SpatialGDK::GetColorForWorkerName(WorkerName);
+}
+
+bool USpatialStatics::IsStrategyWorkerEnabled()
+{
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	return SpatialGDKSettings->bRunStrategyWorker;
 }
 
 bool USpatialStatics::IsMultiWorkerEnabled()
@@ -212,17 +232,14 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 
 	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 	{
-		// Calling IsActorGroupOwnerForClass before NotifyBeginPlay has been called (when NetDriver is ready) is invalid.
-		if (!SpatialNetDriver->IsReady())
+		if (const ULayeredLBStrategy* LBStrategy = GetLayeredLBStrategy(SpatialNetDriver))
 		{
-			UE_LOG(LogSpatial, Error,
-				   TEXT("Called IsActorGroupOwnerForClass before NotifyBeginPlay has been called is invalid. Actor class: %s"),
-				   *GetNameSafe(ActorClass));
-			return true;
-		}
-
-		if (const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy))
-		{
+			if (!LBStrategy->IsReady())
+			{
+				UE_LOG(LogSpatial, Error, TEXT("Called IsActorGroupOwnerForClass before LBStrategy is ready. Actor class: %s"),
+					   *GetNameSafe(ActorClass));
+				return true;
+			}
 			return LBStrategy->CouldHaveAuthority(ActorClass);
 		}
 	}
@@ -345,8 +362,12 @@ FName USpatialStatics::GetLayerName(const UObject* WorldContextObject)
 		return NAME_None;
 	}
 
-	const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy);
-	check(LBStrategy != nullptr);
+	const ULayeredLBStrategy* LBStrategy = GetLayeredLBStrategy(SpatialNetDriver);
+	if (!ensureAlwaysMsgf(LBStrategy != nullptr, TEXT("Failed calling GetLayerName because load balancing strategy was nullptr")))
+	{
+		return FName();
+	}
+
 	return LBStrategy->GetLocalLayerName();
 }
 
@@ -391,14 +412,16 @@ void USpatialStatics::SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* 
 
 void USpatialStatics::SpatialSwitchHasAuthority(const AActor* Target, ESpatialHasAuthority& Authority)
 {
+	if (!ensureAlwaysMsgf(IsValid(Target) && Target->IsA(AActor::StaticClass()),
+						  TEXT("Called SpatialSwitchHasAuthority for an invalid or non-Actor target: %s"), *GetNameSafe(Target)))
+	{
+		return;
+	}
+
 	// A static UFunction does not have the Target parameter, here it is recreated by adding our own Target parameter
 	// that is defaulted to self and hidden so that the user does not need to set it
-	check(IsValid(Target));
-	check(Target->IsA(AActor::StaticClass()));
-	check(Target->GetNetDriver() != nullptr);
-
+	const bool bIsServer = Target->GetWorld() ? Target->GetWorld()->IsServer() : false;
 	const bool bHasAuthority = Target->HasAuthority();
-	const bool bIsServer = Target->GetNetDriver()->IsServer();
 
 	if (bHasAuthority && bIsServer)
 	{

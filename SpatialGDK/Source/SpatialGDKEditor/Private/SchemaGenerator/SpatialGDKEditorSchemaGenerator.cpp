@@ -19,8 +19,6 @@
 #include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
 #include "Runtime/Launch/Resources/Version.h"
-#include "Serialization/JsonReader.h"
-#include "Serialization/JsonSerializer.h"
 #include "Templates/SharedPointer.h"
 #include "UObject/UObjectIterator.h"
 
@@ -40,6 +38,7 @@
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SchemaBundleParser.h"
 #include "Utils/SchemaDatabase.h"
 
 #if ENGINE_MINOR_VERSION >= 26
@@ -48,35 +47,6 @@
 #define GDK_CREATE_PACKAGE(PackagePath) CreatePackage(nullptr, (PackagePath));
 #endif
 
-// clang-format off
-#define SAFE_TRYGET(Value, Type, OutParam)                                                                                                 \
-	do                                                                                                                                     \
-	{                                                                                                                                      \
-		if (!Value->TryGet##Type(OutParam))                                                                                                \
-		{                                                                                                                                  \
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to get %s as type %s"), TEXT(#Value), TEXT(#Type));                   \
-			return false;                                                                                                                  \
-		}                                                                                                                                  \
-	} while (false)
-
-#define SAFE_TRYGETFIELD(Value, Type, FieldName, OutParam)                                                                                 \
-	do                                                                                                                                     \
-	{                                                                                                                                      \
-		if (!Value->TryGet##Type##Field(TEXT(FieldName), OutParam))                                                                        \
-		{                                                                                                                                  \
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to get field %s of type %s from %s"), TEXT(FieldName), TEXT(#Type), TEXT(#Value)); \
-			return false;                                                                                                                  \
-		}                                                                                                                                  \
-	} while (false)
-
-#define COND_SCHEMA_GEN_ERROR_AND_RETURN(Condition, Format, ...)                                                                                           \
-	if (UNLIKELY(Condition))                                                                                                               \
-	{                                                                                                                                      \
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, Format, ##__VA_ARGS__);                                                                \
-		return false;                                                                                                                      \
-	}
-// clang-format on
-
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKSchemaGenerator"
 
@@ -84,9 +54,6 @@ TArray<UClass*> SchemaGeneratedClasses;
 TMap<FString, FActorSchemaData> ActorClassPathToSchema;
 TMap<FString, FSubobjectSchemaData> SubobjectClassPathToSchema;
 Worker_ComponentId NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
-
-// Sets of data/owner only/handover components
-TMap<ESchemaComponentType, TSet<Worker_ComponentId>> SchemaComponentTypeToComponents;
 
 // LevelStreaming
 TMap<FString, Worker_ComponentId> LevelPathToComponentId;
@@ -189,33 +156,6 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 			{
 				SchemaReplicatedDataNames.Add(NextSchemaReplicatedDataName, RepProp.Value);
 			}
-		}
-	}
-
-	// Check Handover data.
-	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
-	TMap<FString, TSharedPtr<FUnrealProperty>> SchemaHandoverDataNames;
-	for (auto& Prop : HandoverData)
-	{
-		FString NextSchemaHandoverDataName = SchemaFieldName(Prop.Value);
-
-		if (!CheckSchemaNameValidity(NextSchemaHandoverDataName, Prop.Value->Property->GetPathName(), TEXT("Handover property")))
-		{
-			bOutSuccess = false;
-		}
-
-		if (TSharedPtr<FUnrealProperty>* ExistingHandoverData = SchemaHandoverDataNames.Find(NextSchemaHandoverDataName))
-		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error,
-				   TEXT("Handover data name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides "
-						"for '%s' and '%s'"),
-				   *NextSchemaHandoverDataName, *ExistingHandoverData->Get()->Property->GetPathName(),
-				   *Prop.Value->Property->GetPathName());
-			bOutSuccess = false;
-		}
-		else
-		{
-			SchemaHandoverDataNames.Add(NextSchemaHandoverDataName, Prop.Value);
 		}
 	}
 
@@ -553,14 +493,16 @@ TMap<Worker_ComponentId, FString> CreateComponentIdToClassPathMap()
 
 FString GetComponentSetNameBySchemaType(ESchemaComponentType SchemaType)
 {
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
+
 	switch (SchemaType)
 	{
 	case SCHEMA_Data:
 		return SpatialConstants::DATA_COMPONENT_SET_NAME;
 	case SCHEMA_OwnerOnly:
 		return SpatialConstants::OWNER_ONLY_COMPONENT_SET_NAME;
-	case SCHEMA_Handover:
-		return SpatialConstants::HANDOVER_COMPONENT_SET_NAME;
+	case SCHEMA_ServerOnly:
+		return SpatialConstants::SERVER_ONLY_COMPONENT_SET_NAME;
 	case SCHEMA_InitialOnly:
 		return SpatialConstants::INITIAL_ONLY_COMPONENT_SET_NAME;
 	default:
@@ -574,13 +516,15 @@ FString GetComponentSetNameBySchemaType(ESchemaComponentType SchemaType)
 
 Worker_ComponentId GetComponentSetIdBySchemaType(ESchemaComponentType SchemaType)
 {
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
+
 	switch (SchemaType)
 	{
 	case SCHEMA_Data:
 		return SpatialConstants::DATA_COMPONENT_SET_ID;
 	case SCHEMA_OwnerOnly:
 		return SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID;
-	case SCHEMA_Handover:
+	case SCHEMA_ServerOnly:
 		return SpatialConstants::HANDOVER_COMPONENT_SET_ID;
 	case SCHEMA_InitialOnly:
 		return SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID;
@@ -662,23 +606,8 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 				const Worker_ComponentId ComponentId = GeneratedActorClass.Value.SchemaComponents[SchemaType];
 				if (ComponentId != 0)
 				{
-					switch (SchemaType)
-					{
-					case SCHEMA_Data:
-						Writer.Printf("unreal.generated.{0}.{1},", ActorClassName.ToLower(), ActorClassName);
-						break;
-					case SCHEMA_OwnerOnly:
-						Writer.Printf("unreal.generated.{0}.{1}OwnerOnly,", ActorClassName.ToLower(), ActorClassName);
-						break;
-					case SCHEMA_Handover:
-						Writer.Printf("unreal.generated.{0}.{1}Handover,", ActorClassName.ToLower(), ActorClassName);
-						break;
-					case SCHEMA_InitialOnly:
-						Writer.Printf("unreal.generated.{0}.{1}InitialOnly,", ActorClassName.ToLower(), ActorClassName);
-						break;
-					default:
-						break;
-					}
+					Writer.Printf("unreal.generated.{0}.{1}{2},", ActorClassName.ToLower(), ActorClassName,
+								  GetReplicatedPropertyGroupName(SchemaComponentTypeToPropertyGroup(SchemaType)));
 				}
 			});
 
@@ -690,23 +619,8 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 					const Worker_ComponentId& ComponentId = ActorSubObjectData.Value.SchemaComponents[SchemaType];
 					if (ComponentId != 0)
 					{
-						switch (SchemaType)
-						{
-						case SCHEMA_Data:
-							Writer.Printf("unreal.generated.{0}.subobjects.{1},", ActorClassName.ToLower(), ActorSubObjectName);
-							break;
-						case SCHEMA_OwnerOnly:
-							Writer.Printf("unreal.generated.{0}.subobjects.{1}OwnerOnly,", ActorClassName.ToLower(), ActorSubObjectName);
-							break;
-						case SCHEMA_Handover:
-							Writer.Printf("unreal.generated.{0}.subobjects.{1}Handover,", ActorClassName.ToLower(), ActorSubObjectName);
-							break;
-						case SCHEMA_InitialOnly:
-							Writer.Printf("unreal.generated.{0}.subobjects.{1}InitialOnly,", ActorClassName.ToLower(), ActorSubObjectName);
-							break;
-						default:
-							break;
-						}
+						Writer.Printf("unreal.generated.{0}.subobjects.{1}{2},", ActorClassName.ToLower(), ActorSubObjectName,
+									  GetReplicatedPropertyGroupName(SchemaComponentTypeToPropertyGroup(SchemaType)));
 					}
 				});
 			}
@@ -725,23 +639,8 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 					const Worker_ComponentId& ComponentId = SubObjectSchemaData.SchemaComponents[SchemaType];
 					if (ComponentId != 0)
 					{
-						switch (SchemaType)
-						{
-						case SCHEMA_Data:
-							Writer.Printf("unreal.generated.{0}Dynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-							break;
-						case SCHEMA_OwnerOnly:
-							Writer.Printf("unreal.generated.{0}OwnerOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-							break;
-						case SCHEMA_Handover:
-							Writer.Printf("unreal.generated.{0}HandoverDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-							break;
-						case SCHEMA_InitialOnly:
-							Writer.Printf("unreal.generated.{0}InitialOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-							break;
-						default:
-							break;
-						}
+						Writer.Printf("unreal.generated.{0}{1}Dynamic{2},", SubObjectClassName,
+									  GetReplicatedPropertyGroupName(SchemaComponentTypeToPropertyGroup(SchemaType)), SubObjectNumber + 1);
 					}
 				});
 			}
@@ -871,6 +770,8 @@ void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchem
 	Writer.Printf("id = {0};", GetComponentSetIdBySchemaType(SchemaType));
 	Writer.Printf("components = [").Indent();
 
+	FString SchemaTypeString = GetReplicatedPropertyGroupName(SchemaComponentTypeToPropertyGroup(SchemaType));
+
 	// Write all components.
 	{
 		for (const auto& GeneratedActorClass : SchemaDatabase->ActorClassPathToSchema)
@@ -879,23 +780,7 @@ void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchem
 			const FString& ActorClassName = UnrealNameToSchemaComponentName(GeneratedActorClass.Value.GeneratedSchemaName);
 			if (GeneratedActorClass.Value.SchemaComponents[SchemaType] != 0)
 			{
-				switch (SchemaType)
-				{
-				case SCHEMA_Data:
-					Writer.Printf("unreal.generated.{0}.{1},", ActorClassName.ToLower(), ActorClassName);
-					break;
-				case SCHEMA_OwnerOnly:
-					Writer.Printf("unreal.generated.{0}.{1}OwnerOnly,", ActorClassName.ToLower(), ActorClassName);
-					break;
-				case SCHEMA_Handover:
-					Writer.Printf("unreal.generated.{0}.{1}Handover,", ActorClassName.ToLower(), ActorClassName);
-					break;
-				case SCHEMA_InitialOnly:
-					Writer.Printf("unreal.generated.{0}.{1}InitialOnly,", ActorClassName.ToLower(), ActorClassName);
-					break;
-				default:
-					break;
-				}
+				Writer.Printf("unreal.generated.{0}.{1}{2},", ActorClassName.ToLower(), ActorClassName, SchemaTypeString);
 			}
 			// Actor static subobjects.
 			for (const auto& ActorSubObjectData : GeneratedActorClass.Value.SubobjectData)
@@ -903,23 +788,8 @@ void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchem
 				const FString ActorSubObjectName = UnrealNameToSchemaComponentName(ActorSubObjectData.Value.Name.ToString());
 				if (ActorSubObjectData.Value.SchemaComponents[SchemaType] != 0)
 				{
-					switch (SchemaType)
-					{
-					case SCHEMA_Data:
-						Writer.Printf("unreal.generated.{0}.subobjects.{1},", ActorClassName.ToLower(), ActorSubObjectName);
-						break;
-					case SCHEMA_OwnerOnly:
-						Writer.Printf("unreal.generated.{0}.subobjects.{1}OwnerOnly,", ActorClassName.ToLower(), ActorSubObjectName);
-						break;
-					case SCHEMA_Handover:
-						Writer.Printf("unreal.generated.{0}.subobjects.{1}Handover,", ActorClassName.ToLower(), ActorSubObjectName);
-						break;
-					case SCHEMA_InitialOnly:
-						Writer.Printf("unreal.generated.{0}.subobjects.{1}InitialOnly,", ActorClassName.ToLower(), ActorSubObjectName);
-						break;
-					default:
-						break;
-					}
+					Writer.Printf("unreal.generated.{0}.subobjects.{1}{2},", ActorClassName.ToLower(), ActorSubObjectName,
+								  SchemaTypeString);
 				}
 			}
 		}
@@ -934,23 +804,7 @@ void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchem
 					GeneratedSubObjectClass.Value.DynamicSubobjectComponents[SubObjectNumber];
 				if (SubObjectSchemaData.SchemaComponents[SchemaType] != 0)
 				{
-					switch (SchemaType)
-					{
-					case SCHEMA_Data:
-						Writer.Printf("unreal.generated.{0}Dynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-						break;
-					case SCHEMA_OwnerOnly:
-						Writer.Printf("unreal.generated.{0}OwnerOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-						break;
-					case SCHEMA_Handover:
-						Writer.Printf("unreal.generated.{0}HandoverDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-						break;
-					case SCHEMA_InitialOnly:
-						Writer.Printf("unreal.generated.{0}InitialOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-						break;
-					default:
-						break;
-					}
+					Writer.Printf("unreal.generated.{0}{1}Dynamic{2},", SubObjectClassName, SchemaTypeString, SubObjectNumber + 1);
 				}
 			}
 		}
@@ -977,8 +831,9 @@ void WriteComponentSetFiles(const USchemaDatabase* SchemaDatabase, FString Schem
 	WriteRoutingWorkerAuthorityComponentSet(SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Data, SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly, SchemaOutputPath);
-	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Handover, SchemaOutputPath);
+	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_ServerOnly, SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_InitialOnly, SchemaOutputPath);
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 }
 
 USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
@@ -1003,10 +858,6 @@ USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
 	SchemaDatabase->NetCullDistanceToComponentId = NetCullDistanceToComponentId;
 	SchemaDatabase->ComponentIdToClassPath = CreateComponentIdToClassPathMap();
-	SchemaDatabase->DataComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Data].Array();
-	SchemaDatabase->OwnerOnlyComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_OwnerOnly].Array();
-	SchemaDatabase->HandoverComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Handover].Array();
-	SchemaDatabase->InitialOnlyComponentsIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_InitialOnly].Array();
 
 	SchemaDatabase->NetCullDistanceComponentIds.Reset();
 	TArray<Worker_ComponentId> NetCullDistanceComponentIds;
@@ -1247,10 +1098,6 @@ void ResetSchemaGeneratorState()
 {
 	ActorClassPathToSchema.Empty();
 	SubobjectClassPathToSchema.Empty();
-	SchemaComponentTypeToComponents.Empty();
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-		SchemaComponentTypeToComponents.Add(Type, TSet<Worker_ComponentId>());
-	});
 	LevelPathToComponentId.Empty();
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 	SchemaGeneratedClasses.Empty();
@@ -1277,8 +1124,6 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 		return false;
 	}
 
-	bool bResetSchema = false;
-
 	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*RelativeFileName);
 	if (StatData.bIsValid)
 	{
@@ -1295,14 +1140,6 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 
 		ActorClassPathToSchema = SchemaDatabase->ActorClassPathToSchema;
 		SubobjectClassPathToSchema = SchemaDatabase->SubobjectClassPathToSchema;
-		SchemaComponentTypeToComponents.Empty();
-		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_Data, TSet<Worker_ComponentId>(SchemaDatabase->DataComponentIds));
-		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_OwnerOnly,
-											TSet<Worker_ComponentId>(SchemaDatabase->OwnerOnlyComponentIds));
-		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_Handover,
-											TSet<Worker_ComponentId>(SchemaDatabase->HandoverComponentIds));
-		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_InitialOnly,
-											TSet<Worker_ComponentId>(SchemaDatabase->InitialOnlyComponentsIds));
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
 		NetCullDistanceToComponentId = SchemaDatabase->NetCullDistanceToComponentId;
@@ -1556,201 +1393,196 @@ bool RunSchemaCompiler(FString& SchemaBundleJsonOutput, FString SchemaInputDir, 
 	}
 }
 
-bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,
-									  TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex, TArray<FFieldIDs>& OutFieldIdsArray)
+struct CustomComponentSetDesc
 {
-	TUniquePtr<FArchive> SchemaFile(IFileManager::Get().CreateFileReader(*SchemaJsonPath));
-	if (!SchemaFile)
+	FString ComponentSetName;
+	Worker_ComponentSetId ComponentSetId;
+
+	FString CustomSchemaFolder;
+	FString SchemaFileName;
+
+	TArray<FString> InitialComponentSetContent;
+	TArray<FString> AdditionalSetInclude;
+};
+
+bool CreateCustomAuthoritySet(FString SchemaInputPath, FString SchemaOutputPath, const CustomComponentSetDesc& SetDesc)
+{
+	if (SchemaOutputPath.IsEmpty())
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not open schema bundle file %s"), *SchemaJsonPath);
-		return false;
+		SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
 	}
 
-	TSharedPtr<FJsonValue> SchemaBundleJson;
+	FString IntermediateDir = GenerateIntermediateDirectory();
+
+	if (SchemaInputPath.IsEmpty())
 	{
-		TSharedRef<TJsonReader<char>> JsonReader = TJsonReader<char>::Create(SchemaFile.Get());
-		FJsonSerializer::Deserialize(*JsonReader, SchemaBundleJson);
+		FString ContentDir = FPaths::ProjectContentDir();
+		SchemaInputPath = FPaths::Combine(ContentDir, TEXT("Spatial"), SetDesc.CustomSchemaFolder);
 	}
 
-	const TSharedPtr<FJsonObject>* RootObject;
-	if (!SchemaBundleJson || !SchemaBundleJson->TryGetObject(RootObject))
+	IPlatformFile& Filesystem = IPlatformFile::GetPlatformPhysical();
+
+	FString DestinationSchemaDir = FPaths::Combine(SchemaOutputPath, SetDesc.CustomSchemaFolder);
+	if (FPaths::DirectoryExists(DestinationSchemaDir))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("%s is not a valid Json file"), *SchemaJsonPath);
-		return false;
-	}
-
-	const TArray<TSharedPtr<FJsonValue>>* SchemaFiles;
-	SAFE_TRYGETFIELD((*RootObject), Array, "schemaFiles", SchemaFiles);
-
-	TMap<FString, uint32> ComponentMap;
-	TMap<uint32, TSet<FString>> ComponentRefSetMap;
-
-	TMap<FString, uint32> DataDefinitionNameToFieldIdsIndex;
-	TMap<uint32, FString> ComponentIdToDataDefinitionName;
-
-	for (const auto& FileValue : *SchemaFiles)
-	{
-		const TSharedPtr<FJsonObject>* FileObject;
-		SAFE_TRYGET(FileValue, Object, FileObject);
-
-		const TArray<TSharedPtr<FJsonValue>>* TypesDecl;
-		SAFE_TRYGETFIELD((*FileObject), Array, "types", TypesDecl);
-
-		for (const auto& TypeValue : *TypesDecl)
+		if (!Filesystem.DeleteDirectoryRecursively(*DestinationSchemaDir))
 		{
-			const TSharedPtr<FJsonObject>* TypeObject;
-			SAFE_TRYGET(TypeValue, Object, TypeObject);
-
-			FString ComponentName;
-			SAFE_TRYGETFIELD((*TypeObject), String, "qualifiedName", ComponentName);
-
-			COND_SCHEMA_GEN_ERROR_AND_RETURN(DataDefinitionNameToFieldIdsIndex.Contains(ComponentName),
-											 TEXT("The schema bundle contains duplicate data definitions for %s."), *ComponentName);
-			DataDefinitionNameToFieldIdsIndex.Add(ComponentName, OutFieldIdsArray.Num());
-			TArray<uint32>& FieldIDs = OutFieldIdsArray.AddDefaulted_GetRef().FieldIds;
-
-			const TArray<TSharedPtr<FJsonValue>>* FieldArray;
-			SAFE_TRYGETFIELD((*TypeObject), Array, "fields", FieldArray);
-
-			for (const auto& ArrayValue : *FieldArray)
-			{
-				const TSharedPtr<FJsonObject>* ArrayObject;
-				SAFE_TRYGET(ArrayValue, Object, ArrayObject);
-
-				int32 FieldId;
-				SAFE_TRYGETFIELD((*ArrayObject), Number, "fieldId", FieldId);
-
-				COND_SCHEMA_GEN_ERROR_AND_RETURN(FieldIDs.Contains(FieldId),
-												 TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId,
-												 *ComponentName);
-				FieldIDs.Add(FieldId);
-			}
-		}
-
-		const TArray<TSharedPtr<FJsonValue>>* ComponentsDecl;
-		SAFE_TRYGETFIELD((*FileObject), Array, "components", ComponentsDecl);
-
-		for (const auto& CompValue : *ComponentsDecl)
-		{
-			const TSharedPtr<FJsonObject>* CompObject;
-			SAFE_TRYGET(CompValue, Object, CompObject);
-
-			FString ComponentName;
-			SAFE_TRYGETFIELD((*CompObject), String, "qualifiedName", ComponentName);
-
-			int32 ComponentId;
-			SAFE_TRYGETFIELD((*CompObject), Number, "componentId", ComponentId);
-
-			ComponentMap.Add(ComponentName, ComponentId);
-
-			const TArray<TSharedPtr<FJsonValue>>* FieldArray;
-			SAFE_TRYGETFIELD((*CompObject), Array, "fields", FieldArray);
-
-			if (FieldArray->Num() > 0)
-			{
-				COND_SCHEMA_GEN_ERROR_AND_RETURN(OutComponentIdToFieldIdsIndex.Contains(ComponentId),
-												 TEXT("The schema bundle contains duplicate component IDs with component %s."),
-												 *ComponentName);
-				OutComponentIdToFieldIdsIndex.Add(ComponentId, OutFieldIdsArray.Num());
-				TArray<uint32>& FieldIDs = OutFieldIdsArray.AddDefaulted_GetRef().FieldIds;
-
-				for (const auto& ArrayValue : *FieldArray)
-				{
-					const TSharedPtr<FJsonObject>* ArrayObject;
-					SAFE_TRYGET(ArrayValue, Object, ArrayObject);
-
-					int32 FieldId;
-					SAFE_TRYGETFIELD((*ArrayObject), Number, "fieldId", FieldId);
-
-					COND_SCHEMA_GEN_ERROR_AND_RETURN(FieldIDs.Contains(FieldId),
-													 TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId,
-													 *ComponentName);
-					FieldIDs.Add(FieldId);
-				}
-			}
-
-			FString DataDefinition;
-			SAFE_TRYGETFIELD((*CompObject), String, "dataDefinition", DataDefinition);
-
-			if (!DataDefinition.IsEmpty())
-			{
-				COND_SCHEMA_GEN_ERROR_AND_RETURN(
-					FieldArray->Num() != 0,
-					TEXT("The schema bundle supplied both a data definition and field IDs - this is unexpected, component name: %s."),
-					*ComponentName);
-				ComponentIdToDataDefinitionName.Add(ComponentId, DataDefinition);
-			}
-		}
-
-		const TArray<TSharedPtr<FJsonValue>>* ComponentSets;
-		SAFE_TRYGETFIELD((*FileObject), Array, "componentSets", ComponentSets);
-
-		for (const auto& CompSetValue : *ComponentSets)
-		{
-			const TSharedPtr<FJsonObject>* CompSetObject;
-			SAFE_TRYGET(CompSetValue, Object, CompSetObject);
-
-			int32 ComponentSetId;
-			SAFE_TRYGETFIELD((*CompSetObject), Number, "componentSetId", ComponentSetId);
-
-			const TSharedPtr<FJsonObject>* CompListObject;
-			SAFE_TRYGETFIELD((*CompSetObject), Object, "componentList", CompListObject);
-
-			const TArray<TSharedPtr<FJsonValue>>* RefComponents;
-			SAFE_TRYGETFIELD((*CompListObject), Array, "components", RefComponents);
-
-			TSet<FString> Components;
-
-			for (const auto& CompRefValue : *RefComponents)
-			{
-				const TSharedPtr<FJsonObject>* CompRefObject;
-				SAFE_TRYGET(CompRefValue, Object, CompRefObject);
-
-				FString ComponentName;
-				SAFE_TRYGETFIELD((*CompRefObject), String, "component", ComponentName);
-
-				Components.Add(ComponentName);
-			}
-
-			ComponentRefSetMap.Add(ComponentSetId, MoveTemp(Components));
+			// clang-format off
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not delete pre-existing %s metadata schema directory '%s'! Please make sure the directory is writeable."), *SetDesc.ComponentSetName, *DestinationSchemaDir);
+			// clang-format on
+			return false;
 		}
 	}
 
-	TMap<uint32, FComponentIDs> FinalMap;
+	TSet<FString> SchemaFiles;
+	TArray<SpatialGDK::SchemaComponentIdentifiers> Components;
 
-	for (const auto& SetEntry : ComponentRefSetMap)
+	if (Filesystem.DirectoryExists(*SchemaInputPath))
 	{
-		const TSet<FString>& ComponentRefs = SetEntry.Value;
+		const FString SchemaExtension("schema");
 
-		FComponentIDs SetIds;
-		for (const auto& CompRef : ComponentRefs)
+		Filesystem.IterateDirectory(*SchemaInputPath, [&SchemaFiles, &SchemaExtension](const TCHAR* Entry, bool bIsDirectory) {
+			FString EntryStr(Entry);
+			if (!bIsDirectory && FPaths::GetExtension(EntryStr) == SchemaExtension)
+			{
+				SchemaFiles.Add(MoveTemp(EntryStr));
+			}
+
+			return true;
+		});
+
+		FString SchemaJsonPath;
+		if (!RunSchemaCompiler(SchemaJsonPath, SchemaInputPath))
 		{
-			uint32* FoundId = ComponentMap.Find(CompRef);
-			COND_SCHEMA_GEN_ERROR_AND_RETURN(FoundId == nullptr, TEXT("Schema file %s is missing a component entry for %s"),
-											 *SchemaJsonPath, *CompRef);
-			SetIds.ComponentIDs.Add(*FoundId);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to parse %s meta data schema files"), *SetDesc.ComponentSetName);
+			return false;
 		}
 
-		FinalMap.Add(SetEntry.Key, MoveTemp(SetIds));
+		TSet<FString> SchemaFileNames;
+		for (const FString& FilePath : SchemaFiles)
+		{
+			SchemaFileNames.Add(FPaths::GetCleanFilename(FilePath));
+		}
+
+		SpatialGDK::ExtractComponentsFromSchemaJson(SchemaJsonPath, Components, SchemaFileNames);
+
+		// schema_compiler cannot create folders, so we need to set them up beforehand.
+		if (!Filesystem.CreateDirectoryTree(*DestinationSchemaDir))
+		{
+			// clang-format off
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create %s metadata schema directory '%s'! Please make sure the parent directory is writeable."), *SetDesc.ComponentSetName, *DestinationSchemaDir);
+			// clang-format on
+			return false;
+		}
+
+		for (const auto& File : SchemaFiles)
+		{
+			FString DestinationFile = FPaths::Combine(DestinationSchemaDir, FPaths::GetCleanFilename(File));
+			Filesystem.CopyFile(*DestinationFile, *File);
+		}
 	}
 
-	for (const auto& Pair : ComponentIdToDataDefinitionName)
+	FCodeWriter Writer;
+	Writer.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.generated;)""");
+	Writer.PrintNewLine();
+
+	// Write all import statements.
+	for (const auto& File : SetDesc.AdditionalSetInclude)
 	{
-		COND_SCHEMA_GEN_ERROR_AND_RETURN(
-			!DataDefinitionNameToFieldIdsIndex.Contains(Pair.Value),
-			TEXT("The schema bundle did not contain a data definition for component ID %d, data definition name: %s."), Pair.Key,
-			*Pair.Value);
-		OutComponentIdToFieldIdsIndex.Add(Pair.Key, DataDefinitionNameToFieldIdsIndex[Pair.Value]);
+		Writer.Printf("import \"{0}\";", *File);
+	}
+	for (const auto& File : SchemaFiles)
+	{
+		FString ImportPath = FPaths::Combine(TEXT("unreal"), TEXT("generated"), SetDesc.CustomSchemaFolder, FPaths::GetCleanFilename(File));
+		Writer.Printf("import \"{0}\";", *ImportPath);
 	}
 
-	OutComponentSetMap = MoveTemp(FinalMap);
+	Writer.PrintNewLine();
+	Writer.Printf("component_set {0} {", SetDesc.ComponentSetName).Indent();
+	Writer.Printf("id = {0};", SetDesc.ComponentSetId);
+	Writer.Printf("components = [").Indent();
+
+	// Write all import components.
+	for (const auto& Component : SetDesc.InitialComponentSetContent)
+	{
+		Writer.Printf("{0},", Component);
+	}
+	for (const auto& MetadataComponent : Components)
+	{
+		Writer.Printf("{0},", MetadataComponent.Name);
+	}
+
+	Writer.RemoveTrailingComma();
+
+	Writer.Outdent().Print("];");
+	Writer.Outdent().Print("}");
+
+	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, *FString::Printf(TEXT("ComponentSets/%s.schema"), *SetDesc.SchemaFileName)));
 
 	return true;
+}
+
+bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPath)
+{
+	CustomComponentSetDesc Desc;
+	Desc.ComponentSetName = TEXT("PartitionMetadataAuth");
+	Desc.ComponentSetId = SpatialConstants::PARTITION_METADATA_AUTH_COMPONENT_SET_ID;
+	Desc.CustomSchemaFolder = TEXT("PartitionMetadata");
+	Desc.SchemaFileName = TEXT("PartitionAuthoritativeComponentSet");
+	Desc.InitialComponentSetContent.Add(TEXT("improbable.Position"));
+	Desc.InitialComponentSetContent.Add(TEXT("improbable.Interest"));
+	Desc.InitialComponentSetContent.Add(TEXT("improbable.AuthorityDelegation"));
+
+	Desc.AdditionalSetInclude.Add(TEXT("improbable/standard_library.schema"));
+
+	return CreateCustomAuthoritySet(SchemaInputPath, SchemaOutputPath, Desc);
+}
+
+bool CreateServerWorkerAuthoritySet(FString SchemaInputPath, FString SchemaOutputPath)
+{
+	CustomComponentSetDesc Desc;
+	Desc.ComponentSetName = TEXT("ServerWorkerAuthComponentSet");
+	Desc.ComponentSetId = SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID;
+	Desc.CustomSchemaFolder = TEXT("ServerWorkerMetadata");
+	Desc.SchemaFileName = TEXT("ServerWorkerAuthorityComponentSet");
+	Desc.InitialComponentSetContent.Add(TEXT("improbable.Position"));
+	Desc.InitialComponentSetContent.Add(TEXT("improbable.Interest"));
+	Desc.InitialComponentSetContent.Add(TEXT("improbable.AuthorityDelegation"));
+	Desc.InitialComponentSetContent.Add(TEXT("improbable.Metadata"));
+	Desc.InitialComponentSetContent.Add(TEXT("unreal.ServerWorker"));
+	Desc.InitialComponentSetContent.Add(TEXT("unreal.generated.UnrealCrossServerSenderRPCs"));
+
+	Desc.AdditionalSetInclude.Add(TEXT("unreal/generated/rpc_endpoints.schema"));
+	Desc.AdditionalSetInclude.Add(TEXT("unreal/gdk/server_worker.schema"));
+	Desc.AdditionalSetInclude.Add(TEXT("improbable/standard_library.schema"));
+
+	return CreateCustomAuthoritySet(SchemaInputPath, SchemaOutputPath, Desc);
+}
+
+bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,
+									  TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex, TArray<FFieldIDs>& OutFieldIdsArray,
+									  TArray<FFieldIDs>& OutListIdsArray)
+{
+	return SpatialGDK::ExtractInformationFromSchemaJson(SchemaJsonPath, OutComponentSetMap, OutComponentIdToFieldIdsIndex, OutFieldIdsArray,
+														OutListIdsArray);
 }
 
 bool SpatialGDKGenerateSchema()
 {
 	SchemaGeneratedClasses.Empty();
+
+	if (!CreatePartitionAuthoritySet())
+	{
+		return false;
+	}
+
+	if (!CreateServerWorkerAuthoritySet())
+	{
+		return false;
+	}
 
 	// Generate Schema for classes loaded in memory.
 
@@ -1778,7 +1610,8 @@ bool SpatialGDKGenerateSchema()
 	}
 
 	if (!ExtractInformationFromSchemaJson(SchemaJsonOutput, SchemaDatabase->ComponentSetIdToComponentIds,
-										  SchemaDatabase->ComponentIdToFieldIdsIndex, SchemaDatabase->FieldIdsArray))
+										  SchemaDatabase->ComponentIdToFieldIdsIndex, SchemaDatabase->FieldIdsArray,
+										  SchemaDatabase->ListIdsArray))
 	{
 		return false;
 	}

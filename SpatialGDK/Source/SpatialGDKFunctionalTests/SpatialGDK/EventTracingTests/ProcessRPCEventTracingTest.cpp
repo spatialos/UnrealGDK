@@ -31,6 +31,4 @@ void AProcessRPCEventTracingTest::FinishEventTraceTest()
 			FString::Printf(TEXT("Process RPC (op->receive) trace events have the expected causes. Events Tested: %d, Events Failed: %d"),
 							Test.NumTested, Test.NumFailed));
 	}
-
-	FinishStep();
 }

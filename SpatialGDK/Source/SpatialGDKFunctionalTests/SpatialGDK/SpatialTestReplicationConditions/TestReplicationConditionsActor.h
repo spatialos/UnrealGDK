@@ -79,6 +79,9 @@ public:
 
 	UPROPERTY(Replicated)
 	int32 CondSkipReplay_Var;
+
+	UPROPERTY(Replicated)
+	int32 CondServerOnly_Var;
 };
 
 /**
@@ -126,6 +129,9 @@ public:
 
 	UPROPERTY(Replicated)
 	int32 CondSkipReplay_Var;
+
+	UPROPERTY(Replicated)
+	int32 CondServerOnly_Var;
 
 	UPROPERTY(Replicated)
 	UTestReplicationConditionsComponent_Common* StaticComponent;
@@ -216,6 +222,15 @@ public:
 
 	UPROPERTY(Replicated)
 	UTestReplicationConditionsComponent_AutonomousOnly* DynamicComponent;
+};
+
+UCLASS()
+class UTestReplicationConditionsPrimitiveComponent : public UPrimitiveComponent
+{
+	GENERATED_BODY()
+
+public:
+	virtual bool IsSimulatingPhysics(FName BoneName = NAME_None) const override;
 };
 
 UCLASS()

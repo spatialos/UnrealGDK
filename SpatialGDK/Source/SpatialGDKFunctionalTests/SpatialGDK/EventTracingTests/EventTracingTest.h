@@ -27,6 +27,15 @@ public:
 
 	virtual void PrepareTest() override;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EventTracingConfig)
+	int32 MinRequiredClients = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EventTracingConfig)
+	int32 MinRequiredWorkers = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EventTracingConfig)
+	float TestTime = 4.0f;
+
 protected:
 	const static FName ReceiveOpEventName;
 	const static FName PropertyChangedEventName;
@@ -56,17 +65,36 @@ protected:
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;
 
-	float TestTime = 8.0f;
+	enum TraceSource : uint8
+	{
+		Runtime,
+		Worker,
+		Client,
+		Count
+	};
 
-	TMap<FString, FName> TraceEvents;
-	TMap<FString, TArray<FString>> TraceSpans;
+	struct TraceItemsData
+	{
+		TMap<FString, TArray<FString>> Spans;
+		TMap<FString, FName> SpanEvents;
+		TMap<FName, int32> EventCount;
+	};
+
+	TMap<TraceSource, TraceItemsData> TraceItems;
+
+	int32 GetTraceSpanCount(const TraceSource Source) const;
+	int32 GetTraceEventCount(const TraceSource Source) const;
+	int32 GetTraceEventCount(const TraceSource Source, const FName TraceEventType) const;
+	FString FindRootSpanId(const FString& SpanId) const;
+
+	void ForEachTraceSource(TFunctionRef<bool(const TraceItemsData& SourceTraceItems)> Predicate) const;
 
 	bool CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames, int MinimumCauses = 1) const;
 
-	virtual void FinishEventTraceTest();
+	virtual void FinishEventTraceTest(){};
 
-	virtual int GetRequiredClients() { return 1; }
-	virtual int GetRequiredWorkers() { return 1; }
+	virtual int GetRequiredClients() { return MinRequiredClients; }
+	virtual int GetRequiredWorkers() { return MinRequiredWorkers; }
 
 	struct CheckResult
 	{
@@ -81,5 +109,5 @@ private:
 	void StartEventTracingTest();
 	void WaitForTestToEnd();
 	void GatherData();
-	void GatherDataFromFile(const FString& FilePath);
+	void GatherDataFromFile(const FString& FilePath, const TraceSource Source);
 };

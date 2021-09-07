@@ -13,6 +13,9 @@
  *		[/Script/SpatialGDK.SpatialGDKSettings]
  *		bEventTracingEnabled=True
  *
+ *		[/Script/SpatialGDK.SpatialGDKSettings]
+ *		bEventTracingEnabledWithEditor=True
+ *
  *		[/Script/SpatialGDKEditor.SpatialGDKEditorSettings]
  *		SpatialOSCommandLineLaunchFlags="--event-tracing-enabled=true"
  *
@@ -27,10 +30,7 @@ AEventTracingSettingsOverride::AEventTracingSettingsOverride()
 	Description = TEXT("Event Tracing - Settings Override");
 }
 
-void AEventTracingSettingsOverride::FinishEventTraceTest()
-{
-	FinishStep();
-}
+void AEventTracingSettingsOverride::FinishEventTraceTest() {}
 
 void AEventTracingSettingsOverride::PrepareTest()
 {
@@ -41,8 +41,11 @@ void AEventTracingSettingsOverride::PrepareTest()
 	AddStep(
 		TEXT("Check SpatialGDKSettings override settings"), FWorkerDefinition::AllWorkers, nullptr,
 		[this]() {
-			bool bEventTracingEnabled = GetDefault<USpatialGDKSettings>()->bEventTracingEnabled;
+			const bool bEventTracingEnabled = GetDefault<USpatialGDKSettings>()->bEventTracingEnabled;
 			RequireTrue(bEventTracingEnabled, TEXT("Expected bEventTracingEnabled to be True"));
+
+			const bool bEventTracingEnabledWithEditor = GetDefault<USpatialGDKSettings>()->bEventTracingEnabledWithEditor;
+			RequireTrue(bEventTracingEnabledWithEditor, TEXT("Expected bEventTracingEnabledWithEditor to be True"));
 
 			FinishStep();
 		},
@@ -51,10 +54,10 @@ void AEventTracingSettingsOverride::PrepareTest()
 	AddStep(
 		TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr,
 		[this]() {
-			int32 ExpectedNumberOfClients = 1;
-			int32 RequiredNumberOfClients = GetNumRequiredClients();
+			const int32 ExpectedNumberOfClients = 1;
+			const int32 RequiredNumberOfClients = GetNumRequiredClients();
 			RequireEqual_Int(RequiredNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of required clients."));
-			int32 ActualNumberOfClients = GetNumberOfClientWorkers();
+			const int32 ActualNumberOfClients = GetNumberOfClientWorkers();
 			RequireEqual_Int(ActualNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of actual clients."));
 
 			FinishStep();

@@ -48,8 +48,7 @@ void ASpatialTestHandover::PrepareTest()
 
 	// Server 1 spawns the HandoverCube under its authority area.
 	AddStep(TEXT("SpatialTestHandoverServer1SpawnCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		HandoverCube = GetWorld()->SpawnActor<AHandoverCube>(Server1Position, FRotator::ZeroRotator, FActorSpawnParameters());
-		RegisterAutoDestroyActor(HandoverCube);
+		HandoverCube = SpawnActor<AHandoverCube>(Server1Position);
 
 		FinishStep();
 	});
@@ -71,7 +70,7 @@ void ASpatialTestHandover::PrepareTest()
 
 				AssertTrue(IsValid(NetDriver), TEXT("This test should be run with Spatial Networking"));
 
-				LoadBalancingStrategy = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy);
+				LoadBalancingStrategy = GetLoadBalancingStrategy();
 
 				if (IsValid(HandoverCube) && IsValid(LoadBalancingStrategy))
 				{

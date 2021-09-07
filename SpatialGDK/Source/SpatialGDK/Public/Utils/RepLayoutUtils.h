@@ -170,8 +170,8 @@ inline TArray<UFunction*> GetClassRPCFunctions(const UClass* Class)
 											 EFieldIteratorFlags::IncludeInterfaces);
 	for (; RemoteFunction; ++RemoteFunction)
 	{
-		if (RemoteFunction->FunctionFlags & FUNC_NetClient || RemoteFunction->FunctionFlags & FUNC_NetServer
-			|| RemoteFunction->FunctionFlags & FUNC_NetCrossServer || RemoteFunction->FunctionFlags & FUNC_NetMulticast)
+		if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetClient | FUNC_NetServer | FUNC_NetCrossServer | FUNC_NetMulticast
+												| FUNC_NetWriteFence))
 		{
 			AllClassFunctions.Add(*RemoteFunction);
 		}

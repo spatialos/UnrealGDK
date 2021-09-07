@@ -31,7 +31,7 @@ public:
 
 #if TRACE_LIB_ACTIVE
 
-		FString TraceFilePath = Path / TEXT("trace_dynamic.dll");
+		FString TraceFilePath = Path / TEXT("legacy_trace_dynamic.dll");
 		TraceLibraryHandle = FPlatformProcess::GetDllHandle(*TraceFilePath);
 		if (TraceLibraryHandle == nullptr)
 		{

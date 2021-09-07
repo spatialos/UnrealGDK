@@ -3,9 +3,11 @@
 #pragma once
 
 #include "Interop/CrossServerRPCHandler.h"
+#include "Engine/EngineBaseTypes.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/CrossServerRPCSender.h"
 #include "Interop/EntityQueryHandler.h"
+#include "Interop/OwnershipCompletenessHandler.h"
 #include "Utils/SpatialBasicAwaiter.h"
 #include "Utils/SpatialDebugger.h"
 
@@ -23,6 +25,9 @@
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
 class FSpatialLoadBalancingHandler;
+class FSpatialNetDriverRPC;
+class FSpatialNetDriverClientRPC;
+class FSpatialNetDriverServerRPC;
 class FSpatialOutputDevice;
 class SpatialDispatcher;
 class SpatialSnapshotManager;
@@ -38,12 +43,15 @@ class USpatialGameInstance;
 class USpatialMetrics;
 class USpatialNetConnection;
 class USpatialNetDriverDebugContext;
+class USpatialNetDriverGameplayDebuggerContext;
 class USpatialPackageMapClient;
 class USpatialPlayerSpawner;
 class USpatialReceiver;
 class USpatialSender;
 class USpatialWorkerConnection;
 class USpatialWorkerFlags;
+class USpatialShadowActor;
+class USpatialNetDriverAuthorityDebugger;
 
 DECLARE_DELEGATE(PostWorldWipeDelegate);
 DECLARE_MULTICAST_DELEGATE(FShutdownEvent);
@@ -69,19 +77,26 @@ enum class EActorMigrationResult : uint8
 
 namespace SpatialGDK
 {
+class FSubView;
 class SpatialRoutingSystem;
 class SpatialDebuggerSystem;
 class ActorSystem;
 class SpatialRPCService;
 class SpatialRoutingSystem;
+class FSpatialHandoverManager;
 class SpatialLoadBalanceEnforcer;
-class InterestFactory;
+class UnrealServerInterestFactory;
 class WellKnownEntitySystem;
 class ClientConnectionManager;
 class InitialOnlyFilter;
 class CrossServerRPCSender;
 class CrossServerRPCHandler;
-class SpatialStrategySystem;
+class FSpatialStrategySystem;
+class FSkeletonEntityCreationStartupStep;
+class FSpatialServerStartupHandler;
+class FSpatialClientStartupHandler;
+class FPartitionSystemImpl;
+class FServerWorkerSystemImpl;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -121,11 +136,18 @@ public:
 	virtual void NotifyStreamingLevelUnload(class ULevel* Level) override;
 
 	virtual void PushCrossServerRPCSender(AActor* Sender) override;
-	virtual void PopCrossServerRPCSender(AActor* Sender) override;
+	virtual void PopCrossServerRPCSender() override;
+	virtual void PushDependentActor(AActor* Dependent) override;
+	virtual void PopDependentActor() override;
+	virtual void PushNetWriteFenceResolution();
+	virtual void PopNetWriteFenceResolution();
+	virtual bool RPCCallNeedWriteFence(AActor* Target, UFunction* Function) override;
 	// End UNetDriver interface.
 
 	void OnConnectionToSpatialOSSucceeded();
 	void OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
+
+	void CreateAndInitializeCoreClassesAfterStartup();
 
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
@@ -137,11 +159,6 @@ public:
 	// Note: you should only call this after we have connected to Spatial.
 	// You can check if we connected by calling GetSpatialOS()->IsConnected()
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
-
-	// When the AcceptingPlayers/SessionID state on the GSM has changed this method will be called.
-	void ClientOnGSMQuerySuccess();
-	void RetryQueryGSM();
-	void GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op);
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
@@ -209,34 +226,40 @@ public:
 	UPROPERTY()
 	USpatialNetDriverDebugContext* DebugCtx;
 	UPROPERTY()
+	USpatialNetDriverGameplayDebuggerContext* GameplayDebuggerCtx;
+	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
-
-	// Stored as fields here to be reused for creating the debug context subview if the world settings dictates it.
-	FFilterPredicate ActorFilter;
-	TArray<FDispatcherRefreshCallback> ActorRefreshCallbacks;
+	UPROPERTY()
+	USpatialNetDriverAuthorityDebugger* AuthorityDebugger;
 
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
+	TOptional<SpatialGDK::FOwnershipCompletenessHandler> OwnershipCompletenessHandler;
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
+	TUniquePtr<FSpatialNetDriverRPC> RPCs;
+	FSpatialNetDriverClientRPC* ClientRPCs = nullptr;
+	FSpatialNetDriverServerRPC* ServerRPCs = nullptr;
+
+	const SpatialGDK::FSubView* LBSubView = nullptr;
 
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
-	TUniquePtr<SpatialGDK::SpatialStrategySystem> StrategySystem;
+	TUniquePtr<SpatialGDK::FSpatialStrategySystem> StrategySystem;
+	TUniquePtr<SpatialGDK::FPartitionSystemImpl> PartitionSystemImpl;
+	TUniquePtr<SpatialGDK::FServerWorkerSystemImpl> ServerWorkerSystemImpl;
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
-	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
+	TUniquePtr<SpatialGDK::FSpatialHandoverManager> HandoverManager;
+	TUniquePtr<SpatialGDK::UnrealServerInterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
+	TUniquePtr<SpatialGDK::FSkeletonEntityCreationStartupStep> SkeletonEntityCreationStep;
+
+	TUniquePtr<SpatialGDK::FSpatialServerStartupHandler> StartupHandler;
+	TUniquePtr<SpatialGDK::FSpatialClientStartupHandler> ClientStartupHandler;
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
 	TUniquePtr<SpatialGDK::InitialOnlyFilter> InitialOnlyFilter;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
-
-	// If this worker is authoritative over the translation, the manager will be instantiated.
-	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
-
-	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
-	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
-	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
 
 #if !UE_BUILD_SHIPPING
 	int32 GetConsiderListSize() const { return ConsiderListSize; }
@@ -266,7 +289,18 @@ public:
 
 	virtual int64 GetClientID() const override;
 
+	virtual int64 GetActorEntityId(const AActor& Actor) const override;
+
 	FShutdownEvent OnShutdown;
+
+	uint32 ClientGetSessionId() const;
+
+	struct FPendingNetworkFailure
+	{
+		ENetworkFailure::Type FailureType;
+		FString Message;
+	};
+	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
 
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
@@ -276,7 +310,7 @@ private:
 	TUniquePtr<SpatialGDK::CrossServerRPCSender> CrossServerRPCSender;
 	TUniquePtr<SpatialGDK::CrossServerRPCHandler> CrossServerRPCHandler;
 
-	SpatialGDK::EntityQueryHandler QueryHandler;
+	SpatialGDK::FEntityQueryHandler QueryHandler;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;
@@ -284,13 +318,11 @@ private:
 
 	FTimerManager TimerManager;
 
-	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;
 	bool bPersistSpatialConnection;
 	bool bWaitingToSpawn;
 	bool bIsReadyToStart;
 	bool bMapLoaded;
-
 	FString SnapshotToLoad;
 
 	// Client variable which stores the SessionId given to us by the server in the URL options.
@@ -303,6 +335,7 @@ private:
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
+
 	void CreateAndInitializeLoadBalancingClasses();
 
 	void CreateServerSpatialOSNetConnection();
@@ -367,10 +400,6 @@ private:
 
 	FUnrealObjectRef GetCurrentPlayerControllerRef();
 
-	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
-	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.
-	bool ClientCanSendPlayerSpawnRequests() const;
-
 	void ProcessOwnershipChanges();
 
 	// Has a certain interval (in seconds) been passed since the previous timestamp
@@ -382,4 +411,8 @@ private:
 
 	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
+
+	// Store the last received state of the actor over the network by Entity ID so that we can check for non-auth changes.
+	UPROPERTY()
+	TMap<int64, USpatialShadowActor*> SpatialShadowActors;
 };

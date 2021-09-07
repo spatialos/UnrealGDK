@@ -18,6 +18,28 @@ DEFINE_LOG_CATEGORY(LogSpatialConnectionManager);
 
 using namespace SpatialGDK;
 
+namespace AsyncUtil
+{
+template <typename FN>
+void AsyncTaskGameThreadOutsideGC(FN&& Func) // A little wrapper which ensures the task is run outside GC (UNR-5421)
+{
+	AsyncTask(ENamedThreads::GameThread, [Func = MoveTemp(Func)]() mutable {
+		if (IsGarbageCollecting())
+		{
+			TSharedPtr<FDelegateHandle> DelegateHandle = MakeShared<FDelegateHandle>();
+			*DelegateHandle = FCoreUObjectDelegates::GetPostGarbageCollect().AddLambda([Func = MoveTemp(Func), DelegateHandle]() mutable {
+				Func(); // Try again, once GC has completed.
+				FCoreUObjectDelegates::GetPostGarbageCollect().Remove(*DelegateHandle);
+			});
+		}
+		else
+		{
+			Func();
+		}
+	});
+}
+} // namespace AsyncUtil
+
 class GDKVersionLoader
 {
 public:
@@ -95,12 +117,18 @@ struct ConfigureConnection
 		Params.network.kcp.upstream_kcp.flush_interval_millis = Config.UdpUpstreamIntervalMS;
 		Params.network.kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
 
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 #if WITH_EDITOR
+		float TimeoutSeconds = Settings->HeartbeatTimeoutWithEditorSeconds;
+#else
+		float TimeoutSeconds = Settings->HeartbeatTimeoutSeconds;
+#endif
+		HeartbeatParams = { static_cast<uint64_t>(Settings->HeartbeatIntervalSeconds * 1000),
+							static_cast<uint64_t>(TimeoutSeconds * 1000) };
 		Params.network.tcp.downstream_heartbeat = &HeartbeatParams;
 		Params.network.tcp.upstream_heartbeat = &HeartbeatParams;
 		Params.network.kcp.downstream_heartbeat = &HeartbeatParams;
 		Params.network.kcp.upstream_heartbeat = &HeartbeatParams;
-#endif
 
 		// Use insecure connections default.
 		Params.network.kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
@@ -152,10 +180,7 @@ struct ConfigureConnection
 	Worker_LogsinkParameters Logsink{};
 	Worker_NameVersionPair UnrealGDKVersionPair{};
 	Worker_FlowControlParameters WorkerFowControlParameters{};
-
-#if WITH_EDITOR
-	Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, MAX_int64 };
-#endif
+	Worker_HeartbeatParameters HeartbeatParams{};
 };
 
 void USpatialConnectionManager::FinishDestroy()
@@ -192,7 +217,7 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 	if (bIsConnected)
 	{
 		check(bInitAsClient == bConnectAsClient);
-		AsyncTask(ENamedThreads::GameThread, [WeakThis = TWeakObjectPtr<USpatialConnectionManager>(this)] {
+		AsyncUtil::AsyncTaskGameThreadOutsideGC([WeakThis = TWeakObjectPtr<USpatialConnectionManager>(this)] {
 			if (WeakThis.IsValid())
 			{
 				WeakThis->OnConnectionSuccess();
@@ -440,35 +465,35 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-		AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection,
-											  EventTracing = MoveTemp(EventTracing)]() mutable {
-			if (!WeakSpatialConnectionManager.IsValid())
-			{
-				// The game instance was destroyed before the connection finished, so just clean up the connection.
-				Worker_Connection_Destroy(NewCAPIWorkerConnection);
-				return;
-			}
+		AsyncUtil::AsyncTaskGameThreadOutsideGC(
+			[WeakSpatialConnectionManager, NewCAPIWorkerConnection, EventTracing = MoveTemp(EventTracing)]() mutable {
+				if (!WeakSpatialConnectionManager.IsValid())
+				{
+					// The game instance was destroyed before the connection finished, so just clean up the connection.
+					Worker_Connection_Destroy(NewCAPIWorkerConnection);
+					return;
+				}
 
-			USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
+				USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
 
-			const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
+				const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
 
-			if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
-			{
-				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>(WeakSpatialConnectionManager.Get());
+				if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
+				{
+					const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+					SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>(WeakSpatialConnectionManager.Get());
 
-				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
-																		  SpatialConnectionManager->ComponentSetData);
-				SpatialConnectionManager->OnConnectionSuccess();
-			}
-			else
-			{
-				const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
-				Worker_Connection_Destroy(NewCAPIWorkerConnection);
-				SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
-			}
-		});
+					SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
+																			  SpatialConnectionManager->ComponentSetData);
+					SpatialConnectionManager->OnConnectionSuccess();
+				}
+				else
+				{
+					const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
+					Worker_Connection_Destroy(NewCAPIWorkerConnection);
+					SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
+				}
+			});
 	});
 }
 
@@ -596,7 +621,7 @@ void USpatialConnectionManager::OnConnectionFailure(uint8_t ConnectionStatusCode
 TSharedPtr<SpatialGDK::SpatialEventTracer> USpatialConnectionManager::CreateEventTracer(const FString& WorkerId)
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	if (Settings == nullptr || !Settings->bEventTracingEnabled)
+	if (Settings == nullptr || !Settings->GetEventTracingEnabled())
 	{
 		return nullptr;
 	}
