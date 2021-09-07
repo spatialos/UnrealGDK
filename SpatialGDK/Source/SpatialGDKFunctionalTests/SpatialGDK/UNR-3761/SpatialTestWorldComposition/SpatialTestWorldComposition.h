@@ -18,7 +18,7 @@ struct FExpectedActor
 	FVector ExpectedActorLocation;
 
 	UPROPERTY()
-	UClass* ExpectedActorClass;
+	UClass* ExpectedActorClass = nullptr;
 };
 
 UCLASS()
