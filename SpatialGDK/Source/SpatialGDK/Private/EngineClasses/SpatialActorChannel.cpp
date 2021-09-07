@@ -1357,7 +1357,7 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 
 	if (Settings->ClientEntityIdListQueryUpdateFrequency > 0.f)
 	{
-		const float UpdateThresholdSecs = 1 / Settings->ClientEntityIdListQueryUpdateFrequency;
+		const float UpdateThresholdSecs = 1.f / Settings->ClientEntityIdListQueryUpdateFrequency;
 		const bool bHitInterestTimeThreshold = TimeSinceLastClientInterestUpdate >= UpdateThresholdSecs;
 		bShouldMarkInterestDirty |= bHitInterestTimeThreshold;
 

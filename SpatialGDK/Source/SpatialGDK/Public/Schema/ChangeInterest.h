@@ -30,7 +30,7 @@ struct ChangeInterestRequest
 
 	void DebugOutput() const;
 
-	void CreateRequest(Worker_CommandRequest& OutCommandRequest) const;
+	Worker_CommandRequest CreateRequest() const;
 };
 
 } // namespace SpatialGDK

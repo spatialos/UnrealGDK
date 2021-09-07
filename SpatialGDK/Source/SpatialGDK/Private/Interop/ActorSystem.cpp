@@ -544,17 +544,17 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 
 						// Flush PC interest on handover
-						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
+						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries && Actor->IsA<APlayerController>())
 						{
 							const Worker_EntityId ControllerEntityId =
 								NetDriver->PackageMap->GetEntityIdFromObject(Actor->GetNetConnection()->PlayerController);
-							if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+							if (ensure(ControllerEntityId == EntityId))
 							{
 								MarkClientInterestDirty(ControllerEntityId, /*bOVerwrite*/ true);
 							}
 							else
 							{
-								UE_LOG(LogActorSystem, Warning, TEXT("Failed to get player controller to update client interest (%s)"),
+								UE_LOG(LogActorSystem, Error, TEXT("Failed to get player controller to update client interest (%s)"),
 									   *Actor->GetName());
 							}
 						}
@@ -812,9 +812,9 @@ void ActorSystem::DestroySubObject(const FUnrealObjectRef& ObjectRef, UObject& O
 	}
 }
 
-void ActorSystem::MarkClientInterestDirty(Worker_EntityId EntityId, bool bOverwrite)
+void ActorSystem::MarkClientInterestDirty(Worker_EntityId EntityId, bool bFullInterestUpdate)
 {
-	ClientInterestDirty.FindOrAdd(EntityId) |= bOverwrite;
+	ClientInterestDirty.FindOrAdd(EntityId) |= bFullInterestUpdate;
 }
 
 void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
@@ -2351,9 +2351,8 @@ void ActorSystem::UpdateClientInterest(AActor* Actor, const bool bOverwrite)
 
 		if (bRequestValid)
 		{
-			Worker_CommandRequest CommandRequest{};
 			Request.DebugOutput();
-			Request.CreateRequest(CommandRequest);
+			Worker_CommandRequest CommandRequest = Request.CreateRequest();
 
 			const Worker_EntityId SystemEntityId =
 				Cast<USpatialNetConnection>(PlayerController->GetNetConnection())->ConnectionClientWorkerSystemEntityId;

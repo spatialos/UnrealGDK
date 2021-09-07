@@ -237,7 +237,8 @@ private:
 	// Deserialized state store for Actor relevant components.
 	TMap<Worker_EntityId_Key, ActorData> ActorDataStore;
 
-	TMap<Worker_EntityId_Key, bool> ClientInterestDirty;
+	// Stored player controller entity ids that need to have their interest updated, and bool indicating partial or full update
+	TMap<Worker_EntityId_Key, bool /*bFullInterestUpdate*/> ClientInterestDirty;
 };
 
 } // namespace SpatialGDK

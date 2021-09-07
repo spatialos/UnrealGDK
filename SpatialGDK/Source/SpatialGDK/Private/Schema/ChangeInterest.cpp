@@ -18,30 +18,19 @@ void ChangeInterestQuery::DebugOutput(const FString& DiffType) const
 		UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: client non auth interest"));
 	}
 
-	/*
-	// Verbose output
-	FString ComponentsString;
-	for (const auto& Component : Components)
-	{
-		ComponentsString += FString::Format(TEXT("{0} "), { Component });
-	}
+	const FString ComponentsString = FString::JoinBy(Components, TEXT(" "), [](const Worker_ComponentId ComponentId) {
+		return FString::Printf(TEXT("%d"), ComponentId);
+	});
+	UE_LOG(LogChangeInterest, Verbose, TEXT("Interest diff: components %s"), *ComponentsString);
 
-	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: components %s"), *ComponentsString);
+	const FString ComponentSetsString = FString::JoinBy(ComponentSets, TEXT(" "), [](const Worker_ComponentSetId ComponentSetId) {
+		return FString::Printf(TEXT("%d"), ComponentSetId);
+	});
+	UE_LOG(LogChangeInterest, Verbose, TEXT("Interest diff: component sets %s"), *ComponentSetsString);
 
-	FString ComponentSetsString;
-	for (const auto& ComponentSet : ComponentSets)
-	{
-		ComponentSetsString += FString::Format(TEXT("{0} "), { ComponentSet });
-	}
-
-	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: component sets %s"), *ComponentSetsString);
-	*/
-
-	FString EntitiesString;
-	for (const auto& EntityId : Entities)
-	{
-		EntitiesString += FString::Format(TEXT("{0} "), { EntityId });
-	}
+	const FString EntitiesString = FString::JoinBy(Entities, TEXT(" "), [](const Worker_EntityId_Key EntityId) {
+		return FString::Printf(TEXT("%lld"), EntityId);
+	});
 
 	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: %s %s"), *DiffType, *EntitiesString);
 }
@@ -71,13 +60,14 @@ void ChangeInterestRequest::DebugOutput() const
 	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: overwrite %d"), bOverwrite);
 }
 
-void ChangeInterestRequest::CreateRequest(Worker_CommandRequest& OutCommandRequest) const
+Worker_CommandRequest ChangeInterestRequest::CreateRequest() const
 {
-	OutCommandRequest.component_id = SpatialConstants::WORKER_COMPONENT_ID;
-	OutCommandRequest.command_index = SpatialConstants::WORKER_CHANGE_INTEREST_COMMAND_ID;
-	OutCommandRequest.schema_type = Schema_CreateCommandRequest();
+	Worker_CommandRequest Request{};
+	Request.component_id = SpatialConstants::WORKER_COMPONENT_ID;
+	Request.command_index = SpatialConstants::WORKER_CHANGE_INTEREST_COMMAND_ID;
+	Request.schema_type = Schema_CreateCommandRequest();
 
-	Schema_Object* RequestObject = Schema_GetCommandRequestObject(OutCommandRequest.schema_type);
+	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
 
 	Schema_AddEntityId(RequestObject, 1, SystemEntityId);
 
@@ -110,6 +100,7 @@ void ChangeInterestRequest::CreateRequest(Worker_CommandRequest& OutCommandReque
 	}
 
 	Schema_AddBool(RequestObject, 4, bOverwrite);
+	return Request;
 }
 
 } // namespace SpatialGDK
