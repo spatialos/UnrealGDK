@@ -8,6 +8,13 @@ namespace SpatialGDK
 {
 struct LegacyLB_GridCell
 {
+	// Schema in <TestGym>/Game/Content/Spatial/PartitionMetadata/LegacyMetadata.schema
+	// component GridCell{
+	// 	 id = 1901;
+	// 	 improbable.Coordinates center = 1;
+	// 	 improbable.EdgeLength edge_length = 2;
+	// }
+
 	static constexpr Worker_ComponentId ComponentId = 1901;
 
 	LegacyLB_GridCell() {}
@@ -69,6 +76,12 @@ struct LegacyLB_GridCell
 
 struct LegacyLB_Layer
 {
+	// Schema in <TestGym>/Game/Content/Spatial/PartitionMetadata/LegacyMetadata.schema
+	// component Layer{
+	//  id = 1902;
+	//  uint32 layer = 1;
+	// }
+
 	static constexpr Worker_ComponentId ComponentId = 1902;
 
 	LegacyLB_Layer() {}
@@ -127,6 +140,12 @@ struct LegacyLB_Layer
 
 struct LegacyLB_VirtualWorkerAssignment
 {
+	// Schema in <TestGym>/Game/Content/Spatial/PartitionMetadata/LegacyMetadata.schema
+	// component VirtualWorkerAssignment{
+	//  id = 1903;
+	//  uint32 virtual_worker_id = 1;
+	// }
+
 	static constexpr Worker_ComponentId ComponentId = 1903;
 
 	LegacyLB_VirtualWorkerAssignment() {}
@@ -185,6 +204,14 @@ struct LegacyLB_VirtualWorkerAssignment
 
 struct LegacyLB_CustomWorkerAssignments
 {
+	// Schema in <TestGym>/Game/Content/Spatial/ServerWorkerMetadata/TestAuthorityAssignment.schema
+	// component CustomWorkerAssignments {
+	//   id = 1904;
+	//   list<uint32> virtual_worker_id = 1;
+	//   list<string> actor_label = 2;
+	//   list<string> interest_label = 3;
+    // }
+
 	static constexpr Worker_ComponentId ComponentId = 1904;
 
 	LegacyLB_CustomWorkerAssignments() = default;
