@@ -51,6 +51,7 @@ public:
 				SpatialEventTracer* InEventTracer);
 
 	void Advance();
+	void Flush();
 
 	UnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);
 
@@ -76,6 +77,7 @@ public:
 	void ProcessPositionUpdates();
 	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
 	void UpdateInterestComponent(AActor* Actor);
+	void UpdateClientInterest(AActor* Actor, const bool bOverwrite);
 	void SendInterestBucketComponentChange(Worker_EntityId EntityId, Worker_ComponentId OldComponent,
 										   Worker_ComponentId NewComponent) const;
 	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo,
@@ -94,6 +96,8 @@ public:
 														 const USpatialClassInfoManager& ClassInfoManager);
 
 	void DestroySubObject(const FUnrealObjectRef& ObjectRef, UObject& Object) const;
+
+	void MarkClientInterestDirty(Worker_EntityId EntityId, bool bOverwrite);
 
 private:
 	// Helper struct to manage FSpatialObjectRepState update cycle.
@@ -144,6 +148,7 @@ private:
 	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
 													TArray<GDK_PROPERTY(Property) *>& RepNotifies);
 	void CleanUpTornOffChannels();
+	void ProcessClientInterestUpdates();
 
 	// Authority
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
@@ -231,6 +236,9 @@ private:
 
 	// Deserialized state store for Actor relevant components.
 	TMap<Worker_EntityId_Key, ActorData> ActorDataStore;
+
+	// Stored player controller entity ids that need to have their interest updated, and bool indicating partial or full update
+	TMap<Worker_EntityId_Key, bool /*bFullInterestUpdate*/> ClientInterestDirty;
 };
 
 } // namespace SpatialGDK

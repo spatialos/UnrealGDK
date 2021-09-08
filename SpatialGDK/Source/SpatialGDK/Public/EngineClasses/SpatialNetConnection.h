@@ -58,4 +58,7 @@ public:
 	Worker_EntityId ConnectionClientWorkerSystemEntityId;
 
 	double TimeWhenClientInterestLastUpdated;
+
+	TSet<Worker_EntityId_Key> EntityInterestCache;
+	TSet<Worker_EntityId_Key> EntityAuthCache;
 };

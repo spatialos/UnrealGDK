@@ -695,8 +695,9 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			CheckForClientEntityInterestUpdate();
 		}
+
 		// Classic interest flow
-		else if (NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
+		if (NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
 		{
 			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
 			SetNeedOwnerInterestUpdate(false);
@@ -1352,9 +1353,19 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 
 	// If we've passed the X seconds threshold, mark interest dirty (controlled by ClientEntityIdListQueryUpdateFrequency).
 	const float TimeSinceLastClientInterestUpdate = CurrentTime - NetConnection->TimeWhenClientInterestLastUpdated;
-	const float UpdateThresholdSecs = 1 / Settings->ClientEntityIdListQueryUpdateFrequency;
-	const bool bHitInterestTimeThreshold = TimeSinceLastClientInterestUpdate >= UpdateThresholdSecs;
-	bShouldMarkInterestDirty |= bHitInterestTimeThreshold;
+
+	if (Settings->ClientEntityIdListQueryUpdateFrequency > 0.f)
+	{
+		const float UpdateThresholdSecs = 1.f / Settings->ClientEntityIdListQueryUpdateFrequency;
+		const bool bHitInterestTimeThreshold = TimeSinceLastClientInterestUpdate >= UpdateThresholdSecs;
+		bShouldMarkInterestDirty |= bHitInterestTimeThreshold;
+
+		if (bHitInterestTimeThreshold)
+		{
+			UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Frame %u. Hit client interest %f second threshold for %s"),
+				   RepGraph->GetReplicationGraphFrame(), UpdateThresholdSecs, *Actor->GetName());
+		}
+	}
 
 	// If the rep graph has notified the connection that interest changed needed, mark interest dirty.
 	const bool bRepGraphNodeFlaggedDirty = RepGraphConnection->RepGraphRequestedInterestChange;
@@ -1363,12 +1374,6 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 	if (!bShouldMarkInterestDirty)
 	{
 		return;
-	}
-
-	if (bHitInterestTimeThreshold)
-	{
-		UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Frame %u. Hit client interest %f second threshold for %s"),
-			   RepGraph->GetReplicationGraphFrame(), UpdateThresholdSecs, *Actor->GetName());
 	}
 
 	UMetricsExport* MetricsExport =
@@ -1382,7 +1387,7 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 	RepGraphConnection->RepGraphRequestedInterestChange = false;
 	NetConnection->TimeWhenClientInterestLastUpdated = CurrentTime;
 
-	MarkInterestDirty();
+	NetDriver->ActorSystem->MarkClientInterestDirty(EntityId, /*bOverwrite*/ false);
 }
 
 bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements() const
