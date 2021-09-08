@@ -17,3 +17,5 @@ void FSpatialGDKModule::ShutdownModule()
 }
 
 #undef LOCTEXT_NAMESPACE
+
+// A random comment
