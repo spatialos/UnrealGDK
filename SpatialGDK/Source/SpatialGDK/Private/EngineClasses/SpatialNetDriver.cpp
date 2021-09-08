@@ -2621,6 +2621,11 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 				ActorSystem->ProcessPositionUpdates();
 			}
 
+			if (ActorSystem.IsValid())
+			{
+				ActorSystem->Flush();
+			}
+
 			if (ServerWorkerSystemImpl.IsValid())
 			{
 				ServerWorkerSystemImpl->Flush(WorkerEntityId, Connection->GetCoordinator());

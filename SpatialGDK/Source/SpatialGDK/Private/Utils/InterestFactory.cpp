@@ -7,7 +7,9 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Schema/ChangeInterest.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/GDKPropertyMacros.h"
@@ -18,6 +20,7 @@
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "ReplicationGraph.h"
 #include "UObject/UObjectIterator.h"
 #include "Utils/MetricsExport.h"
@@ -265,11 +268,7 @@ Interest UnrealServerInterestFactory::CreateInterest(AActor* InActor, const FCla
 
 	if (InActor->IsA(APlayerController::StaticClass()))
 	{
-		if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
-		{
-			AddClientInterestEntityIdQuery(ResultInterest, InActor);
-		}
-		else
+		if (!GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
 		{
 			// Put the "main" client interest queries on the player controller
 			AddClientPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
@@ -363,6 +362,146 @@ void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(I
 }
 #endif
 
+bool UnrealServerInterestFactory::CreateClientInterestDiff(const APlayerController* PlayerController,
+														   ChangeInterestRequest& ChangeInterestRequestData, const bool bOverwrite) const
+{
+	USpatialNetConnection* NetConnection =
+		(PlayerController != nullptr) ? Cast<USpatialNetConnection>(PlayerController->NetConnection) : nullptr;
+	if (!ensure(GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
+		|| !ensureMsgf(PlayerController != nullptr, TEXT("Only PCs can use client entity interest: %s"), *GetNameSafe(PlayerController))
+		|| !ensureMsgf(NetConnection != nullptr, TEXT("Failed to retieve USpatialNetConnection from controller: %s"),
+					   *GetNameSafe(PlayerController)))
+	{
+		return false;
+	}
+
+	TArray<Worker_EntityId> ClientInterestedEntities = GetClientInterestedEntityIds(PlayerController);
+
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(PlayerController->GetNetDriver());
+
+	// MAKE DEBUGGING EASIER, REVERT ME
+#if WITH_EDITOR
+	ClientInterestedEntities.Sort();
+#endif
+
+	ChangeInterestRequestData.Clear();
+
+	{
+		// Add non-auth interest
+		TSet<Worker_EntityId_Key> FullInterested;
+		FullInterested.Reserve(ClientInterestedEntities.Num());
+		for (auto EntityId : ClientInterestedEntities)
+		{
+			FullInterested.Add(EntityId);
+		}
+
+		TSet<Worker_EntityId_Key> Add, Remove;
+		if (bOverwrite)
+		{
+			Add = FullInterested;
+			Remove.Empty();
+		}
+		else
+		{
+			Add = FullInterested.Difference(NetConnection->EntityInterestCache);
+			Remove = NetConnection->EntityInterestCache.Difference(FullInterested);
+		}
+		NetConnection->EntityInterestCache = FullInterested;
+
+		ChangeInterestRequestData.SystemEntityId = NetConnection->ConnectionClientWorkerSystemEntityId;
+
+		if (Add.Num() > 0)
+		{
+			ChangeInterestQuery Query{};
+			Query.Components = ClientNonAuthInterestResultType.ComponentIds;
+			Query.ComponentSets = ClientNonAuthInterestResultType.ComponentSetsIds;
+			Query.Entities = Add.Array();
+
+			ChangeInterestRequestData.QueriesToAdd.Emplace(Query);
+		}
+
+		if (Remove.Num() > 0)
+		{
+			ChangeInterestQuery Query{};
+			Query.Components = ClientNonAuthInterestResultType.ComponentIds;
+			Query.ComponentSets = ClientNonAuthInterestResultType.ComponentSetsIds;
+			Query.Entities = Remove.Array();
+
+			ChangeInterestRequestData.QueriesToRemove.Emplace(Query);
+		}
+
+		ChangeInterestRequestData.bOverwrite = bOverwrite;
+
+		// Add auth interest
+		TSet<Worker_EntityId_Key> FullAuth;
+		const Worker_EntityId PCEntityId = PackageMap->GetEntityIdFromObject(PlayerController);
+		const Worker_EntityId PawnEntityId = PackageMap->GetEntityIdFromObject(PlayerController->GetPawn());
+		const Worker_EntityId PlayerStateEntityId = PackageMap->GetEntityIdFromObject(PlayerController->PlayerState);
+
+		if (PCEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			FullAuth.Add(PCEntityId);
+		}
+
+		if (PawnEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			FullAuth.Add(PawnEntityId);
+		}
+
+		if (PlayerStateEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			FullAuth.Add(PlayerStateEntityId);
+		}
+
+		if (bOverwrite)
+		{
+			Add = FullAuth;
+			Remove.Empty();
+		}
+		else
+		{
+			Add = FullAuth.Difference(NetConnection->EntityAuthCache);
+			Remove = NetConnection->EntityAuthCache.Difference(FullAuth);
+		}
+		NetConnection->EntityAuthCache = FullAuth;
+
+		if (Add.Num() > 0)
+		{
+			ChangeInterestQuery Query{};
+			Query.Components = ClientAuthInterestResultType.ComponentIds;
+			Query.ComponentSets = ClientAuthInterestResultType.ComponentSetsIds;
+			Query.Entities = Add.Array();
+
+			ChangeInterestRequestData.QueriesToAdd.Emplace(Query);
+		}
+
+		if (Remove.Num() > 0)
+		{
+			ChangeInterestQuery Query{};
+			Query.Components = ClientAuthInterestResultType.ComponentIds;
+			Query.ComponentSets = ClientAuthInterestResultType.ComponentSetsIds;
+			Query.Entities = Remove.Array();
+
+			ChangeInterestRequestData.QueriesToRemove.Emplace(Query);
+		}
+	}
+
+	if (ChangeInterestRequestData.IsEmpty())
+	{
+		return false;
+	}
+
+	UMetricsExport* MetricsExport =
+		Cast<UMetricsExport>(PlayerController->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
+	if (MetricsExport != nullptr)
+	{
+		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
+		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("total_interested_entities"), ClientInterestedEntities.Num());
+	}
+
+	return true;
+}
+
 void UnrealServerInterestFactory::AddClientInterestEntityIdQuery(Interest& OutInterest, const AActor* InActor) const
 {
 	const APlayerController* PlayerController = Cast<APlayerController>(InActor);
@@ -408,6 +547,7 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 	TArray<Worker_EntityId> InterestedEntityIdList{};
 
 	UNetConnection* NetConnection = InPlayerController->NetConnection;
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(NetConnection->Driver);
 	USpatialReplicationGraph* RepGraph = Cast<USpatialReplicationGraph>(NetConnection->Driver->GetReplicationDriver());
 	if (RepGraph == nullptr)
 	{
