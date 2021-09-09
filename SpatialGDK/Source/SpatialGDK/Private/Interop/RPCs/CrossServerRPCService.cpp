@@ -405,22 +405,28 @@ void CrossServerRPCService::UpdateSentRPCsACKs(Worker_EntityId SenderId, const C
 				{
 					const Worker_EntityId TargetEntityId = SentRPC->Target.Entity;
 
-					const EntityViewElement& Entity = ActorSubView.GetView()[SenderId];
-					Schema_ComponentData* SenderComponentData =
-						Entity.Components
-							.FindByPredicate(ComponentIdEquality{ SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID })
-							->GetUnderlying();
+					const EntityViewElement* Element = ActorSubView.GetView().Find(SenderId);
+					if (ensureMsgf(Element, TEXT("Serious error, cannot find sender in the view which should not be possible")))
+					{
+						Schema_ComponentData* SenderComponentData =
+							Element->Components
+								.FindByPredicate(ComponentIdEquality{ SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID })
+								->GetUnderlying();
 
-					CrossServerEndpoint SenderEndpoint(SenderComponentData);
-					check(SentRPC->SourceSlot < static_cast<uint32>(SenderEndpoint.ReliableRPCBuffer.RingBuffer.Num()));
-					const auto& SlotData = SenderEndpoint.ReliableRPCBuffer.RingBuffer[SentRPC->SourceSlot];
-					check(SlotData.IsSet());
+						CrossServerEndpoint SenderEndpoint(SenderComponentData);
+						if (ensureMsgf(SentRPC->SourceSlot < static_cast<uint32>(SenderEndpoint.ReliableRPCBuffer.RingBuffer.Num()),
+									   TEXT("Serious error, SourceSlot is larger than 'ReliableRPCBuffer.RingBuffer'")))
+						{
+							const auto& SlotData = SenderEndpoint.ReliableRPCBuffer.RingBuffer[SentRPC->SourceSlot];
+							check(SlotData.IsSet());
 
-					const RPCSender Sender(SenderId, 0);
-					const RPCPayload& SenderPayload = SlotData.GetValue();
-					const PendingRPCPayload PendingPayload(SenderPayload, {});
+							const RPCSender Sender(SenderId, 0);
+							const RPCPayload& SenderPayload = SlotData.GetValue();
+							const PendingRPCPayload PendingPayload(SenderPayload, {});
 
-					PushCrossServerRPC(TargetEntityId, Sender, PendingPayload, true);
+							PushCrossServerRPC(TargetEntityId, Sender, PendingPayload, true);
+						}
+					}
 				}
 
 				SenderState.Alloc.FreeSlot(SentRPC->SourceSlot);
