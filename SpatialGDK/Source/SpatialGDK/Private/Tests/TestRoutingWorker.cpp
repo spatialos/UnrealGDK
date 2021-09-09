@@ -930,7 +930,7 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_WhiteBox_SendMessagePriorToReceiverCreati
 
 	// Expect 'Receiver' to not exist in view (yet)
 	{
-		const SpatialGDK::EntityViewElement* ViewElement =  TestFixture.ServerWorker.Coordinator.GetView().Find(ReceiverEntityId);
+		const SpatialGDK::EntityViewElement* ViewElement = TestFixture.ServerWorker.Coordinator.GetView().Find(ReceiverEntityId);
 		TestNull(TEXT("BeforeReceiverExists: Receiver does not exist in view"), ViewElement);
 	}
 
@@ -950,7 +950,8 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_WhiteBox_SendMessagePriorToReceiverCreati
 			TestTrue(TEXT("BeforeReceiverExists: SenderACKs written"), SenderComps.SenderACK->ACKArray[0].IsSet());
 			if (SenderComps.SenderACK->ACKArray[0].IsSet())
 			{
-				TestTrue(TEXT("BeforeReceiverExists: SenderACKs written as TargetUnknown"), SenderComps.SenderACK->ACKArray[0]->Result == static_cast<uint64>(SpatialGDK::CrossServer::Result::TargetUnknown));
+				TestTrue(TEXT("BeforeReceiverExists: SenderACKs written as TargetUnknown"),
+						 SenderComps.SenderACK->ACKArray[0]->Result == static_cast<uint64>(SpatialGDK::CrossServer::Result::TargetUnknown));
 			}
 		}
 	}
