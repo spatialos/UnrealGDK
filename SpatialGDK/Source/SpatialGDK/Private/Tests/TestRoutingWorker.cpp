@@ -517,6 +517,14 @@ struct TestRoutingFixture
 		RoutingWorker.Stub->SetFromBuilder(Builder);
 	}
 
+	void Update(SpatialGDK::CrossServerRPCService& RPCService, SpatialGDK::FRPCStore& RPCStore)
+	{
+		TransferServerWorkerUpdates(RPCService, RPCStore);
+		RoutingWorker.Step();
+		TransferRoutingWorkerUpdates();
+		ServerWorker.Step(RPCService, RPCStore);
+	}
+
 	ActorCanExtractRPCDelegate CanExtractDelegate;
 
 	RoutingWorkerMock RoutingWorker;
@@ -880,6 +888,143 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendMoreMessagesThanRingBufferCa
 		TestFixture.TransferRoutingWorkerUpdates();
 	}
 	TestTrue(TEXT("All RPC were received"), ExpectedRPCs.Num() == 0);
+
+	return true;
+}
+
+ROUTING_SERVICE_TEST(TestRoutingWorker_WhiteBox_SendMessagePriorToReceiverCreation)
+{
+	const Worker_EntityId SenderEntityId = 10;
+	const Worker_EntityId ReceiverEntityId = 20;
+	const TArray<Worker_EntityId> InitialEntities = { SenderEntityId };
+
+	// Initialize fixture with only the source entity
+	TestRoutingFixture TestFixture;
+	TestFixture.Init(InitialEntities);
+
+	const SpatialGDK::PendingRPCPayload Payload(SpatialGDK::RPCPayload(0, 1337, {}, TArray<uint8>()), {});
+	TSet<TPair<Worker_EntityId_Key, uint32>> ExpectedRPCs = { MakeTuple((Worker_EntityId_Key)ReceiverEntityId, 1337u) };
+
+	SpatialGDK::CrossServerRPCService* RPCServiceBackptr = nullptr;
+
+	auto ExtractRPCCallback = [this, &ExpectedRPCs, &RPCServiceBackptr](const FUnrealObjectRef& Target, const SpatialGDK::RPCSender& Sender,
+																		SpatialGDK::RPCPayload Payload, TOptional<uint64>) {
+		int32 NumRemoved = ExpectedRPCs.Remove(MakeTuple((Worker_EntityId_Key)Target.Entity, Payload.Index));
+		FString DebugText = FString::Printf(TEXT("RPC %i from %llu to %llu was unexpected"), Payload.Index, Sender.Entity, Target.Entity);
+		TestTrue(*DebugText, NumRemoved > 0);
+
+		RPCServiceBackptr->WriteCrossServerACKFor(Target.Entity, Sender);
+	};
+
+	SpatialGDK::FRPCStore RPCStore;
+	SpatialGDK::CrossServerRPCService RPCService(TestFixture.CanExtractDelegate, ExtractRPCDelegate::CreateLambda(ExtractRPCCallback),
+												 TestFixture.ServerWorker.SubView, TestFixture.ServerWorker.DummyRoutingWorkerSubView,
+												 RPCStore);
+
+	RPCServiceBackptr = &RPCService;
+	RPCService.AdvanceView();
+	RPCService.ProcessChanges();
+	RPCService.PushCrossServerRPC(ReceiverEntityId, SpatialGDK::RPCSender(SenderEntityId, 0), Payload, false);
+
+	TestFixture.Update(RPCService, RPCStore);
+
+	// Expect 'Receiver' to not exist in view (yet)
+	{
+		const SpatialGDK::EntityViewElement* ViewElement =  TestFixture.ServerWorker.Coordinator.GetView().Find(ReceiverEntityId);
+		TestNull(TEXT("BeforeReceiverExists: Receiver does not exist in view"), ViewElement);
+	}
+
+	// Expect 'RPC' to not be received (yet)
+	{
+		TestFalse(TEXT("BeforeReceiverExists: ReceivedRPC"), ExpectedRPCs.Num() == 0);
+	}
+
+	TestFixture.Update(RPCService, RPCStore);
+
+	// Expect 'TargetUnknown' ACK response since receiver does not exist (yet)
+	{
+		const Components SenderComps(SenderEntityId, TestFixture.ServerWorker.Coordinator.GetView());
+		TestTrue(TEXT("BeforeReceiverExists: SenderACK slots exist"), SenderComps.SenderACK->ACKArray.Num() > 0);
+		if (SenderComps.SenderACK->ACKArray.Num() > 0)
+		{
+			TestTrue(TEXT("BeforeReceiverExists: SenderACKs written"), SenderComps.SenderACK->ACKArray[0].IsSet());
+			if (SenderComps.SenderACK->ACKArray[0].IsSet())
+			{
+				TestTrue(TEXT("BeforeReceiverExists: SenderACKs written as TargetUnknown"), SenderComps.SenderACK->ACKArray[0]->Result == static_cast<uint64>(SpatialGDK::CrossServer::Result::TargetUnknown));
+			}
+		}
+	}
+
+	TestFixture.Update(RPCService, RPCStore);
+
+	// Initialize/create the receiver entity
+	TestFixture.Init({ ReceiverEntityId });
+	RPCService.AdvanceView();
+	RPCService.ProcessChanges();
+	TestFixture.Update(RPCService, RPCStore);
+
+	// Expect 'RPC' to be sent to receiver
+	{
+		const Components ReceiverComps(ReceiverEntityId, TestFixture.ServerWorker.Coordinator.GetView());
+		TestTrue(TEXT("ReceiverExists: SentRPC"), ReceiverComps.Receiver->ReliableRPCBuffer.Counterpart.Num() > 0);
+		if (ReceiverComps.Receiver->ReliableRPCBuffer.Counterpart.Num() > 0)
+		{
+			TestTrue(TEXT("ReceiverExists: SentRPC"), ReceiverComps.Receiver->ReliableRPCBuffer.Counterpart[0].IsSet());
+			if (ReceiverComps.Receiver->ReliableRPCBuffer.Counterpart[0].IsSet())
+			{
+				const SpatialGDK::CrossServerRPCInfo& SenderBackRef = ReceiverComps.Receiver->ReliableRPCBuffer.Counterpart[0].GetValue();
+				TestTrue(TEXT("ReceiverExists: SentRPC"), SenderBackRef.Entity == SenderEntityId);
+			}
+		}
+	}
+
+	TestFixture.Update(RPCService, RPCStore);
+
+	// Expect sender ACK to have been provided
+	{
+		const Components SenderComps(SenderEntityId, TestFixture.ServerWorker.Coordinator.GetView());
+		TestTrue(TEXT("ReceiverExists: ACKWritten"), SenderComps.SenderACK->ACKArray.Num() > 0);
+		if (SenderComps.SenderACK->ACKArray.Num() > 0)
+		{
+			TestTrue(TEXT("ReceiverExists: ACKWritten"), SenderComps.SenderACK->ACKArray[0].IsSet());
+			if (SenderComps.Receiver->ReliableRPCBuffer.Counterpart[0].IsSet())
+			{
+				const SpatialGDK::ACKItem& ACK = SenderComps.SenderACK->ACKArray[0].GetValue();
+				TestTrue(TEXT("ReceiverExists: ACKWritten"), ACK.Sender == SenderEntityId);
+			}
+		}
+	}
+
+	TestFixture.Update(RPCService, RPCStore);
+
+	// Expect sender ACK to be cleaned up
+	{
+		const Components SenderComps(SenderEntityId, TestFixture.ServerWorker.Coordinator.GetView());
+		for (auto& Slot : SenderComps.SenderACK->ACKArray)
+		{
+			TestTrue(TEXT("ReceiverExists: SenderACK cleaned up"), !Slot.IsSet());
+		}
+	}
+
+	// Expect receiver RPC to be cleaned up
+	{
+		const Components ReceiverComps(ReceiverEntityId, TestFixture.ServerWorker.Coordinator.GetView());
+		for (auto& Slot : ReceiverComps.Receiver->ReliableRPCBuffer.Counterpart)
+		{
+			TestTrue(TEXT("ReceiverExists: Receiver cleaned up"), !Slot.IsSet());
+		}
+	}
+
+	TestFixture.Update(RPCService, RPCStore);
+
+	// Expect receiver ACK to be cleaned up
+	{
+		const Components Entity2Comps(ReceiverEntityId, TestFixture.ServerWorker.Coordinator.GetView());
+		for (auto& Slot : Entity2Comps.ReceiverACK->ACKArray)
+		{
+			TestTrue(TEXT("ReceiverExists: Receiver ACK cleaned up"), !Slot.IsSet());
+		}
+	}
 
 	return true;
 }

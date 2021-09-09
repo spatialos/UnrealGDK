@@ -398,6 +398,31 @@ void CrossServerRPCService::UpdateSentRPCsACKs(Worker_EntityId SenderId, const C
 			CrossServer::SentRPCEntry* SentRPC = SenderState.Mailbox.Find(RPCKey);
 			if (SentRPC != nullptr)
 			{
+				// If the ACK result is 'TargetUnknown' then resend the RPC immediately,
+				// as a temporary measure to bypass race conditions. There is deliberately
+				// no time-out handling at present.
+				if (ACK.Result == static_cast<uint64>(CrossServer::Result::TargetUnknown))
+				{
+					const Worker_EntityId TargetEntityId = SentRPC->Target.Entity;
+
+					const EntityViewElement& Entity = ActorSubView.GetView()[SenderId];
+					Schema_ComponentData* SenderComponentData =
+						Entity.Components
+							.FindByPredicate(ComponentIdEquality{ SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID })
+							->GetUnderlying();
+
+					CrossServerEndpoint SenderEndpoint(SenderComponentData);
+					check(SentRPC->SourceSlot < static_cast<uint32>(SenderEndpoint.ReliableRPCBuffer.RingBuffer.Num()));
+					const auto& SlotData = SenderEndpoint.ReliableRPCBuffer.RingBuffer[SentRPC->SourceSlot];
+					check(SlotData.IsSet());
+
+					const RPCSender Sender(SenderId, 0);
+					const RPCPayload& SenderPayload = SlotData.GetValue();
+					const PendingRPCPayload PendingPayload(SenderPayload, {});
+
+					PushCrossServerRPC(TargetEntityId, Sender, PendingPayload, true); // mk = is true correct?
+				}
+
 				SenderState.Alloc.FreeSlot(SentRPC->SourceSlot);
 				SenderState.Mailbox.Remove(RPCKey);
 
