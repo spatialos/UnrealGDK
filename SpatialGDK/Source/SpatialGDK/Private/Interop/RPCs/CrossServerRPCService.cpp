@@ -420,7 +420,7 @@ void CrossServerRPCService::UpdateSentRPCsACKs(Worker_EntityId SenderId, const C
 					const RPCPayload& SenderPayload = SlotData.GetValue();
 					const PendingRPCPayload PendingPayload(SenderPayload, {});
 
-					PushCrossServerRPC(TargetEntityId, Sender, PendingPayload, true); // mk = is true correct?
+					PushCrossServerRPC(TargetEntityId, Sender, PendingPayload, true);
 				}
 
 				SenderState.Alloc.FreeSlot(SentRPC->SourceSlot);
