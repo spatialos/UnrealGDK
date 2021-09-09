@@ -2351,7 +2351,6 @@ void ActorSystem::UpdateClientInterest(AActor* Actor, const bool bOverwrite)
 
 		if (bRequestValid)
 		{
-			Request.DebugOutput();
 			Worker_CommandRequest CommandRequest = Request.CreateRequest();
 
 			const Worker_EntityId SystemEntityId =
