@@ -400,7 +400,7 @@ void CrossServerRPCService::UpdateSentRPCsACKs(Worker_EntityId SenderId, const C
 			CrossServer::SentRPCEntry* SentRPC = SenderState.Mailbox.Find(RPCKey);
 			if (SentRPC != nullptr)
 			{
-				// If the ACK result is 'TargetUnknown' then resend the RPC immediately only 
+				// If the ACK result is 'TargetUnknown' then resend the RPC immediately only
 				// as a temporary measure to bypass race conditions. But only if the receiver
 				// is known the exist. There is deliberately no time-out handling at present.
 				if (ACK.Result == static_cast<uint64>(CrossServer::Result::TargetUnknown))
@@ -435,7 +435,8 @@ void CrossServerRPCService::UpdateSentRPCsACKs(Worker_EntityId SenderId, const C
 						else
 						{
 							UE_LOG(LogCrossServerRPCService, Error,
-								   TEXT("Attempting to resend RPC but the receiver has been deleted, the RPC will therefore be dropped. Receiver: %llu, Sender: %llu"),
+								   TEXT("Attempting to resend RPC but the receiver has been deleted, the RPC will therefore be dropped. "
+										"Receiver: %llu, Sender: %llu"),
 								   TargetEntityId, SenderId);
 						}
 					}

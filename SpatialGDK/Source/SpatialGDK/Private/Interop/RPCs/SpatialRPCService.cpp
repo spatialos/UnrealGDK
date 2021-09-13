@@ -40,11 +40,11 @@ SpatialRPCService::SpatialRPCService(const FSubView& InActorAuthSubView, const F
 	if (NetDriver != nullptr && NetDriver->IsServer()
 		&& Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
 	{
-		CrossServerRPCs.Emplace(CrossServerRPCService(
-			ActorCanExtractRPCDelegate::CreateRaw(this, &SpatialRPCService::ActorCanExtractRPC),
-			ExtractRPCDelegate::CreateRaw(this, &SpatialRPCService::ProcessOrQueueIncomingRPC),
-			DoesEntityIdHaveValidObjectDelegate::CreateRaw(this, &SpatialRPCService::DoesEntityIdHaveValidObject),
-			InActorAuthSubView, InWorkerEntitySubView, RPCStore));
+		CrossServerRPCs.Emplace(
+			CrossServerRPCService(ActorCanExtractRPCDelegate::CreateRaw(this, &SpatialRPCService::ActorCanExtractRPC),
+								  ExtractRPCDelegate::CreateRaw(this, &SpatialRPCService::ProcessOrQueueIncomingRPC),
+								  DoesEntityIdHaveValidObjectDelegate::CreateRaw(this, &SpatialRPCService::DoesEntityIdHaveValidObject),
+								  InActorAuthSubView, InWorkerEntitySubView, RPCStore));
 	}
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateRaw(this, &SpatialRPCService::ApplyRPC));
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateRaw(this, &SpatialRPCService::SendRPC));
