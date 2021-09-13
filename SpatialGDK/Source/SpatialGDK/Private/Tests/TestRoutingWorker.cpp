@@ -560,8 +560,13 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_WhiteBox_SendOneMessage)
 		RPCServiceBackptr->WriteCrossServerACKFor(Target.Entity, Sender);
 	};
 
+	auto DoesEntityIdHaveValidObjectCallback = [this](Worker_EntityId EntityId) {
+		return true;
+	};
+
 	SpatialGDK::FRPCStore RPCStore;
 	SpatialGDK::CrossServerRPCService RPCService(TestFixture.CanExtractDelegate, ExtractRPCDelegate::CreateLambda(ExtractRPCCallback),
+												 DoesEntityIdHaveValidObjectDelegate::CreateLambda(DoesEntityIdHaveValidObjectCallback),
 												 TestFixture.ServerWorker.SubView, TestFixture.ServerWorker.DummyRoutingWorkerSubView,
 												 RPCStore);
 
@@ -660,8 +665,13 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendSeveralMessagesToSeveralEnti
 		RPCServiceBackptr->WriteCrossServerACKFor(Target.Entity, Sender);
 	};
 
+	auto DoesEntityIdHaveValidObjectCallback = [this](Worker_EntityId EntityId) {
+		return true;
+	};
+
 	SpatialGDK::FRPCStore RPCStore;
 	SpatialGDK::CrossServerRPCService RPCService(TestFixture.CanExtractDelegate, ExtractRPCDelegate::CreateLambda(ExtractRPCCallback),
+												 DoesEntityIdHaveValidObjectDelegate::CreateLambda(DoesEntityIdHaveValidObjectCallback),
 												 TestFixture.ServerWorker.SubView, TestFixture.ServerWorker.DummyRoutingWorkerSubView,
 												 RPCStore);
 	RPCServiceBackptr = &RPCService;
@@ -737,8 +747,13 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendOneMessageBetweenDeletedEnti
 		RPCServiceBackptr->WriteCrossServerACKFor(Target.Entity, Sender);
 	};
 
+	auto DoesEntityIdHaveValidObjectCallback = [this](Worker_EntityId EntityId) {
+		return false;
+	};
+
 	SpatialGDK::FRPCStore RPCStore;
 	SpatialGDK::CrossServerRPCService RPCService(TestFixture.CanExtractDelegate, ExtractRPCDelegate::CreateLambda(ExtractRPCCallback),
+												 DoesEntityIdHaveValidObjectDelegate::CreateLambda(DoesEntityIdHaveValidObjectCallback),
 												 TestFixture.ServerWorker.SubView, TestFixture.ServerWorker.DummyRoutingWorkerSubView,
 												 RPCStore);
 
@@ -757,7 +772,7 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendOneMessageBetweenDeletedEnti
 
 			if (ToRemove == 100)
 			{
-				AddExpectedError(TEXT("Receiver missing from view. RPC will be dropped"));
+				AddExpectedError(TEXT("Attempting to resend RPC but the receiver has been deleted, the RPC will therefore be dropped"));
 			}
 
 			PendingRPCPayload DummyPayload(RPCPayload(0, 0, {}, TArray<uint8>()), {});
@@ -829,8 +844,13 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendMoreMessagesThanRingBufferCa
 		RPCServiceBackptr->WriteCrossServerACKFor(Target.Entity, Sender);
 	};
 
+	auto DoesEntityIdHaveValidObjectCallback = [this](Worker_EntityId EntityId) {
+		return true;
+	};
+
 	SpatialGDK::FRPCStore RPCStore;
 	SpatialGDK::CrossServerRPCService RPCService(TestFixture.CanExtractDelegate, ExtractRPCDelegate::CreateLambda(ExtractRPCCallback),
+												 DoesEntityIdHaveValidObjectDelegate::CreateLambda(DoesEntityIdHaveValidObjectCallback),
 												 TestFixture.ServerWorker.SubView, TestFixture.ServerWorker.DummyRoutingWorkerSubView,
 												 RPCStore);
 
@@ -916,8 +936,14 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_WhiteBox_SendMessagePriorToReceiverCreati
 		RPCServiceBackptr->WriteCrossServerACKFor(Target.Entity, Sender);
 	};
 
+	auto DoesEntityIdHaveValidObjectCallback = [this](Worker_EntityId EntityId) {
+		// Pretend the receiver exists for the purposes of resending RPCs
+		return true;
+	};
+
 	SpatialGDK::FRPCStore RPCStore;
 	SpatialGDK::CrossServerRPCService RPCService(TestFixture.CanExtractDelegate, ExtractRPCDelegate::CreateLambda(ExtractRPCCallback),
+												 DoesEntityIdHaveValidObjectDelegate::CreateLambda(DoesEntityIdHaveValidObjectCallback),
 												 TestFixture.ServerWorker.SubView, TestFixture.ServerWorker.DummyRoutingWorkerSubView,
 												 RPCStore);
 

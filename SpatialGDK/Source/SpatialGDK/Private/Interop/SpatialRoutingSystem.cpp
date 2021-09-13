@@ -135,7 +135,7 @@ void SpatialRoutingSystem::OnSenderChanged(Worker_EntityId SenderId, RoutingComp
 		if (Slots.ACKSlot < 0)
 		{
 			UE_LOG(LogSpatialRoutingSystem, Verbose,
-				   TEXT("Receiver missing from view. RPC will be resent until Receiver appears. Receiver: %llu, Sender: %llu"), RPC.Value,
+				   TEXT("Receiver missing from view. RPC will be resent if receiver not deleted. Receiver: %llu, Sender: %llu"), RPC.Value,
 				   SenderId);
 			Slots.CounterpartEntity = RPC.Value;
 			WriteACKToSender(RPC.Key, Components, CrossServer::Result::TargetUnknown);
