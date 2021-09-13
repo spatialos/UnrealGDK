@@ -817,6 +817,11 @@ void ActorSystem::MarkClientInterestDirty(Worker_EntityId EntityId, bool bFullIn
 	ClientInterestDirty.FindOrAdd(EntityId) |= bFullInterestUpdate;
 }
 
+bool ActorSystem::IsClientInterestDirty(Worker_EntityId EntityId) const
+{
+	return ClientInterestDirty.Find(EntityId) != nullptr;
+}
+
 void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
 {
 	PopulateDataStore(EntityId);

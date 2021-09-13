@@ -98,6 +98,7 @@ public:
 	void DestroySubObject(const FUnrealObjectRef& ObjectRef, UObject& Object) const;
 
 	void MarkClientInterestDirty(Worker_EntityId EntityId, bool bOverwrite);
+	bool IsClientInterestDirty(Worker_EntityId EntityId) const;
 
 private:
 	// Helper struct to manage FSpatialObjectRepState update cycle.

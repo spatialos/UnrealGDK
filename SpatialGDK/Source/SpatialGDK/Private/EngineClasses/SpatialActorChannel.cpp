@@ -1345,7 +1345,7 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 
 	// If interest is already marked dirty (e.g. because we just gained authority over the PC and want to flush immediate),
 	// then don't bother doing any checks.
-	if (GetInterestDirty())
+	if (NetDriver->ActorSystem->IsClientInterestDirty(EntityId))
 	{
 		RepGraphConnection->RepGraphRequestedInterestChange = false;
 		NetConnection->TimeWhenClientInterestLastUpdated = CurrentTime;
