@@ -21,12 +21,12 @@ void ChangeInterestQuery::DebugOutput(const FString& DiffType) const
 	const FString ComponentsString = FString::JoinBy(Components, TEXT(" "), [](const Worker_ComponentId ComponentId) {
 		return FString::Printf(TEXT("%d"), ComponentId);
 	});
-	UE_LOG(LogChangeInterest, Verbose, TEXT("Interest diff: components %s"), *ComponentsString);
+	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: components %s"), *ComponentsString);
 
 	const FString ComponentSetsString = FString::JoinBy(ComponentSets, TEXT(" "), [](const Worker_ComponentSetId ComponentSetId) {
 		return FString::Printf(TEXT("%d"), ComponentSetId);
 	});
-	UE_LOG(LogChangeInterest, Verbose, TEXT("Interest diff: component sets %s"), *ComponentSetsString);
+	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: component sets %s"), *ComponentSetsString);
 
 	const FString EntitiesString = FString::JoinBy(Entities, TEXT(" "), [](const Worker_EntityId_Key EntityId) {
 		return FString::Printf(TEXT("%lld"), EntityId);

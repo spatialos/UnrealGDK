@@ -2357,6 +2357,7 @@ void ActorSystem::UpdateClientInterest(AActor* Actor, const bool bOverwrite)
 		if (bRequestValid)
 		{
 			Worker_CommandRequest CommandRequest = Request.CreateRequest();
+			Request.DebugOutput();
 
 			const Worker_EntityId SystemEntityId =
 				Cast<USpatialNetConnection>(PlayerController->GetNetConnection())->ConnectionClientWorkerSystemEntityId;
