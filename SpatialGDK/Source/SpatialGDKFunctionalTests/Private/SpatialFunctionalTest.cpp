@@ -51,6 +51,7 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 
 	bIsStandaloneTest = false;
 	GeneratedTestMap = nullptr;
+	bIsGeneratingMap = false;
 }
 
 ASpatialFunctionalTest::ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients /*=1*/,
@@ -1137,9 +1138,11 @@ void ASpatialFunctionalTest::ClearAllTakenSnapshots()
 
 void ASpatialFunctionalTest::GenerateMap()
 {
+	bIsGeneratingMap = true;
 	GeneratedTestMap->GenerateMap();
 	CreateCustomContentForMap();
 	GeneratedTestMap->AddActorToLevel(GeneratedTestMap->GetWorld()->GetCurrentLevel(), this->GetClass(), FTransform(TestPositionInWorld));
+	bIsGeneratingMap = false;
 }
 
 bool ASpatialFunctionalTest::ShouldGenerateMap()
@@ -1169,6 +1172,8 @@ void ASpatialFunctionalTest::SetCustomConfig(FString& String)
 
 ASpatialWorldSettings* ASpatialFunctionalTest::GetWorldSettings()
 {
+	checkf(bIsGeneratingMap,
+		TEXT("GetWorldSettings should only be called from within an overridden CreateCustomContentForMap."));
 	return CastChecked<ASpatialWorldSettings>(GeneratedTestMap->GetWorld()->GetWorldSettings());
 }
 

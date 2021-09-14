@@ -422,6 +422,8 @@ public:
 	template <class T>
 	T& AddActor(const FTransform& Transform = FTransform::Identity)
 	{
+		checkf(bIsGeneratingMap,
+			TEXT("AddActor should only be called from within an overridden CreateCustomContentForMap."));
 		return GeneratedTestMap->AddActorToLevel<T>(GeneratedTestMap->GetWorld()->GetCurrentLevel(), Transform);
 	}
 
@@ -451,6 +453,9 @@ private:
 	UGeneratedTestMap* GeneratedTestMap;
 
 	FVector TestPositionInWorld;
+
+	// Used to make sure tests don't try and call methods related to map generation when they're not supposed to.
+	bool bIsGeneratingMap;
 
 protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }

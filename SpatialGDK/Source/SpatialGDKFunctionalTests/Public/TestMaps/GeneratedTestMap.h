@@ -87,6 +87,4 @@ private:
 	FString MapName;
 	FString CustomConfigString;
 	TOptional<int32> NumberOfClients;
-
-	bool bIsGeneratingMap;
 };

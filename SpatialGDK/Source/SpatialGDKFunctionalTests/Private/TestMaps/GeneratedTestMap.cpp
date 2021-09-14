@@ -14,7 +14,6 @@
 
 UGeneratedTestMap::UGeneratedTestMap()
 	: bIsValidForGeneration(false)
-	, bIsGeneratingMap(false)
 {
 	ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneAsset(TEXT("/Engine/BasicShapes/Plane.Plane"));
 	check(PlaneAsset.Succeeded());
@@ -47,8 +46,6 @@ AActor* UGeneratedTestMap::AddActorToLevel(ULevel* Level, UClass* Class, const F
 
 void UGeneratedTestMap::SetMapCategory(const EMapCategory InMapCategory)
 {
-	checkf(bIsGeneratingMap,
-		   TEXT("SetMapCategory should only be called between GenerateMap and SaveMap - most likely within CreateCustomContentForMap."));
 	MapCategory = InMapCategory;
 }
 
@@ -56,7 +53,6 @@ void UGeneratedTestMap::GenerateMap()
 {
 	checkf(bIsValidForGeneration, TEXT("This test map object is not valid for map generation, please use the UGeneratedTestMap constructor "
 									   "with arguments when deriving from the base UGeneratedTestMap."));
-	bIsGeneratingMap = true;
 	GenerateBaseMap();
 	CreateCustomContentForMap();
 }
@@ -129,7 +125,6 @@ bool UGeneratedTestMap::SaveMap()
 {
 	const bool bSuccess = FEditorFileUtils::SaveLevel(World->GetCurrentLevel(), GetPathToSaveTheMap());
 	UE_CLOG(!bSuccess, LogGenerateTestMapsCommandlet, Error, TEXT("Failed to save the map %s."), *GetMapName());
-	bIsGeneratingMap = false;
 	return bSuccess;
 }
 
@@ -163,7 +158,5 @@ FString UGeneratedTestMap::GetPathToSaveTheMap()
 
 UWorld* UGeneratedTestMap::GetWorld() const
 {
-	checkf(bIsGeneratingMap,
-		   TEXT("GetWorld should only be called between GenerateMap and SaveMap - most likely within CreateCustomContentForMap."));
 	return World;
 }
