@@ -9,7 +9,7 @@ namespace SpatialGDK
 void ChangeInterestQuery::DebugOutput(const FString& DiffType) const
 {
 	// Minimal output
-	if (Components.Find(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID) != INDEX_NONE)
+	if (ComponentSets.Find(SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID) != INDEX_NONE)
 	{
 		UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: client auth interest"));
 	}
@@ -21,12 +21,12 @@ void ChangeInterestQuery::DebugOutput(const FString& DiffType) const
 	const FString ComponentsString = FString::JoinBy(Components, TEXT(" "), [](const Worker_ComponentId ComponentId) {
 		return FString::Printf(TEXT("%d"), ComponentId);
 	});
-	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: components %s"), *ComponentsString);
+	UE_LOG(LogChangeInterest, Verbose, TEXT("Interest diff: components %s"), *ComponentsString);
 
 	const FString ComponentSetsString = FString::JoinBy(ComponentSets, TEXT(" "), [](const Worker_ComponentSetId ComponentSetId) {
 		return FString::Printf(TEXT("%d"), ComponentSetId);
 	});
-	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: component sets %s"), *ComponentSetsString);
+	UE_LOG(LogChangeInterest, Verbose, TEXT("Interest diff: component sets %s"), *ComponentSetsString);
 
 	const FString EntitiesString = FString::JoinBy(Entities, TEXT(" "), [](const Worker_EntityId_Key EntityId) {
 		return FString::Printf(TEXT("%lld"), EntityId);
