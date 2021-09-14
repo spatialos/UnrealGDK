@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Note**: Since GDK for Unreal v0.10.0, the changelog is published in both English and Chinese. The Chinese version of each changelog is shown after its English version.<br>
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
+## [`0.14.1-rc`] - unreleased
+
+### Features:
+- The GDK has been upgraded to use version 15.1.1 of SpatialOS.
 
 ## [`0.14.0`] - 2021-08-16
 
