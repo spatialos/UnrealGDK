@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "GeneratableTestMap.generated.h"
@@ -13,29 +15,13 @@ class IGeneratableTestMap
 	GENERATED_BODY()
 
 public:
-	virtual void GenerateMap() { check(false); }
+	virtual void GenerateMap() = 0;
 
-	virtual bool SaveMap()
-	{
-		check(false);
-		return false;
-	}
+	virtual bool SaveMap() = 0;
 
-	virtual bool GenerateCustomConfig()
-	{
-		check(false);
-		return false;
-	}
+	virtual bool GenerateCustomConfig() = 0;
 
-	virtual FString GetMapName()
-	{
-		check(false);
-		return TEXT("Should not be calling member function on interface.");
-	}
+	virtual FString GetMapName() = 0;
 
-	virtual bool ShouldGenerateMap()
-	{
-		check(false);
-		return false;
-	}
+	virtual bool ShouldGenerateMap() = 0;
 };

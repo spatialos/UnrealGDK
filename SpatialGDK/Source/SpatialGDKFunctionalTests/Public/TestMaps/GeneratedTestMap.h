@@ -30,17 +30,17 @@ public:
 	UGeneratedTestMap();
 
 	// This constructor with arguments is the one that the descended classes should be using within their no-argument constructor.
-	UGeneratedTestMap(EMapCategory MapCategory, FString MapName);
+	UGeneratedTestMap(const EMapCategory InMapCategory, const FString& InMapName);
 
 	// Should be used directly after the no argument constructor.
-	void Init(EMapCategory InMapCategory, FString InMapName);
+	void Init(const EMapCategory InMapCategory, const FString& InMapName);
 
 	void GenerateMap() override;
 	bool SaveMap() override;
 	bool GenerateCustomConfig() override;
 	virtual bool ShouldGenerateMap() override
 	{
-		return this->GetClass() != UGeneratedTestMap::StaticClass();
+		return bIsValidForGeneration;
 	} // To control whether to generate a map from this class
 	FString GetMapName() override { return MapName; }
 	static FString GetGeneratedMapFolder();
@@ -59,12 +59,12 @@ public:
 
 	// Derived test maps can call this to set the string that will be printed into the .ini file to be used with this map to override
 	// settings specifically for this test map
-	void SetCustomConfig(FString String) { CustomConfigString = String; }
+	void SetCustomConfig(const FString& String) { CustomConfigString = String; }
 
 	// Use this to override the default number of clients when running the test map.
 	void SetNumberOfClients(int32 InNumberOfClients) { NumberOfClients = InNumberOfClients; }
 
-	virtual UWorld* GetWorld() const override;
+	UWorld* GetWorld() const override;
 
 	AActor* AddActorToLevel(ULevel* Level, UClass* Class, const FTransform& Transform);
 

@@ -54,7 +54,8 @@ bool GenerateTestMaps()
 	TArray<UClass*> TestMapClasses;
 	for (TObjectIterator<UClass> Iter; Iter; ++Iter)
 	{
-		if (Iter->IsChildOf(UGeneratedTestMap::StaticClass()) || Iter->IsChildOf(ASpatialFunctionalTest::StaticClass()))
+		if ((Iter->IsChildOf(UGeneratedTestMap::StaticClass()) || Iter->IsChildOf(ASpatialFunctionalTest::StaticClass()))
+			&& !Iter->HasAnyClassFlags(CLASS_Abstract))
 		{
 			TestMapClasses.Add(*Iter);
 		}

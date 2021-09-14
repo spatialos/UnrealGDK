@@ -36,27 +36,6 @@ constexpr float FINISH_TEST_GRACE_PERIOD_DURATION = 2.0f;
 ASpatialFunctionalTest::ASpatialFunctionalTest()
 	: Super()
 	, FlowControllerSpawner(this, ASpatialFunctionalTestFlowController::StaticClass())
-	, bIsStandaloneTest(false)
-{
-	Init();
-}
-
-ASpatialFunctionalTest::ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients /*=1*/,
-											   const FVector& InTestPositionInWorld /*=FVector::ZeroVector*/)
-	: Super()
-	, FlowControllerSpawner(this, ASpatialFunctionalTestFlowController::StaticClass())
-	, bIsStandaloneTest(true)
-	, TestPositionInWorld(InTestPositionInWorld)
-{
-	Init();
-
-	GeneratedTestMap = NewObject<UGeneratedTestMap>();
-	GeneratedTestMap->Init(MapCiCategory, this->GetClass()->GetName());
-
-	GeneratedTestMap->SetNumberOfClients(NumberOfClients);
-}
-
-void ASpatialFunctionalTest::Init()
 {
 	bReplicates = true;
 	NetPriority = 3.0f;
@@ -69,6 +48,22 @@ void ASpatialFunctionalTest::Init()
 	PreparationTimeLimit = 30.0f;
 	bReadyToSpawnServerControllers = false;
 	CachedTestResult = EFunctionalTestResult::Default;
+
+	bIsStandaloneTest = false;
+	GeneratedTestMap = nullptr;
+}
+
+ASpatialFunctionalTest::ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients /*=1*/,
+											   const FVector& InTestPositionInWorld /*=FVector::ZeroVector*/)
+	: ASpatialFunctionalTest()
+{
+	bIsStandaloneTest = true;
+	TestPositionInWorld = InTestPositionInWorld;
+
+	GeneratedTestMap = NewObject<UGeneratedTestMap>();
+	GeneratedTestMap->Init(MapCiCategory, this->GetClass()->GetName());
+
+	GeneratedTestMap->SetNumberOfClients(NumberOfClients);
 }
 
 void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -1149,7 +1144,7 @@ void ASpatialFunctionalTest::GenerateMap()
 
 bool ASpatialFunctionalTest::ShouldGenerateMap()
 {
-	return bIsStandaloneTest && this->GetClass() != ASpatialFunctionalTest::StaticClass();
+	return bIsStandaloneTest;
 }
 
 bool ASpatialFunctionalTest::SaveMap()
@@ -1167,7 +1162,7 @@ FString ASpatialFunctionalTest::GetMapName()
 	return GeneratedTestMap->GetMapName();
 }
 
-void ASpatialFunctionalTest::SetCustomConfig(FString String)
+void ASpatialFunctionalTest::SetCustomConfig(FString& String)
 {
 	GeneratedTestMap->SetCustomConfig(String);
 }
@@ -1182,17 +1177,12 @@ void ASpatialFunctionalTest::SetMapCiCategory(const EMapCategory MapCiCategory)
 	GeneratedTestMap->SetMapCategory(MapCiCategory);
 }
 
-void ASpatialFunctionalTest::SetNumberOfClients(const int NumberOfClients)
+void ASpatialFunctionalTest::SetNumberOfClients(const int32 NumberOfClients)
 {
 	GeneratedTestMap->SetNumberOfClients(NumberOfClients);
 }
 
-void ASpatialFunctionalTest::SetTestPositionInWorld(const FVector Position)
+void ASpatialFunctionalTest::SetTestPositionInWorld(const FVector& Position)
 {
 	TestPositionInWorld = Position;
-}
-
-void ASpatialFunctionalTest::SetIsNotStandaloneTest()
-{
-	bIsStandaloneTest = false;
 }

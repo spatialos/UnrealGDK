@@ -24,11 +24,6 @@ void ASpatialTestRemotePossession::CreateCustomContentForMap()
 {
 	GetWorldSettings()->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
 	GetWorldSettings()->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
-
-	if (this->GetClass() == ASpatialTestRemotePossession::StaticClass())
-	{
-		SetIsNotStandaloneTest();
-	}
 }
 
 ATestPossessionPawn* ASpatialTestRemotePossession::GetPawn()

@@ -21,7 +21,7 @@ struct FControllerPawnPair
 	APawn* Pawn;
 };
 
-UCLASS()
+UCLASS(Abstract)
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestRemotePossession : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()

@@ -25,7 +25,7 @@ UGeneratedTestMap::UGeneratedTestMap()
 	BasicShapeMaterial = MaterialAsset.Object;
 }
 
-UGeneratedTestMap::UGeneratedTestMap(EMapCategory InMapCategory, FString InMapName)
+UGeneratedTestMap::UGeneratedTestMap(const EMapCategory InMapCategory, const FString& InMapName)
 	: UGeneratedTestMap()
 {
 	MapCategory = InMapCategory;
@@ -33,7 +33,7 @@ UGeneratedTestMap::UGeneratedTestMap(EMapCategory InMapCategory, FString InMapNa
 	bIsValidForGeneration = true;
 }
 
-void UGeneratedTestMap::Init(EMapCategory InMapCategory, FString InMapName)
+void UGeneratedTestMap::Init(const EMapCategory InMapCategory, const FString& InMapName)
 {
 	MapCategory = InMapCategory;
 	MapName = InMapName;
