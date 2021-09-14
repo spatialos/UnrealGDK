@@ -38,7 +38,7 @@ public:
 	void GenerateMap() override;
 	bool SaveMap() override;
 	bool GenerateCustomConfig() override;
-	virtual bool ShouldGenerateMap() override { return bIsValidForGeneration; } // To control whether to generate a map from this class
+	bool ShouldGenerateMap() override { return bIsValidForGeneration; } // To control whether to generate a map from this class
 	FString GetMapName() override { return MapName; }
 	static FString GetGeneratedMapFolder();
 

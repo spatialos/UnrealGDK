@@ -415,7 +415,7 @@ public:
 
 	void GenerateMap() override;
 
-	virtual bool ShouldGenerateMap() override;
+	bool ShouldGenerateMap() override;
 
 	bool SaveMap() override;
 
