@@ -400,9 +400,9 @@ void CrossServerRPCService::UpdateSentRPCsACKs(Worker_EntityId SenderId, const C
 			CrossServer::SentRPCEntry* SentRPC = SenderState.Mailbox.Find(RPCKey);
 			if (SentRPC != nullptr)
 			{
-				// If the ACK result is 'TargetUnknown' then resend the RPC immediately only
-				// as a temporary measure to bypass race conditions. But only if the receiver
-				// is known the exist. There is deliberately no time-out handling at present.
+				// If the ACK result is 'TargetUnknown', resend the RPC immediately as a temporary
+				// measure to bypass race conditions. But only if the receiver is known the exist.
+				// There is (deliberately) no time-out handling at present.
 				if (ACK.Result == static_cast<uint64>(CrossServer::Result::TargetUnknown))
 				{
 					const Worker_EntityId TargetEntityId = SentRPC->Target.Entity;
@@ -413,23 +413,25 @@ void CrossServerRPCService::UpdateSentRPCsACKs(Worker_EntityId SenderId, const C
 						const bool TargetEntityIdHasValidObject = DoesEntityIdHaveValidObjectCallback.Execute(TargetEntityId);
 						if (TargetEntityIdHasValidObject)
 						{
-							Schema_ComponentData* SenderComponentData =
-								Element->Components
-									.FindByPredicate(ComponentIdEquality{ SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID })
-									->GetUnderlying();
-
-							CrossServerEndpoint SenderEndpoint(SenderComponentData);
-							if (ensureMsgf(SentRPC->SourceSlot < static_cast<uint32>(SenderEndpoint.ReliableRPCBuffer.RingBuffer.Num()),
-										   TEXT("Serious error, SourceSlot is larger than 'ReliableRPCBuffer.RingBuffer'")))
+							const ComponentData* CompData = Element->Components.FindByPredicate(
+								ComponentIdEquality{ SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID });
+							if (ensureMsgf(
+									Element,
+									TEXT("Serious error, cannot find 'ComponentData' of type 'CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID'")))
 							{
-								const auto& SlotData = SenderEndpoint.ReliableRPCBuffer.RingBuffer[SentRPC->SourceSlot];
-								check(SlotData.IsSet());
+								CrossServerEndpoint SenderEndpoint(CompData->GetUnderlying());
+								if (ensureMsgf(SentRPC->SourceSlot < static_cast<uint32>(SenderEndpoint.ReliableRPCBuffer.RingBuffer.Num()),
+											   TEXT("Serious error, SourceSlot is larger than 'ReliableRPCBuffer.RingBuffer'")))
+								{
+									const auto& SlotData = SenderEndpoint.ReliableRPCBuffer.RingBuffer[SentRPC->SourceSlot];
+									check(SlotData.IsSet());
 
-								const RPCSender Sender(SenderId, 0);
-								const RPCPayload& SenderPayload = SlotData.GetValue();
-								const PendingRPCPayload PendingPayload(SenderPayload, {});
+									const RPCSender Sender(SenderId, 0);
+									const RPCPayload& SenderPayload = SlotData.GetValue();
+									const PendingRPCPayload PendingPayload(SenderPayload, {});
 
-								PushCrossServerRPC(TargetEntityId, Sender, PendingPayload, true);
+									PushCrossServerRPC(TargetEntityId, Sender, PendingPayload, true);
+								}
 							}
 						}
 						else
