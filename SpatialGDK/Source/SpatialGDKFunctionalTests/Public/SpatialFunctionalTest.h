@@ -422,8 +422,7 @@ public:
 	template <class T>
 	T& AddActor(const FTransform& Transform = FTransform::Identity)
 	{
-		checkf(bIsGeneratingMap,
-			TEXT("AddActor should only be called from within an overridden CreateCustomContentForMap."));
+		checkf(bIsGeneratingMap, TEXT("AddActor should only be called from within an overridden CreateCustomContentForMap."));
 		return GeneratedTestMap->AddActorToLevel<T>(GeneratedTestMap->GetWorld()->GetCurrentLevel(), Transform);
 	}
 

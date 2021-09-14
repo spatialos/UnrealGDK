@@ -1172,8 +1172,7 @@ void ASpatialFunctionalTest::SetCustomConfig(FString& String)
 
 ASpatialWorldSettings* ASpatialFunctionalTest::GetWorldSettings()
 {
-	checkf(bIsGeneratingMap,
-		TEXT("GetWorldSettings should only be called from within an overridden CreateCustomContentForMap."));
+	checkf(bIsGeneratingMap, TEXT("GetWorldSettings should only be called from within an overridden CreateCustomContentForMap."));
 	return CastChecked<ASpatialWorldSettings>(GeneratedTestMap->GetWorld()->GetWorldSettings());
 }
 
