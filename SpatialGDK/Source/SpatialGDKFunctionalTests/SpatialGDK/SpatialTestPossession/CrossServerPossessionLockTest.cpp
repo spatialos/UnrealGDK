@@ -1,10 +1,13 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "CrossServerPossessionLockTest.h"
+
+#include "CrossServerPossessionGameMode.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "TestWorkerSettings.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
 
 /**
@@ -33,6 +36,12 @@ ACrossServerPossessionLockTest::ACrossServerPossessionLockTest()
 {
 	Author = "Jay";
 	Description = TEXT("Test Locked Actor Cross-Server Possession");
+}
+
+void ACrossServerPossessionLockTest::CreateCustomContentForMap()
+{
+	GetWorldSettings()->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
+	GetWorldSettings()->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
 }
 
 void ACrossServerPossessionLockTest::PrepareTest()

@@ -20,12 +20,6 @@ ASpatialTestRemotePossession::ASpatialTestRemotePossession()
 	Description = TEXT("Test Actor Remote Possession");
 }
 
-void ASpatialTestRemotePossession::CreateCustomContentForMap()
-{
-	GetWorldSettings()->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
-	GetWorldSettings()->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
-}
-
 ATestPossessionPawn* ASpatialTestRemotePossession::GetPawn()
 {
 	return Cast<ATestPossessionPawn>(UGameplayStatics::GetActorOfClass(GetWorld(), ATestPossessionPawn::StaticClass()));

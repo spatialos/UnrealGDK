@@ -2,6 +2,7 @@
 
 #include "CrossServerMultiPossessionTest.h"
 
+#include "CrossServerPossessionGameMode.h"
 #include "Containers/Array.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/GameModeBase.h"
@@ -11,6 +12,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
 #include "TestPossessionPlayerController.h"
+#include "TestWorkerSettings.h"
 #include "Utils/SpatialStatics.h"
 
 /**
@@ -42,7 +44,8 @@ ACrossServerMultiPossessionTest::ACrossServerMultiPossessionTest()
 
 void ACrossServerMultiPossessionTest::CreateCustomContentForMap()
 {
-	Super::CreateCustomContentForMap();
+	GetWorldSettings()->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
+	GetWorldSettings()->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
 	SetNumberOfClients(3);
 }
 

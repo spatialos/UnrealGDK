@@ -28,8 +28,6 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestRemotePossession : public ASpati
 public:
 	ASpatialTestRemotePossession();
 
-	virtual void CreateCustomContentForMap() override;
-
 	virtual void PrepareTest() override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
