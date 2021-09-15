@@ -2,8 +2,8 @@
 
 #include "CrossServerPossessionTest.h"
 
-#include "CrossServerPossessionGameMode.h"
 #include "Containers/Array.h"
+#include "CrossServerPossessionGameMode.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/PlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
