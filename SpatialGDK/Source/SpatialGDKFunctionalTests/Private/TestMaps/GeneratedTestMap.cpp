@@ -27,9 +27,7 @@ UGeneratedTestMap::UGeneratedTestMap()
 UGeneratedTestMap::UGeneratedTestMap(const EMapCategory InMapCategory, const FString& InMapName)
 	: UGeneratedTestMap()
 {
-	MapCategory = InMapCategory;
-	MapName = InMapName;
-	bIsValidForGeneration = true;
+	Init(InMapCategory, InMapName);
 }
 
 void UGeneratedTestMap::Init(const EMapCategory InMapCategory, const FString& InMapName)
