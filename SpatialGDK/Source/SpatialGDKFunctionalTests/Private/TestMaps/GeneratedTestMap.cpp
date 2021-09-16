@@ -30,7 +30,8 @@ UGeneratedTestMap::UGeneratedTestMap(const EMapCategory InMapCategory, const FSt
 	Init(InMapCategory, InMapName);
 }
 
-UGeneratedTestMap* UGeneratedTestMap::MakeGeneratedTestMap(const EMapCategory InMapCategory, const FString& InMapName) {
+UGeneratedTestMap* UGeneratedTestMap::MakeGeneratedTestMap(const EMapCategory InMapCategory, const FString& InMapName)
+{
 	UGeneratedTestMap* GenTestMap = NewObject<UGeneratedTestMap>();
 	GenTestMap->Init(InMapCategory, InMapName);
 	return GenTestMap;

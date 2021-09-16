@@ -12,9 +12,7 @@
 
 const float ASpatialTestRemotePossession::MaxWaitTime = 2.0f;
 
-ASpatialTestRemotePossession::ASpatialTestRemotePossession()
-{
-}
+ASpatialTestRemotePossession::ASpatialTestRemotePossession() {}
 
 ASpatialTestRemotePossession::ASpatialTestRemotePossession(const EMapCategory MapCiCategory, const int32 NumberOfClients)
 	: ASpatialFunctionalTest(MapCiCategory, NumberOfClients)

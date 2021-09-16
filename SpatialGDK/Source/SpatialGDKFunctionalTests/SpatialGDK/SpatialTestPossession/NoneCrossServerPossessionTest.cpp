@@ -32,7 +32,8 @@
  *    - ATestPossessionPlayerController::OnPossess should be called == 1 times
  */
 
-ANoneCrossServerPossessionTest::ANoneCrossServerPossessionTest() : Super(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, 1)
+ANoneCrossServerPossessionTest::ANoneCrossServerPossessionTest()
+	: Super(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, 1)
 {
 	Author = "Ken.Yu";
 	Description = TEXT("Test Local Possession via RemotePossessionComponent");
