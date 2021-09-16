@@ -32,7 +32,7 @@
  *    - ATestPossessionPlayerController::OnPossess should be called == 1 times
  */
 
-ACrossServerPossessionTest::ACrossServerPossessionTest()
+ACrossServerPossessionTest::ACrossServerPossessionTest() : Super(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, 1)
 {
 	Author = "Ken.Yu";
 	Description = TEXT("Test Cross-Server Possession");

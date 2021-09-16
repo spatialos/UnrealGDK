@@ -61,8 +61,7 @@ ASpatialFunctionalTest::ASpatialFunctionalTest(const EMapCategory MapCiCategory,
 	bIsStandaloneTest = true;
 	TestPositionInWorld = InTestPositionInWorld;
 
-	GeneratedTestMap = NewObject<UGeneratedTestMap>();
-	GeneratedTestMap->Init(MapCiCategory, this->GetClass()->GetName());
+	GeneratedTestMap = UGeneratedTestMap::MakeGeneratedTestMap(MapCiCategory, this->GetClass()->GetName());
 
 	GeneratedTestMap->SetNumberOfClients(NumberOfClients);
 }
@@ -1174,19 +1173,4 @@ ASpatialWorldSettings* ASpatialFunctionalTest::GetWorldSettings()
 {
 	checkf(bIsGeneratingMap, TEXT("GetWorldSettings should only be called from within an overridden CreateCustomContentForMap."));
 	return CastChecked<ASpatialWorldSettings>(GeneratedTestMap->GetWorld()->GetWorldSettings());
-}
-
-void ASpatialFunctionalTest::SetMapCiCategory(const EMapCategory MapCiCategory)
-{
-	GeneratedTestMap->SetMapCategory(MapCiCategory);
-}
-
-void ASpatialFunctionalTest::SetNumberOfClients(const int32 NumberOfClients)
-{
-	GeneratedTestMap->SetNumberOfClients(NumberOfClients);
-}
-
-void ASpatialFunctionalTest::SetTestPositionInWorld(const FVector& Position)
-{
-	TestPositionInWorld = Position;
 }

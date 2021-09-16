@@ -13,11 +13,14 @@
 const float ASpatialTestRemotePossession::MaxWaitTime = 2.0f;
 
 ASpatialTestRemotePossession::ASpatialTestRemotePossession()
-	: ASpatialFunctionalTest(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, 1)
-	, LocationOfPawn(500.0f, 500.0f, 50.0f)
 {
-	Author = "Jay";
-	Description = TEXT("Test Actor Remote Possession");
+}
+
+ASpatialTestRemotePossession::ASpatialTestRemotePossession(const EMapCategory MapCiCategory, const int32 NumberOfClients)
+	: ASpatialFunctionalTest(MapCiCategory, NumberOfClients)
+{
+	LocationOfPawn = FVector(500.0f, 500.0f, 50.0f);
+	WaitTime = 0;
 }
 
 ATestPossessionPawn* ASpatialTestRemotePossession::GetPawn()

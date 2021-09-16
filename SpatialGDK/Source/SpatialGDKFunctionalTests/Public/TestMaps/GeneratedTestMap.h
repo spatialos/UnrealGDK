@@ -32,8 +32,8 @@ public:
 	// This constructor with arguments is the one that the descended classes should be using within their no-argument constructor.
 	UGeneratedTestMap(const EMapCategory InMapCategory, const FString& InMapName);
 
-	// Should be used directly after the no argument constructor.
-	void Init(const EMapCategory InMapCategory, const FString& InMapName);
+	// This static function should be used to get an instance of GeneratedTestMap
+	static UGeneratedTestMap* MakeGeneratedTestMap(const EMapCategory InMapCategory, const FString& InMapName);
 
 	void GenerateMap() override;
 	bool SaveMap() override;
@@ -58,14 +58,12 @@ public:
 	// settings specifically for this test map
 	void SetCustomConfig(const FString& String) { CustomConfigString = String; }
 
-	// Use this to override the default number of clients when running the test map.
-	void SetNumberOfClients(int32 InNumberOfClients) { NumberOfClients = InNumberOfClients; }
-
 	UWorld* GetWorld() const override;
 
 	AActor* AddActorToLevel(ULevel* Level, UClass* Class, const FTransform& Transform);
 
-	void SetMapCategory(const EMapCategory InMapCategory);
+	// Use this to override the default number of clients when running the test map.
+	void SetNumberOfClients(int32 InNumberOfClients) { NumberOfClients = InNumberOfClients; }
 
 protected:
 	// This is what test maps descending from this class should normally override to add their own content to the map
@@ -79,6 +77,8 @@ protected:
 	UMaterial* BasicShapeMaterial;
 
 private:
+	void Init(const EMapCategory InMapCategory, const FString& InMapName);
+
 	void GenerateBaseMap();
 	FString GetPathToSaveTheMap();
 

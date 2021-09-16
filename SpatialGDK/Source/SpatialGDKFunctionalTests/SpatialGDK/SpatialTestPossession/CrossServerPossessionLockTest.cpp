@@ -32,7 +32,7 @@
  */
 
 ACrossServerPossessionLockTest::ACrossServerPossessionLockTest()
-	: Super()
+	: Super(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, 1)
 {
 	Author = "Jay";
 	Description = TEXT("Test Locked Actor Cross-Server Possession");

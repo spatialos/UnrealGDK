@@ -437,14 +437,6 @@ protected:
 
 	ASpatialWorldSettings* GetWorldSettings();
 
-	// The constructor is the intended way to set the following settings, however these setters can be used if a test is not a direct
-	// descendant of ASpatialFunctionalTest and needs to modify these settings.
-	void SetMapCiCategory(const EMapCategory MapCiCategory);
-
-	void SetNumberOfClients(const int32 NumberOfClients);
-
-	void SetTestPositionInWorld(const FVector& Position);
-
 private:
 	bool bIsStandaloneTest;
 

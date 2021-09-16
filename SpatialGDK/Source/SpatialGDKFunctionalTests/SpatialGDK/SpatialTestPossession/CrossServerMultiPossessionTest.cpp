@@ -36,7 +36,7 @@
  */
 
 ACrossServerMultiPossessionTest::ACrossServerMultiPossessionTest()
-	: Super()
+	: Super(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, 3)
 {
 	Author = "Ken.Yu";
 	Description = TEXT("Test Cross-Server Multi Controllers Possess 1 Pawn");
@@ -46,7 +46,6 @@ void ACrossServerMultiPossessionTest::CreateCustomContentForMap()
 {
 	GetWorldSettings()->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
 	GetWorldSettings()->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
-	SetNumberOfClients(3);
 }
 
 void ACrossServerMultiPossessionTest::PrepareTest()

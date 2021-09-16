@@ -30,6 +30,12 @@ UGeneratedTestMap::UGeneratedTestMap(const EMapCategory InMapCategory, const FSt
 	Init(InMapCategory, InMapName);
 }
 
+UGeneratedTestMap* UGeneratedTestMap::MakeGeneratedTestMap(const EMapCategory InMapCategory, const FString& InMapName) {
+	UGeneratedTestMap* GenTestMap = NewObject<UGeneratedTestMap>();
+	GenTestMap->Init(InMapCategory, InMapName);
+	return GenTestMap;
+}
+
 void UGeneratedTestMap::Init(const EMapCategory InMapCategory, const FString& InMapName)
 {
 	MapCategory = InMapCategory;
@@ -40,11 +46,6 @@ void UGeneratedTestMap::Init(const EMapCategory InMapCategory, const FString& In
 AActor* UGeneratedTestMap::AddActorToLevel(ULevel* Level, UClass* Class, const FTransform& Transform)
 {
 	return GEditor->AddActor(Level, Class, Transform);
-}
-
-void UGeneratedTestMap::SetMapCategory(const EMapCategory InMapCategory)
-{
-	MapCategory = InMapCategory;
 }
 
 void UGeneratedTestMap::GenerateMap()
