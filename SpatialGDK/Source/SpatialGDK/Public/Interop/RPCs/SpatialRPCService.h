@@ -81,6 +81,7 @@ private:
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters) const;
 
 	bool ActorCanExtractRPC(Worker_EntityId) const;
+	bool DoesEntityIdHaveValidObject(const Worker_EntityId EntityId) const;
 
 	USpatialNetDriver* NetDriver;
 	USpatialLatencyTracer* SpatialLatencyTracer;
