@@ -283,8 +283,11 @@ Interest UnrealServerInterestFactory::CreateInterest(AActor* InActor, const FCla
 	}
 #endif
 
-	// Clients need to see owner only and server RPC components on entities they have authority over
-	AddClientSelfInterest(ResultInterest);
+	if (!GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
+	{
+		// Clients need to see owner only and server RPC components on entities they have authority over
+		AddClientSelfInterest(ResultInterest);
+	}
 
 	// Every actor needs a self query for the server to the client RPC endpoint
 	AddServerSelfInterest(ResultInterest);
