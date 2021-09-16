@@ -4,7 +4,7 @@
 
 #include "improbable/c_worker.h"
 
-#define WORKER_SDK_VERSION "15.1.1"
+#define WORKER_SDK_VERSION "15.1.0" // We currently download the 15.1.1 SDK, but its still marked as 15.1.0 by worker
 
 constexpr bool StringsEqual(char const* A, char const* B)
 {
