@@ -5,6 +5,7 @@
 #include "Templates/SharedPointer.h"
 #include "Templates/UniquePtr.h"
 
+#include "Interop/EntityQueryHandler.h"
 #include "Interop/Startup/ServerWorkerStartupCommon.h"
 #include "Interop/Startup/SpatialStartupCommon.h"
 
@@ -13,6 +14,42 @@ class ISpatialOSWorker;
 
 namespace SpatialGDK
 {
+struct FPartitionCreationSharedState : public TSharedFromThis<FPartitionCreationSharedState>
+{
+	TMap<Worker_EntityId_Key, EntityViewElement> DiscoveredPartitionEntityIds;
+	TArray<Worker_EntityId> NewCreatedPartitionEntityIds;
+};
+
+class FDiscoverExistingPartitionsStep : public FStartupStep
+{
+public:
+	FDiscoverExistingPartitionsStep(TSharedRef<FPartitionCreationSharedState> InSharedState, ISpatialOSWorker& InConnection,
+									Worker_ComponentId ComponentToLookFor, TArray<Worker_ComponentId> ComponentsToRead)
+		: SharedState(InSharedState)
+		, Connection(&InConnection)
+		, PartitionComponentTag(ComponentToLookFor)
+		, PartitionComponents(MoveTemp(ComponentsToRead))
+	{
+		StepName = TEXT("Discovering existing worker partitions");
+	}
+
+	virtual void Start() override;
+
+	void OnPartitionQueryComplete(const Worker_EntityQueryResponseOp& QueryResponse);
+
+	virtual bool TryFinish() override;
+
+private:
+	TSharedRef<FPartitionCreationSharedState> SharedState;
+
+	ISpatialOSWorker* Connection;
+
+	FEntityQueryHandler PartitionQueryHandler;
+	Worker_ComponentId PartitionComponentTag;
+	TArray<Worker_ComponentId> PartitionComponents;
+	bool bQueryComplete = false;
+};
+
 class FAuthCreateAndAssignPartitions : public FStartupStep
 {
 public:
@@ -25,9 +62,6 @@ public:
 private:
 	TArray<TUniquePtr<FStartupStep>> CreateSteps();
 
-	struct FPartitionCreationSharedState;
-
-	class FDiscoverExistingPartitionsStep;
 	class FCreateNecessaryPartitionsStep;
 	class FWaitForPartitionVisibilityStep;
 	class FAssignPartitionsToWorkersStep;
