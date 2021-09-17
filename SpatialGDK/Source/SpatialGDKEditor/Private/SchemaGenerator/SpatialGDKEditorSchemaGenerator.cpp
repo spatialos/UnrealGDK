@@ -359,6 +359,7 @@ void GenerateSchemaForSublevels(const FString& SchemaOutputPath, const TMultiMap
 
 	TArray<FName> Keys;
 	LevelNamesToPaths.GetKeys(Keys);
+	Keys.Sort(FNameLexicalLess());
 
 	for (FName LevelName : Keys)
 	{
@@ -424,19 +425,26 @@ void GenerateSchemaForNCDs(const FString& SchemaOutputPath)
 
 	FComponentIdGenerator IdGenerator = FComponentIdGenerator(NextAvailableComponentId);
 
-	for (auto& NCDComponent : NetCullDistanceToComponentId)
+	TArray<float> Keys;
+	NetCullDistanceToComponentId.GetKeys(Keys);
+
+	Keys.Sort([](const float& A, const float& B) {
+		return A < B;
+	});
+
+	for (float NCD : Keys)
 	{
-		const FString ComponentName = FString::Printf(TEXT("NetCullDistanceSquared%lld"), static_cast<uint64>(NCDComponent.Key));
-		if (NCDComponent.Value == 0)
+		const FString ComponentName = FString::Printf(TEXT("NetCullDistanceSquared%lld"), static_cast<uint64>(NCD));
+		FString SchemaComponentName = UnrealNameToSchemaComponentName(ComponentName);
+
+		Worker_ComponentId& ComponentId = NetCullDistanceToComponentId[NCD];
+		if (ComponentId == 0)
 		{
-			NCDComponent.Value = IdGenerator.Next();
+			ComponentId = IdGenerator.Next();
 		}
 
-		FString SchemaComponentName = UnrealNameToSchemaComponentName(ComponentName);
-		Worker_ComponentId ComponentId = NCDComponent.Value;
-
 		Writer.PrintNewLine();
-		Writer.Printf("// distance {0}", NCDComponent.Key);
+		Writer.Printf("// distance {0}", NCD);
 		Writer.Printf("component {0} {", *SchemaComponentName);
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
