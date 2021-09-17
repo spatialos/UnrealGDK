@@ -2,20 +2,23 @@
 
 #include "SpatialTestRemotePossession.h"
 
+#include "CrossServerPossessionGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
 #include "TestPossessionPlayerController.h"
+#include "TestWorkerSettings.h"
 
 const float ASpatialTestRemotePossession::MaxWaitTime = 2.0f;
 
-ASpatialTestRemotePossession::ASpatialTestRemotePossession()
-	: Super()
-	, LocationOfPawn(500.0f, 500.0f, 50.0f)
+ASpatialTestRemotePossession::ASpatialTestRemotePossession() {}
+
+ASpatialTestRemotePossession::ASpatialTestRemotePossession(const EMapCategory MapCiCategory, const int32 NumberOfClients)
+	: ASpatialFunctionalTest(MapCiCategory, NumberOfClients)
 {
-	Author = "Jay";
-	Description = TEXT("Test Actor Remote Possession");
+	LocationOfPawn = FVector(500.0f, 500.0f, 50.0f);
+	WaitTime = 0;
 }
 
 ATestPossessionPawn* ASpatialTestRemotePossession::GetPawn()

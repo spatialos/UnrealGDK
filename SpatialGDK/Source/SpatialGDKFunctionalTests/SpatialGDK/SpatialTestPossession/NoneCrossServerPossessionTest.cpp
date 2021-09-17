@@ -3,11 +3,13 @@
 #include "NoneCrossServerPossessionTest.h"
 
 #include "Containers/Array.h"
+#include "CrossServerPossessionGameMode.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/PlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
 #include "TestPossessionPlayerController.h"
+#include "TestWorkerSettings.h"
 
 /**
  * This test tests 1 Controller possess over 1 Pawn.
@@ -31,10 +33,17 @@
  */
 
 ANoneCrossServerPossessionTest::ANoneCrossServerPossessionTest()
+	: Super(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, 1)
 {
 	Author = "Ken.Yu";
 	Description = TEXT("Test Local Possession via RemotePossessionComponent");
 	LocationOfPawn = FVector(-500.0f, -500.0f, 50.0f);
+}
+
+void ANoneCrossServerPossessionTest::CreateCustomContentForMap()
+{
+	GetWorldSettingsForMap()->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
+	GetWorldSettingsForMap()->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
 }
 
 void ANoneCrossServerPossessionTest::PrepareTest()

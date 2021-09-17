@@ -14,5 +14,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ANoneCrossServerPossessionTest : public ASpa
 public:
 	ANoneCrossServerPossessionTest();
 
+	virtual void CreateCustomContentForMap() override;
+
 	virtual void PrepareTest() override;
 };
