@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed Actor Dormancy issue, we now correctly update if we set an actor awake and update properties on it on the same tick.
 - Fixed IsActorGroupOwnerForClass logging an error if NetDriver was not ready.
 - Fixed PlayerControllers incorrectly being deleted when Actor is teleported out of owning Server's interest range.
+- NCD and sublevel schema generation won't invalidate schema determinism.
 
 ### Internal:
 - Modified startup flow to only create ActorSystem, RPCService and some others after startup has otherwise finished; removed initial op reordering.
