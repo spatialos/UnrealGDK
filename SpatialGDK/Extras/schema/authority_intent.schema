@@ -21,11 +21,6 @@ component AuthorityIntentAck {
      uint64 assignment_counter_ack = 1;
 }
 
-component PartitionIntentAck{
-     id = 9956;
-     uint64 assignment_counter_ack = 1;
-}
-
 component_set StrategyWorkerAuthComponentSet {
   id = 9909;
   components = [
