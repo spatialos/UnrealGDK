@@ -1164,13 +1164,13 @@ FString ASpatialFunctionalTest::GetMapName()
 	return GeneratedTestMap->GetMapName();
 }
 
-void ASpatialFunctionalTest::SetCustomConfig(FString& String)
+void ASpatialFunctionalTest::SetCustomConfigForMap(FString& String)
 {
 	GeneratedTestMap->SetCustomConfig(String);
 }
 
-ASpatialWorldSettings* ASpatialFunctionalTest::GetWorldSettings()
+ASpatialWorldSettings* ASpatialFunctionalTest::GetWorldSettingsForMap()
 {
-	checkf(bIsGeneratingMap, TEXT("GetWorldSettings should only be called from within an overridden CreateCustomContentForMap."));
+	checkf(bIsGeneratingMap, TEXT("GetWorldSettingsForMap should only be called from within an overridden CreateCustomContentForMap."));
 	return CastChecked<ASpatialWorldSettings>(GeneratedTestMap->GetWorld()->GetWorldSettings());
 }

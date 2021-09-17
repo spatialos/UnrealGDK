@@ -433,9 +433,9 @@ public:
 protected:
 	// Derived tests can call this to set the string that will be printed into the .ini file to be used with this map to override
 	// settings specifically for this test map. Should be called during constructor.
-	void SetCustomConfig(FString& String);
+	void SetCustomConfigForMap(FString& String);
 
-	ASpatialWorldSettings* GetWorldSettings();
+	ASpatialWorldSettings* GetWorldSettingsForMap();
 
 private:
 	bool bIsStandaloneTest;

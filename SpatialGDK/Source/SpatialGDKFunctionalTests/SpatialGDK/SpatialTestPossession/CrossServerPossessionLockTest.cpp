@@ -40,8 +40,8 @@ ACrossServerPossessionLockTest::ACrossServerPossessionLockTest()
 
 void ACrossServerPossessionLockTest::CreateCustomContentForMap()
 {
-	GetWorldSettings()->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
-	GetWorldSettings()->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
+	GetWorldSettingsForMap()->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
+	GetWorldSettingsForMap()->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
 }
 
 void ACrossServerPossessionLockTest::PrepareTest()

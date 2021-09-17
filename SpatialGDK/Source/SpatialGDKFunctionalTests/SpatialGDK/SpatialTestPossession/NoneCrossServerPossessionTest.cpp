@@ -42,8 +42,8 @@ ANoneCrossServerPossessionTest::ANoneCrossServerPossessionTest()
 
 void ANoneCrossServerPossessionTest::CreateCustomContentForMap()
 {
-	GetWorldSettings()->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
-	GetWorldSettings()->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
+	GetWorldSettingsForMap()->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
+	GetWorldSettingsForMap()->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
 }
 
 void ANoneCrossServerPossessionTest::PrepareTest()
