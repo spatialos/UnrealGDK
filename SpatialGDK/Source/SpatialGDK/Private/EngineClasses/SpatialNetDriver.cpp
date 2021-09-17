@@ -44,8 +44,9 @@
 #include "Interop/MigrationDiagnosticsSystem.h"
 #include "Interop/OwnershipCompletenessHandler.h"
 #include "Interop/RPCExecutor.h"
-#include "Interop/SkeletonEntities.h"
 #include "Interop/SkeletonEntityCreationStep.h"
+#include "Interop/SkeletonEntityManifestPublisher.h"
+#include "Interop/SkeletonEntityPopulator.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialNetDriverLoadBalancingHandler.h"
@@ -458,11 +459,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		Sender = NewObject<USpatialSender>();
 		Receiver = NewObject<USpatialReceiver>();
 
-		if (IsServer() && GetDefault<USpatialGDKSettings>()->bEnableSkeletonEntityCreation)
-		{
-			SkeletonEntityCreationStep = MakeUnique<SpatialGDK::FSkeletonEntityCreationStartupStep>(*this);
-		}
-
 		// TODO: UNR-2452
 		// Ideally the GlobalStateManager and StaticComponentView would be created as part of USpatialWorkerConnection::Init
 		// however, this causes a crash upon the second instance of running PIE due to a destroyed USpatialNetDriver still being reference.
@@ -496,8 +492,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			if (Partitions)
 			{
 				SpatialGDK::FSubView& PartitionsSubView =
-					Connection->GetCoordinator().CreateSubView(SpatialConstants::PARTITION_ACK_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
-															   SpatialGDK::FSubView::NoDispatcherCallbacks);
+					Connection->GetCoordinator().CreateSubView(SpatialConstants::LOADBALANCER_PARTITION_TAG_COMPONENT_ID,
+															   SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
 				PartitionSystemImpl = MakeUnique<SpatialGDK::FPartitionSystemImpl>(PartitionsSubView);
 				PartitionSystemImpl->PartitionData.DataStorages = Partitions->GetData();
@@ -530,6 +526,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	if (WorkerType == SpatialConstants::DefaultServerWorkerType)
 	{
+		auto& FilledManifestSubView = SpatialGDK::SkeletonEntityFunctions::CreateFilledManifestSubView(Connection->GetCoordinator());
+
+		ManifestPublisher = MakeUnique<SpatialGDK::FSkeletonManifestPublisher>(FilledManifestSubView);
+		SkeletonPopulator = MakeUnique<SpatialGDK::FSkeletonEntityPopulator>(*this);
+
 		StartupHandler = MakeUnique<SpatialGDK::FSpatialServerStartupHandler>(
 			*this, SpatialGDK::FInitialSetup{ static_cast<int32>(LoadBalanceStrategy->GetMinimumRequiredWorkers()) });
 	}
@@ -2283,6 +2284,16 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (bIsDefaultServerOrClientWorker)
 		{
+			if (ManifestPublisher.IsValid())
+			{
+				ManifestPublisher->Advance(Connection->GetCoordinator());
+			}
+
+			if (SkeletonPopulator.IsValid())
+			{
+				SkeletonPopulator->Advance(Connection->GetCoordinator());
+			}
+
 			if (PartitionSystemImpl.IsValid())
 			{
 				PartitionSystemImpl->Advance();
