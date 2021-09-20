@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Interop/SkeletonEntities.h"
 #include "Interop/SpatialCommandsHandler.h"
 #include "Interop/Startup/SpatialStartupCommon.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
@@ -35,6 +36,7 @@ public:
 	virtual void OnWorkersDisconnected(TArrayView<FLBWorkerHandle> DisconnectedWorkers) override;
 	virtual void TickPartitions() override;
 	virtual void CollectEntitiesToMigrate(FMigrationContext& Ctx) override;
+	virtual void OnSkeletonManifestReceived(Worker_EntityId, FSkeletonEntityManifest) override;
 
 protected:
 	void EvaluateDebugComponent(Worker_EntityId, FMigrationContext& Ctx);
@@ -71,6 +73,17 @@ protected:
 
 	Worker_EntityId WorkerForCustomAssignment = SpatialConstants::INVALID_ENTITY_ID;
 	// --- Load Balancing ---
+
+	// +++ Skeleton entity processing +++
+	struct ManifestProcessing
+	{
+		FSkeletonEntityManifest ManifestData;
+		TMap<int32, TSet<Worker_EntityId_Key>> InProgressManifests;
+		TArray<FManifestCreationHandle> PublishedManifests;
+		uint32 ProcessedEntities = 0;
+	};
+	TMap<Worker_EntityId_Key, ManifestProcessing> ReceivedManifests;
+	// --- Skeleton entity processing ---
 };
 
 } // namespace SpatialGDK

@@ -107,7 +107,62 @@ void FLegacyLoadBalancing::Advance(ISpatialOSWorker& Connection)
 
 void FLegacyLoadBalancing::Flush(ISpatialOSWorker& Connection)
 {
-	
+	for (auto Iter = ReceivedManifests.CreateIterator(); Iter; ++Iter)
+	{
+		ManifestProcessing& Processing = Iter->Value;
+		if (Processing.PublishedManifests.Num() == 0)
+		{
+			if (Processing.ProcessedEntities != Processing.ManifestData.EntitiesToPopulate.Num())
+			{
+				continue;
+			}
+			bool bAllPartitionsAssigned = true;
+			TArray<Worker_PartitionId> PartitionIds;
+			PartitionIds.SetNum(ExpectedWorkers);
+			for (uint32 VirtualWorker = 0; VirtualWorker < ExpectedWorkers; ++VirtualWorker)
+			{
+				if (auto PartitionId = SharedData->PartitionManager.GetPartitionId(Partitions[VirtualWorker]))
+				{
+					PartitionIds[VirtualWorker] = PartitionId.GetValue();
+				}
+				else
+				{
+					bAllPartitionsAssigned = false;
+					break;
+				}
+			}
+
+			if (!bAllPartitionsAssigned)
+			{
+				continue;
+			}
+			for (uint32 VirtualWorker = 0; VirtualWorker < ExpectedWorkers; ++VirtualWorker)
+			{
+				const TSet<Worker_EntityId_Key>& EntitiesSet = Processing.InProgressManifests.FindOrAdd(VirtualWorker);
+				FManifestCreationHandle Handle =
+					SharedData->ManifestPublisher.CreateManifestForPartition(Connection, EntitiesSet.Array(), PartitionIds[VirtualWorker]);
+				Processing.PublishedManifests.Add(Handle);
+			}
+		}
+		else
+		{
+			bool bAllManfestProcessed = true;
+			for (auto& Handle : Processing.PublishedManifests)
+			{
+				if (Handle && !SharedData->ManifestPublisher.HasManifestBeenProcessed(Handle))
+				{
+					bAllManfestProcessed = false;
+					break;
+				}
+			}
+			if (bAllManfestProcessed)
+			{
+				Processing.ManifestData.PopulatedEntities = Processing.ManifestData.EntitiesToPopulate;
+				Connection.SendComponentUpdate(Iter->Key, Processing.ManifestData.CreateComponentUpdate());
+				Iter.RemoveCurrent();
+			}
+		}
+	}
 }
 
 void FLegacyLoadBalancing::Init(ISpatialOSWorker& Connection, FLoadBalancingSharedData InSharedData,
@@ -185,6 +240,127 @@ void FLegacyLoadBalancing::OnWorkersConnected(TArrayView<FLBWorkerHandle> InConn
 void FLegacyLoadBalancing::OnWorkersDisconnected(TArrayView<FLBWorkerHandle> DisconnectedWorkers)
 {
 	// Not handled
+}
+
+void FLegacyLoadBalancing::OnSkeletonManifestReceived(Worker_EntityId EntityId, FSkeletonEntityManifest ManifestData)
+{
+	if (ReceivedManifests.Contains(EntityId))
+	{
+		return;
+	}
+	ManifestProcessing NewManifestToProcess;
+	NewManifestToProcess.ManifestData = MoveTemp(ManifestData);
+	NewManifestToProcess.ManifestData.bAckedManifest = true;
+	for (Worker_EntityId Entity : NewManifestToProcess.ManifestData.EntitiesToPopulate)
+	{
+		if (int32* VirtualWorkerId = Assignment.Find(Entity))
+		{
+			if (*VirtualWorkerId == -1)
+			{
+				continue;
+			}
+			TSet<Worker_EntityId_Key>& Entities = NewManifestToProcess.InProgressManifests.FindOrAdd(*VirtualWorkerId);
+			if (ensure(!Entities.Contains(Entity)))
+			{
+				Entities.Add(Entity);
+				++NewManifestToProcess.ProcessedEntities;
+			}
+		}
+	}
+	ReceivedManifests.Add(EntityId, MoveTemp(NewManifestToProcess));
+}
+
+void FLegacyLoadBalancing::CreateAndAssignPartitions()
+{
+	FPartitionManager& PartitionMgr = SharedData->PartitionManager;
+	TMap<Worker_EntityId_Key, FLBWorkerHandle> WorkersMap;
+
+	for (auto Worker : ConnectedWorkers)
+	{
+		WorkersMap.Add(PartitionMgr.GetServerWorkerEntityIdForWorker(Worker), Worker);
+	}
+	TArray<Worker_EntityId_Key> SortedWorkers;
+	WorkersMap.GetKeys(SortedWorkers);
+	SortedWorkers.Sort();
+
+	for (VirtualWorkerId i = 1; i <= ExpectedWorkers; ++i)
+	{
+		VirtualWorkerIdToHandle[i - 1] = WorkersMap.FindChecked(SortedWorkers[i - 1]);
+	}
+
+	if (!bDirectAssignment)
+	{
+		Partitions.SetNum(ExpectedWorkers);
+
+		for (const auto& Layer : LBContext.Layers)
+		{
+			for (const auto& Cell : Layer.Cells)
+			{
+				FVector2D CellCenter = Cell.Region.GetCenter();
+				const FVector Center3D{ CellCenter.X, CellCenter.Y, 0.0f };
+
+				const FVector2D EdgeLengths2D = Cell.Region.GetSize();
+				check(EdgeLengths2D.X > 0.0f && EdgeLengths2D.Y > 0.0f);
+				const FVector EdgeLengths3D{ EdgeLengths2D.X + Cell.Border, EdgeLengths2D.Y + Cell.Border, FLT_MAX };
+
+				SpatialGDK::QueryConstraint Constraint;
+				Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D),
+																	  SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
+
+				FString PartitionName =
+					FString::Printf(TEXT("Layer : %s, Cell (%f,%f)"), *Layer.Name.ToString(), CellCenter.X, CellCenter.Y);
+
+				TArray<ComponentData> Components;
+
+				LegacyLB_GridCell GridCellComp;
+				GridCellComp.Center = Center3D;
+				GridCellComp.Edge_length = FVector(EdgeLengths2D.X, EdgeLengths2D.Y, FLT_MAX);
+
+				Components.Add(GridCellComp.CreateComponentData());
+
+				LegacyLB_Layer LayerComp;
+				LayerComp.Layer = &Layer - LBContext.Layers.GetData();
+
+				Components.Add(LayerComp.CreateComponentData());
+
+				LegacyLB_VirtualWorkerAssignment VirtualWorkerComp;
+				VirtualWorkerComp.Virtual_worker_id = Cell.WorkerId;
+
+				Components.Add(VirtualWorkerComp.CreateComponentData());
+
+				Partitions[Cell.WorkerId - 1] = PartitionMgr.CreatePartition(PartitionName, Constraint, MoveTemp(Components));
+			}
+		}
+	}
+	else
+	{
+		for (VirtualWorkerId i = 1; i <= ExpectedWorkers; ++i)
+		{
+			TArray<ComponentData> Components;
+
+			LegacyLB_VirtualWorkerAssignment VirtualWorkerComp;
+			VirtualWorkerComp.Virtual_worker_id = i;
+
+			Components.Add(VirtualWorkerComp.CreateComponentData());
+
+			Partitions.Add(PartitionMgr.CreatePartition(FString::Printf(TEXT("VirtualWorker Partition %i"), i), QueryConstraint(),
+														MoveTemp(Components)));
+		}
+	}
+
+	for (uint32 i = 0; i < ExpectedWorkers; ++i)
+	{
+		PartitionMgr.AssignPartitionTo(Partitions[i], VirtualWorkerIdToHandle[i]);
+	}
+
+	for (auto Worker : ConnectedWorkers)
+	{
+		Worker_EntityId ServerWorkerEntity = PartitionMgr.GetServerWorkerEntityIdForWorker(Worker);
+		if (WorkerForCustomAssignment == 0 || ServerWorkerEntity < WorkerForCustomAssignment)
+		{
+			WorkerForCustomAssignment = ServerWorkerEntity;
+		}
+	}
 }
 
 void FLegacyLoadBalancing::TickPartitions()
@@ -406,7 +582,11 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 			{
 				int32 LayerIndex = CurAssignment + 1 - Layer.FirstWorkerId;
 
-				if (!ensureAlways(LayerIndex < Layer.Cells.Num()) || Layer.Cells[LayerIndex].Region.IsInside(Actor2DLocation))
+				if (!ensureAlways(LayerIndex < Layer.Cells.Num()))
+				{
+					continue;
+				}
+				if (Layer.Cells[LayerIndex].IsInside(Actor2DLocation))
 				{
 					continue;
 				}
@@ -415,9 +595,10 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 			int32 NewAssignment = -1;
 			for (const auto& CandidateCell : Layer.Cells)
 			{
-				if (CandidateCell.Region.IsInside(Actor2DLocation))
+				if (CandidateCell.IsInside(Actor2DLocation))
 				{
 					NewAssignment = CandidateCell.WorkerId - 1;
+					break;
 				}
 			}
 
@@ -427,7 +608,24 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 				Ctx.EntitiesToMigrate.Add(EntityId, Partitions[CurAssignment]);
 			}
 		}
-		
+		for (auto& Processing : ReceivedManifests)
+		{
+			for (auto& AssignmentMade : Ctx.EntitiesToMigrate)
+			{
+				if (Processing.Value.ManifestData.EntitiesToPopulate.Contains(AssignmentMade.Key))
+				{
+					int32 VirtualWorkerIdx;
+					Partitions.Find(AssignmentMade.Value, VirtualWorkerIdx);
+					++VirtualWorkerIdx;
+					TSet<Worker_EntityId_Key>& Entities = Processing.Value.InProgressManifests.FindOrAdd(VirtualWorkerIdx);
+					if (!Entities.Contains(AssignmentMade.Key))
+					{
+						Entities.Add(AssignmentMade.Key);
+						++Processing.Value.ProcessedEntities;
+					}
+				}
+			}
+		}
 		ToRefresh = MoveTemp(NotChecked);
 	}
 	else
