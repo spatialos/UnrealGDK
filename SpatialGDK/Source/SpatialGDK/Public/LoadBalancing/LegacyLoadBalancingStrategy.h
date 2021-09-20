@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Interop/SpatialCommandsHandler.h"
+#include "Interop/Startup/SpatialStartupCommon.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/LoadBalancingStrategy.h"
 
@@ -23,11 +24,12 @@ public:
 	FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, SpatialVirtualWorkerTranslator& InTranslator);
 	~FLegacyLoadBalancing();
 
-	virtual void Init(FLoadBalancingSharedData InSharedData, TArray<FLBDataStorage*>& OutLoadBalancingData,
+	virtual void Init(ISpatialOSWorker& Connection, FLoadBalancingSharedData InSharedData, TArray<FLBDataStorage*>& OutLoadBalancingData,
 					  TArray<FLBDataStorage*>& OutServerWorkerData) override;
 
 	virtual void Advance(ISpatialOSWorker& Connection) override;
 	virtual void Flush(ISpatialOSWorker& Connection) override;
+	virtual bool IsReady() override { return !StartupExecutor.IsSet(); }
 
 	virtual void OnWorkersConnected(TArrayView<FLBWorkerHandle> ConnectedWorkers) override;
 	virtual void OnWorkersDisconnected(TArrayView<FLBWorkerHandle> DisconnectedWorkers) override;
@@ -35,10 +37,12 @@ public:
 	virtual void CollectEntitiesToMigrate(FMigrationContext& Ctx) override;
 
 protected:
-	void QueryTranslation(ISpatialOSWorker& Connection);
 	void EvaluateDebugComponent(Worker_EntityId, FMigrationContext& Ctx);
 	TOptional<TPair<Worker_EntityId, uint32>> EvaluateDebugComponentWithSet(Worker_EntityId);
 	TOptional<uint32> EvaluateDebugComponent(Worker_EntityId);
+
+	TOptional<FStartupExecutor> StartupExecutor;
+	void CreateAndAssignPartitions();
 
 	// +++ Data Storage +++
 	TUniquePtr<FSpatialPositionStorage> PositionStorage;
@@ -53,12 +57,9 @@ protected:
 	TArray<FPartitionHandle> Partitions;
 	TArray<FLBWorkerHandle> VirtualWorkerIdToHandle;
 	TSet<FLBWorkerHandle> ConnectedWorkers;
-	SpatialVirtualWorkerTranslator& Translator;
 	FCommandsHandler CommandsHandler;
-	TOptional<Worker_RequestId> WorkerTranslationRequest;
 	uint32 ExpectedWorkers = 0;
 	bool bCreatedPartitions = false;
-	bool bTranslatorIsReady = false;
 	// --- Partition Assignment ---
 
 	// +++ Load Balancing +++
