@@ -729,10 +729,13 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialSettings->bRunStrategyWorker)
 	{
+		const SpatialGDK::FSubView& UnfilteredLBView = Connection->GetCoordinator().CreateSubView(
+			SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+
 		const SpatialGDK::FSubView& PartitionAuthSubView = Connection->GetCoordinator().CreateSubView(
 			SpatialConstants::PARTITION_AUTH_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-		HandoverManager = MakeUnique<SpatialGDK::FSpatialHandoverManager>(*LBSubView, PartitionAuthSubView);
+		HandoverManager = MakeUnique<SpatialGDK::FSpatialHandoverManager>(UnfilteredLBView, PartitionAuthSubView);
 	}
 
 	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
@@ -2635,6 +2638,25 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #endif // WITH_SERVER_CODE
 	}
 
+	if (HandoverManager)
+	{
+		TSet<Worker_EntityId_Key> SkeletonsToHandover = HandoverManager->GetActorsToHandover();
+		auto& Coordinator = Connection->GetCoordinator();
+		for (auto Iter = SkeletonsToHandover.CreateIterator(); Iter; ++Iter)
+		{
+			const SpatialGDK::EntityViewElement* Entity = Coordinator.GetView().Find(*Iter);
+			if (!ensure(Entity != nullptr))
+			{
+				continue;
+			}
+			if (SpatialGDK::SkeletonEntityFunctions::IsCompleteSkeleton(*Entity))
+			{
+				Iter.RemoveCurrent();
+			}
+		}
+		HandoverManager->Flush(Coordinator, SkeletonsToHandover);
+	}
+
 	if (RPCService != nullptr)
 	{
 		RPCService->PushUpdates();
@@ -3302,6 +3324,11 @@ void USpatialNetDriver::TryFinishStartup()
 			SpatialGDK::FSubView& ServerWorkerView = Connection->GetCoordinator().CreateSubView(
 				SpatialConstants::SERVER_WORKER_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
+			const SpatialGDK::FSubView& LocallyAuthSkeletonEntityManifestsSubview =
+				SpatialGDK::SkeletonEntityFunctions::CreateLocallyAuthManifestSubView(Connection->GetCoordinator());
+			const SpatialGDK::FSubView& FilledManifestSubView =
+				SpatialGDK::SkeletonEntityFunctions::CreateFilledManifestSubView(Connection->GetCoordinator());
+
 			auto PartitionMgr = MakeUnique<SpatialGDK::FPartitionManager>(ServerWorkerView, Connection->GetWorkerSystemEntityId(),
 																		  Connection->GetCoordinator(),
 																		  MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
@@ -3311,8 +3338,12 @@ void USpatialNetDriver::TryFinishStartup()
 			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy =
 				MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy, *VirtualWorkerTranslator);
 
-			StrategySystem =
-				MakeUnique<SpatialGDK::FSpatialStrategySystem>(MoveTemp(PartitionMgr), LBView, ServerWorkerView, MoveTemp(Strategy));
+			SpatialGDK::FStrategySystemViews Views(
+				{ LBView, ServerWorkerView, LocallyAuthSkeletonEntityManifestsSubview, FilledManifestSubView });
+
+			StrategySystem = MakeUnique<SpatialGDK::FSpatialStrategySystem>(MoveTemp(PartitionMgr), Views, MoveTemp(Strategy));
+
+			StrategySystem->Init(Connection->GetCoordinator());
 
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();
