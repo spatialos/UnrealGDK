@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a debug mode to detect non-auth modification of data, enable/disable with the SpatialGDKSettings flag bSpatialAuthorityDebugger (disabled by default).
 - Pre and PostNetReceive are now called on an object a maximum of a single time in a given tick. This matches native much closer.
 - The GDK has been upgraded to use version 15.3.1 of SpatialOS.
+- Add the ability for tests to run without being placed within a standalone map. See `ANoneCrossServerPossessionTest` for an example of this.
 
 ### Bug fixes:
 - Fix `A functional test is already running error` that would sometimes occur when re-running multi-server functional tests.
