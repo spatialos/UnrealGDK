@@ -127,17 +127,23 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
-	const Worker_PartitionId AuthoritativeServerPartitionId = NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId();
+	const bool bUsesDistributedLoadBalancer =
+		!(SpatialSettings->bRunStrategyWorker && NetDriver->LoadBalanceStrategy->IsStrategyWorkerAware());
+
+	const Worker_PartitionId AuthoritativeServerPartitionId =
+		bUsesDistributedLoadBalancer ? NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId() : NetDriver->StagingPartitionId;
 	const Worker_PartitionId AuthoritativeClientPartitionId = GetConnectionOwningPartitionId(Actor);
 
 	// Add Load Balancer Attribute. If this is a single worker deployment, this will be just be the single worker.
-	const VirtualWorkerId IntendedVirtualWorkerId = NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId();
-	checkf(IntendedVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
+	const VirtualWorkerId IntendedVirtualWorkerId =
+		bUsesDistributedLoadBalancer ? NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId() : 0;
+	checkf(!bUsesDistributedLoadBalancer || IntendedVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
 		   TEXT("Load balancing strategy provided invalid local virtual worker ID during Actor spawn. "
 				"Actor: %s. Strategy: %s"),
 		   *Actor->GetName(), *NetDriver->LoadBalanceStrategy->GetName());
 
 	AuthorityDelegationMap DelegationMap;
+
 	DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
 	if (!SpatialSettings->bRunStrategyWorker)
 	{
@@ -155,11 +161,14 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 #if !UE_BUILD_SHIPPING
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
-		if (ensureAlwaysMsgf(NetDriver->VirtualWorkerTranslator != nullptr,
+		if (ensureAlwaysMsgf(SpatialSettings->bRunStrategyWorker || NetDriver->VirtualWorkerTranslator != nullptr,
 							 TEXT("Failed to add debugging utilities. Translator was invalid")))
 		{
+			FString DummyWorkerName(TEXT("Beats me..."));
 			const PhysicalWorkerName* PhysicalWorkerName =
-				NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
+				SpatialSettings->bRunStrategyWorker
+					? &DummyWorkerName
+					: NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
 			const FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
 			const FColor IntentColor =
 				PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
@@ -177,7 +186,7 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId).CreateComponentData());
 	if (SpatialSettings->bRunStrategyWorker)
 	{
-		ComponentDatas.Add(AuthorityIntentV2(AuthoritativeServerPartitionId).CreateComponentData());
+		ComponentDatas.Add(AuthorityIntentV2().CreateComponentData());
 		ComponentDatas.Add(AuthorityIntentACK().CreateComponentData());
 		if (NetDriver->LoadBalanceStrategy->IsStrategyWorkerAware())
 		{
@@ -191,14 +200,15 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 			}
 		}
 	}
-	if (!(SpatialSettings->bRunStrategyWorker && NetDriver->LoadBalanceStrategy->IsStrategyWorkerAware()))
+	if (bUsesDistributedLoadBalancer)
 	{
 		ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
 	}
 
 	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
-	if (USpatialStatics::IsStrategyWorkerEnabled())
+	// Actor set information.
+	if (SpatialSettings->bRunStrategyWorker)
 	{
 		const auto AddComponentData = [&ComponentDatas](ComponentData Data) {
 			Worker_ComponentData ComponentData;
