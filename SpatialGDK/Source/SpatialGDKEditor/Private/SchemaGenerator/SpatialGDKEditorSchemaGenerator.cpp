@@ -427,10 +427,7 @@ void GenerateSchemaForNCDs(const FString& SchemaOutputPath)
 
 	TArray<float> Keys;
 	NetCullDistanceToComponentId.GetKeys(Keys);
-
-	Keys.Sort([](const float& A, const float& B) {
-		return A < B;
-	});
+	Keys.Sort();
 
 	for (float NCD : Keys)
 	{
