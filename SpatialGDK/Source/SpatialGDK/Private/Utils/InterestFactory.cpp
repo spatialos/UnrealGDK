@@ -27,6 +27,7 @@
 
 #if WITH_GAMEPLAY_DEBUGGER
 #include "GameplayDebuggerCategoryReplicator.h"
+#include "GameplayDebuggerPlayerManager.h"
 #endif
 
 DEFINE_LOG_CATEGORY(LogInterestFactory);
@@ -455,6 +456,15 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const APlayerControll
 		{
 			FullAuth.Add(PlayerStateEntityId);
 		}
+
+#if WITH_GAMEPLAY_DEBUGGER
+		const Worker_EntityId GameplayDebuggerEntityId = PackageMap->GetEntityIdFromObject(
+			AGameplayDebuggerPlayerManager::GetCurrent(PlayerController->GetWorld()).GetReplicator(*PlayerController));
+		if (GameplayDebuggerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			FullAuth.Add(GameplayDebuggerEntityId);
+		}
+#endif
 
 		if (bOverwrite)
 		{

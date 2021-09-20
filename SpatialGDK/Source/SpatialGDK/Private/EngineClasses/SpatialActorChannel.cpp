@@ -706,7 +706,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	// If any properties have changed, send a component update.
-	if (bCreatingNewEntity || RepChanged.Num() > 0 || GetInterestDirty())
+	if (bCreatingNewEntity || RepChanged.Num() > 0)
 	{
 		if (bCreatingNewEntity)
 		{
@@ -728,9 +728,9 @@ int64 USpatialActorChannel::ReplicateActor()
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
 
 			NetDriver->ActorSystem->SendComponentUpdates(Actor, Info, this, &RepChangeState, ReplicationBytesWritten);
-		}
 
-		bInterestDirty = false;
+			bInterestDirty = false;
+		}
 
 		if (RepChanged.Num() > 0)
 		{
