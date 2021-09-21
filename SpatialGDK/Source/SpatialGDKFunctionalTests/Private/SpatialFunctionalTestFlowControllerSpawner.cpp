@@ -7,6 +7,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/PlayerController.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/LegacyLoadBalancingPartitionSystem.h"
 #include "SpatialFunctionalTest.h"
 #include "SpatialFunctionalTestFlowController.h"
 
@@ -87,7 +88,29 @@ uint8 SpatialFunctionalTestFlowControllerSpawner::OwningServerIntanceId(UWorld* 
 	}
 	else
 	{
-		return static_cast<uint8>(SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId());
+		if (USpatialStatics::IsStrategyWorkerEnabled())
+		{
+			UGameInstance* GameInstance = World->GetGameInstance();
+			ULegacyPartitionSystem* PartitionSystem = GameInstance->GetSubsystem<ULegacyPartitionSystem>();
+			if (ensureMsgf(PartitionSystem != nullptr,
+						   TEXT("Expected the legacy partition system as a way to retrieve the VirtualWorkerId")))
+			{
+				for (const auto& Entry : PartitionSystem->GetPartitions())
+				{
+					if (Entry.Value.bDelegated)
+					{
+						return PartitionSystem->GetVirtualWorkerIds().FindChecked(Entry.Key).Virtual_worker_id;
+					}
+				}
+
+				ensureMsgf(false, TEXT("Could not find the delegated partition"));
+			}
+			return 0;
+		}
+		else
+		{
+			return static_cast<uint8>(SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId());
+		}
 	}
 }
 
