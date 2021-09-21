@@ -8,14 +8,7 @@ namespace SpatialGDK
 {
 struct LegacyLB_GridCell
 {
-	// Schema in <TestGym>/Game/Content/Spatial/PartitionMetadata/LegacyMetadata.schema
-	// component GridCell{
-	// 	 id = 1901;
-	// 	 improbable.Coordinates center = 1;
-	// 	 improbable.EdgeLength edge_length = 2;
-	// }
-
-	static constexpr Worker_ComponentId ComponentId = 1901;
+	static constexpr Worker_ComponentId ComponentId = 190502;
 
 	LegacyLB_GridCell() {}
 
@@ -76,13 +69,7 @@ struct LegacyLB_GridCell
 
 struct LegacyLB_Layer
 {
-	// Schema in <TestGym>/Game/Content/Spatial/PartitionMetadata/LegacyMetadata.schema
-	// component Layer{
-	//  id = 1902;
-	//  uint32 layer = 1;
-	// }
-
-	static constexpr Worker_ComponentId ComponentId = 1902;
+	static constexpr Worker_ComponentId ComponentId = 190501;
 
 	LegacyLB_Layer() {}
 
@@ -140,13 +127,7 @@ struct LegacyLB_Layer
 
 struct LegacyLB_VirtualWorkerAssignment
 {
-	// Schema in <TestGym>/Game/Content/Spatial/PartitionMetadata/LegacyMetadata.schema
-	// component VirtualWorkerAssignment{
-	//  id = 1903;
-	//  uint32 virtual_worker_id = 1;
-	// }
-
-	static constexpr Worker_ComponentId ComponentId = 1903;
+	static constexpr Worker_ComponentId ComponentId = 190500;
 
 	LegacyLB_VirtualWorkerAssignment() {}
 
@@ -200,95 +181,5 @@ struct LegacyLB_VirtualWorkerAssignment
 	void WriteToObject(Schema_Object* Object) const { Schema_AddUint32(Object, 1, Virtual_worker_id); }
 
 	uint32 Virtual_worker_id;
-};
-
-struct LegacyLB_CustomWorkerAssignments
-{
-	// Schema in <TestGym>/Game/Content/Spatial/ServerWorkerMetadata/TestAuthorityAssignment.schema
-	// component CustomWorkerAssignments {
-	//   id = 1904;
-	//   list<uint32> virtual_worker_id = 1;
-	//   list<string> actor_label = 2;
-	//   list<string> interest_label = 3;
-    // }
-
-	static constexpr Worker_ComponentId ComponentId = 1904;
-
-	LegacyLB_CustomWorkerAssignments() = default;
-
-	explicit LegacyLB_CustomWorkerAssignments(const ComponentData& Data)
-		: LegacyLB_CustomWorkerAssignments(Data.GetUnderlying())
-	{
-	}
-
-	explicit LegacyLB_CustomWorkerAssignments(Schema_ComponentData* Data)
-	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
-		ReadFromObject(ComponentObject);
-	}
-
-	ComponentData CreateComponentData() const
-	{
-		ComponentData Data(ComponentId);
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.GetUnderlying());
-
-		WriteToObject(ComponentObject);
-
-		return Data;
-	}
-
-	ComponentUpdate CreateComponentUpdate() const
-	{
-		ComponentUpdate Update(ComponentId);
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.GetUnderlying());
-
-		WriteToObject(ComponentObject);
-
-		return Update;
-	}
-
-	void ApplyComponentUpdate(const ComponentUpdate& Update) { ApplyComponentUpdate(Update.GetUnderlying()); }
-
-	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
-	{
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
-		ReadFromObject(ComponentObject);
-	}
-
-	void ReadFromObject(Schema_Object* Object)
-	{
-		LabelToVirtualWorker.Empty();
-		AdditionalInterest.Empty();
-		uint32 NumEntries = Schema_GetUint32Count(Object, 1);
-		uint32 NumStrings = Schema_GetBytesCount(Object, 2);
-		for (uint32 i = 0; i < NumEntries; ++i)
-		{
-			uint32_t WorkerId = Schema_IndexUint32(Object, 1, i);
-			FString Label = IndexStringFromSchema(Object, 2, i);
-			LabelToVirtualWorker.Add(FName(*Label), WorkerId);
-		}
-		uint32 NumEntriesInterest = Schema_GetBytesCount(Object, 3);
-		for (uint32 i = 0; i < NumEntriesInterest; ++i)
-		{
-			FString Label = IndexStringFromSchema(Object, 3, i);
-			AdditionalInterest.Add(FName(*Label));
-		}
-	}
-
-	void WriteToObject(Schema_Object* Object) const
-	{
-		for (const auto& Entry : LabelToVirtualWorker)
-		{
-			Schema_AddUint32(Object, 1, Entry.Value);
-			AddStringToSchema(Object, 2, Entry.Key.ToString());
-		}
-		for (const auto& Label : AdditionalInterest)
-		{
-			AddStringToSchema(Object, 3, Label.ToString());
-		}
-	}
-
-	TMap<FName, uint32> LabelToVirtualWorker;
-	TSet<FName> AdditionalInterest;
 };
 } // namespace SpatialGDK

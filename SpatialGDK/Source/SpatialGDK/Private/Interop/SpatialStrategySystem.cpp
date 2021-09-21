@@ -25,8 +25,7 @@ FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InP
 	, ServerWorkerDataStorages(InServerWorkerView)
 	, Strategy(MoveTemp(InStrategy))
 {
-	FLoadBalancingSharedData SharedData(*PartitionsMgr, ActorSetSystem);
-	Strategy->Init(SharedData, UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
+	Strategy->Init(UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
 	DataStorages.DataStorages.Add(&AuthACKView);
 	DataStorages.DataStorages.Add(&NetOwningClientView);
 	DataStorages.DataStorages.Add(&SetMemberView);
@@ -110,7 +109,7 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	}
 
 	// Manage updates to partitions
-	Strategy->TickPartitions();
+	Strategy->TickPartitions(*PartitionsMgr);
 	PartitionsMgr->Flush(Connection);
 
 	// Iterator over the data storage to collect the entities which have been modified this frame.
@@ -125,12 +124,6 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 		if (ActorSetSystem.GetSetLeader(*Iterator) != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			Iterator.RemoveCurrent();
-			continue;
-		}
-		if (DataStorages.EntitiesRemoved.Contains(*Iterator))
-		{
-			Iterator.RemoveCurrent();
-			continue;
 		}
 	}
 

@@ -35,10 +35,6 @@ public:
 			{
 				Value = MakeUnique<T>(*InValue);
 			}
-			else
-			{
-				Value.Reset();
-			}
 		}
 
 		return *this;

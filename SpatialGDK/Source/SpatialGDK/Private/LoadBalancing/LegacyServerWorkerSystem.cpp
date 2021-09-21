@@ -6,7 +6,7 @@ ULegacyServerWorkerSystem::ULegacyServerWorkerSystem() = default;
 TArray<SpatialGDK::ComponentData> ULegacyServerWorkerSystem::GetServerWorkerInitialData()
 {
 	TArray<SpatialGDK::ComponentData> Data;
-	Data.Add(SpatialGDK::LegacyLB_CustomWorkerAssignments().CreateComponentData());
-
+	// Will be used to add test debug data in the next PR.
+	// Data.Add(SpatialGDK::LegacyLB_CustomWorkerAssignments().CreateComponentData());
 	return Data;
 }

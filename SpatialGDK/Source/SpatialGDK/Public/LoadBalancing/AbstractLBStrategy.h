@@ -31,7 +31,6 @@ struct FLegacyLBContext
 	struct Layer
 	{
 		FName Name;
-		VirtualWorkerId FirstWorkerId;
 		TArray<Cell> Cells;
 	};
 

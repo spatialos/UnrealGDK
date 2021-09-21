@@ -56,10 +56,6 @@ public:
 
 	UAbstractLBStrategy* GetWrappedStrategy() const { return WrappedStrategy; }
 
-	virtual bool IsStrategyWorkerAware() const override;
-	virtual void GetLegacyLBInformation(FLegacyLBContext& Ctx) const override;
-	virtual TArray<SpatialGDK::ComponentData> CreateStaticLoadBalancingData(const AActor& Actor) const override;
-
 private:
 	UPROPERTY()
 	UAbstractLBStrategy* WrappedStrategy = nullptr;

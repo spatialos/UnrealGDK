@@ -19,30 +19,6 @@ void FLBDataCollection::Advance()
 		{
 		case EntityDelta::UPDATE:
 		{
-			for (const auto& Added : Delta.ComponentsAdded)
-			{
-				for (auto& Storage : DataStorages)
-				{
-					if (Storage->GetComponentsToWatch().Contains(Added.ComponentId))
-					{
-						Storage->OnComponentAdded(Delta.EntityId, Added.ComponentId, Added.Data);
-					}
-				}
-			}
-
-			for (const auto& Removed : Delta.ComponentsRemoved)
-			{
-				for (auto& Storage : DataStorages)
-				{
-					if (Storage->GetComponentsToWatch().Contains(Removed.ComponentId))
-					{
-						// As opposed to all the other operations, this particular one is not mirrored anywhere.
-						// It remains to be seen if this is going to be useful, or if dynamic components are not
-						// something we should use here.
-						Storage->OnRemoved(Delta.EntityId);
-					}
-				}
-			}
 			for (const auto& CompleteUpdate : Delta.ComponentsRefreshed)
 			{
 				for (auto& Storage : DataStorages)

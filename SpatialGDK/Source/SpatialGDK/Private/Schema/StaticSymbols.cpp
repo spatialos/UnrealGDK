@@ -50,6 +50,5 @@ constexpr Worker_ComponentId UnrealMetadata::ComponentId;
 constexpr Worker_ComponentId LegacyLB_GridCell::ComponentId;
 constexpr Worker_ComponentId LegacyLB_Layer::ComponentId;
 constexpr Worker_ComponentId LegacyLB_VirtualWorkerAssignment::ComponentId;
-constexpr Worker_ComponentId LegacyLB_CustomWorkerAssignments::ComponentId;
 } // namespace SpatialGDK
 #endif
