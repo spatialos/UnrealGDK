@@ -175,15 +175,14 @@ TArray<AActor*> USpatialReplicationGraph::ExtractClientInterestActorsFromGather(
 				continue;
 			}
 
-			FConnectionReplicationActorInfo& ConnectionActorInfo = ConnectionActorInfoMap.FindOrAdd(Actor);
-
-			// Following comment and logic is  from the replication flow - seems maybe relevant to do the same for interest?
-			// Skip if dormant on this connection. We want this to always be the first/quickest check.
-			if (ConnectionActorInfo.bDormantOnConnection)
+			if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 			{
 				continue;
 			}
 
+			FConnectionReplicationActorInfo& ConnectionActorInfo = ConnectionActorInfoMap.FindOrAdd(Actor);
+
+			// Following comment and logic is from the replication flow - seems maybe relevant to do the same for interest?
 			// Always skip if we've already processed this Actor (because it was in multiple replication lists)
 			if (ConnectionActorInfo.LastInterestUpdateFrameName == FrameNum)
 			{

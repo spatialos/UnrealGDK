@@ -589,11 +589,6 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 
 	for (const AActor* Actor : ClientInterestedActors)
 	{
-		if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
-		{
-			continue;
-		}
-
 		const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 
 		// We should be assigning entity IDs to replicated Actors as soon as they are created.
