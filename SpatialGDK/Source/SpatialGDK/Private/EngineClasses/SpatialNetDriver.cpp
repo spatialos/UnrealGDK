@@ -2273,6 +2273,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (Connection->HasDisconnected())
 		{
 			Receiver->OnDisconnect(Connection->GetConnectionStatus(), Connection->GetDisconnectReason());
+			Connection = nullptr; // prevent worker from processing stale command retries - probably want a proper shutdown process here
 			return;
 		}
 
