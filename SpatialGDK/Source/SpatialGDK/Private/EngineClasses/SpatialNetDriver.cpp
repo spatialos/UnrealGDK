@@ -10,6 +10,7 @@
 #include "EngineGlobals.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
+#include "Misc/EngineVersionComparison.h"
 #include "Net/DataReplication.h"
 #include "SocketSubsystem.h"
 #include "UObject/UObjectIterator.h"
@@ -923,7 +924,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 		}
 	}
 
-#if ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION < 27
+#if UE_VERSION_OLDER_THAN(4, 27, 0)
 	FGuid NextMapGuid = UEngine::GetPackageGuid(FName(*NextMap), World->IsPlayInEditor());
 #endif
 
@@ -937,7 +938,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 
 	// Notify clients we're switching level and give them time to receive.
 	FString URLMod = NewURL;
-#if ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION < 27
+#if UE_VERSION_OLDER_THAN(4, 27, 0)
 	APlayerController* LocalPlayer = GameMode->ProcessClientTravel(URLMod, NextMapGuid, bSeamless, bAbsolute);
 #else
 	APlayerController* LocalPlayer = GameMode->ProcessClientTravel(URLMod, bSeamless, bAbsolute);

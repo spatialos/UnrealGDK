@@ -4,6 +4,7 @@
 
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
+#include "Misc/EngineVersionComparison.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
@@ -79,7 +80,7 @@ uint32 GenerateChecksum(GDK_PROPERTY(Property) * Property, uint32 ParentChecksum
 	Checksum = FCrc::StrCrc32(*Property->GetCPPType(nullptr, 0).ToLower(), Checksum); // Evolve by property type
 	Checksum = FCrc::MemCrc32(&StaticArrayIndex, sizeof(StaticArrayIndex),
 							  Checksum); // Evolve by StaticArrayIndex (to make all unrolled static array elements unique)
-#if ENGINE_MINOR_VERSION >= 27 || ENGINE_MAJOR_VERSION == 5
+#if UE_VERSION_NEWER_THAN(4, 27, -1)
 	// Evolve by enum max value bits required
 	if (const FEnumProperty* EnumProp = CastField<FEnumProperty>(Property))
 	{
