@@ -152,11 +152,15 @@ struct ConfigureConnection
 #endif
 		}
 
-		WorkerFowControlParameters.downstream_window_size_bytes = Config.DownstreamWindowSizeBytes;
-		WorkerFowControlParameters.upstream_window_size_bytes = Config.UpstreamWindowSizeBytes;
+		WorkerFlowControlParameters.downstream_window_size_bytes = Config.DownstreamWindowSizeBytes;
+		WorkerFlowControlParameters.upstream_window_size_bytes = Config.UpstreamWindowSizeBytes;
 
-		Params.network.kcp.flow_control = &WorkerFowControlParameters; // Both tcp and udp use same window concepts.
-		Params.network.tcp.flow_control = &WorkerFowControlParameters;
+		UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Downstream window size: %d Upstream window size: %d"), WorkerFlowControlParameters.downstream_window_size_bytes, WorkerFlowControlParameters.upstream_window_size_bytes);
+
+		Params.built_in_metrics_report_period_millis = 1000;
+
+		Params.network.kcp.flow_control = &WorkerFlowControlParameters; // Both tcp and udp use same window concepts.
+		Params.network.tcp.flow_control = &WorkerFlowControlParameters;
 	}
 
 	FString FormatWorkerSDKLogFilePrefix() const
@@ -179,7 +183,7 @@ struct ConfigureConnection
 	Worker_CompressionParameters EnableCompressionParams{};
 	Worker_LogsinkParameters Logsink{};
 	Worker_NameVersionPair UnrealGDKVersionPair{};
-	Worker_FlowControlParameters WorkerFowControlParameters{};
+	Worker_FlowControlParameters WorkerFlowControlParameters{};
 	Worker_HeartbeatParameters HeartbeatParams{};
 };
 
