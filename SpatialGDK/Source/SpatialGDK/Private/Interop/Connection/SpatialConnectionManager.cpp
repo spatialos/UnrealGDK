@@ -155,9 +155,8 @@ struct ConfigureConnection
 		WorkerFlowControlParameters.downstream_window_size_bytes = Config.DownstreamWindowSizeBytes;
 		WorkerFlowControlParameters.upstream_window_size_bytes = Config.UpstreamWindowSizeBytes;
 
-		UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Downstream window size: %d Upstream window size: %d"), WorkerFlowControlParameters.downstream_window_size_bytes, WorkerFlowControlParameters.upstream_window_size_bytes);
-
-		Params.built_in_metrics_report_period_millis = 1000;
+		UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Downstream window size: %d Upstream window size: %d"),
+			   WorkerFlowControlParameters.downstream_window_size_bytes, WorkerFlowControlParameters.upstream_window_size_bytes);
 
 		Params.network.kcp.flow_control = &WorkerFlowControlParameters; // Both tcp and udp use same window concepts.
 		Params.network.tcp.flow_control = &WorkerFlowControlParameters;
