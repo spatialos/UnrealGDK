@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking changes:
 - SpatialSwitchHasAuthority now respects World's version of IsServer which assumes server status when NetDriver is null.
+- We no longer support Unreal Engine version 4.25. We recommend that you upgrade to the newest version 4.27 to continue receiving updates.
 
 ### Features:
 - Add support DOREPLIFETIME_ACTIVE_OVERRIDE for replication conditions, with the exception of TArray's this should now work the same as in native.
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pre and PostNetReceive are now called on an object a maximum of a single time in a given tick. This matches native much closer.
 - The GDK has been upgraded to use version 15.3.1 of SpatialOS.
 - Add the ability for tests to run without being placed within a standalone map. See `ANoneCrossServerPossessionTest` for an example of this.
+- Unreal Engine version 4.27.0 is supported!
 
 ### Bug fixes:
 - Fix `A functional test is already running error` that would sometimes occur when re-running multi-server functional tests.
