@@ -3,6 +3,7 @@
 #include "CrossServerMultiPossessionTest.h"
 
 #include "Containers/Array.h"
+#include "CrossServerPossessionGameMode.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerController.h"
@@ -11,6 +12,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
 #include "TestPossessionPlayerController.h"
+#include "TestWorkerSettings.h"
 #include "Utils/SpatialStatics.h"
 
 /**
@@ -34,10 +36,16 @@
  */
 
 ACrossServerMultiPossessionTest::ACrossServerMultiPossessionTest()
-	: Super()
+	: Super(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, 3)
 {
 	Author = "Ken.Yu";
 	Description = TEXT("Test Cross-Server Multi Controllers Possess 1 Pawn");
+}
+
+void ACrossServerMultiPossessionTest::CreateCustomContentForMap()
+{
+	GetWorldSettingsForMap()->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
+	GetWorldSettingsForMap()->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
 }
 
 void ACrossServerMultiPossessionTest::PrepareTest()

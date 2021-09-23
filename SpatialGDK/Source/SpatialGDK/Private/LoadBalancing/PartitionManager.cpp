@@ -327,6 +327,18 @@ struct FPartitionManager::Impl
 					}
 				}
 			}
+
+			if (PartitionState.bInterestDirty)
+			{
+				if (Connection.GetView().Find(PartitionState.Id))
+				{
+					Worker_ComponentUpdate WorkerUpdate =
+						InterestF->CreatePartitionInterest(PartitionState.LBConstraint, true).CreateInterestUpdate();
+					ComponentUpdate Update(OwningComponentUpdatePtr(WorkerUpdate.schema_type), WorkerUpdate.component_id);
+					Connection.SendComponentUpdate(PartitionState.Id, MoveTemp(Update));
+					PartitionState.bInterestDirty = false;
+				}
+			}
 		}
 	}
 
@@ -353,7 +365,7 @@ struct FPartitionManager::Impl
 		Components.Add(Persistence().CreateComponentData());
 		Components.Add(Metadata(PartitionName).CreateComponentData());
 
-		Components.Add(InterestF->CreatePartitionInterest(LBConstraint, false).CreateComponentData());
+		Components.Add(InterestF->CreatePartitionInterest(LBConstraint, true).CreateComponentData());
 
 		Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_SHADOW_COMPONENT_ID));

@@ -24,8 +24,20 @@ UGeneratedTestMap::UGeneratedTestMap()
 	BasicShapeMaterial = MaterialAsset.Object;
 }
 
-UGeneratedTestMap::UGeneratedTestMap(EMapCategory InMapCategory, FString InMapName)
+UGeneratedTestMap::UGeneratedTestMap(const EMapCategory InMapCategory, const FString& InMapName)
 	: UGeneratedTestMap()
+{
+	Init(InMapCategory, InMapName);
+}
+
+/*static*/ UGeneratedTestMap* UGeneratedTestMap::MakeGeneratedTestMap(const EMapCategory InMapCategory, const FString& InMapName)
+{
+	UGeneratedTestMap* GenTestMap = NewObject<UGeneratedTestMap>();
+	GenTestMap->Init(InMapCategory, InMapName);
+	return GenTestMap;
+}
+
+void UGeneratedTestMap::Init(const EMapCategory InMapCategory, const FString& InMapName)
 {
 	MapCategory = InMapCategory;
 	MapName = InMapName;
@@ -37,13 +49,12 @@ AActor* UGeneratedTestMap::AddActorToLevel(ULevel* Level, UClass* Class, const F
 	return GEditor->AddActor(Level, Class, Transform);
 }
 
-bool UGeneratedTestMap::GenerateMap()
+void UGeneratedTestMap::GenerateMap()
 {
 	checkf(bIsValidForGeneration, TEXT("This test map object is not valid for map generation, please use the UGeneratedTestMap constructor "
 									   "with arguments when deriving from the base UGeneratedTestMap."));
 	GenerateBaseMap();
 	CreateCustomContentForMap();
-	return SaveMap();
 }
 
 bool UGeneratedTestMap::GenerateCustomConfig()
@@ -143,4 +154,9 @@ FString UGeneratedTestMap::GetPathToSaveTheMap()
 	}
 
 	return GetGeneratedMapFolder() / DirName / MapName + FPackageName::GetMapPackageExtension();
+}
+
+UWorld* UGeneratedTestMap::GetWorld() const
+{
+	return World;
 }

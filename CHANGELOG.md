@@ -17,7 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add support DOREPLIFETIME_ACTIVE_OVERRIDE for replication conditions, with the exception of TArray's this should now work the same as in native.
 - Added a debug mode to detect non-auth modification of data, enable/disable with the SpatialGDKSettings flag bSpatialAuthorityDebugger (disabled by default).
 - Pre and PostNetReceive are now called on an object a maximum of a single time in a given tick. This matches native much closer.
-- The GDK has been upgraded to use version 15.2.0 of SpatialOS.
+- The GDK has been upgraded to use version 15.3.1 of SpatialOS.
+- Add the ability for tests to run without being placed within a standalone map. See `ANoneCrossServerPossessionTest` for an example of this.
 
 ### Bug fixes:
 - Fix `A functional test is already running error` that would sometimes occur when re-running multi-server functional tests.
@@ -28,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed Actor Dormancy issue, we now correctly update if we set an actor awake and update properties on it on the same tick.
 - Fixed IsActorGroupOwnerForClass logging an error if NetDriver was not ready.
 - Fixed PlayerControllers incorrectly being deleted when Actor is teleported out of owning Server's interest range.
+- NCD and sublevel schema generation won't invalidate schema determinism.
 
 ### Internal:
 - Modified startup flow to only create ActorSystem, RPCService and some others after startup has otherwise finished; removed initial op reordering.

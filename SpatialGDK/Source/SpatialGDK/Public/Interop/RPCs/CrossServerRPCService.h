@@ -38,7 +38,8 @@ class SPATIALGDK_API CrossServerRPCService
 {
 public:
 	CrossServerRPCService(const ActorCanExtractRPCDelegate InCanExtractRPCDelegate, const ExtractRPCDelegate InExtractRPCCallback,
-						  const FSubView& InActorSubView, const FSubView& InWorkerEntitySubView, FRPCStore& InRPCStore);
+						  const DoesEntityIdHaveValidObjectDelegate InDoesEntityIdHaveValidObjectDelegate, const FSubView& InActorSubView,
+						  const FSubView& InWorkerEntitySubView, FRPCStore& InRPCStore);
 
 	void AdvanceView();
 	void ProcessChanges();
@@ -77,6 +78,7 @@ private:
 
 	ActorCanExtractRPCDelegate CanExtractRPCDelegate;
 	ExtractRPCDelegate ExtractRPCCallback;
+	DoesEntityIdHaveValidObjectDelegate DoesEntityIdHaveValidObjectCallback;
 	const FSubView& ActorSubView;
 	const FSubView& WorkerEntitySubView;
 
