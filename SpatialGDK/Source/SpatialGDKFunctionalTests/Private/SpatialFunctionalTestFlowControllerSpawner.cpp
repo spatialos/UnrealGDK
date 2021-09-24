@@ -88,29 +88,7 @@ uint8 SpatialFunctionalTestFlowControllerSpawner::OwningServerIntanceId(UWorld* 
 	}
 	else
 	{
-		if (USpatialStatics::IsStrategyWorkerEnabled())
-		{
-			UGameInstance* GameInstance = World->GetGameInstance();
-			ULegacyPartitionSystem* PartitionSystem = GameInstance->GetSubsystem<ULegacyPartitionSystem>();
-			if (ensureMsgf(PartitionSystem != nullptr,
-						   TEXT("Expected the legacy partition system as a way to retrieve the VirtualWorkerId")))
-			{
-				for (const auto& Entry : PartitionSystem->GetPartitions())
-				{
-					if (Entry.Value.bDelegated)
-					{
-						return PartitionSystem->GetVirtualWorkerIds().FindChecked(Entry.Key).Virtual_worker_id;
-					}
-				}
-
-				ensureMsgf(false, TEXT("Could not find the delegated partition"));
-			}
-			return 0;
-		}
-		else
-		{
-			return static_cast<uint8>(SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId());
-		}
+		return static_cast<uint8>(SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId());
 	}
 }
 

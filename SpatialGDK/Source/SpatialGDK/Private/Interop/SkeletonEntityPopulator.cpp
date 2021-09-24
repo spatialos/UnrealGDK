@@ -9,6 +9,7 @@
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/ViewCoordinator.h"
 #include "Utils/ComponentFactory.h"
+#include "Utils/SpatialActorUtils.h"
 
 namespace SpatialGDK
 {
@@ -169,6 +170,12 @@ void FSkeletonEntityPopulator::ManifestProcessing::ConsiderEntityPopulation(cons
 
 void FSkeletonEntityPopulator::ManifestProcessing::PopulateEntity(Worker_EntityId SkeletonEntityId, AActor& SkeletonEntityStartupActor)
 {
+	if (ShouldActorHaveVisibleComponent(&SkeletonEntityStartupActor))
+	{
+		ComponentData VisibilityData(SpatialConstants::VISIBLE_COMPONENT_ID);
+		NetDriver->Connection->GetCoordinator().SendAddComponent(SkeletonEntityId, MoveTemp(VisibilityData));
+	}
+
 	NetDriver->PackageMap->ResolveEntityActorAndSubobjects(SkeletonEntityId, &SkeletonEntityStartupActor);
 
 	SkeletonEntityStartupActor.Role = ROLE_Authority;

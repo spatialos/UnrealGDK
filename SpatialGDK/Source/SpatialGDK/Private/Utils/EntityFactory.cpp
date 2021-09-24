@@ -226,9 +226,19 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 
 void EntityFactory::WriteRPCComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel& Channel)
 {
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+
 	checkf(RPCService != nullptr, TEXT("Attempting to create an entity with a null RPCService."));
 	ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(Channel.GetEntityId()));
 	ComponentDatas.Append(NetDriver->RPCs->GetRPCComponentsOnEntityCreation(Channel.GetEntityId()));
+
+	if (SpatialSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+	{
+		// Addition of CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID is handled in GetRPCComponentsOnEntityCreation
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID));
+	}
 }
 
 void EntityFactory::CheckStablyNamedActorPath(const TArray<FWorkerComponentData>& ComponentDatas, const AActor* Actor,
@@ -327,13 +337,6 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 	Channel->SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor));
 
-	if (SpatialSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
-	{
-		// Addition of CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID is handled in GetRPCComponentsOnEntityCreation
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID));
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID));
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID));
-	}
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
 
 	// Only add subobjects which are replicating
@@ -414,6 +417,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
 {
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	TArray<FWorkerComponentData> ComponentDatas = CreateMinimalEntityComponents(Actor);
 
 	// LB components also contain authority delegation, giving this worker ServerAuth.
@@ -422,6 +426,14 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 	// Empty RPC components.
 	Algo::Transform(SpatialRPCService::GetRPCComponents(), ComponentDatas, &ComponentFactory::CreateEmptyComponentData);
 	Algo::Transform(FSpatialNetDriverRPC::GetRPCComponentIds(), ComponentDatas, &ComponentFactory::CreateEmptyComponentData);
+
+	if (SpatialSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+	{
+		// Addition of CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID is handled in GetRPCComponentsOnEntityCreation
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID));
+	}
 
 	// Skeleton entity markers.
 	ComponentDatas.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID));

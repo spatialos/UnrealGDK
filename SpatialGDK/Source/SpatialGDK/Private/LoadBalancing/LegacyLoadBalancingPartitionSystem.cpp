@@ -80,6 +80,17 @@ void ULegacyPartitionSystem::Tick()
 		{
 			PartitionInfo& Info = Partitions.FindChecked(Event.PartitionId);
 			Info.bDelegated = true;
+
+			UWorld* World = GetWorld();
+			USpatialNetDriver* NetDriver = World ? Cast<USpatialNetDriver>(World->GetNetDriver()) : nullptr;
+			const SpatialGDK::LegacyLB_VirtualWorkerAssignment* VirtualWorkerIdData = GetVirtualWorkerIds().Find(Partition);
+			if (ensure(NetDriver != nullptr && World != nullptr && NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId() == 0))
+			{
+				// Assign the worker ID for compatibility purposes. A couple of tests rely on this begin valued
+				// They should be migrated to directly interrogate the partition system instead.
+				NetDriver->LoadBalanceStrategy->SetLocalVirtualWorkerId(VirtualWorkerIdData->Virtual_worker_id);
+			}
+
 			UE_LOG(LogSpatialLegacyLoadBalancing, Log, TEXT("Partition %llu delegated to the local worker"), Partition);
 		}
 		if (Event.Event == SpatialGDK::FPartitionEvent::DelegationLost)

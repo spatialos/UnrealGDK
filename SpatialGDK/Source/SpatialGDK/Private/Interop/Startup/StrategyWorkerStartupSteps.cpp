@@ -115,4 +115,5 @@ bool FCreateStagingPartition::TryFinish()
 	Coordinator.SendComponentUpdate(*State->WorkerEntityId, MoveTemp(MarkAsReady));
 	return true;
 }
+
 } // namespace SpatialGDK
