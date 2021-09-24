@@ -4,6 +4,7 @@
 
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
+#include "Misc/EngineVersionComparison.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
@@ -79,6 +80,21 @@ uint32 GenerateChecksum(GDK_PROPERTY(Property) * Property, uint32 ParentChecksum
 	Checksum = FCrc::StrCrc32(*Property->GetCPPType(nullptr, 0).ToLower(), Checksum); // Evolve by property type
 	Checksum = FCrc::MemCrc32(&StaticArrayIndex, sizeof(StaticArrayIndex),
 							  Checksum); // Evolve by StaticArrayIndex (to make all unrolled static array elements unique)
+#if UE_VERSION_NEWER_THAN(4, 27, -1)
+	// Evolve by enum max value bits required
+	if (const FEnumProperty* EnumProp = CastField<FEnumProperty>(Property))
+	{
+		const uint64 MaxBits = EnumProp->GetMaxNetSerializeBits();
+
+		Checksum = FCrc::MemCrc32(&MaxBits, sizeof(MaxBits), Checksum);
+	}
+	else if (const FByteProperty* ByteProp = CastField<FByteProperty>(Property))
+	{
+		const uint64 MaxBits = ByteProp->GetMaxNetSerializeBits();
+
+		Checksum = FCrc::MemCrc32(&MaxBits, sizeof(MaxBits), Checksum);
+	}
+#endif
 	return Checksum;
 }
 
@@ -398,7 +414,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		RepDataNode->Condition = Parent.Condition;
 		RepDataNode->RepNotifyCondition = Parent.RepNotifyCondition;
 		RepDataNode->ArrayIndex = PropertyNode->StaticArrayIndex;
-#if ENGINE_MINOR_VERSION >= 25
+
 		if (Class->IsChildOf(AActor::StaticClass()))
 		{
 			// Uses the same pattern as ComponentReader::ApplySchemaObject and ReceivePropertyHelper
@@ -413,13 +429,6 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				RepDataNode->RoleSwapHandle = static_cast<int32>(RepLayout.Cmds[SwappedCmdIndex].RelativeHandle);
 			}
 		}
-#else
-		if (Parent.RoleSwapIndex != -1)
-		{
-			const int32 SwappedCmdIndex = RepLayout.Parents[Parent.RoleSwapIndex].CmdStart;
-			RepDataNode->RoleSwapHandle = static_cast<int32>(RepLayout.Cmds[SwappedCmdIndex].RelativeHandle);
-		}
-#endif
 		else
 		{
 			RepDataNode->RoleSwapHandle = -1;
