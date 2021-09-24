@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "SpatialCommonTypes.h"
+#include "Templates/Function.h"
 
 using FSystemEntityCommandDelegate = TFunction<void(const Worker_CommandResponseOp&)>;
 

@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 
+#include "LoadBalancing/ActorSetSystem.h"
 #include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/LoadBalancingTypes.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/CrossServerEndpoint.h"
 #include "Schema/NetOwningClientWorker.h"
@@ -27,7 +29,7 @@ class FPartitionManager;
 class FSpatialStrategySystem
 {
 public:
-	FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionMgr, const FSubView& InLBView,
+	FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionMgr, const FSubView& InLBView, const FSubView& InServerWorkerView,
 						   TUniquePtr<FLoadBalancingStrategy> Strategy);
 
 	~FSpatialStrategySystem();
@@ -44,8 +46,11 @@ private:
 	// +++ Components watched to implement the strategy +++
 	TLBDataStorage<AuthorityIntentACK> AuthACKView;
 	TLBDataStorage<NetOwningClientWorker> NetOwningClientView;
+	TLBDataStorage<ActorSetMember> SetMemberView;
+	FActorSetSystem ActorSetSystem;
 	FLBDataCollection DataStorages;
 	FLBDataCollection UserDataStorages;
+	FLBDataCollection ServerWorkerDataStorages;
 	TSet<Worker_ComponentId> UpdatesToConsider;
 	// --- Components watched to implement the strategy ---
 
@@ -58,6 +63,7 @@ private:
 	TUniquePtr<FLoadBalancingStrategy> Strategy;
 	TSet<Worker_EntityId_Key> MigratingEntities;
 	TMap<Worker_EntityId_Key, FPartitionHandle> PendingMigrations;
+	TMap<Worker_EntityId_Key, FPartitionHandle> EntityAssignment;
 	// --- Migration data ---
 
 	void UpdateStrategySystemInterest(ISpatialOSWorker& Connection);

@@ -18,7 +18,7 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 
 	// Step 1 - Check actor exists and that it's NetDormancy and TestIntProp are correct on the server.
 	AddStep(TEXT("ServerCheckkDormancyAndRepProperty"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		RequireDormancyActorCount(1);
+		RequireEqual_Int(CountActors<ADormancyTestActor>(GetWorld()), 1, TEXT("Number of TestDormancyActors in world"));
 		RequireDormancyTestState(DORM_Initial, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 		FinishStep();
 	});
@@ -27,7 +27,7 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 	AddStep(
 		TEXT("ClientRequireDormancyTestState"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireDormancyActorCount(1);
+			RequireEqual_Int(CountActors<ADormancyTestActor>(GetWorld()), 1, TEXT("Number of TestDormancyActors in world"));
 			RequireDormancyTestState(DORM_Initial, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 			FinishStep();
 		},
@@ -35,9 +35,8 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 
 	// Step 3 - Modify TestIntProp on server.
 	AddStep(TEXT("ServerModifyRepPropertyValue"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
+		for (ADormancyTestActor* DormancyTestActor : TActorRange<ADormancyTestActor>(GetWorld()))
 		{
-			ADormancyTestActor* DormancyTestActor = *Iter;
 			DormancyTestActor->TestIntProp = 1;
 		}
 		FinishStep();
@@ -69,9 +68,8 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 
 	// Step 6 - Modify call FlushNetDormancy.
 	AddStep(TEXT("ServerModifyRepPropertyValueAndFlush"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
+		for (ADormancyTestActor* DormancyTestActor : TActorRange<ADormancyTestActor>(GetWorld()))
 		{
-			ADormancyTestActor* DormancyTestActor = *Iter;
 			DormancyTestActor->TestIntProp = 1;
 			DormancyTestActor->FlushNetDormancy();
 		}
@@ -97,7 +95,7 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 	AddStep(
 		TEXT("ClientCheckActorDestroyed"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireDormancyActorCount(0);
+			RequireEqual_Int(CountActors<ADormancyTestActor>(GetWorld()), 0, TEXT("Number of TestDormancyActors in world"));
 			FinishStep();
 		},
 		5.0f);

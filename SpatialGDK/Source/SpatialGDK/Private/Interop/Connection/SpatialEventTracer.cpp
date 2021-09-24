@@ -20,36 +20,34 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 		return;
 	}
 
-	uint32_t ItemSize = Trace_GetSerializedItemSize(Item);
 	// Depends whether we are using rotating logs or single-log mode (where we track max size).
 	const bool bTrackFileSize = EventTracer->MaxFileSize != 0;
-	if (!bTrackFileSize || (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize))
+	if (!bTrackFileSize || (EventTracer->BytesWrittenToStream < EventTracer->MaxFileSize))
 	{
-		if (bTrackFileSize)
-		{
-			EventTracer->BytesWrittenToStream += ItemSize;
-		}
+		int64_t BytesWritten = Trace_SerializeItemToStream(Stream, Item);
 
-		int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
-		if (Code == WORKER_RESULT_FAILURE)
+		if (BytesWritten == WORKER_RESULT_FAILURE)
 		{
-			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s)"), Code,
+			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize with error code %lld (%s)"), BytesWritten,
 				   ANSI_TO_TCHAR(Trace_GetLastError()));
+		}
+		else if (BytesWritten == 0)
+		{
+			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize due to file stream having insufficient capacity."));
+		}
+		else if (bTrackFileSize)
+		{
+			EventTracer->BytesWrittenToStream += BytesWritten;
 		}
 
 		if (FPlatformAtomics::AtomicRead_Relaxed(&EventTracer->FlushOnWriteAtomic))
 		{
-			if (Io_Stream_Flush(Stream) == -1)
+			if (Io_Stream_Flush(Stream) == WORKER_RESULT_FAILURE)
 			{
-				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to flush stream with error code %d (%s)"), Code,
+				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to flush stream with error code %lld (%s)"), BytesWritten,
 					   ANSI_TO_TCHAR(Io_Stream_GetLastError(Stream)));
 			}
 		}
-	}
-	else
-	{
-		// Went over max capacity so stop writing here.
-		EventTracer->BytesWrittenToStream = EventTracer->MaxFileSize;
 	}
 }
 
@@ -339,6 +337,11 @@ FSpatialGDKSpanId SpatialEventTracer::PopLatentPropertyUpdateSpanId(const TWeakO
 	ObjectSpanIdStacks.Remove(Object);
 
 	return TempSpanId;
+}
+
+bool SpatialEventTracer::IsObjectStackEmpty() const
+{
+	return ObjectSpanIdStacks.Num() == 0;
 }
 
 void SpatialEventTracer::SetFlushOnWrite(bool bValue)

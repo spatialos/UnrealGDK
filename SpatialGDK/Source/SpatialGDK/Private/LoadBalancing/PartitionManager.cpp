@@ -22,6 +22,9 @@ struct FPartitionInternalState
 {
 	Worker_PartitionId Id = 0;
 	QueryConstraint LBConstraint;
+	TSet<Worker_ComponentId> CurrentMetadataComponents;
+	TArray<ComponentData> PendingMetadataCreation;
+	TArray<ComponentUpdate> PendingMetadataUpdates;
 
 	TOptional<Worker_RequestId> CreationRequest;
 	TOptional<Worker_RequestId> AssignmentRequest;
@@ -66,9 +69,8 @@ CommandRequest CreateClaimPartitionRequest(Worker_PartitionId Partition)
 
 struct FPartitionManager::Impl
 {
-	Impl(ViewCoordinator& Coordinator, TUniquePtr<InterestFactory>&& InInterestF)
-		: WorkerView(Coordinator.CreateSubView(SpatialConstants::SERVER_WORKER_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
-											   SpatialGDK::FSubView::NoDispatcherCallbacks))
+	Impl(const FSubView& InServerWorkerView, ViewCoordinator& Coordinator, TUniquePtr<InterestFactory>&& InInterestF)
+		: WorkerView(InServerWorkerView)
 		, SystemWorkerView(Coordinator.CreateSubView(SpatialConstants::WORKER_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
 													 SpatialGDK::FSubView::NoDispatcherCallbacks))
 		, PartitionView(Coordinator.CreateSubView(SpatialConstants::PARTITION_ACK_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
@@ -248,6 +250,13 @@ struct FPartitionManager::Impl
 					TArray<ComponentData> Components =
 						CreatePartitionEntityComponents(PartitionState.DisplayName, PartitionState.Id, PartitionState.LBConstraint);
 
+					for (auto& InitialComponent : PartitionState.PendingMetadataCreation)
+					{
+						PartitionState.CurrentMetadataComponents.Add(InitialComponent.GetComponentId());
+						Components.Add(MoveTemp(InitialComponent));
+					}
+					PartitionState.PendingMetadataCreation.Empty();
+
 					Worker_EntityId PartitionEntity = PartitionState.Id;
 					const Worker_RequestId RequestId =
 						Connection.SendCreateEntityRequest(MoveTemp(Components), PartitionEntity, SpatialGDK::RETRY_UNTIL_COMPLETE);
@@ -274,6 +283,19 @@ struct FPartitionManager::Impl
 				}
 				continue;
 			}
+
+			for (auto& NewComponent : PartitionState.PendingMetadataCreation)
+			{
+				PartitionState.CurrentMetadataComponents.Add(NewComponent.GetComponentId());
+				Connection.SendAddComponent(PartitionState.Id, MoveTemp(NewComponent));
+			}
+			PartitionState.PendingMetadataCreation.Empty();
+
+			for (auto& Update : PartitionState.PendingMetadataUpdates)
+			{
+				Connection.SendComponentUpdate(PartitionState.Id, MoveTemp(Update));
+			}
+			PartitionState.PendingMetadataUpdates.Empty();
 
 			if (PartitionState.UserAssignment != PartitionState.CurrentAssignment)
 			{
@@ -304,7 +326,18 @@ struct FPartitionManager::Impl
 							});
 					}
 				}
-				continue;
+			}
+
+			if (PartitionState.bInterestDirty)
+			{
+				if (Connection.GetView().Find(PartitionState.Id))
+				{
+					Worker_ComponentUpdate WorkerUpdate =
+						InterestF->CreatePartitionInterest(PartitionState.LBConstraint, true).CreateInterestUpdate();
+					ComponentUpdate Update(OwningComponentUpdatePtr(WorkerUpdate.schema_type), WorkerUpdate.component_id);
+					Connection.SendComponentUpdate(PartitionState.Id, MoveTemp(Update));
+					PartitionState.bInterestDirty = false;
+				}
 			}
 		}
 	}
@@ -332,7 +365,7 @@ struct FPartitionManager::Impl
 		Components.Add(Persistence().CreateComponentData());
 		Components.Add(Metadata(PartitionName).CreateComponentData());
 
-		Components.Add(InterestF->CreatePartitionInterest(LBConstraint, false).CreateComponentData());
+		Components.Add(InterestF->CreatePartitionInterest(LBConstraint, true).CreateComponentData());
 
 		Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_SHADOW_COMPONENT_ID));
@@ -386,9 +419,9 @@ struct FPartitionManager::Impl
 
 FPartitionManager::~FPartitionManager() = default;
 
-FPartitionManager::FPartitionManager(Worker_EntityId InStrategyWorkerEntityId, ViewCoordinator& Coordinator,
-									 TUniquePtr<InterestFactory>&& InterestF)
-	: m_Impl(MakeUnique<Impl>(Coordinator, MoveTemp(InterestF)))
+FPartitionManager::FPartitionManager(const FSubView& InServerWorkerView, Worker_EntityId InStrategyWorkerEntityId,
+									 ViewCoordinator& Coordinator, TUniquePtr<InterestFactory>&& InterestF)
+	: m_Impl(MakeUnique<Impl>(InServerWorkerView, Coordinator, MoveTemp(InterestF)))
 {
 	m_Impl->StrategyWorkerEntityId = InStrategyWorkerEntityId;
 }
@@ -427,13 +460,15 @@ TOptional<Worker_PartitionId> FPartitionManager::GetPartitionId(FPartitionHandle
 	return PartitionState.Id;
 }
 
-FPartitionHandle FPartitionManager::CreatePartition(FString DisplayName, void* UserData, const QueryConstraint& Interest)
+FPartitionHandle FPartitionManager::CreatePartition(FString DisplayName, void* UserData, const QueryConstraint& Interest,
+													TArray<ComponentData> MetaData)
 {
 	FPartitionHandle NewPartition = MakeShared<FPartitionDesc>();
 	NewPartition->State = MakeUnique<FPartitionInternalState>();
 	NewPartition->State->UserData = UserData;
 	NewPartition->State->LBConstraint = Interest;
 	NewPartition->State->DisplayName = MoveTemp(DisplayName);
+	NewPartition->State->PendingMetadataCreation = MoveTemp(MetaData);
 
 	m_Impl->Partitions.Add(NewPartition);
 
@@ -462,13 +497,33 @@ void FPartitionManager::AssignPartitionTo(FPartitionHandle Partition, FLBWorkerH
 	PartitionState.UserAssignment = Worker;
 }
 
-void FPartitionManager::SetPartitionMetadata(FPartitionHandle Partition)
+void FPartitionManager::UpdatePartitionMetadata(FPartitionHandle Partition, TArray<ComponentUpdate> Updates)
 {
 	if (!m_Impl->Partitions.Contains(Partition))
 	{
 		return;
 	}
-	// Later
+
+	FPartitionInternalState& PartitionState = *Partition->State;
+	for (auto& Update : Updates)
+	{
+		// Disallow adding new components on the fly for now.
+		if (ensureAlways(PartitionState.CurrentMetadataComponents.Contains(Update.GetComponentId())))
+		{
+			ComponentUpdate* PendingUpdate =
+				PartitionState.PendingMetadataUpdates.FindByPredicate([&Update](const ComponentUpdate& QueuedUpdate) {
+					return QueuedUpdate.GetComponentId() == Update.GetComponentId();
+				});
+			if (PendingUpdate != nullptr)
+			{
+				PendingUpdate->Merge(MoveTemp(Update));
+			}
+			else
+			{
+				PartitionState.PendingMetadataUpdates.Add(MoveTemp(Update));
+			}
+		}
+	}
 }
 
 void FPartitionManager::AdvanceView(ISpatialOSWorker& Connection)
@@ -503,6 +558,19 @@ Worker_EntityId FPartitionManager::GetServerWorkerEntityIdForWorker(FLBWorkerHan
 	}
 
 	return Worker->State->ServerWorkerId;
+}
+
+FLBWorkerHandle FPartitionManager::GetWorkerForServerWorkerEntity(Worker_EntityId EntityId)
+{
+	for (const auto& Worker : m_Impl->ConnectedWorkers)
+	{
+		if (Worker->State->ServerWorkerId == EntityId)
+		{
+			return Worker;
+		}
+	}
+
+	return FLBWorkerHandle();
 }
 
 } // namespace SpatialGDK

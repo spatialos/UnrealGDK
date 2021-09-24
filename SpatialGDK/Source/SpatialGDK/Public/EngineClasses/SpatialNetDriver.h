@@ -50,6 +50,8 @@ class USpatialReceiver;
 class USpatialSender;
 class USpatialWorkerConnection;
 class USpatialWorkerFlags;
+class USpatialShadowActor;
+class USpatialNetDriverAuthorityDebugger;
 
 DECLARE_DELEGATE(PostWorldWipeDelegate);
 DECLARE_MULTICAST_DELEGATE(FShutdownEvent);
@@ -75,6 +77,7 @@ enum class EActorMigrationResult : uint8
 
 namespace SpatialGDK
 {
+class FSubView;
 class SpatialRoutingSystem;
 class SpatialDebuggerSystem;
 class ActorSystem;
@@ -90,6 +93,10 @@ class CrossServerRPCSender;
 class CrossServerRPCHandler;
 class FSpatialStrategySystem;
 class FSkeletonEntityCreationStartupStep;
+class FSpatialServerStartupHandler;
+class FSpatialClientStartupHandler;
+class FPartitionSystemImpl;
+class FServerWorkerSystemImpl;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -140,6 +147,8 @@ public:
 	void OnConnectionToSpatialOSSucceeded();
 	void OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
 
+	void CreateAndInitializeCoreClassesAfterStartup();
+
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
 #endif
@@ -150,11 +159,6 @@ public:
 	// Note: you should only call this after we have connected to Spatial.
 	// You can check if we connected by calling GetSpatialOS()->IsConnected()
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
-
-	// When the AcceptingPlayers/SessionID state on the GSM has changed this method will be called.
-	void ClientOnGSMQuerySuccess();
-	void RetryQueryGSM();
-	void GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op);
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
@@ -225,6 +229,8 @@ public:
 	USpatialNetDriverGameplayDebuggerContext* GameplayDebuggerCtx;
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
+	UPROPERTY()
+	USpatialNetDriverAuthorityDebugger* AuthorityDebugger;
 
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
 	TOptional<SpatialGDK::FOwnershipCompletenessHandler> OwnershipCompletenessHandler;
@@ -234,8 +240,12 @@ public:
 	FSpatialNetDriverClientRPC* ClientRPCs = nullptr;
 	FSpatialNetDriverServerRPC* ServerRPCs = nullptr;
 
+	const SpatialGDK::FSubView* LBSubView = nullptr;
+
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
 	TUniquePtr<SpatialGDK::FSpatialStrategySystem> StrategySystem;
+	TUniquePtr<SpatialGDK::FPartitionSystemImpl> PartitionSystemImpl;
+	TUniquePtr<SpatialGDK::FServerWorkerSystemImpl> ServerWorkerSystemImpl;
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialGDK::FSpatialHandoverManager> HandoverManager;
 	TUniquePtr<SpatialGDK::UnrealServerInterestFactory> InterestFactory;
@@ -243,15 +253,13 @@ public:
 
 	TUniquePtr<SpatialGDK::FSkeletonEntityCreationStartupStep> SkeletonEntityCreationStep;
 
+	TUniquePtr<SpatialGDK::FSpatialServerStartupHandler> StartupHandler;
+	TUniquePtr<SpatialGDK::FSpatialClientStartupHandler> ClientStartupHandler;
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
 	TUniquePtr<SpatialGDK::InitialOnlyFilter> InitialOnlyFilter;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
-
-	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
-	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
-	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
 
 #if !UE_BUILD_SHIPPING
 	int32 GetConsiderListSize() const { return ConsiderListSize; }
@@ -285,6 +293,15 @@ public:
 
 	FShutdownEvent OnShutdown;
 
+	uint32 ClientGetSessionId() const;
+
+	struct FPendingNetworkFailure
+	{
+		ENetworkFailure::Type FailureType;
+		FString Message;
+	};
+	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
+
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
@@ -301,19 +318,11 @@ private:
 
 	FTimerManager TimerManager;
 
-	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;
 	bool bPersistSpatialConnection;
 	bool bWaitingToSpawn;
 	bool bIsReadyToStart;
 	bool bMapLoaded;
-
-	struct FPendingNetworkFailure
-	{
-		ENetworkFailure::Type FailureType;
-		FString Message;
-	};
-	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
 	FString SnapshotToLoad;
 
 	// Client variable which stores the SessionId given to us by the server in the URL options.
@@ -326,7 +335,6 @@ private:
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
-	void CreateAndInitializeCoreClassesAfterStartup();
 
 	void CreateAndInitializeLoadBalancingClasses();
 
@@ -392,10 +400,6 @@ private:
 
 	FUnrealObjectRef GetCurrentPlayerControllerRef();
 
-	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
-	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.
-	bool ClientCanSendPlayerSpawnRequests() const;
-
 	void ProcessOwnershipChanges();
 
 	// Has a certain interval (in seconds) been passed since the previous timestamp
@@ -407,4 +411,8 @@ private:
 
 	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
+
+	// Store the last received state of the actor over the network by Entity ID so that we can check for non-auth changes.
+	UPROPERTY()
+	TMap<int64, USpatialShadowActor*> SpatialShadowActors;
 };

@@ -67,19 +67,14 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 	// Step 0 - The server spawn a TestMovementCharacter and makes Client 1 possess it.
 	AddStep(TEXT("DynamicSubobjectsTestSetup"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		ASpatialFunctionalTestFlowController* ClientOneFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-		APlayerController* PlayerController = Cast<APlayerController>(ClientOneFlowController->GetOwner());
+		APlayerController* PlayerController = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
 
-		if (AssertIsValid(PlayerController, TEXT("PlayerController should be valid")))
-		{
-			ClientOneSpawnedPawn = GetWorld()->SpawnActor<ATestMovementCharacter>(CharacterSpawnLocation, FRotator::ZeroRotator);
-			RegisterAutoDestroyActor(ClientOneSpawnedPawn);
+		ClientOneSpawnedPawn = SpawnActor<ATestMovementCharacter>(CharacterSpawnLocation);
 
-			ClientOneDefaultPawn = PlayerController->GetPawn();
-			PlayerController->Possess(ClientOneSpawnedPawn);
+		ClientOneDefaultPawn = PlayerController->GetPawn();
+		PlayerController->Possess(ClientOneSpawnedPawn);
 
-			FinishStep();
-		}
+		FinishStep();
 	});
 
 	// Step 1 - All workers check if they have one ADynamicSubObjectTestActor in the world, and set a reference to it
@@ -96,10 +91,11 @@ void ADynamicSubobjectsTest::PrepareTest()
 	AddStep(
 		TEXT("DynamicSubobjectsTestClientCheckPossesion"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-			APawn* PlayerCharacter = GetFlowPawn();
+			APawn* PlayerCharacter = GetLocalFlowPawn();
 			if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid")))
 			{
-				RequireTrue(PlayerCharacter == GetFlowPlayerController()->AcknowledgedPawn, TEXT("The client should possess the pawn."));
+				RequireTrue(PlayerCharacter == GetLocalFlowPlayerController()->AcknowledgedPawn,
+							TEXT("The client should possess the pawn."));
 				FinishStep();
 			}
 		},
@@ -155,7 +151,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckFirstMovement"), FWorkerDefinition::Client(1), nullptr, nullptr,
 			[this](float DeltaTime) {
-				APawn* PlayerCharacter = GetFlowPawn();
+				APawn* PlayerCharacter = GetLocalFlowPawn();
 
 				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should not be nullptr")))
 				{
@@ -243,7 +239,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckSecondMovement"), FWorkerDefinition::Client(1), nullptr, nullptr,
 			[this](float DeltaTime) {
-				APawn* PlayerCharacter = GetFlowPawn();
+				APawn* PlayerCharacter = GetLocalFlowPawn();
 
 				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid")))
 				{
@@ -281,14 +277,10 @@ void ADynamicSubobjectsTest::PrepareTest()
 	// Step 13 - Server Cleanup.
 	AddStep(TEXT("DynamicSubobjectsTestServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Possess the original pawn, so that the spawned character can get destroyed correctly
-		ASpatialFunctionalTestFlowController* ClientOneFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-		APlayerController* PlayerController = Cast<APlayerController>(ClientOneFlowController->GetOwner());
+		APlayerController* PlayerController = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
 
-		if (AssertIsValid(PlayerController, TEXT("PlayerController should be valid")))
-		{
-			PlayerController->Possess(ClientOneDefaultPawn);
-			FinishStep();
-		}
+		PlayerController->Possess(ClientOneDefaultPawn);
+		FinishStep();
 	});
 }
 

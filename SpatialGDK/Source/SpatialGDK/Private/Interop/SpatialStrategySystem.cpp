@@ -17,16 +17,19 @@ DEFINE_LOG_CATEGORY(LogSpatialStrategySystem);
 namespace SpatialGDK
 {
 FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionsMgr, const FSubView& InLBView,
-											   TUniquePtr<FLoadBalancingStrategy> InStrategy)
+											   const FSubView& InServerWorkerView, TUniquePtr<FLoadBalancingStrategy> InStrategy)
 	: LBView(InLBView)
 	, PartitionsMgr(MoveTemp(InPartitionsMgr))
 	, DataStorages(InLBView)
 	, UserDataStorages(InLBView)
+	, ServerWorkerDataStorages(InServerWorkerView)
 	, Strategy(MoveTemp(InStrategy))
 {
-	Strategy->Init(UserDataStorages.DataStorages);
+	FLoadBalancingSharedData SharedData(*PartitionsMgr, ActorSetSystem);
+	Strategy->Init(SharedData, UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
 	DataStorages.DataStorages.Add(&AuthACKView);
 	DataStorages.DataStorages.Add(&NetOwningClientView);
+	DataStorages.DataStorages.Add(&SetMemberView);
 
 	UpdatesToConsider = DataStorages.GetComponentsToWatch();
 	UpdatesToConsider = UpdatesToConsider.Union(UserDataStorages.GetComponentsToWatch());
@@ -55,7 +58,9 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 
 	DataStorages.Advance();
 	UserDataStorages.Advance();
+	ServerWorkerDataStorages.Advance();
 
+	TSet<Worker_EntityId_Key> RemovedEntities;
 	for (const EntityDelta& Delta : LBView.GetViewDelta().EntityDeltas)
 	{
 		switch (Delta.Type)
@@ -83,12 +88,15 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 			AuthorityIntentView.Remove(Delta.EntityId);
 			AuthorityDelegationView.Remove(Delta.EntityId);
 			PendingMigrations.Remove(Delta.EntityId);
+			RemovedEntities.Add(Delta.EntityId);
 		}
 		break;
 		default:
 			break;
 		}
 	}
+
+	ActorSetSystem.Update(SetMemberView, RemovedEntities);
 
 	Strategy->Advance(Connection);
 }
@@ -102,25 +110,33 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	}
 
 	// Manage updates to partitions
-	Strategy->TickPartitions(*PartitionsMgr);
+	Strategy->TickPartitions();
 	PartitionsMgr->Flush(Connection);
 
 	// Iterator over the data storage to collect the entities which have been modified this frame.
-	TSet<Worker_EntityId_Key> ModifiedEntities;
+	TSet<Worker_EntityId_Key> ModifiedEntities = ActorSetSystem.GetEntitiesToEvaluate();
 	for (auto& Storage : UserDataStorages.DataStorages)
 	{
 		ModifiedEntities = ModifiedEntities.Union(Storage->GetModifiedEntities());
 	}
 
-	// Ask the Strategy about the entities that need migration.
-	FMigrationContext Ctx(MigratingEntities, ModifiedEntities);
-	Strategy->CollectEntitiesToMigrate(Ctx);
-
-	// Clear the buffer of modified entities now that the strategy has been informed.
-	for (auto& Storage : UserDataStorages.DataStorages)
+	for (auto Iterator = ModifiedEntities.CreateIterator(); Iterator; ++Iterator)
 	{
-		Storage->ClearModified();
+		if (ActorSetSystem.GetSetLeader(*Iterator) != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			Iterator.RemoveCurrent();
+			continue;
+		}
+		if (DataStorages.EntitiesRemoved.Contains(*Iterator))
+		{
+			Iterator.RemoveCurrent();
+			continue;
+		}
 	}
+
+	// Ask the Strategy about the entities that need migration.
+	FMigrationContext Ctx(MigratingEntities, ModifiedEntities, DataStorages.EntitiesRemoved);
+	Strategy->CollectEntitiesToMigrate(Ctx);
 
 	// If there were pending migrations, meld them with the migration requests
 	for (auto PendingMigration : PendingMigrations)
@@ -132,17 +148,67 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	}
 	PendingMigrations.Empty();
 
+	// Filter the set considering set membership
+	for (auto Iterator = Ctx.EntitiesToMigrate.CreateIterator(); Iterator; ++Iterator)
+	{
+		Worker_EntityId EntityId = Iterator->Key;
+		if (ActorSetSystem.GetSetLeader(EntityId) != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			Iterator.RemoveCurrent();
+		}
+	}
+
+	{
+		// Augment the migrations with the set information.
+		auto MinimalMigrations = Ctx.EntitiesToMigrate;
+		for (const auto& Migration : MinimalMigrations)
+		{
+			Worker_EntityId EntityId = Migration.Key;
+			if (auto Set = ActorSetSystem.GetSet(EntityId))
+			{
+				for (auto ActorInSet : *Set)
+				{
+					Ctx.EntitiesToMigrate.Add(ActorInSet, Migration.Value);
+				}
+			}
+		}
+	}
+
+	{
+		// Attach actors that just joined a set to their leader
+		for (Worker_EntityId ToAttach : ActorSetSystem.GetEntitiesToAttach())
+		{
+			if (Ctx.EntitiesToMigrate.Contains(ToAttach))
+			{
+				continue;
+			}
+			Worker_EntityId Leader = ActorSetSystem.GetSetLeader(ToAttach);
+			if (!ensure(Leader != SpatialConstants::INVALID_ENTITY_ID))
+			{
+				continue;
+			}
+
+			FPartitionHandle* LeaderPartition = EntityAssignment.Find(Leader);
+			if (!ensureMsgf(LeaderPartition != nullptr,
+							TEXT("Leader should have been evaluated, and should be contained in EntitiesToMigrate")))
+			{
+				continue;
+			}
+			Ctx.EntitiesToMigrate.Add(ToAttach, *LeaderPartition);
+		}
+	}
+
+	for (auto DeletedEntity : Ctx.DeletedEntities)
+	{
+		EntityAssignment.Remove(DeletedEntity);
+	}
+
 	for (const auto& Migration : Ctx.EntitiesToMigrate)
 	{
 		Worker_EntityId EntityId = Migration.Key;
 
-		// Right now we do not allow changing the destination partition in flight, but that may not be a hard requirement.
-		if (!ensureAlways(!MigratingEntities.Contains(EntityId)))
-		{
-			continue;
-		}
-
 		FPartitionHandle Partition = Migration.Value;
+		EntityAssignment.Add(EntityId, Partition);
 		TOptional<Worker_PartitionId> DestPartition = PartitionsMgr->GetPartitionId(Partition);
 		AuthorityIntentV2& AuthIntent = AuthorityIntentView.FindChecked(EntityId);
 		// The destination partition is not ready to accept actors, push the migration into the pending map.
@@ -154,6 +220,10 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 		PendingMigrations.Remove(EntityId);
 		AuthIntent.PartitionId = DestPartition.GetValue();
 		AuthIntent.AssignmentCounter++;
+		if (MigratingEntities.Contains(EntityId))
+		{
+			UE_LOG(LogSpatialStrategySystem, Verbose, TEXT("In-flight modification"));
+		}
 
 		// Send an update to the current authoritative worker, to release auth.
 		ComponentUpdate Update(OwningComponentUpdatePtr(AuthIntent.CreateAuthorityIntentUpdate().schema_type),
@@ -230,6 +300,10 @@ void FSpatialStrategySystem::UpdateStrategySystemInterest(ISpatialOSWorker& Conn
 	{
 		Query ServerQuery = {};
 		ServerQuery.ResultComponentIds = { SpatialConstants::SERVER_WORKER_COMPONENT_ID };
+		for (auto& Component : ServerWorkerDataStorages.GetComponentsToWatch())
+		{
+			ServerQuery.ResultComponentIds.Add(Component);
+		}
 		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
 		InterestSet.Queries.Add(ServerQuery);
 	}

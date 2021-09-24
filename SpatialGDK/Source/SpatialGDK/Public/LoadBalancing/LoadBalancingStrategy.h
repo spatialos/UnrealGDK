@@ -17,14 +17,17 @@ class SPATIALGDK_API FLoadBalancingStrategy
 public:
 	virtual ~FLoadBalancingStrategy() = default;
 
-	virtual void Init(TArray<FLBDataStorage*>& OutLoadBalancingData) {}
+	virtual void Init(FLoadBalancingSharedData InSharedData, TArray<FLBDataStorage*>& OutLoadBalancingData,
+					  TArray<FLBDataStorage*>& OutServerWorkerData)
+	{
+	}
 
 	virtual void Advance(ISpatialOSWorker& Connection) {}
 	virtual void Flush(ISpatialOSWorker& Connection) {}
 
 	virtual void OnWorkersConnected(TArrayView<FLBWorkerHandle> ConnectedWorkers) {}
 	virtual void OnWorkersDisconnected(TArrayView<FLBWorkerHandle> DisconnectedWorkers) {}
-	virtual void TickPartitions(FPartitionManager& Partitions) {}
+	virtual void TickPartitions() {}
 	virtual void CollectEntitiesToMigrate(FMigrationContext& Ctx) {}
 };
 

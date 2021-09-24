@@ -63,7 +63,7 @@ SPATIALGDKEDITOR_API bool RefreshSchemaFiles(const FString& SchemaOutputPath, co
 
 SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& CoreSDKSchemaCopyDir);
 
-SPATIALGDKEDITOR_API bool RunSchemaCompiler(FString& SchemaJsonPath, FString SchemaInputDir = "", FString BuildDir = "");
+SPATIALGDKEDITOR_API bool RunSchemaCompiler(FString& SchemaJsonPath, FString SchemaInputDir = "", FString BuildDir = "", FString CompiledSchemaDir = "");
 
 SPATIALGDKEDITOR_API bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,
 														   TMap<uint32, uint32>& OutComponentIdToFieldIdsIndex,
@@ -81,6 +81,7 @@ SPATIALGDKEDITOR_API void WriteComponentSetBySchemaType(const USchemaDatabase* S
 														const FString& SchemaOutputPath);
 
 SPATIALGDKEDITOR_API bool CreatePartitionAuthoritySet(FString SchemaInputPath = FString(), FString SchemaOutputPath = FString());
+SPATIALGDKEDITOR_API bool CreateServerWorkerAuthoritySet(FString SchemaInputPath = FString(), FString SchemaOutputPath = FString());
 
 } // namespace Schema
 } // namespace SpatialGDKEditor

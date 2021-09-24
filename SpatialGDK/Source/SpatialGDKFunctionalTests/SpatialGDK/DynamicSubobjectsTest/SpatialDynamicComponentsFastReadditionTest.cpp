@@ -23,12 +23,8 @@ void ASpatialDynamicComponentsFastReadditionTest::PrepareTest()
 	Super::PrepareTest();
 
 	AddStep(TEXT("Spawn the test actor"), FWorkerDefinition::Server(1), nullptr, [this] {
-		ADynamicComponentsTestActor* TestActor = GetWorld()->SpawnActor<ADynamicComponentsTestActor>();
-		if (!AssertIsValid(TestActor, TEXT("Spawned test actor successfully")))
-		{
-			return;
-		}
-		RegisterAutoDestroyActor(TestActor);
+		ADynamicComponentsTestActor* TestActor = SpawnActor<ADynamicComponentsTestActor>();
+
 		USelfRecreatingDynamicComponent* DynamicComponent = NewObject<USelfRecreatingDynamicComponent>(TestActor, TEXT("Initial"));
 		if (!AssertIsValid(DynamicComponent, TEXT("Spawned initial component successfully")))
 		{

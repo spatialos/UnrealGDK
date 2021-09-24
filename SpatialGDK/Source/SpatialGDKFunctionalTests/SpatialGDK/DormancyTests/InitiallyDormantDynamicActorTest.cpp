@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "InitiallyDormantDynamicActorTest.h"
+#include "DormancyTestActor.h"
 
 // This test checks that a spawned actor that sets its NetDormancy to DORM_Initial in its constructor will be DORM_Initial on the server
 // but DORM_DormantAll on clients.
@@ -16,8 +17,7 @@ void AInitiallyDormantDynamicActorTest::PrepareTest()
 
 	// Step 1 - Spawn dormancy actor
 	AddStep(TEXT("ServerSpawnDormancyActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		AActor* Actor = CreateDormancyTestActor();
-		RegisterAutoDestroyActor(Actor);
+		SpawnActor<ADormancyTestActor>();
 		FinishStep();
 	});
 
@@ -25,7 +25,7 @@ void AInitiallyDormantDynamicActorTest::PrepareTest()
 	AddStep(
 		TEXT("ClientRequireDormancyTestState"), FWorkerDefinition::Server(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireDormancyActorCount(1);
+			RequireEqual_Int(CountActors<ADormancyTestActor>(GetWorld()), 1, TEXT("Number of TestDormancyActors in world"));
 			RequireDormancyTestState(DORM_Initial, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 			FinishStep();
 		},

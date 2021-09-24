@@ -2,13 +2,17 @@
 
 #pragma once
 
+#include "Algo/Count.h"
 #include "CoreMinimal.h"
 #include "Engine/World.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "EngineUtils.h"
 #include "FunctionalTest.h"
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
 #include "SpatialFunctionalTestRequireHandler.h"
 #include "SpatialFunctionalTestStep.h"
+#include "TestMaps/GeneratedTestMap.h"
+
 #include "SpatialFunctionalTest.generated.h"
 
 // Blueprint Delegate
@@ -31,13 +35,19 @@ constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// Represents test already 
 
 class ULayeredLBStrategy;
 
+enum class ERegisterToAutoDestroy
+{
+	No,
+	Yes
+};
+
 /*
  * A Spatial Functional NetTest allows you to define a series of steps, and control which server/client context they execute on
  * Servers and Clients are registered as Test Players by the framework, and request individual steps to be executed in the correct Player
  */
 UCLASS(Blueprintable, SpatialType = NotPersistent,
 	   hidecategories = (Input, Movement, Collision, Rendering, Replication, LOD, "Utilities|Transformation"))
-class SPATIALGDKFUNCTIONALTESTS_API ASpatialFunctionalTest : public AFunctionalTest
+class SPATIALGDKFUNCTIONALTESTS_API ASpatialFunctionalTest : public AFunctionalTest, public IGeneratableTestMap
 {
 	GENERATED_BODY()
 
@@ -53,6 +63,10 @@ private:
 public:
 	ASpatialFunctionalTest();
 
+	// This constructor should be used by within the constructor of tests that wish to be standalone.
+	ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients = 1,
+						   const FVector& InTestPositionInWorld = FVector::ZeroVector);
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void BeginPlay() override;
@@ -61,7 +75,6 @@ public:
 
 	virtual void OnAuthorityGained() override;
 
-	// Should be called from the server with authority over this actor.
 	virtual void RegisterAutoDestroyActor(AActor* ActorToAutoDestroy) override;
 
 	virtual void LogStep(ELogVerbosity::Type Verbosity, const FString& Message) override;
@@ -119,9 +132,34 @@ public:
 	// clang-format on
 	ASpatialFunctionalTestFlowController* GetFlowController(ESpatialFunctionalTestWorkerType WorkerType, int WorkerId);
 
+	// clang-format off
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test", meta = (WorkerId = "1",
+		ToolTip = "Returns the PlayerController owning a FlowController for a specific Server / Client.\nKeep in mind that WorkerIds start from 1, and the Server's WorkerId will match their VirtualWorkerId while the Client's will be based on the order they connect.\n\n'All' Worker type will soft assert as it isn't supported."))
+	// clang-format on
+	APlayerController* GetFlowPlayerController(const ESpatialFunctionalTestWorkerType WorkerType, const int WorkerId);
+
 	// Get the FlowController that is Local to this instance.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	ASpatialFunctionalTestFlowController* GetLocalFlowController();
+
+	// Get the player controller owning the current flow controller.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	APlayerController* GetLocalFlowPlayerController();
+
+	// Get the pawn that belongs to the PlayerController associated with the current flow controller.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	APawn* GetLocalFlowPawn();
+
+	template <class T>
+	T* SpawnActor(const ERegisterToAutoDestroy RegisterToAutoDestroy);
+
+	template <class T>
+	T* SpawnActor(const FActorSpawnParameters& SpawnParameters);
+
+	template <class T>
+	T* SpawnActor(const FVector& Location = FVector::ZeroVector, const FRotator& Rotation = FRotator::ZeroRotator,
+				  const FActorSpawnParameters& SpawnParameters = FActorSpawnParameters(),
+				  const ERegisterToAutoDestroy RegisterToAutoDestroy = ERegisterToAutoDestroy::Yes);
 
 	// Helper to get the local Worker Type.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
@@ -258,6 +296,9 @@ public:
 
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
+	bool RequireValid(const UObject* Object, const FString& Msg) { return RequireHandler.RequireValid(Object, Msg); }
+
+	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
 	bool RequireTrue(bool bCheckTrue, const FString& Msg) { return RequireHandler.RequireTrue(bCheckTrue, Msg); }
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
@@ -293,6 +334,10 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Transform)"), Category = "Spatial Functional Test")
 	bool RequireEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance = 1.e-4) { return RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
 
+	template<typename EnumType>
+	bool RequireEqual_Enum(const EnumType Value, const EnumType Expected, const FString& Msg) { return RequireHandler.RequireEqual_Enum(Value, Expected, Msg); }
+
+
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Bool)"), Category = "Spatial Functional Test")
 	bool RequireNotEqual_Bool(bool bValue, bool bNotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(bValue, bNotExpected, Msg); }
 
@@ -316,6 +361,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Transform)"), Category = "Spatial Functional Test")
 	bool RequireNotEqual_Transform(const FTransform& Value, const FTransform& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
+
+	template<typename EnumType>
+	bool RequireNotEqual_Enum(const EnumType Value, const EnumType NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual_Enum(Value, NotExpected, Msg); }
 	// clang-format on
 
 	// # Snapshot APIs.
@@ -338,16 +386,15 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	bool WasLoadedFromTakenSnapshot();
 
-	template <typename T>
-	static int GetNumberOfActorsOfType(UWorld* World)
+	template <typename ActorType>
+	static int32 CountActors(UWorld* World)
 	{
-		int Counter = 0;
-		for (TActorIterator<T> Iter(World); Iter; ++Iter)
+		int32 Count = 0;
+		for (const ActorType* Actor : TActorRange<ActorType>(World))
 		{
-			Counter++;
+			++Count;
 		}
-
-		return Counter;
+		return Count;
 	}
 
 	// Get the path of the taken snapshot for this world's map. Returns an empty string if it's using the default snapshot.
@@ -362,11 +409,44 @@ public:
 	// Clears all the snapshots taken, not meant to be used directly.
 	static void ClearAllTakenSnapshots();
 
-	// Get the player controller owned by the current flow controller.
-	APlayerController* GetFlowPlayerController();
+	// Members used for tests that are also their own standalone map.
 
-	// Get the pawn that belongs to the PlayerController associated with the current flow controller.
-	APawn* GetFlowPawn();
+	virtual void CreateCustomContentForMap() {}
+
+	void GenerateMap() override;
+
+	bool ShouldGenerateMap() override;
+
+	bool SaveMap() override;
+
+	template <class T>
+	T& AddActor(const FTransform& Transform = FTransform::Identity)
+	{
+		checkf(bIsGeneratingMap, TEXT("AddActor should only be called from within an overridden CreateCustomContentForMap."));
+		return GeneratedTestMap->AddActorToLevel<T>(GeneratedTestMap->GetWorld()->GetCurrentLevel(), Transform);
+	}
+
+	bool GenerateCustomConfig() override;
+
+	FString GetMapName() override;
+
+protected:
+	// Derived tests can call this to set the string that will be printed into the .ini file to be used with this map to override
+	// settings specifically for this test map. Should be called during constructor.
+	void SetCustomConfigForMap(FString& String);
+
+	ASpatialWorldSettings* GetWorldSettingsForMap();
+
+private:
+	bool bIsStandaloneTest;
+
+	UPROPERTY()
+	UGeneratedTestMap* GeneratedTestMap;
+
+	FVector TestPositionInWorld;
+
+	// Used to make sure tests don't try and call methods related to map generation when they're not supposed to.
+	bool bIsGeneratingMap;
 
 protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }
@@ -470,3 +550,29 @@ private:
 	// will check if there's a snapshot for them, and if so launch with it instead of the default snapshot.
 	static TMap<FString, FString> TakenSnapshots;
 };
+
+template <class T>
+T* ASpatialFunctionalTest::SpawnActor(const ERegisterToAutoDestroy RegisterToAutoDestroy)
+{
+	return SpawnActor<T>(FVector::ZeroVector, FRotator::ZeroRotator, FActorSpawnParameters(), RegisterToAutoDestroy);
+}
+
+template <class T>
+T* ASpatialFunctionalTest::SpawnActor(const FActorSpawnParameters& SpawnParameters)
+{
+	return SpawnActor<T>(FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters, ERegisterToAutoDestroy::Yes);
+}
+
+template <class T>
+T* ASpatialFunctionalTest::SpawnActor(const FVector& Location, const FRotator& Rotation, const FActorSpawnParameters& SpawnParameters,
+									  const ERegisterToAutoDestroy RegisterToAutoDestroy /*=ERegisterToAutoDestroy::Yes*/)
+{
+	T* Actor = GetWorld()->SpawnActor<T>(Location, Rotation, SpawnParameters);
+	checkf(IsValid(Actor), TEXT("Actor returned by GetWorld->SpawnActor must be valid."));
+
+	if (RegisterToAutoDestroy == ERegisterToAutoDestroy::Yes)
+	{
+		RegisterAutoDestroyActor(Actor);
+	}
+	return Actor;
+}

@@ -54,27 +54,17 @@ void ASpatialTestMultiServerUnrealComponents::PrepareTest()
 		}
 
 		AssertTrue(HasAuthority(), TEXT("Server 1 requires authority over the test actor"));
-		TestActor = GetWorld()->SpawnActor<ATestUnrealComponentsActor>(ActorSpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
-		if (!AssertTrue(TestActor != nullptr, TEXT("Failed to spawn test actor")))
-		{
-			return;
-		}
+		TestActor = SpawnActor<ATestUnrealComponentsActor>(ActorSpawnPosition);
 
 		TestActor->SpawnDynamicComponents();
 
 		const bool bWrite = true;
 		ProcessActorProperties(bWrite);
 
-		AController* PlayerController = Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
-		if (!AssertTrue(PlayerController != nullptr, TEXT("Failed to retrieve player controller")))
-		{
-			return;
-		}
+		AController* PlayerController = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
 
 		AssertTrue(PlayerController->HasAuthority(), TEXT("Server 1 requires authority over controller"));
 		TestActor->SetOwner(PlayerController);
-
-		RegisterAutoDestroyActor(TestActor);
 
 		FinishStep();
 	});

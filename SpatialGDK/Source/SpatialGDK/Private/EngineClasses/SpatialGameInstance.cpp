@@ -287,3 +287,8 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 		GlobalStateManager->HandleActorBasedOnLoadBalancer(Actor);
 	}
 }
+
+void USpatialGameInstance::OnWorldChanged(UWorld* OldWorld, UWorld* NewWorld)
+{
+	WorldChangedEvent.Broadcast(OldWorld, NewWorld);
+}

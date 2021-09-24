@@ -58,6 +58,8 @@ struct FLBDataCollection
 	void Advance();
 	TSet<Worker_ComponentId> GetComponentsToWatch() const;
 	TArray<FLBDataStorage*> DataStorages;
+	TSet<Worker_EntityId_Key> EntitiesAdded;
+	TSet<Worker_EntityId_Key> EntitiesRemoved;
 	const FSubView& SubView;
 };
 
@@ -112,14 +114,6 @@ public:
 
 protected:
 	TMap<Worker_EntityId_Key, T> SchemaObjects;
-};
-
-class FActorGroupStorage : public TLBDataStorage<ActorGroupMember>
-{
-};
-
-class FDirectAssignmentStorage : public TLBDataStorage<AuthorityIntent>
-{
 };
 
 } // namespace SpatialGDK

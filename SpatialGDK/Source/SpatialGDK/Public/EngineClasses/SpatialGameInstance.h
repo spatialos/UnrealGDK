@@ -18,6 +18,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedEvent);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnConnectionFailedEvent, const FString&, Reason);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerSpawnFailedEvent, const FString&, Reason);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPrepareShutdownEvent);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnWorldChanged, UWorld*, UWorld*);
 
 UCLASS(config = Engine)
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
@@ -80,10 +81,16 @@ public:
 
 	void TryInjectSpatialLocatorIntoCommandLine();
 
+	FOnWorldChanged& OnWorldChanged() { return WorldChangedEvent; }
+
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
 	// Can be used to decide whether to use Unreal networking or SpatialOS networking.
 	bool HasSpatialNetDriver() const;
+
+	virtual void OnWorldChanged(UWorld* OldWorld, UWorld* NewWorld) override;
+
+	FOnWorldChanged WorldChangedEvent;
 
 private:
 	// SpatialConnection is stored here for persistence between map travels.

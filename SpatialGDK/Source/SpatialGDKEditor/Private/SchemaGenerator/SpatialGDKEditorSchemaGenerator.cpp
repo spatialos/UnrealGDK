@@ -359,6 +359,7 @@ void GenerateSchemaForSublevels(const FString& SchemaOutputPath, const TMultiMap
 
 	TArray<FName> Keys;
 	LevelNamesToPaths.GetKeys(Keys);
+	Keys.Sort(FNameLexicalLess());
 
 	for (FName LevelName : Keys)
 	{
@@ -424,19 +425,23 @@ void GenerateSchemaForNCDs(const FString& SchemaOutputPath)
 
 	FComponentIdGenerator IdGenerator = FComponentIdGenerator(NextAvailableComponentId);
 
-	for (auto& NCDComponent : NetCullDistanceToComponentId)
+	TArray<float> Keys;
+	NetCullDistanceToComponentId.GetKeys(Keys);
+	Keys.Sort();
+
+	for (float NCD : Keys)
 	{
-		const FString ComponentName = FString::Printf(TEXT("NetCullDistanceSquared%lld"), static_cast<uint64>(NCDComponent.Key));
-		if (NCDComponent.Value == 0)
+		const FString ComponentName = FString::Printf(TEXT("NetCullDistanceSquared%lld"), static_cast<uint64>(NCD));
+		FString SchemaComponentName = UnrealNameToSchemaComponentName(ComponentName);
+
+		Worker_ComponentId& ComponentId = NetCullDistanceToComponentId[NCD];
+		if (ComponentId == 0)
 		{
-			NCDComponent.Value = IdGenerator.Next();
+			ComponentId = IdGenerator.Next();
 		}
 
-		FString SchemaComponentName = UnrealNameToSchemaComponentName(ComponentName);
-		Worker_ComponentId ComponentId = NCDComponent.Value;
-
 		Writer.PrintNewLine();
-		Writer.Printf("// distance {0}", NCDComponent.Key);
+		Writer.Printf("// distance {0}", NCD);
 		Writer.Printf("component {0} {", *SchemaComponentName);
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
@@ -1290,23 +1295,28 @@ void ResetUsedNames()
 	}
 }
 
-bool RunSchemaCompiler(FString& SchemaBundleJsonOutput, FString SchemaInputDir, FString BuildDir)
+bool RunSchemaCompiler(FString& SchemaBundleJsonOutput, FString SchemaInputDir, FString BuildDir, FString CompiledSchemaDir)
 {
 	FString PluginDir = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory();
 
 	// Get the schema_compiler path and arguments
 	FString SchemaCompilerExe = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe"));
 
-	if (SchemaInputDir == "")
+	if (SchemaInputDir.IsEmpty())
 	{
 		SchemaInputDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema"));
 	}
 
-	if (BuildDir == "")
+	if (BuildDir.IsEmpty())
 	{
 		BuildDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build"));
 	}
-	FString CompiledSchemaDir = FPaths::Combine(BuildDir, TEXT("assembly/schema"));
+
+	if (CompiledSchemaDir.IsEmpty())
+	{
+		CompiledSchemaDir = FPaths::Combine(BuildDir, TEXT("assembly/schema"));
+	}
+
 	FString CoreSDKSchemaDir = FPaths::Combine(BuildDir, TEXT("dependencies/schema/standard_library"));
 
 	FString CompiledSchemaASTDir = FPaths::Combine(CompiledSchemaDir, TEXT("ast"));
@@ -1393,7 +1403,19 @@ bool RunSchemaCompiler(FString& SchemaBundleJsonOutput, FString SchemaInputDir, 
 	}
 }
 
-bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPath)
+struct CustomComponentSetDesc
+{
+	FString ComponentSetName;
+	Worker_ComponentSetId ComponentSetId;
+
+	FString CustomSchemaFolder;
+	FString SchemaFileName;
+
+	TArray<FString> InitialComponentSetContent;
+	TArray<FString> AdditionalSetInclude;
+};
+
+bool CreateCustomAuthoritySet(FString SchemaInputPath, FString SchemaOutputPath, const CustomComponentSetDesc& SetDesc)
 {
 	if (SchemaOutputPath.IsEmpty())
 	{
@@ -1401,23 +1423,22 @@ bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPa
 	}
 
 	FString IntermediateDir = GenerateIntermediateDirectory();
-	const FString PartitionDataFolderName(TEXT("PartitionMetadata"));
 
 	if (SchemaInputPath.IsEmpty())
 	{
 		FString ContentDir = FPaths::ProjectContentDir();
-		SchemaInputPath = FPaths::Combine(ContentDir, TEXT("Spatial"), PartitionDataFolderName);
+		SchemaInputPath = FPaths::Combine(ContentDir, TEXT("Spatial"), SetDesc.CustomSchemaFolder);
 	}
 
 	IPlatformFile& Filesystem = IPlatformFile::GetPlatformPhysical();
 
-	FString DestinationSchemaDir = FPaths::Combine(SchemaOutputPath, PartitionDataFolderName);
+	FString DestinationSchemaDir = FPaths::Combine(SchemaOutputPath, SetDesc.CustomSchemaFolder);
 	if (FPaths::DirectoryExists(DestinationSchemaDir))
 	{
 		if (!Filesystem.DeleteDirectoryRecursively(*DestinationSchemaDir))
 		{
 			// clang-format off
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not delete pre-existing partition metadata schema directory '%s'! Please make sure the directory is writeable."), *DestinationSchemaDir);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not delete pre-existing %s metadata schema directory '%s'! Please make sure the directory is writeable."), *SetDesc.ComponentSetName, *DestinationSchemaDir);
 			// clang-format on
 			return false;
 		}
@@ -1440,10 +1461,15 @@ bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPa
 			return true;
 		});
 
+		// Put the generated schema binary for our custom schema in the Intermediate folder.
+		// This is so it doesn't stomp the users (or tests) proper schema binary used by the runtime.
+		FString SchemaCompilerIntermediateDir = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("Improbable"), TEXT("schema"));
+		Filesystem.CreateDirectoryTree(*SchemaCompilerIntermediateDir);
+
 		FString SchemaJsonPath;
-		if (!RunSchemaCompiler(SchemaJsonPath, SchemaInputPath))
+		if (!RunSchemaCompiler(SchemaJsonPath, SchemaInputPath, "" /*BuildDir*/, SchemaCompilerIntermediateDir))
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to parse partition meta data schema files"));
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to parse %s meta data schema files"), *SetDesc.ComponentSetName);
 			return false;
 		}
 
@@ -1459,7 +1485,7 @@ bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPa
 		if (!Filesystem.CreateDirectoryTree(*DestinationSchemaDir))
 		{
 			// clang-format off
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create partition metadata schema directory '%s'! Please make sure the parent directory is writeable."), *DestinationSchemaDir);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create %s metadata schema directory '%s'! Please make sure the parent directory is writeable."), *SetDesc.ComponentSetName, *DestinationSchemaDir);
 			// clang-format on
 			return false;
 		}
@@ -1479,25 +1505,29 @@ bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPa
 	Writer.PrintNewLine();
 
 	// Write all import statements.
-	Writer.Printf("import \"{0}\";", TEXT("improbable/standard_library.schema"));
+	for (const auto& File : SetDesc.AdditionalSetInclude)
+	{
+		Writer.Printf("import \"{0}\";", *File);
+	}
 	for (const auto& File : SchemaFiles)
 	{
-		FString ImportPath = FPaths::Combine(TEXT("unreal"), TEXT("generated"), PartitionDataFolderName, FPaths::GetCleanFilename(File));
+		FString ImportPath = FPaths::Combine(TEXT("unreal"), TEXT("generated"), SetDesc.CustomSchemaFolder, FPaths::GetCleanFilename(File));
 		Writer.Printf("import \"{0}\";", *ImportPath);
 	}
 
 	Writer.PrintNewLine();
-	Writer.Printf("component_set {0} {", TEXT("PartitionMetadataAuth")).Indent();
-	Writer.Printf("id = {0};", SpatialConstants::PARTITION_METADATA_AUTH_COMPONENT_SET_ID);
+	Writer.Printf("component_set {0} {", SetDesc.ComponentSetName).Indent();
+	Writer.Printf("id = {0};", SetDesc.ComponentSetId);
 	Writer.Printf("components = [").Indent();
 
 	// Write all import components.
-	Writer.Printf("improbable.Position,");
-	Writer.Printf("improbable.Interest,");
-	Writer.Printf("improbable.AuthorityDelegation,");
-	for (const auto& MetadataComponentId : Components)
+	for (const auto& Component : SetDesc.InitialComponentSetContent)
 	{
-		Writer.Printf("{0},", MetadataComponentId.Name);
+		Writer.Printf("{0},", Component);
+	}
+	for (const auto& MetadataComponent : Components)
+	{
+		Writer.Printf("{0},", MetadataComponent.Name);
 	}
 
 	Writer.RemoveTrailingComma();
@@ -1505,9 +1535,46 @@ bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPa
 	Writer.Outdent().Print("];");
 	Writer.Outdent().Print("}");
 
-	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("ComponentSets/PartitionAuthoritativeComponentSet.schema")));
+	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, *FString::Printf(TEXT("ComponentSets/%s.schema"), *SetDesc.SchemaFileName)));
 
 	return true;
+}
+
+bool CreatePartitionAuthoritySet(FString SchemaInputPath, FString SchemaOutputPath)
+{
+	CustomComponentSetDesc Desc;
+	Desc.ComponentSetName = TEXT("PartitionMetadataAuth");
+	Desc.ComponentSetId = SpatialConstants::PARTITION_METADATA_AUTH_COMPONENT_SET_ID;
+	Desc.CustomSchemaFolder = TEXT("PartitionMetadata");
+	Desc.SchemaFileName = TEXT("PartitionAuthoritativeComponentSet");
+	Desc.InitialComponentSetContent.Add(TEXT("improbable.Position"));
+	Desc.InitialComponentSetContent.Add(TEXT("improbable.Interest"));
+	Desc.InitialComponentSetContent.Add(TEXT("improbable.AuthorityDelegation"));
+
+	Desc.AdditionalSetInclude.Add(TEXT("improbable/standard_library.schema"));
+
+	return CreateCustomAuthoritySet(SchemaInputPath, SchemaOutputPath, Desc);
+}
+
+bool CreateServerWorkerAuthoritySet(FString SchemaInputPath, FString SchemaOutputPath)
+{
+	CustomComponentSetDesc Desc;
+	Desc.ComponentSetName = TEXT("ServerWorkerAuthComponentSet");
+	Desc.ComponentSetId = SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID;
+	Desc.CustomSchemaFolder = TEXT("ServerWorkerMetadata");
+	Desc.SchemaFileName = TEXT("ServerWorkerAuthorityComponentSet");
+	Desc.InitialComponentSetContent.Add(TEXT("improbable.Position"));
+	Desc.InitialComponentSetContent.Add(TEXT("improbable.Interest"));
+	Desc.InitialComponentSetContent.Add(TEXT("improbable.AuthorityDelegation"));
+	Desc.InitialComponentSetContent.Add(TEXT("improbable.Metadata"));
+	Desc.InitialComponentSetContent.Add(TEXT("unreal.ServerWorker"));
+	Desc.InitialComponentSetContent.Add(TEXT("unreal.generated.UnrealCrossServerSenderRPCs"));
+
+	Desc.AdditionalSetInclude.Add(TEXT("unreal/generated/rpc_endpoints.schema"));
+	Desc.AdditionalSetInclude.Add(TEXT("unreal/gdk/server_worker.schema"));
+	Desc.AdditionalSetInclude.Add(TEXT("improbable/standard_library.schema"));
+
+	return CreateCustomAuthoritySet(SchemaInputPath, SchemaOutputPath, Desc);
 }
 
 bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,
@@ -1523,6 +1590,11 @@ bool SpatialGDKGenerateSchema()
 	SchemaGeneratedClasses.Empty();
 
 	if (!CreatePartitionAuthoritySet())
+	{
+		return false;
+	}
+
+	if (!CreateServerWorkerAuthoritySet())
 	{
 		return false;
 	}

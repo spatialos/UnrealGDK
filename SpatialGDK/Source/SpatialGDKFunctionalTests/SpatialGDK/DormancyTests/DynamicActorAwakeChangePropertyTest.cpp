@@ -18,9 +18,8 @@ void ADynamicActorAwakeChangePropertyTest::PrepareTest()
 
 	// Step 1 - Spawn dormancy actor and set NetDormancy to DORM_Awake
 	AddStep(TEXT("ServerSpawnDormancyActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		AActor* Actor = CreateDormancyTestActor();
+		AActor* Actor = SpawnActor<ADormancyTestActor>();
 		Actor->SetNetDormancy(DORM_Awake);
-		RegisterAutoDestroyActor(Actor);
 		FinishStep();
 	});
 
@@ -28,7 +27,7 @@ void ADynamicActorAwakeChangePropertyTest::PrepareTest()
 	AddStep(
 		TEXT("ClientRequireDormancyTestState"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireDormancyActorCount(1);
+			RequireEqual_Int(CountActors<ADormancyTestActor>(GetWorld()), 1, TEXT("Number of TestDormancyActors in world"));
 			RequireDormancyTestState(DORM_Awake, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 			FinishStep();
 		},

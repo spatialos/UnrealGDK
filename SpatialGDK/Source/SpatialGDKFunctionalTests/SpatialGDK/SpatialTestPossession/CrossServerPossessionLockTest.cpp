@@ -1,11 +1,14 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "CrossServerPossessionLockTest.h"
+
+#include "CrossServerPossessionGameMode.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
+#include "TestWorkerSettings.h"
 
 /**
  * This test tests 1 locked Controller remote possess over 1 pawn.
@@ -29,10 +32,16 @@
  */
 
 ACrossServerPossessionLockTest::ACrossServerPossessionLockTest()
-	: Super()
+	: Super(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, 1)
 {
 	Author = "Jay";
 	Description = TEXT("Test Locked Actor Cross-Server Possession");
+}
+
+void ACrossServerPossessionLockTest::CreateCustomContentForMap()
+{
+	GetWorldSettingsForMap()->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
+	GetWorldSettingsForMap()->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
 }
 
 void ACrossServerPossessionLockTest::PrepareTest()
