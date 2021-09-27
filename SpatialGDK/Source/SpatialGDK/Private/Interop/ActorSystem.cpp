@@ -2368,7 +2368,7 @@ void ActorSystem::UpdateClientInterest(AActor* Actor, const bool bOverwrite)
 		}
 		else
 		{
-			UE_LOG(LogActorSystem, Warning, TEXT("Interest diff: refresh request but no diff detected (%s)"), *Actor->GetName());
+			UE_LOG(LogActorSystem, Verbose, TEXT("Interest diff: refresh request but no diff detected (%s)"), *Actor->GetName());
 		}
 	}
 	else
