@@ -102,15 +102,15 @@ public:
 		for (auto Iterator = this->ReceivedRPCs.CreateIterator(); Iterator; ++Iterator)
 		{
 			Worker_EntityId EntityId = Iterator->Key;
+			if (!CanExtract(EntityId))
+			{
+				continue;
+			}
 			ReceiverState& State = ReceiverStates.FindChecked(EntityId);
 			auto& Payloads = Iterator->Value;
 			uint32 ProcessedRPCs = 0;
 			for (const auto& Payload : Payloads)
 			{
-				if (!CanExtract(EntityId))
-				{
-					continue;
-				}
 				const PayloadType& PayloadData = Payload.GetData();
 				if (Process(EntityId, PayloadData, Payload.GetAdditionalData()))
 				{
