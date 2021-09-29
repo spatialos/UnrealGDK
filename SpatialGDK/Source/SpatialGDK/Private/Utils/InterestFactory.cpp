@@ -284,11 +284,8 @@ Interest UnrealServerInterestFactory::CreateInterest(AActor* InActor, const FCla
 	}
 #endif
 
-	if (!GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
-	{
-		// Clients need to see owner only and server RPC components on entities they have authority over
-		AddClientSelfInterest(ResultInterest);
-	}
+	// Clients need to see owner only and server RPC components on entities they have authority over
+	AddClientSelfInterest(ResultInterest);
 
 	// Every actor needs a self query for the server to the client RPC endpoint
 	AddServerSelfInterest(ResultInterest);
@@ -435,68 +432,6 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const APlayerControll
 		}
 
 		ChangeInterestRequestData.bOverwrite = bOverwrite;
-
-		// Add auth interest
-		TSet<Worker_EntityId_Key> FullAuth;
-		const Worker_EntityId PCEntityId = PackageMap->GetEntityIdFromObject(PlayerController);
-		const Worker_EntityId PawnEntityId = PackageMap->GetEntityIdFromObject(PlayerController->GetPawn());
-		const Worker_EntityId PlayerStateEntityId = PackageMap->GetEntityIdFromObject(PlayerController->PlayerState);
-
-		if (PCEntityId != SpatialConstants::INVALID_ENTITY_ID)
-		{
-			FullAuth.Add(PCEntityId);
-		}
-
-		if (PawnEntityId != SpatialConstants::INVALID_ENTITY_ID)
-		{
-			FullAuth.Add(PawnEntityId);
-		}
-
-		if (PlayerStateEntityId != SpatialConstants::INVALID_ENTITY_ID)
-		{
-			FullAuth.Add(PlayerStateEntityId);
-		}
-
-#if WITH_GAMEPLAY_DEBUGGER
-		const Worker_EntityId GameplayDebuggerEntityId = PackageMap->GetEntityIdFromObject(
-			AGameplayDebuggerPlayerManager::GetCurrent(PlayerController->GetWorld()).GetReplicator(*PlayerController));
-		if (GameplayDebuggerEntityId != SpatialConstants::INVALID_ENTITY_ID)
-		{
-			FullAuth.Add(GameplayDebuggerEntityId);
-		}
-#endif
-
-		if (bOverwrite)
-		{
-			Add = FullAuth;
-			Remove.Empty();
-		}
-		else
-		{
-			Add = FullAuth.Difference(NetConnection->EntityAuthCache);
-			Remove = NetConnection->EntityAuthCache.Difference(FullAuth);
-		}
-		NetConnection->EntityAuthCache = FullAuth;
-
-		if (Add.Num() > 0)
-		{
-			ChangeInterestQuery Query{};
-			Query.Components = ClientAuthInterestResultType.ComponentIds;
-			Query.ComponentSets = ClientAuthInterestResultType.ComponentSetsIds;
-			Query.Entities = Add.Array();
-
-			ChangeInterestRequestData.QueriesToAdd.Emplace(Query);
-		}
-
-		if (Remove.Num() > 0)
-		{
-			ChangeInterestQuery Query{};
-			Query.Components = ClientAuthInterestResultType.ComponentIds;
-			Query.ComponentSets = ClientAuthInterestResultType.ComponentSetsIds;
-			Query.Entities = Remove.Array();
-
-			ChangeInterestRequestData.QueriesToRemove.Emplace(Query);
-		}
 	}
 
 	if (ChangeInterestRequestData.IsEmpty())
