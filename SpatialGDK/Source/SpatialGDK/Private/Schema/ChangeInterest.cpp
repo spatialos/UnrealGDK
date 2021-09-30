@@ -6,18 +6,18 @@ DEFINE_LOG_CATEGORY(LogChangeInterest);
 
 namespace SpatialGDK
 {
-inline void AddEntityListToSchema(Schema_Object* Object, Schema_FieldId Id, TArrayView<const Worker_EntityId> Entities)
+inline void AddEntityListToSchema(Schema_Object* Object, Schema_FieldId Id, TArray<Worker_EntityId_Key> Entities)
 {
-	uint8* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(Worker_EntityId) * Entities.Num());
-	FMemory::Memcpy(PayloadBuffer, Entities.GetData(), sizeof(Worker_EntityId) * Entities.Num());
-	Schema_AddEntityIdList(Object, Id, (const Worker_EntityId*)PayloadBuffer, Entities.Num());
+	uint8* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(Worker_EntityId_Key) * Entities.Num());
+	FMemory::Memcpy(PayloadBuffer, Entities.GetData(), sizeof(Worker_EntityId_Key) * Entities.Num());
+	Schema_AddEntityIdList(Object, Id, (Worker_EntityId_Key*)PayloadBuffer, Entities.Num());
 }
 
-inline void AddUint32ListToSchema(Schema_Object* Object, Schema_FieldId Id, TArrayView<const uint32> IntList)
+inline void AddUint32ListToSchema(Schema_Object* Object, Schema_FieldId Id, TArray<uint32> IntList)
 {
 	uint8* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(uint32) * IntList.Num());
 	FMemory::Memcpy(PayloadBuffer, IntList.GetData(), sizeof(uint32) * IntList.Num());
-	Schema_AddUint32List(Object, Id, (const uint32*)PayloadBuffer, IntList.Num());
+	Schema_AddUint32List(Object, Id, (uint32*)PayloadBuffer, IntList.Num());
 }	
 
 void ChangeInterestQuery::DebugOutput(const FString& DiffType) const
