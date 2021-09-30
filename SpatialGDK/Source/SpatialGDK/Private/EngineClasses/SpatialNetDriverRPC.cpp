@@ -384,7 +384,7 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, const FRPCPayload&
 		if (UObject* ActorReceiving = ActorReceivingRPC.Get())
 		{
 			AActor* Actor = CastChecked<AActor>(ActorReceiving);
-			checkf(Actor != nullptr, TEXT("Receiving actor should have been checked in CanExtractRPC"));
+			checkf(Actor != nullptr, TEXT("Invalid RPC recipient, the receiver should be an Actor!"));
 			UE_LOG(LogSpatialNetDriverRPC, Error,
 				   TEXT("Failed to execute RPC on Actor %s (Entity %llu)'s Subobject %i because the Subobject is null"), *Actor->GetName(),
 				   EntityId, RPCData.Offset);
