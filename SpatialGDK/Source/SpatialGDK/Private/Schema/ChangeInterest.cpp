@@ -6,6 +6,20 @@ DEFINE_LOG_CATEGORY(LogChangeInterest);
 
 namespace SpatialGDK
 {
+inline void AddEntityListToSchema(Schema_Object* Object, Schema_FieldId Id, TArrayView<const Worker_EntityId> Entities)
+{
+	uint8* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(Worker_EntityId) * Entities.Num());
+	FMemory::Memcpy(PayloadBuffer, Entities.GetData(), sizeof(Worker_EntityId) * Entities.Num());
+	Schema_AddEntityIdList(Object, Id, (const Worker_EntityId*)PayloadBuffer, Entities.Num());
+}
+
+inline void AddUint32ListToSchema(Schema_Object* Object, Schema_FieldId Id, TArrayView<const uint32> IntList)
+{
+	uint8* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(uint32) * IntList.Num());
+	FMemory::Memcpy(PayloadBuffer, IntList.GetData(), sizeof(uint32) * IntList.Num());
+	Schema_AddUint32List(Object, Id, (const uint32*)PayloadBuffer, IntList.Num());
+}	
+
 void ChangeInterestQuery::DebugOutput(const FString& DiffType) const
 {
 	// Minimal output
@@ -78,10 +92,10 @@ Worker_CommandRequest ChangeInterestRequest::CreateRequest() const
 			Schema_Object* QueriesToAddObject = Schema_AddObject(RequestObject, 2);
 
 			Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToAddObject, 1);
-			Schema_AddEntityIdList(QueriesToAddObject, 2, (const Worker_EntityId*)Query.Entities.GetData(), Query.Entities.Num());
 
-			Schema_AddUint32List(ResultTypeObject, 1, Query.Components.GetData(), Query.Components.Num());
-			Schema_AddUint32List(ResultTypeObject, 2, Query.ComponentSets.GetData(), Query.ComponentSets.Num());
+			AddEntityListToSchema(QueriesToAddObject, 2, Query.Entities);
+			AddUint32ListToSchema(ResultTypeObject, 1, Query.Components);
+			AddUint32ListToSchema(ResultTypeObject, 2, Query.ComponentSets);
 		}
 	}
 
@@ -92,10 +106,10 @@ Worker_CommandRequest ChangeInterestRequest::CreateRequest() const
 			Schema_Object* QueriesToRemoveObject = Schema_AddObject(RequestObject, 3);
 
 			Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToRemoveObject, 1);
-			Schema_AddEntityIdList(QueriesToRemoveObject, 2, (const Worker_EntityId*)Query.Entities.GetData(), Query.Entities.Num());
 
-			Schema_AddUint32List(ResultTypeObject, 1, Query.Components.GetData(), Query.Components.Num());
-			Schema_AddUint32List(ResultTypeObject, 2, Query.ComponentSets.GetData(), Query.ComponentSets.Num());
+			AddEntityListToSchema(QueriesToRemoveObject, 2, Query.Entities);
+			AddUint32ListToSchema(ResultTypeObject, 1, Query.Components);
+			AddUint32ListToSchema(ResultTypeObject, 2, Query.ComponentSets);
 		}
 	}
 
