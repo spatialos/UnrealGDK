@@ -10,6 +10,8 @@ DEFINE_LOG_CATEGORY(LogCrossServerRPCHandler);
 
 namespace SpatialGDK
 {
+static constexpr double CrossServerRPCGuidTimeout = 30.f;
+
 CrossServerRPCHandler::CrossServerRPCHandler(ViewCoordinator& InCoordinator, TUniquePtr<RPCExecutorInterface> InRPCExecutor,
 											 SpatialEventTracer* InEventTracer)
 	: Coordinator(&InCoordinator)
