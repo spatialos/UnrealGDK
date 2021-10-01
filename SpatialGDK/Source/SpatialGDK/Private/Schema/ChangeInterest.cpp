@@ -10,7 +10,7 @@ inline void AddEntityListToSchema(Schema_Object* Object, Schema_FieldId Id, TArr
 {
 	uint8* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(Worker_EntityId_Key) * Entities.Num());
 	FMemory::Memcpy(PayloadBuffer, Entities.GetData(), sizeof(Worker_EntityId_Key) * Entities.Num());
-	Schema_AddEntityIdList(Object, Id, (Worker_EntityId_Key*)PayloadBuffer, Entities.Num());
+	Schema_AddEntityIdList(Object, Id, (Worker_EntityId*)PayloadBuffer, Entities.Num());
 }
 
 inline void AddUint32ListToSchema(Schema_Object* Object, Schema_FieldId Id, TArray<uint32> IntList)
@@ -59,7 +59,7 @@ void ChangeInterestRequest::Clear()
 
 void ChangeInterestRequest::DebugOutput() const
 {
-	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: client entity id %lld"), SystemEntityId);
+	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: system entity id %lld"), SystemEntityId);
 
 	for (const auto& Query : QueriesToAdd)
 	{
