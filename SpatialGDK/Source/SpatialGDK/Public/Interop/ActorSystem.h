@@ -77,7 +77,7 @@ public:
 	void ProcessPositionUpdates();
 	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
 	void UpdateInterestComponent(AActor* Actor);
-	void UpdateClientInterest(AActor* Actor, const bool bOverwrite);
+	void UpdateClientInterest(AActor* Actor, const Worker_EntityId ClientEntityId, const bool bOverwrite);
 	void SendInterestBucketComponentChange(Worker_EntityId EntityId, Worker_ComponentId OldComponent,
 										   Worker_ComponentId NewComponent) const;
 	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo,
@@ -240,6 +240,7 @@ private:
 
 	// Stored player controller entity ids that need to have their interest updated, and bool indicating partial or full update
 	TMap<Worker_EntityId_Key, bool /*bFullInterestUpdate*/> ClientInterestDirty;
+	TMap<Worker_RequestId_Key, Worker_EntityId_Key> InFlightInterestRequests;
 };
 
 } // namespace SpatialGDK

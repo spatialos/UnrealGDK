@@ -18,7 +18,7 @@ inline void AddUint32ListToSchema(Schema_Object* Object, Schema_FieldId Id, TArr
 	uint8* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(uint32) * IntList.Num());
 	FMemory::Memcpy(PayloadBuffer, IntList.GetData(), sizeof(uint32) * IntList.Num());
 	Schema_AddUint32List(Object, Id, (uint32*)PayloadBuffer, IntList.Num());
-}	
+}
 
 void ChangeInterestQuery::DebugOutput(const FString& DiffType) const
 {

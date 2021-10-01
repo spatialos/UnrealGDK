@@ -395,6 +395,23 @@ void ActorSystem::Advance()
 
 	CommandsHandler.ProcessOps(*ActorSubView->GetViewDelta().WorkerMessages);
 
+	for (const Worker_Op& Op : *ActorSubView->GetViewDelta().WorkerMessages)
+	{
+		if (Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE)
+		{
+			const Worker_CommandResponseOp& CommandResponse = Op.op.command_response;
+			Worker_EntityId_Key EntityId = SpatialConstants::INVALID_ENTITY_ID;
+			if (InFlightInterestRequests.RemoveAndCopyValue(CommandResponse.request_id, EntityId))
+			{
+				if (CommandResponse.status_code == WORKER_STATUS_CODE_TIMEOUT)
+				{
+					UE_LOG(LogActorSystem, Warning, TEXT("Update client interest timed out, sending full interest update: entity id %lld"), EntityId);
+					MarkClientInterestDirty(EntityId, true);
+				}
+			}
+		}
+	}
+
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	for (const EntityDelta& Delta : ActorSubView->GetViewDelta().EntityDeltas)
 	{
@@ -2007,13 +2024,16 @@ void ActorSystem::ProcessClientInterestUpdates()
 {
 	for (auto Pair : ClientInterestDirty)
 	{
-		if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Pair.Key)))
+		const Worker_EntityId ControllerEntityId = Pair.Key;
+		const bool bFullInterestUpdate = Pair.Value;
+
+		if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(ControllerEntityId)))
 		{
-			UpdateClientInterest(Actor, Pair.Value);
+			UpdateClientInterest(Actor, ControllerEntityId, bFullInterestUpdate);
 		}
 		else
 		{
-			UE_LOG(LogActorSystem, Warning, TEXT("Failed to get actor for entity id to update client interest (%lld)"), Pair.Key);
+			UE_LOG(LogActorSystem, Warning, TEXT("Failed to get actor for entity id to update client interest (%lld)"), ControllerEntityId);
 		}
 	}
 	ClientInterestDirty.Empty();
@@ -2342,7 +2362,7 @@ void ActorSystem::UpdateInterestComponent(AActor* Actor)
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void ActorSystem::UpdateClientInterest(AActor* Actor, const bool bOverwrite)
+void ActorSystem::UpdateClientInterest(AActor* Actor, const Worker_EntityId ControllerEntityId, const bool bOverwrite)
 {
 	if (!ensure(GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries))
 	{
@@ -2362,7 +2382,9 @@ void ActorSystem::UpdateClientInterest(AActor* Actor, const bool bOverwrite)
 			const Worker_EntityId SystemEntityId =
 				Cast<USpatialNetConnection>(PlayerController->GetNetConnection())->ConnectionClientWorkerSystemEntityId;
 
-			NetDriver->Connection->SendCommandRequest(SystemEntityId, &CommandRequest, RETRY_MAX_TIMES, {});
+			const FRetryData RetryData = { 0, 0, 0.f, 0.f, 60000 };
+			Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(SystemEntityId, &CommandRequest, RetryData, {});
+			InFlightInterestRequests.Emplace(RequestId, ControllerEntityId);
 
 			UE_LOG(LogActorSystem, Verbose, TEXT("Interest diff: worker entity id %lld"), SystemEntityId);
 		}
