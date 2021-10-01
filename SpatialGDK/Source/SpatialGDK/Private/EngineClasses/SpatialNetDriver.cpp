@@ -3309,17 +3309,12 @@ void USpatialNetDriver::TryFinishStartup()
 			SpatialGDK::FSubView& ServerWorkerView = Connection->GetCoordinator().CreateSubView(
 				SpatialConstants::SERVER_WORKER_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-			auto PartitionMgr = MakeUnique<SpatialGDK::FPartitionManager>(ServerWorkerView, Connection->GetWorkerSystemEntityId(),
-																		  Connection->GetCoordinator(),
-																		  MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
-
-			PartitionMgr->Init(Connection->GetCoordinator());
-
 			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy =
 				MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy, *VirtualWorkerTranslator);
 
 			StrategySystem =
-				MakeUnique<SpatialGDK::FSpatialStrategySystem>(MoveTemp(PartitionMgr), LBView, ServerWorkerView, MoveTemp(Strategy));
+				MakeUnique<SpatialGDK::FSpatialStrategySystem>(Connection->GetCoordinator(), LBView, ServerWorkerView, MoveTemp(Strategy),
+															   MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
 
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();

@@ -22,7 +22,7 @@ public:
 	{
 	}
 
-	virtual void Advance(ISpatialOSWorker& Connection) {}
+	virtual void Advance(ISpatialOSWorker& Connection, const TSet<Worker_EntityId_Key>& DeletedEntities) {}
 	virtual void Flush(ISpatialOSWorker& Connection) {}
 
 	virtual void OnWorkersConnected(TArrayView<FLBWorkerHandle> ConnectedWorkers) {}

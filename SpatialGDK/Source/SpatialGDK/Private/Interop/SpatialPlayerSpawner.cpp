@@ -328,7 +328,15 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 	// forwarded worker knows to search for a PlayerStart.
 	if (PlayerStartActor == nullptr)
 	{
-		VirtualWorkerToForwardTo = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*UGameplayStatics::GetGameMode(GetWorld()));
+		AGameModeBase* GameMode = UGameplayStatics::GetGameMode(GetWorld());
+		if (GameMode == nullptr)
+		{
+			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Gamemode not found. Client worker ID: %lld."), ClientWorkerId);
+			PassSpawnRequestToNetDriver(SpawnPlayerRequest, PlayerStartActor);
+			return;
+		}
+
+		VirtualWorkerToForwardTo = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*GameMode);
 		if (VirtualWorkerToForwardTo == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Error,

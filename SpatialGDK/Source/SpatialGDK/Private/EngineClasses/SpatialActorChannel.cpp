@@ -1334,6 +1334,7 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 	USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection());
 	UNetReplicationGraphConnection* RepGraphConnection =
 		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
+
 	if (RepGraph == nullptr || !RepGraph->IsClientEntityInterestEnabled() || RepGraphConnection == nullptr || NetConnection == nullptr)
 	{
 		UE_LOG(LogSpatialActorChannel, Error,

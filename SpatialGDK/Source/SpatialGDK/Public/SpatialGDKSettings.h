@@ -497,6 +497,12 @@ public:
 	bool bUseNarrowPhaseNCDInterestCulling;
 
 	/**
+	 * Use USI for server interest
+	 */
+	UPROPERTY(EditAnywhere, config, Category = "Server Entity Interest")
+	bool bUserSpaceServerInterest;
+
+	/**
 	 * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
 	 * the multi-worker settings class
 	 */

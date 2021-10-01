@@ -16,16 +16,19 @@ DEFINE_LOG_CATEGORY(LogSpatialStrategySystem);
 
 namespace SpatialGDK
 {
-FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionsMgr, const FSubView& InLBView,
-											   const FSubView& InServerWorkerView, TUniquePtr<FLoadBalancingStrategy> InStrategy)
+FSpatialStrategySystem::FSpatialStrategySystem(ViewCoordinator& Coordinator, const FSubView& InLBView, const FSubView& InServerWorkerView,
+											   TUniquePtr<FLoadBalancingStrategy> InStrategy, TUniquePtr<InterestFactory> InInterestF)
 	: LBView(InLBView)
-	, PartitionsMgr(MoveTemp(InPartitionsMgr))
+	, InterestF(MoveTemp(InInterestF))
 	, DataStorages(InLBView)
 	, UserDataStorages(InLBView)
 	, ServerWorkerDataStorages(InServerWorkerView)
 	, Strategy(MoveTemp(InStrategy))
 {
-	FLoadBalancingSharedData SharedData(*PartitionsMgr, ActorSetSystem);
+	PartitionsMgr = MakeUnique<SpatialGDK::FPartitionManager>(InServerWorkerView, Coordinator, *InterestF);
+	PartitionsMgr->Init(Coordinator);
+
+	FLoadBalancingSharedData SharedData(*PartitionsMgr, ActorSetSystem, *InterestF);
 	Strategy->Init(SharedData, UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
 	DataStorages.DataStorages.Add(&AuthACKView);
 	DataStorages.DataStorages.Add(&NetOwningClientView);
@@ -98,7 +101,7 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 
 	ActorSetSystem.Update(SetMemberView, RemovedEntities);
 
-	Strategy->Advance(Connection);
+	Strategy->Advance(Connection, DataStorages.EntitiesRemoved);
 }
 
 void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)

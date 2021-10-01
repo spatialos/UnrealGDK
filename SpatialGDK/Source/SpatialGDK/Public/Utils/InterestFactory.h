@@ -53,6 +53,11 @@ public:
 	static Interest CreateRoutingWorkerInterest();
 	Interest CreateSkeletonEntityInterest() const;
 
+	const SchemaResultType& GetClientNonAuthInterestResultType() const { return ClientNonAuthInterestResultType; }
+	const SchemaResultType& GetClientAuthInterestResultType() const { return ClientAuthInterestResultType; }
+	const SchemaResultType& GetServerNonAuthInterestResultType() const { return ServerNonAuthInterestResultType; }
+	const SchemaResultType& GetServerAuthInterestResultType() const { return ServerAuthInterestResultType; }
+
 protected:
 	// Shared constraints and result types are created at initialization and reused throughout the lifetime of the factory.
 	void CreateAndCacheInterestState();

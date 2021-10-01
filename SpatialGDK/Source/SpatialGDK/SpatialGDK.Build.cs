@@ -179,5 +179,13 @@ public class SpatialGDK : ModuleRules
             Log.TraceInformation("Didn't find trace libraries at {0} and {1}, disabling trace functionality.", TraceStaticLibPath, TraceDynamicLibPath);
             PublicDefinitions.Add("TRACE_LIB_ACTIVE=0");
         }
+
+        if (Target.Platform == UnrealTargetPlatform.Win64 && false)
+        {
+            PublicDefinitions.Add("HAS_BULLET_PHYSICS=1");
+            PrivateIncludePaths.Add("F:/Dev/bullet3-3.17/src");
+            PublicAdditionalLibraries.Add("F:/Dev/Bullet_Build/lib/RelWithDebInfo/BulletCollision_RelWithDebugInfo.lib");
+            PublicAdditionalLibraries.Add("F:/Dev/Bullet_Build/lib/RelWithDebInfo/LinearMath_RelWithDebugInfo.lib");
+        }
     }
 }

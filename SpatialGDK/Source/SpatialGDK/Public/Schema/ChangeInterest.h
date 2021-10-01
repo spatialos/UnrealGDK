@@ -8,6 +8,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogChangeInterest, Log, All);
 
 namespace SpatialGDK
 {
+class ISpatialOSWorker;
+
 struct ChangeInterestQuery
 {
 	TArray<Worker_ComponentId> Components;
@@ -31,6 +33,8 @@ struct ChangeInterestRequest
 	void DebugOutput() const;
 
 	Worker_CommandRequest CreateRequest() const;
+
+	Worker_RequestId SendRequest(ISpatialOSWorker& Connection);
 };
 
 } // namespace SpatialGDK
