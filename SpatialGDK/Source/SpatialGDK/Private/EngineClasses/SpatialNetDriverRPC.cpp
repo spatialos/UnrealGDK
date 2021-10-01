@@ -391,8 +391,7 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, const FRPCPayload&
 		}
 		else
 		{
-			UE_LOG(LogSpatialNetDriverRPC, Verbose,
-				   TEXT("Actor with Entity %llu was destroyed before the RPC could execute"), EntityId);
+			UE_LOG(LogSpatialNetDriverRPC, Verbose, TEXT("Actor with Entity %llu was destroyed before the RPC could execute"), EntityId);
 		}
 
 		return RPCConsumed;
