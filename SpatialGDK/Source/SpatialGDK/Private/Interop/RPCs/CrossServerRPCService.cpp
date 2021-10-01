@@ -12,10 +12,12 @@ DEFINE_LOG_CATEGORY(LogCrossServerRPCService);
 namespace SpatialGDK
 {
 CrossServerRPCService::CrossServerRPCService(const ActorCanExtractRPCDelegate InCanExtractRPCDelegate,
-											 const ExtractRPCDelegate InExtractRPCCallback, const FSubView& InActorSubView,
-											 const FSubView& InWorkerEntitySubView, FRPCStore& InRPCStore)
+											 const ExtractRPCDelegate InExtractRPCCallback,
+											 const DoesEntityIdHaveValidObjectDelegate InDoesEntityIdHaveValidObjectCallback,
+											 const FSubView& InActorSubView, const FSubView& InWorkerEntitySubView, FRPCStore& InRPCStore)
 	: CanExtractRPCDelegate(InCanExtractRPCDelegate)
 	, ExtractRPCCallback(InExtractRPCCallback)
+	, DoesEntityIdHaveValidObjectCallback(InDoesEntityIdHaveValidObjectCallback)
 	, ActorSubView(InActorSubView)
 	, WorkerEntitySubView(InWorkerEntitySubView)
 	, RPCStore(InRPCStore)
@@ -398,6 +400,50 @@ void CrossServerRPCService::UpdateSentRPCsACKs(Worker_EntityId SenderId, const C
 			CrossServer::SentRPCEntry* SentRPC = SenderState.Mailbox.Find(RPCKey);
 			if (SentRPC != nullptr)
 			{
+				// If the ACK result is 'TargetUnknown', resend the RPC immediately as a temporary
+				// measure to bypass race conditions. But only if the receiver is known the exist.
+				// There is (deliberately) no time-out handling at present.
+				if (ACK.Result == static_cast<uint64>(CrossServer::Result::TargetUnknown))
+				{
+					const Worker_EntityId TargetEntityId = SentRPC->Target.Entity;
+
+					const EntityViewElement* Element = ActorSubView.GetView().Find(SenderId);
+					if (ensureMsgf(Element, TEXT("Serious error, cannot find sender in the view which should not be possible")))
+					{
+						const bool TargetEntityIdHasValidObject = DoesEntityIdHaveValidObjectCallback.Execute(TargetEntityId);
+						if (TargetEntityIdHasValidObject)
+						{
+							const ComponentData* CompData = Element->Components.FindByPredicate(
+								ComponentIdEquality{ SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID });
+							if (ensureMsgf(
+									Element,
+									TEXT("Serious error, cannot find 'ComponentData' of type 'CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID'")))
+							{
+								CrossServerEndpoint SenderEndpoint(CompData->GetUnderlying());
+								if (ensureMsgf(SentRPC->SourceSlot < static_cast<uint32>(SenderEndpoint.ReliableRPCBuffer.RingBuffer.Num()),
+											   TEXT("Serious error, SourceSlot is larger than 'ReliableRPCBuffer.RingBuffer'")))
+								{
+									const auto& SlotData = SenderEndpoint.ReliableRPCBuffer.RingBuffer[SentRPC->SourceSlot];
+									check(SlotData.IsSet());
+
+									const RPCSender Sender(SenderId, 0);
+									const RPCPayload& SenderPayload = SlotData.GetValue();
+									const PendingRPCPayload PendingPayload(SenderPayload, {});
+
+									PushCrossServerRPC(TargetEntityId, Sender, PendingPayload, true);
+								}
+							}
+						}
+						else
+						{
+							UE_LOG(LogCrossServerRPCService, Error,
+								   TEXT("Attempting to resend RPC but the receiver has been deleted, the RPC will therefore be dropped. "
+										"Receiver: %llu, Sender: %llu"),
+								   TargetEntityId, SenderId);
+						}
+					}
+				}
+
 				SenderState.Alloc.FreeSlot(SentRPC->SourceSlot);
 				SenderState.Mailbox.Remove(RPCKey);
 

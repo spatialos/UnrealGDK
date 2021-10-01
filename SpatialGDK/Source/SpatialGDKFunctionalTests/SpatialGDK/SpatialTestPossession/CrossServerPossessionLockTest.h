@@ -14,5 +14,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ACrossServerPossessionLockTest : public ASpa
 public:
 	ACrossServerPossessionLockTest();
 
+	virtual void CreateCustomContentForMap() override;
+
 	virtual void PrepareTest() override;
 };

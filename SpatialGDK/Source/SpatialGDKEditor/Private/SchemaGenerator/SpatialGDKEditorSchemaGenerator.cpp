@@ -359,6 +359,7 @@ void GenerateSchemaForSublevels(const FString& SchemaOutputPath, const TMultiMap
 
 	TArray<FName> Keys;
 	LevelNamesToPaths.GetKeys(Keys);
+	Keys.Sort(FNameLexicalLess());
 
 	for (FName LevelName : Keys)
 	{
@@ -424,19 +425,23 @@ void GenerateSchemaForNCDs(const FString& SchemaOutputPath)
 
 	FComponentIdGenerator IdGenerator = FComponentIdGenerator(NextAvailableComponentId);
 
-	for (auto& NCDComponent : NetCullDistanceToComponentId)
+	TArray<float> Keys;
+	NetCullDistanceToComponentId.GetKeys(Keys);
+	Keys.Sort();
+
+	for (float NCD : Keys)
 	{
-		const FString ComponentName = FString::Printf(TEXT("NetCullDistanceSquared%lld"), static_cast<uint64>(NCDComponent.Key));
-		if (NCDComponent.Value == 0)
+		const FString ComponentName = FString::Printf(TEXT("NetCullDistanceSquared%lld"), static_cast<uint64>(NCD));
+		FString SchemaComponentName = UnrealNameToSchemaComponentName(ComponentName);
+
+		Worker_ComponentId& ComponentId = NetCullDistanceToComponentId[NCD];
+		if (ComponentId == 0)
 		{
-			NCDComponent.Value = IdGenerator.Next();
+			ComponentId = IdGenerator.Next();
 		}
 
-		FString SchemaComponentName = UnrealNameToSchemaComponentName(ComponentName);
-		Worker_ComponentId ComponentId = NCDComponent.Value;
-
 		Writer.PrintNewLine();
-		Writer.Printf("// distance {0}", NCDComponent.Key);
+		Writer.Printf("// distance {0}", NCD);
 		Writer.Printf("component {0} {", *SchemaComponentName);
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
@@ -1290,23 +1295,28 @@ void ResetUsedNames()
 	}
 }
 
-bool RunSchemaCompiler(FString& SchemaBundleJsonOutput, FString SchemaInputDir, FString BuildDir)
+bool RunSchemaCompiler(FString& SchemaBundleJsonOutput, FString SchemaInputDir, FString BuildDir, FString CompiledSchemaDir)
 {
 	FString PluginDir = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory();
 
 	// Get the schema_compiler path and arguments
 	FString SchemaCompilerExe = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe"));
 
-	if (SchemaInputDir == "")
+	if (SchemaInputDir.IsEmpty())
 	{
 		SchemaInputDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema"));
 	}
 
-	if (BuildDir == "")
+	if (BuildDir.IsEmpty())
 	{
 		BuildDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build"));
 	}
-	FString CompiledSchemaDir = FPaths::Combine(BuildDir, TEXT("assembly/schema"));
+
+	if (CompiledSchemaDir.IsEmpty())
+	{
+		CompiledSchemaDir = FPaths::Combine(BuildDir, TEXT("assembly/schema"));
+	}
+
 	FString CoreSDKSchemaDir = FPaths::Combine(BuildDir, TEXT("dependencies/schema/standard_library"));
 
 	FString CompiledSchemaASTDir = FPaths::Combine(CompiledSchemaDir, TEXT("ast"));
@@ -1451,8 +1461,13 @@ bool CreateCustomAuthoritySet(FString SchemaInputPath, FString SchemaOutputPath,
 			return true;
 		});
 
+		// Put the generated schema binary for our custom schema in the Intermediate folder.
+		// This is so it doesn't stomp the users (or tests) proper schema binary used by the runtime.
+		FString SchemaCompilerIntermediateDir = FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("Improbable"), TEXT("schema"));
+		Filesystem.CreateDirectoryTree(*SchemaCompilerIntermediateDir);
+
 		FString SchemaJsonPath;
-		if (!RunSchemaCompiler(SchemaJsonPath, SchemaInputPath))
+		if (!RunSchemaCompiler(SchemaJsonPath, SchemaInputPath, "" /*BuildDir*/, SchemaCompilerIntermediateDir))
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to parse %s meta data schema files"), *SetDesc.ComponentSetName);
 			return false;

@@ -10,6 +10,7 @@
 #include "EngineGlobals.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
+#include "Misc/EngineVersionComparison.h"
 #include "Net/DataReplication.h"
 #include "SocketSubsystem.h"
 #include "UObject/UObjectIterator.h"
@@ -935,7 +936,9 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 		}
 	}
 
+#if UE_VERSION_OLDER_THAN(4, 27, 0)
 	FGuid NextMapGuid = UEngine::GetPackageGuid(FName(*NextMap), World->IsPlayInEditor());
+#endif
 
 	FString NewURL = URL;
 
@@ -947,7 +950,11 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 
 	// Notify clients we're switching level and give them time to receive.
 	FString URLMod = NewURL;
+#if UE_VERSION_OLDER_THAN(4, 27, 0)
 	APlayerController* LocalPlayer = GameMode->ProcessClientTravel(URLMod, NextMapGuid, bSeamless, bAbsolute);
+#else
+	APlayerController* LocalPlayer = GameMode->ProcessClientTravel(URLMod, bSeamless, bAbsolute);
+#endif
 
 	// We can't have the NextURL set this early when using SpatialProcessServerTravel so empty the string here.
 	// The reason for this is, on the next WorldTick the current World and NetDriver will be unloaded.
