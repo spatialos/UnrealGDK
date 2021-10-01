@@ -405,7 +405,8 @@ void ActorSystem::Advance()
 			{
 				if (CommandResponse.status_code == WORKER_STATUS_CODE_TIMEOUT)
 				{
-					UE_LOG(LogActorSystem, Warning, TEXT("Update client interest timed out, sending full interest update: entity id %lld"), EntityId);
+					UE_LOG(LogActorSystem, Warning, TEXT("Update client interest timed out, sending full interest update: entity id %lld"),
+						   EntityId);
 					MarkClientInterestDirty(EntityId, true);
 				}
 			}

@@ -164,7 +164,7 @@ TArray<AActor*> USpatialReplicationGraph::ExtractClientInterestActorsFromGather(
 	// Should try and reserve accurately here - could sum gathered rep list lengths (although this wouldn't factor dependent Actors) or
 	// cache the last list size
 
-	for (FActorRepListRawView& List : GatheredReplicationListsForConnection.GetLists(EActorRepListTypeFlags::Default))
+	for (const FActorRepListConstView& List : GatheredReplicationListsForConnection.GetLists(EActorRepListTypeFlags::Default))
 	{
 		for (AActor* Actor : List)
 		{
