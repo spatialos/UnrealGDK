@@ -2200,35 +2200,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	{
 		if (bStrategyWorkerEnabled)
 		{
-			if (!bDirectAssignment)
-			{
-				for (AActor* Actor : ActorsHandedOver)
-				{
-					// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy
-					Actor->Role = ROLE_SimulatedProxy;
-					Actor->RemoteRole = ROLE_Authority;
-
-					Actor->OnAuthorityLost();
-				}
-
-				for (auto EntityId : HandoverManager->GetActorsToCheckForAuth())
-				{
-					TWeakObjectPtr<UObject> ObjectPtr = PackageMap->GetObjectFromEntityId(EntityId);
-					AActor* Actor = Cast<AActor>(ObjectPtr.Get());
-					if (Actor == nullptr || Actor->HasAuthority())
-					{
-						continue;
-					}
-					else if (Actor != nullptr)
-					{
-						Actor->Role = ROLE_Authority;
-						Actor->RemoteRole = ROLE_SimulatedProxy;
-
-						Actor->OnAuthorityGained();
-					}
-				}
-			}
-			HandoverManager->Flush(Connection->GetCoordinator(), EntitiesHandedOver);
+			FSpatialLoadBalancingHandler::UpdateActorsHandedOver(*this, EntitiesHandedOver, ActorsHandedOver);
 		}
 		if (!bStrategyWorkerEnabled || bDirectAssignment)
 		{
