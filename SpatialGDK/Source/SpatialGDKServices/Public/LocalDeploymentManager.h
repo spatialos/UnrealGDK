@@ -25,8 +25,8 @@ public:
 
 	void SPATIALGDKSERVICES_API Init();
 
-	bool CheckIfPortIsBound(int32 Port);
-	bool KillProcessBlockingPort(int32 Port);
+	bool CheckIfPortIsBound(uint16_t Port);
+	bool KillProcessBlockingPort(uint16_t Port);
 	bool LocalDeploymentPreRunChecks();
 
 	using LocalDeploymentCallback = TFunction<void(bool)>;
@@ -92,9 +92,9 @@ private:
 	TUniquePtr<IFileHandle> RuntimeLogFileHandle;
 	FDateTime RuntimeStartTime;
 
-	static const int32 RequiredRuntimePort = 5301;
-	static const int32 WorkerPort = 8018;
-	static const int32 HTTPPort = 5006;
+	static const uint16_t RequiredRuntimePort = 5301;
+	static const uint16_t WorkerPort = 8018;
+	static const uint16_t HTTPPort = 5006;
 
 	static constexpr double RuntimeTimeout = 10.0;
 	static constexpr int32 RuntimeStartRetries = 3;

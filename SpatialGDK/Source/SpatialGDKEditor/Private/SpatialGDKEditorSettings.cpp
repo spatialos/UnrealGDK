@@ -59,7 +59,6 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bBuildAndUploadAssembly(true)
 	, AssemblyBuildConfiguration(TEXT("Development"))
 	, bConnectServerToCloud(false)
-	, LocalReceptionistPort(SpatialConstants::DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT)
 	, ListeningAddress(SpatialConstants::LOCAL_HOST)
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 	, bPackageMobileCommandLineArgs(true)
@@ -74,6 +73,8 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	// TODO: UNR-4472 - Remove this WorkerTypeName renaming when refactoring FLaunchConfigDescription.
 	// Force update users settings in-case they have a bad server worker name saved.
 	LaunchConfigDesc.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
+
+	GetMutableDefault<ULevelEditorPlaySettings>()->GetServerPort(LocalReceptionistPort);
 }
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)

@@ -457,7 +457,7 @@ public:
 	/** Port on which the receptionist proxy will be available. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection",
 			  meta = (EditCondition = "bConnectServerToCloud", DisplayName = "Local Receptionist Port"))
-	int32 LocalReceptionistPort;
+	uint16 LocalReceptionistPort;
 
 	/** Network address to bind the receptionist proxy to. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection",

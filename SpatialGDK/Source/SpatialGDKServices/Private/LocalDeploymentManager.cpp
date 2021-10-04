@@ -118,7 +118,7 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 	});
 }
 
-bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
+bool FLocalDeploymentManager::CheckIfPortIsBound(uint16_t Port)
 {
 	ISocketSubsystem* SocketSubsystem = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
 	bool bCanBindToPort = false;
@@ -163,7 +163,7 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 	return !bCanBindToPort;
 }
 
-bool FLocalDeploymentManager::KillProcessBlockingPort(int32 Port)
+bool FLocalDeploymentManager::KillProcessBlockingPort(uint16_t Port)
 {
 	FString PID;
 	FString State;
@@ -183,9 +183,11 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 	bool bSuccess = true;
 
 	// Check for the known runtime ports which could be blocked by other processes.
-	TArray<int32> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, SpatialGDKServicesConstants::RuntimeGRPCPort };
 
-	for (int32 RuntimePort : RequiredRuntimePorts)
+	// Pass the RuntimeGRPCPort to this function
+	TArray<uint16_t> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, SpatialGDKServicesConstants::RuntimeGRPCPort };
+
+	for (uint16_t RuntimePort : RequiredRuntimePorts)
 	{
 		if (CheckIfPortIsBound(RuntimePort))
 		{
@@ -211,6 +213,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfi
 													  const FString& SnapshotName, const FString& RuntimeIPToExpose,
 													  const LocalDeploymentCallback& CallBack)
 {
+
 	int NumRetries = RuntimeStartRetries;
 	while (NumRetries > 0)
 	{
