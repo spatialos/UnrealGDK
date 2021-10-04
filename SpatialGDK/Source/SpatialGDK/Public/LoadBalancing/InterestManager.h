@@ -54,6 +54,8 @@ public:
 
 	void ComputeInterest(ISpatialOSWorker& Connection, const TArray<Worker_EntityId> Workers, const TArray<FBox2D>& Regions);
 
+	FSpatialPositionStorage& GetPositions() { return Positions; }
+
 protected:
 	int32 Allocate();
 	void Remove(int32);
@@ -71,8 +73,10 @@ protected:
 
 	TArray<Worker_EntityId> Entities;
 	TArray<FVector2D> EntityPosition;
-	TArray<uint32> EntityFlags;
-	TArray<uint64> Visibility;
+	TArray<float, TAlignedHeapAllocator<16>> EntityPositionX;
+	TArray<float, TAlignedHeapAllocator<16>> EntityPositionY;
+	TArray<uint32, TAlignedHeapAllocator<16>> EntityFlags;
+	TArray<uint64, TAlignedHeapAllocator<16>> Visibility;
 	TArray<uint64> ActiveTimestamp;
 	int32 ActiveEntities = 0;
 

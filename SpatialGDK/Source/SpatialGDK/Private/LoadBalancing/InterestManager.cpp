@@ -19,9 +19,12 @@ THIRD_PARTY_INCLUDES_END
 #include <algorithm>
 #include <cmath>
 
+#include <immintrin.h>
+
 DECLARE_CYCLE_STAT(TEXT("InterestManagerCompute"), STAT_InterestManagerComputation, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("InterestManagerComputeBroadphase"), STAT_InterestManagerComputationBroadphase, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("InterestManagerComputeBox"), STAT_InterestManagerComputationBox, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("InterestManagerComputeBoxSSE"), STAT_InterestManagerComputationBoxSSE, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("InterestManagerComputeSort"), STAT_InterestManagerComputationSort, STATGROUP_SpatialNet);
 
 namespace SpatialGDK
@@ -209,7 +212,7 @@ struct FInterestManager::FBroadphaseImpl
 	}
 #endif
 
-	void ComputeBoxVisibility(const TArray<FBox2D>& Regions, TArray<uint64>& OutVisibility)
+	void ComputeBoxVisibility(const TArray<FBox2D>& Regions, uint64* OutVisibility)
 	{
 #ifdef HAS_BULLET_PHYSICS
 		btAlignedObjectArray<btDbvtVolume> btRegions;
@@ -222,10 +225,12 @@ struct FInterestManager::FBroadphaseImpl
 			btRegions.push_back(btDbvtVolume::FromMM(btMin, btMax));
 		}
 
+		const btDbvtVolume* regionsPtr = &btRegions[0];
+
 		TraverseTree(
 			Regions.Num(),
 			[&](uint32 RegionNum, const btDbvtVolume& Volume) {
-				return Intersect(btRegions[RegionNum], Volume);
+				return Intersect(regionsPtr[RegionNum], Volume);
 			},
 			[&](uint32 RegionNum, uint32 Slot) {
 				if (Intersect(btRegions[RegionNum], Positions[Slot]))
@@ -277,7 +282,7 @@ FInterestManager::FInterestManager(InterestFactory& InInterestF, FSpatialPositio
 	Visibility.Reserve(1 << 16);
 	ActiveTimestamp.Reserve(1 << 16);
 #ifdef HAS_BULLET_PHYSICS
-	Broadphase = MakeUnique<FBroadphaseImpl>();
+	// Broadphase = MakeUnique<FBroadphaseImpl>();
 #endif
 }
 
@@ -311,6 +316,7 @@ void FInterestManager::Advance(const TSet<Worker_EntityId_Key>& DeletedEntities)
 		}
 		else
 		{
+			// Assume these flags are available immediately and never change.
 			uint32 Flags = 0;
 			if (AlwaysRelevant.GetObjects().Contains(Entity))
 			{
@@ -331,6 +337,8 @@ void FInterestManager::Advance(const TSet<Worker_EntityId_Key>& DeletedEntities)
 		}
 
 		EntityPosition[Slot] = FVector2D(Pos.X, Pos.Y);
+		EntityPositionX[Slot] = Pos.X;
+		EntityPositionY[Slot] = Pos.Y;
 		ActiveTimestamp[Slot] = FPlatformTime::Cycles64();
 
 		if (Slot >= ActiveEntities)
@@ -345,6 +353,8 @@ int32 FInterestManager::Allocate()
 {
 	Entities.AddDefaulted();
 	EntityPosition.AddDefaulted();
+	EntityPositionX.AddDefaulted();
+	EntityPositionY.AddDefaulted();
 	EntityFlags.AddDefaulted();
 	Visibility.AddDefaulted();
 	ActiveTimestamp.AddDefaulted();
@@ -357,7 +367,6 @@ int32 FInterestManager::Allocate()
 		MoveEntry(ActiveEntities - 1, NumEntities - 1);
 	}
 	return ActiveEntities - 1;
-	// return NumEntities - 1;
 }
 
 void FInterestManager::Remove(int32 Slot)
@@ -374,6 +383,8 @@ void FInterestManager::Remove(int32 Slot)
 	}
 	Entities.Pop(false);
 	EntityPosition.Pop(false);
+	EntityPositionX.Pop(false);
+	EntityPositionY.Pop(false);
 	EntityFlags.Pop(false);
 	Visibility.Pop(false);
 }
@@ -386,6 +397,8 @@ void FInterestManager::MoveEntry(int32 SlotSrc, int32 SlotDest)
 
 	Entities[SlotDest] = Entities[SlotSrc];
 	EntityPosition[SlotDest] = EntityPosition[SlotSrc];
+	EntityPositionX[SlotDest] = EntityPositionX[SlotSrc];
+	EntityPositionY[SlotDest] = EntityPositionY[SlotSrc];
 	EntityFlags[SlotDest] = EntityFlags[SlotSrc];
 	ActiveTimestamp[SlotDest] = ActiveTimestamp[SlotSrc];
 }
@@ -400,8 +413,15 @@ void FInterestManager::SwapEntries(int32 Slot1, int32 Slot2)
 
 	Swap(Entities[Slot1], Entities[Slot2]);
 	Swap(EntityPosition[Slot1], EntityPosition[Slot2]);
+	Swap(EntityPositionX[Slot1], EntityPositionX[Slot2]);
+	Swap(EntityPositionY[Slot1], EntityPositionY[Slot2]);
 	Swap(EntityFlags[Slot1], EntityFlags[Slot2]);
 	Swap(ActiveTimestamp[Slot1], ActiveTimestamp[Slot2]);
+
+	if (Broadphase)
+	{
+		Broadphase->SwapEntries(Slot1, Slot2);
+	}
 }
 
 void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArray<Worker_EntityId> Workers, const TArray<FBox2D>& Regions)
@@ -412,7 +432,13 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 	{
 		return;
 	}
+	if (Regions.Num() == 0)
+	{
+		return;
+	}
 
+	// Set an entity that has not moved since 5 secs as inactive. It will not be checked against the regions.
+	// This assumes that the bits allocation against workers remains constant, which is not valid anymore when changing/reassigning regions.
 	const double InactiveTime = 5.0;
 	const uint64 TimeToConsiderInactive = FPlatformTime::Cycles64() - (InactiveTime / FPlatformTime::GetSecondsPerCycle64());
 	for (int32 i = 0; i < (int32)ActiveEntities; ++i)
@@ -437,8 +463,18 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 		CachedServerInterest[2].SetNum(NumRegions);
 	}
 
-	if (Broadphase)
+	constexpr bool bUseBroadphaseForRegions = false;
+
+	if (Broadphase && bUseBroadphaseForRegions)
 	{
+		// 60ms, 200k entities, 64 regions, 5% overlap
+		// Worse than the non-spatialized version, which is not surprising, since we are visiting all the entities anyway,
+		// hence visiting the tree before testing the entities is just more data to process.
+		// Have to test it for the player interest since the tree culling might actually do something in that case.
+
+		// Since the regions are a partition of the entire space in the server case, a better strategy would be to find the region in the
+		// partition an entity belongs to and test the position against the segment boundaries with the interest border. The region's
+		// connectivity would be needed to interpret these results.
 		SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputationBroadphase);
 		const uint32 NumActiveEntities = ActiveEntities;
 
@@ -452,10 +488,12 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			++Flags;
 		}
 
-		Broadphase->ComputeBoxVisibility(Regions, Visibility);
+		Broadphase->ComputeBoxVisibility(Regions, Visibility.GetData());
 	}
-	else
+	else if (false)
 	{
+		// Not-so naively iterate over the region
+		// 24ms, 200k entities, 64 regions
 		SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputationBox);
 		const FVector2D* Pos = EntityPosition.GetData();
 		const uint32* Flags = EntityFlags.GetData();
@@ -465,26 +503,220 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 
 		for (uint32 i = 0; i < NumActiveEntities; ++i)
 		{
-			*VisibilityPtr = 0;
+			const uint64 AllRegionsMask = UINT64_MAX;
+			*VisibilityPtr = ((uint64)(*Flags != 0)) * AllRegionsMask;
+
+			// Avoid using operator[] as the range-check could expand to a sizable chunk of code.
+			const FBox2D* RegionBox = Regions.GetData();
 
 			for (uint32 j = 0; j < NumRegions; ++j)
 			{
 				const uint64 Mask = 1ull << j;
-
-				*VisibilityPtr |= ((uint64)(*Flags != 0)) * Mask;
-				const FBox2D& Box = Regions[j];
-				*VisibilityPtr |= ((uint64)Box.IsInside(*Pos)) * Mask;
+				// Setting individual bits is useful when doing a batch test over several regions in one go
+				*VisibilityPtr |= ((uint64)RegionBox->IsInside(*Pos)) * Mask;
+				++RegionBox;
 			}
 			++Pos;
 			++Flags;
 			++VisibilityPtr;
 		}
 	}
+	else
+	{
+		SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputationBoxSSE);
+
+		constexpr bool bVectorizeRegions = true;
+		constexpr bool bVectorizeEntities = !bVectorizeRegions;
+
+		const uint64 AllRegionsMask = [NumRegions] {
+			// To handle the 64 regions case, shifting by 64 could be a nop;
+			uint64 Mask = 1ull << (NumRegions - 1);
+			Mask <<= 1;
+			return Mask - 1ull;
+		}();
+
+		const uint32* Flags = EntityFlags.GetData();
+		uint64* VisibilityPtr = Visibility.GetData();
+		if (bVectorizeRegions)
+		{
+			// SSE version, processing 4 regions at a time.
+			// 10-16ms ?? profiler has wild noise
+			// 200k entities, 64 regions
+			const uint32 Num4Regions = (NumRegions + 3) / 4;
+			const uint32 NextMultipleOf4 = Num4Regions * 4;
+
+			TArray<float, TAlignedHeapAllocator<16>> BoxesMinX;
+			TArray<float, TAlignedHeapAllocator<16>> BoxesMinY;
+			TArray<float, TAlignedHeapAllocator<16>> BoxesMaxX;
+			TArray<float, TAlignedHeapAllocator<16>> BoxesMaxY;
+			BoxesMinX.Reserve(NextMultipleOf4);
+			BoxesMinY.Reserve(NextMultipleOf4);
+			BoxesMaxX.Reserve(NextMultipleOf4);
+			BoxesMaxY.Reserve(NextMultipleOf4);
+			for (uint32 j = 0; j < NumRegions; ++j)
+			{
+				BoxesMinX.Add(Regions[j].Min.X);
+				BoxesMinY.Add(Regions[j].Min.Y);
+				BoxesMaxX.Add(Regions[j].Max.X);
+				BoxesMaxY.Add(Regions[j].Max.Y);
+			}
+			for (uint32 j = NumRegions; j < NextMultipleOf4; ++j)
+			{
+				BoxesMinX.Add(0);
+				BoxesMinY.Add(0);
+				BoxesMaxX.Add(0);
+				BoxesMaxY.Add(0);
+			}
+
+			const VectorRegister Zero = VectorSetFloat1(0);
+
+			const FVector2D* Pos = EntityPosition.GetData();
+			for (uint32 i = 0; i < NumEntities; ++i)
+			{
+				*VisibilityPtr = ((uint64)(*Flags != 0)) * AllRegionsMask;
+
+				const float* BoxesMinXPtr = BoxesMinX.GetData();
+				const float* BoxesMinYPtr = BoxesMinY.GetData();
+				const float* BoxesMaxXPtr = BoxesMaxX.GetData();
+				const float* BoxesMaxYPtr = BoxesMaxY.GetData();
+
+				VectorRegister regX = VectorSetFloat1(Pos->X);
+				VectorRegister regY = VectorSetFloat1(Pos->Y);
+
+				for (uint32 j = 0; j < NextMultipleOf4 / 4; ++j)
+				{
+					VectorRegister BoxTest = VectorLoad(BoxesMinXPtr);
+					BoxTest = VectorSubtract(regX, BoxTest);
+					VectorRegister TestResult = VectorCompareGT(BoxTest, Zero);
+
+					BoxTest = VectorLoad(BoxesMaxXPtr);
+					BoxTest = VectorSubtract(BoxTest, regX);
+					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, Zero));
+
+					BoxTest = VectorLoad(BoxesMinYPtr);
+					BoxTest = VectorSubtract(regY, BoxTest);
+					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, Zero));
+
+					BoxTest = VectorLoad(BoxesMaxYPtr);
+					BoxTest = VectorSubtract(BoxTest, regY);
+					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, Zero));
+					uint64 Mask = (TestResult.m128_i32[0] & 1) | (TestResult.m128_i32[1] & 1) << 1 | (TestResult.m128_i32[2] & 1) << 2
+								  | (TestResult.m128_i32[3] & 1) << 3;
+
+					*VisibilityPtr |= Mask << (j * 4);
+
+					BoxesMinXPtr += 4;
+					BoxesMinYPtr += 4;
+					BoxesMaxXPtr += 4;
+					BoxesMaxYPtr += 4;
+				}
+				++Pos;
+				++Flags;
+				++VisibilityPtr;
+			}
+		}
+
+		if (bVectorizeEntities)
+		{
+			// SSE version, processing 4 positions at a time.
+			// 10-16ms ?? profiler has wild noise
+			// 200k entities, 64 regions
+			const uint32 Num4Entities = ActiveEntities / 4;
+			const uint32 Rem4Entities = ActiveEntities % 4;
+
+			const float* PosX = EntityPositionX.GetData();
+			const float* PosY = EntityPositionY.GetData();
+
+			const VectorRegister Zero128 = VectorSetFloat1(0);
+			__m256i Zero256 = _mm256_set1_epi64x(0);
+			__m256i One256 = _mm256_set1_epi64x(UINT64_MAX);
+			__m256i AllRegions256 = _mm256_set1_epi64x(AllRegionsMask);
+
+			for (uint32 i = 0; i < Num4Entities; ++i)
+			{
+				// Load flags, sign extended to 64 bits integers
+				__m256i FlagsReg = _mm256_cvtepi32_epi64(_mm_loadu_epi32(Flags));
+
+				// Visibility flags for the next 4 entities.
+				// Compare to zero to check if any bit is set (could be a different mask).
+				__m256i VisibilityReg = _mm256_cmpeq_epi64(Zero256, FlagsReg);
+
+				// Xor the result to get a full mask if any bit was set.
+				VisibilityReg = _mm256_xor_si256(One256, VisibilityReg);
+				VisibilityReg = _mm256_and_si256(AllRegions256, VisibilityReg);
+
+				const FBox2D* RegionBox = Regions.GetData();
+
+				// Load the X and Y coordinates of the next 4 entities.
+				VectorRegister regX = VectorLoadAligned(PosX);
+				VectorRegister regY = VectorLoadAligned(PosY);
+
+				for (uint32 j = 0; j < NumRegions; ++j)
+				{
+					const uint64 Mask = 1ull << j;
+
+					VectorRegister BoxTest = VectorSetFloat1(RegionBox->Min.X);
+					BoxTest = VectorSubtract(regX, BoxTest);
+					VectorRegister TestResult = VectorCompareGT(BoxTest, Zero128);
+
+					BoxTest = VectorSetFloat1(RegionBox->Max.X);
+					BoxTest = VectorSubtract(BoxTest, regX);
+					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, Zero128));
+
+					BoxTest = VectorSetFloat1(RegionBox->Min.Y);
+					BoxTest = VectorSubtract(regY, BoxTest);
+					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, Zero128));
+
+					BoxTest = VectorSetFloat1(RegionBox->Max.Y);
+					BoxTest = VectorSubtract(BoxTest, regY);
+					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, Zero128));
+
+					// The test result is 0xFFFFFFFF for each entity which is in the box.
+					// Convert it to 64bit, once again with sign extension, to get UINT64_MAX or 0 in order to AND it with the region's mask
+					__m256i TestResult256 = _mm256_cvtepi32_epi64(_mm_castps_si128(TestResult));
+
+					// Combine the current result with the entity's visibility mask
+					VisibilityReg = _mm256_or_si256(VisibilityReg, _mm256_and_si256(_mm256_set1_epi64x(Mask), TestResult256));
+					++RegionBox;
+				}
+				// Store the result.
+				_mm256_storeu_epi64(VisibilityPtr, VisibilityReg);
+
+				PosX += 4;
+				PosY += 4;
+				Flags += 4;
+				VisibilityPtr += 4;
+			}
+
+			// Handle the tail entities.
+			const FVector2D* Pos = EntityPosition.GetData() + 4 * Num4Entities;
+			for (uint32 i = 0; i < Rem4Entities; ++i)
+			{
+				*VisibilityPtr = ((uint64)(*Flags != 0)) * AllRegionsMask;
+
+				const FBox2D* RegionBox = Regions.GetData();
+
+				for (uint32 j = 0; j < NumRegions; ++j)
+				{
+					const uint64 Mask = 1ull << j;
+					*VisibilityPtr |= ((uint64)RegionBox->IsInside(*Pos)) * Mask;
+
+					++RegionBox;
+				}
+				++Pos;
+				++Flags;
+				++VisibilityPtr;
+			}
+		}
+	}
 
 	{
+		// 8ms 200k entities, 64 regions, 5% overlap
 		SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputationSort);
 
 		const uint64* VisibilityPtr = Visibility.GetData();
+
+		// Reset region visibility.
 		for (uint32 j = 0; j < NumRegions; ++j)
 		{
 			Swap(CachedServerInterest[2][j], CachedServerInterest[0][j]);
@@ -495,15 +727,20 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			uint64 VisMask = *VisibilityPtr;
 			while (VisMask != 0)
 			{
+				// _tzcnt_u64 -> Count trailing zeros, <==> position of the first set bit
+				// equivalent of peeling one set region at a time
 				const uint32 j = _tzcnt_u64(VisMask);
-				const uint64 Mask = 1ull << j;
 				CachedServerInterest[0][j].Add(Entities[i]);
-				VisMask &= ~Mask;
+				VisMask &= ~(1ull << j);
 			}
 			++VisibilityPtr;
 		}
+
 		for (uint32 j = 0; j < NumRegions; ++j)
 		{
+			// If several regions are assigned to a single worker, the lists need to be merged and
+			// duplicates eliminated before computing the add/remove lists.
+
 			auto& CurVisible = CachedServerInterest[0][j];
 			auto& PrevVisible = CachedServerInterest[2][j];
 			auto& Added = CachedServerInterest[1][j];

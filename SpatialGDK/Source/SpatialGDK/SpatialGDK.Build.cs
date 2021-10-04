@@ -180,7 +180,7 @@ public class SpatialGDK : ModuleRules
             PublicDefinitions.Add("TRACE_LIB_ACTIVE=0");
         }
 
-        if (Target.Platform == UnrealTargetPlatform.Win64 && false)
+        if (Target.Platform == UnrealTargetPlatform.Win64)
         {
             PublicDefinitions.Add("HAS_BULLET_PHYSICS=1");
             PrivateIncludePaths.Add("F:/Dev/bullet3-3.17/src");

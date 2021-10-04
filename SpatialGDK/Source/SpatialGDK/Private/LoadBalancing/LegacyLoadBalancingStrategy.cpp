@@ -15,6 +15,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialLegacyLoadBalancing)
 
+//#define BENCH_INTEREST_PERF
+
 namespace SpatialGDK
 {
 class FActorGroupStorage : public TLBDataStorage<ActorGroupMember>
@@ -36,7 +38,8 @@ class FCustomWorkerAssignmentStorage : public TLBDataStorage<LegacyLB_CustomWork
 class DbgPositionStorage : public FSpatialPositionStorage
 {
 public:
-	DbgPositionStorage(FBox2D Region, uint32 Num)
+	DbgPositionStorage(FBox2D InRegion, uint32 Num)
+		: Region(InRegion)
 	{
 		FVector2D Offset = Region.Min;
 		FVector2D Size = Region.GetSize();
@@ -44,11 +47,29 @@ public:
 		{
 			Modified.Add(i + 1);
 
-			FVector Pos(FMath::RandRange(0.0f, Size.X) + Offset.X, FMath::RandRange(0.0f, Size.Y) + Offset.Y, 0);
+			FVector Pos(Rand.FRandRange(0.0f, Size.X) + Offset.X, Rand.FRandRange(0.0f, Size.Y) + Offset.Y, 0);
 
 			Positions.Add(i + 1, Pos);
 		}
 	}
+
+	void MoveStuff(uint32 NumToMove)
+	{
+		uint32 NumEntities = Positions.Num();
+		FVector2D Offset = Region.Min;
+		FVector2D Size = Region.GetSize();
+
+		for (uint32 i = 0; i < NumToMove; ++i)
+		{
+			uint32 ToMove = (Rand.GetUnsignedInt() % NumEntities) + 1;
+			FVector Pos(Rand.FRandRange(0.0f, Size.X) + Offset.X, Rand.FRandRange(0.0f, Size.Y) + Offset.Y, 0);
+			Positions.Add(ToMove, Pos);
+			Modified.Add(ToMove);
+		}
+	}
+
+	FBox2D Region;
+	FRandomStream Rand;
 };
 
 static const FBox2D TestBox = FBox2D(FVector2D(-100000, -100000), FVector2D(100000, 100000));
@@ -88,8 +109,12 @@ void FLegacyLoadBalancing::Advance(ISpatialOSWorker& Connection, const TSet<Work
 	CommandsHandler.ProcessOps(Connection.GetWorkerMessages());
 	if (InterestManager)
 	{
+#ifndef BENCH_INTEREST_PERF
 		InterestManager->Advance(DeletedEntities);
-		// InterestManager->Advance(TSet<Worker_EntityId_Key>());
+#else
+		static_cast<DbgPositionStorage&>(InterestManager->GetPositions()).MoveStuff(2000);
+		InterestManager->Advance(TSet<Worker_EntityId_Key>());
+#endif
 	}
 }
 
@@ -151,21 +176,22 @@ void FLegacyLoadBalancing::Flush(ISpatialOSWorker& Connection)
 		TArray<Worker_EntityId> Workers;
 		TArray<FBox2D> Regions;
 
-		// const uint32 div = 8;
-		// FVector2D Increment = (TestBox.GetSize() / div) * 1.05;
-		// FVector2D Start = TestBox.Min;
-		// for (uint32 x = 0; x < div; ++x)
-		//{
-		//	for (uint32 y = 0; y < div; ++y)
-		//	{
-		//		FVector2D Offset = Start;
-		//		Offset.X += x * Increment.X;
-		//		Offset.Y += x * Increment.Y;
-		//		Regions.Add(FBox2D(Offset, Offset + Increment));
-		//		Workers.Add(Workers.Num());
-		//	}
-		//}
-
+#ifdef BENCH_INTEREST_PERF
+		const uint32 div = 8;
+		FVector2D Increment = (TestBox.GetSize() / div);
+		FVector2D Min = TestBox.Min;
+		for (uint32 x = 0; x < div; ++x)
+		{
+			for (uint32 y = 0; y < div; ++y)
+			{
+				Regions.Add(FBox2D(Min - Increment * 0.05, Min + Increment * 1.05));
+				Workers.Add(Workers.Num());
+				Min.Y += Increment.Y;
+			}
+			Min.Y = TestBox.Min.Y;
+			Min.X += Increment.X;
+		}
+#else
 		for (const auto& Layer : LBContext.Layers)
 		{
 			for (const auto& Cell : Layer.Cells)
@@ -181,6 +207,7 @@ void FLegacyLoadBalancing::Flush(ISpatialOSWorker& Connection)
 				Regions.Last().Max.Y += Cell.Border;
 			}
 		}
+#endif
 
 		InterestManager->ComputeInterest(Connection, Workers, Regions);
 	}
@@ -218,15 +245,17 @@ void FLegacyLoadBalancing::Init(FLoadBalancingSharedData InSharedData, TArray<FL
 	OutLoadBalancingData.Add(AlwaysRelevantStorage.Get());
 	OutLoadBalancingData.Add(ServerAlwaysRelevantStorage.Get());
 
+#ifndef BENCH_INTEREST_PERF
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	if (Settings->bUserSpaceServerInterest)
 	{
 		InterestManager =
 			MakeUnique<FInterestManager>(SharedData->InterestF, *PositionStorage, *AlwaysRelevantStorage, *ServerAlwaysRelevantStorage);
 	}
-
-	// InterestManager = MakeUnique<FInterestManager>(SharedData->InterestF,
-	//*new DbgPositionStorage(TestBox, 210000), *new FAlwaysRelevantStorage, *new FServerAlwaysRelevantStorage);
+#else
+	InterestManager = MakeUnique<FInterestManager>(SharedData->InterestF, *new DbgPositionStorage(TestBox, 210000),
+												   *new FAlwaysRelevantStorage, *new FServerAlwaysRelevantStorage);
+#endif
 }
 
 void FLegacyLoadBalancing::OnWorkersConnected(TArrayView<FLBWorkerHandle> InConnectedWorkers)
