@@ -248,7 +248,7 @@ public:
 	void LoadDefaults()
 	{
 		UseExternalIp = false;
-		ReceptionistPort = SpatialConstants::DEFAULT_PORT;
+		ReceptionistPort = GetDefault<USpatialGDKSettings>()->GetReceptionistPort();
 		SetReceptionistHost(GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost);
 	}
 
@@ -324,5 +324,5 @@ private:
 
 	FString ReceptionistHost;
 
-	uint16 ReceptionistPort;
+	uint16_t ReceptionistPort;
 };

@@ -74,7 +74,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	// Force update users settings in-case they have a bad server worker name saved.
 	LaunchConfigDesc.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 
-	GetMutableDefault<ULevelEditorPlaySettings>()->GetServerPort(LocalReceptionistPort);
+	GetDefault<ULevelEditorPlaySettings>()->GetServerPort(LocalReceptionistPort);
 	RuntimeGRPCPort = LocalReceptionistPort;
 }
 

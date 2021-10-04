@@ -320,8 +320,13 @@ private:
 
 	friend class AEventTracingSettingsOverride;
 
+	/** Port used as default ReceptionistPort for any new Spatial connection. */
+	uint16_t ReceptionistPort;
+
 public:
 	bool GetPreventClientCloudDeploymentAutoConnect() const;
+
+	FORCEINLINE uint16_t GetReceptionistPort() const { return ReceptionistPort; }
 
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings",
 			  meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))

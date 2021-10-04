@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
+#include "SpatialGDKSettings.h"
 
 #define CONNECTIONMANAGER_TEST(TestName) GDK_AUTOMATION_TEST(Core, SpatialConnectionManager, TestName)
 
@@ -224,7 +225,7 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_ExternalBridgeNoHost)
 	// THEN
 	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, true);
 	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "127.0.0.1");
-	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.GetReceptionistPort(), SpatialConstants::DEFAULT_PORT);
+	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.GetReceptionistPort(), GetDefault<USpatialGDKSettings>()->GetReceptionistPort());
 	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
 
 	return true;

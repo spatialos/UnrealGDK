@@ -238,6 +238,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 	RPCRingBufferSizeOverrides.Add(ERPCType::ServerAlwaysWrite, 1);
+
+	GetDefault<ULevelEditorPlaySettings>()->GetServerPort(ReceptionistPort);
 }
 
 void USpatialGDKSettings::PostInitProperties()
