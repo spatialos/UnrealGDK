@@ -184,7 +184,6 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 
 	// Check for the known runtime ports which could be blocked by other processes.
 
-	// Pass the RuntimeGRPCPort to this function
 	TArray<uint16_t> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, SpatialGDKServicesConstants::RuntimeGRPCPort };
 
 	for (uint16_t RuntimePort : RequiredRuntimePorts)
@@ -213,7 +212,6 @@ void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfi
 													  const FString& SnapshotName, const FString& RuntimeIPToExpose,
 													  const LocalDeploymentCallback& CallBack)
 {
-
 	int NumRetries = RuntimeStartRetries;
 	while (NumRetries > 0)
 	{
@@ -293,11 +291,12 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots/<timestamp>
 	// --schema-bundle=spatial/build/assembly/schema/schema.sb
 	// --event - tracing - logs - directory = `<Project > / spatial / localdeployment / <timestamp> / `
-	FString RuntimeArgs = FString::Printf(
-		TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
-			 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
-		*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-		*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *CurrentSnapshotPath, *SchemaBundle, *EventTracingPath, *LaunchArgs);
+	FString RuntimeArgs =
+		FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
+							 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
+						*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
+						*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *CurrentSnapshotPath, *SchemaBundle,
+						*EventTracingPath, *LaunchArgs);
 
 	if (!RuntimeIPToExpose.IsEmpty())
 	{
