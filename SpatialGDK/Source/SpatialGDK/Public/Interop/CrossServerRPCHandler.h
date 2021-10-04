@@ -32,6 +32,7 @@ private:
 	TArray<TTuple<double, uint32>> RPCsToDelete;
 
 	double CurrentTime = 0.f;
+	static constexpr double CrossServerRPCGuidTimeout = 30.f;
 	TMap<Worker_EntityId_Key, TArray<FCrossServerRPCParams>> QueuedCrossServerRPCs;
 	FProcessCrossServerRPC ProcessCrossServerRPCDelegate;
 	FTryRetrieveCrossServerRPCParams TryRetrieveCrossServerRPCParamsDelegate;
