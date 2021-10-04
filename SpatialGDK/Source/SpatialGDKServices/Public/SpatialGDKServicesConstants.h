@@ -54,10 +54,8 @@ static const FString GetInspectorExecutablePath(const FString& InspectorVersion)
 
 const FString SpatialOSRuntimePinnedStandardVersion = TEXT("15.3.0");
 
-const uint16_t RuntimeGRPCPort = 7777;
 const uint16_t RuntimeHTTPPort = 5006;
 
-const FString InspectorGRPCAddress = FString::Printf(TEXT("localhost:%s"), *FString::FromInt(RuntimeGRPCPort));
 const FString InspectorHTTPAddress = FString::Printf(TEXT("localhost:%s"), *FString::FromInt(RuntimeHTTPPort));
 const FString InspectorV2URL = TEXT("http://localhost:33333/inspector-v2");
 const FString InspectorPinnedVersion = TEXT("15.1.0");

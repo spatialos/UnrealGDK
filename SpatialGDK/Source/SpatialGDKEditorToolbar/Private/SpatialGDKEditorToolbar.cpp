@@ -943,10 +943,11 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
 	const FString SnapshotName = ForceSnapshot.IsEmpty() ? SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad() : ForceSnapshot;
 	const FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, SnapshotName);
-
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
+	const uint16_t RuntimeGRPCPort = SpatialGDKEditorSettings->GetRuntimeGRPCPort();
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotPath, RuntimeVersion] {
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotPath, RuntimeVersion,
+															 RuntimeGRPCPort] {
 		if (!FetchRuntimeBinaryWrapper(RuntimeVersion))
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but could not fetch the local runtime."));
@@ -983,7 +984,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 		};
 
 		LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotPath,
-														GetOptionalExposedRuntimeIP(), CallBack);
+														GetOptionalExposedRuntimeIP(), RuntimeGRPCPort, CallBack);
 	});
 }
 
@@ -1026,8 +1027,9 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> OnR
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
+	const uint16_t RuntimeGRPCPort = SpatialGDKEditorSettings->GetRuntimeGRPCPort();
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion, OnReady] {
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion, OnReady, RuntimeGRPCPort] {
 		if (InspectorProcess && InspectorProcess->Update())
 		{
 			// We already have an inspector process running. Call ready callback if any.
@@ -1049,8 +1051,9 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> OnR
 			return;
 		}
 
-		FString InspectorArgs = FString::Printf(
-			TEXT("--grpc_addr=%s --http_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorGRPCAddress,
+
+		FString InspectorArgs = FString::Printf(TEXT("--grpc_addr=%s --http_addr=%s --schema_bundle=\"%s\""),
+							*(FString::Printf(TEXT("localhost:%s"), *FString::FromInt(RuntimeGRPCPort))),
 			*SpatialGDKServicesConstants::InspectorHTTPAddress, *SpatialGDKServicesConstants::SchemaBundlePath);
 
 		InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,

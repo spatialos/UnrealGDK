@@ -75,6 +75,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	LaunchConfigDesc.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 
 	GetMutableDefault<ULevelEditorPlaySettings>()->GetServerPort(LocalReceptionistPort);
+	RuntimeGRPCPort = LocalReceptionistPort;
 }
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)

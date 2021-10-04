@@ -311,6 +311,8 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (EditCondition = "!bUseGDKPinnedInspectorVersion"))
 	FString InspectorVersionOverride;
 
+	FORCEINLINE uint16_t GetRuntimeGRPCPort() const { return RuntimeGRPCPort; }
+
 	/** Returns the version information for the currently set inspector*/
 	const FString& GetInspectorVersion() const
 	{
@@ -326,6 +328,8 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Launch",
 			  meta = (EditCondition = "!bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file path"))
 	FFilePath SpatialOSLaunchConfig;
+
+	uint16_t RuntimeGRPCPort;
 
 public:
 	/** Specify on which IP address the local runtime should be reachable. If empty, the local runtime will not be exposed. Changes are

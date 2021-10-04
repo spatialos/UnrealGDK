@@ -178,14 +178,14 @@ bool FLocalDeploymentManager::KillProcessBlockingPort(uint16_t Port)
 	return bSuccess;
 }
 
-bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
+bool FLocalDeploymentManager::LocalDeploymentPreRunChecks(const uint16_t& RuntimeGRPCPort)
 {
 	bool bSuccess = true;
 
 	// Check for the known runtime ports which could be blocked by other processes.
 
-	TArray<uint16_t> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, SpatialGDKServicesConstants::RuntimeGRPCPort };
-
+	TArray<uint16_t> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, RuntimeGRPCPort};
+	
 	for (uint16_t RuntimePort : RequiredRuntimePorts)
 	{
 		if (CheckIfPortIsBound(RuntimePort))
@@ -210,14 +210,14 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 
 void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
 													  const FString& SnapshotName, const FString& RuntimeIPToExpose,
-													  const LocalDeploymentCallback& CallBack)
+													  const uint16_t& RuntimeGRPCPort, const LocalDeploymentCallback& CallBack)
 {
 	int NumRetries = RuntimeStartRetries;
 	while (NumRetries > 0)
 	{
 		NumRetries--;
 		ERuntimeStartResponse Response =
-			StartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose, CallBack);
+			StartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose, RuntimeGRPCPort, CallBack);
 		if (Response != ERuntimeStartResponse::Timeout)
 		{
 			break;
@@ -237,7 +237,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfi
 
 FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLocalDeployment(
 	const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs, const FString& SnapshotName,
-	const FString& RuntimeIPToExpose, const LocalDeploymentCallback& CallBack)
+	const FString& RuntimeIPToExpose, const uint16_t& RuntimeGRPCPort, const LocalDeploymentCallback& CallBack)
 {
 	RuntimeStartTime = FDateTime::Now();
 	bRedeployRequired = false;
@@ -252,7 +252,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 		return ERuntimeStartResponse::AlreadyRunning;
 	}
 
-	if (!LocalDeploymentPreRunChecks())
+	if (!LocalDeploymentPreRunChecks(RuntimeGRPCPort))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error,
 			   TEXT("Tried to start a local deployment but a required port is already bound by another process."));
@@ -295,7 +295,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 		FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
 							 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
 						*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-						*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *CurrentSnapshotPath, *SchemaBundle,
+						*FString::FromInt(RuntimeGRPCPort), *CurrentSnapshotPath, *SchemaBundle,
 						*EventTracingPath, *LaunchArgs);
 
 	if (!RuntimeIPToExpose.IsEmpty())
