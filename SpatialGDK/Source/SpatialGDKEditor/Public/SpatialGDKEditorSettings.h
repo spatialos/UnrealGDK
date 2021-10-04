@@ -311,7 +311,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (EditCondition = "!bUseGDKPinnedInspectorVersion"))
 	FString InspectorVersionOverride;
 
-	FORCEINLINE uint16_t GetRuntimeGRPCPort() const { return RuntimeGRPCPort; }
 
 	/** Returns the version information for the currently set inspector*/
 	const FString& GetInspectorVersion() const
@@ -328,8 +327,6 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Launch",
 			  meta = (EditCondition = "!bGenerateDefaultLaunchConfig", DisplayName = "Launch configuration file path"))
 	FFilePath SpatialOSLaunchConfig;
-
-	uint16_t RuntimeGRPCPort;
 
 public:
 	/** Specify on which IP address the local runtime should be reachable. If empty, the local runtime will not be exposed. Changes are
@@ -458,11 +455,6 @@ public:
 			  meta = (DisplayName = "Connect local server worker to the cloud deployment"))
 	bool bConnectServerToCloud;
 
-	/** Port on which the receptionist proxy will be available. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection",
-			  meta = (EditCondition = "bConnectServerToCloud", DisplayName = "Local Receptionist Port"))
-	uint16 LocalReceptionistPort;
-
 	/** Network address to bind the receptionist proxy to. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection",
 			  meta = (EditCondition = "bConnectServerToCloud", DisplayName = "Listening Address"))
@@ -517,6 +509,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Mobile",
 			  meta = (DisplayName = "Start PIE Clients when launching on a device with local deployment flow"))
 	bool bStartPIEClientsWithLocalLaunchOnDevice;
+
 
 public:
 	/** If you have selected **Auto-generate launch configuration file**, you can change the default options in the file from the drop-down
@@ -689,4 +682,9 @@ public:
 	static bool IsAssemblyNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
 	static void TrimTMap(TMap<FString, FString>& Map);
+
+	uint16_t GetLevelSettingsServerPort() const;
+
+private:
+	const ULevelEditorPlaySettings* LevelEditorPlaySettings;
 };

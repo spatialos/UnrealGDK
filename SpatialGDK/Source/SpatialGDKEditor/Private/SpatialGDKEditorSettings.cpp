@@ -64,6 +64,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bPackageMobileCommandLineArgs(true)
 	, bStartPIEClientsWithLocalLaunchOnDevice(false)
 	, SpatialOSNetFlowType(ESpatialOSNetFlow::LocalDeployment)
+	, LevelEditorPlaySettings(GetDefault<ULevelEditorPlaySettings>())
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
@@ -73,9 +74,6 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	// TODO: UNR-4472 - Remove this WorkerTypeName renaming when refactoring FLaunchConfigDescription.
 	// Force update users settings in-case they have a bad server worker name saved.
 	LaunchConfigDesc.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
-
-	GetDefault<ULevelEditorPlaySettings>()->GetServerPort(LocalReceptionistPort);
-	RuntimeGRPCPort = LocalReceptionistPort;
 }
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
@@ -188,6 +186,14 @@ bool USpatialGDKEditorSettings::IsDeploymentNameValid(const FString& Name)
 	FRegexMatcher RegMatcher(DeploymentPatternRegex, Name);
 
 	return RegMatcher.FindNext();
+}
+
+uint16_t USpatialGDKEditorSettings::GetLevelSettingsServerPort() const
+{
+	uint16_t LevelSettingsServerPort = 0;
+	LevelEditorPlaySettings->GetServerPort(LevelSettingsServerPort);
+
+	return LevelSettingsServerPort;
 }
 
 bool USpatialGDKEditorSettings::IsRegionCodeValid(const ERegionCode::Type RegionCode)

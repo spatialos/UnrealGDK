@@ -141,7 +141,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	});
 
 	LocalDeploymentManager->Init();
-	LocalReceptionistProxyServerManager->Init(GetDefault<USpatialGDKEditorSettings>()->LocalReceptionistPort);
+	LocalReceptionistProxyServerManager->Init(GetDefault<USpatialGDKEditorSettings>()->GetLevelSettingsServerPort());
 
 	SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
 
@@ -944,7 +944,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 	const FString SnapshotName = ForceSnapshot.IsEmpty() ? SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad() : ForceSnapshot;
 	const FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, SnapshotName);
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
-	const uint16_t RuntimeGRPCPort = SpatialGDKEditorSettings->GetRuntimeGRPCPort();
+	const uint16_t RuntimeGRPCPort = SpatialGDKEditorSettings->GetLevelSettingsServerPort();
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotPath, RuntimeVersion,
 															 RuntimeGRPCPort] {
@@ -1027,7 +1027,7 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> OnR
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
-	const uint16_t RuntimeGRPCPort = SpatialGDKEditorSettings->GetRuntimeGRPCPort();
+	const uint16_t RuntimeGRPCPort = SpatialGDKEditorSettings->GetLevelSettingsServerPort();
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion, OnReady, RuntimeGRPCPort] {
 		if (InspectorProcess && InspectorProcess->Update())

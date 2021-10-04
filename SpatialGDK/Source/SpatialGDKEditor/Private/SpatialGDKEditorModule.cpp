@@ -114,7 +114,7 @@ bool FSpatialGDKEditorModule::TryStartLocalReceptionistProxyServer() const
 		const USpatialGDKEditorSettings* EditorSettings = GetDefault<USpatialGDKEditorSettings>();
 		bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(
 			GetDefault<USpatialGDKSettings>()->IsRunningInChina(), EditorSettings->GetPrimaryDeploymentName(),
-			EditorSettings->ListeningAddress, EditorSettings->LocalReceptionistPort);
+			EditorSettings->ListeningAddress, EditorSettings->GetLevelSettingsServerPort());
 
 		if (bSuccess)
 		{

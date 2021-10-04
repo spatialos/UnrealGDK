@@ -225,7 +225,7 @@ CONNECTIONMANAGER_TEST(SetupFromURL_Receptionist_ExternalBridgeNoHost)
 	// THEN
 	TestEqual("UseExternalIp", Manager->ReceptionistConfig.UseExternalIp, true);
 	TestEqual("ReceptionistHost", Manager->ReceptionistConfig.GetReceptionistHost(), "127.0.0.1");
-	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.GetReceptionistPort(), GetDefault<USpatialGDKSettings>()->GetReceptionistPort());
+	TestEqual("ReceptionistPort", Manager->ReceptionistConfig.GetReceptionistPort(), GetDefault<USpatialGDKSettings>()->GetLevelSettingsServerPort());
 	TestEqual("WorkerType", Manager->ReceptionistConfig.WorkerType, "SomeWorkerType");
 
 	return true;

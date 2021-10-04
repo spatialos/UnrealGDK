@@ -235,11 +235,10 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, EventTracingRotatingLogsMaxFileCount(256)
 	, bEnableAlwaysWriteRPCs(false)
 	, bEnableInitialOnlyReplicationCondition(false)
+	, LevelEditorPlaySettings(GetDefault<ULevelEditorPlaySettings>())
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 	RPCRingBufferSizeOverrides.Add(ERPCType::ServerAlwaysWrite, 1);
-
-	GetDefault<ULevelEditorPlaySettings>()->GetServerPort(ReceptionistPort);
 }
 
 void USpatialGDKSettings::PostInitProperties()
@@ -391,7 +390,15 @@ void USpatialGDKSettings::SetServicesRegion(EServicesRegion::Type NewRegion)
 bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 {
 	return (IsRunningGame() || IsRunningClientOnly()) && bPreventClientCloudDeploymentAutoConnect;
-};
+}
+
+uint16_t USpatialGDKSettings::GetLevelSettingsServerPort() const
+{
+	uint16 LevelSettingsServerPort = 0;
+	LevelEditorPlaySettings->GetServerPort(LevelSettingsServerPort);
+
+	return LevelSettingsServerPort;
+}
 
 UEventTracingSamplingSettings* USpatialGDKSettings::GetEventTracingSamplingSettings() const
 {

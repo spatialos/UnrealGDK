@@ -82,7 +82,7 @@ bool FStartDeployment::Update()
 		const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
 		const FString SnapshotName = SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoadPath();
 		const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
-		const uint16_t RuntimeGRPCPort = SpatialGDKEditorSettings->GetRuntimeGRPCPort();
+		const uint16_t RuntimeGRPCPort = SpatialGDKEditorSettings->GetLevelSettingsServerPort();
 
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName,
 																 RuntimeVersion, RuntimeGRPCPort] {
