@@ -376,6 +376,12 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const APlayerControll
 		return false;
 	}
 
+	AActor* Pawn = PlayerController->GetPawn();
+	if (Pawn != nullptr && Pawn != PlayerController->GetViewTarget())
+	{
+		const_cast<APlayerController*>(PlayerController)->SetViewTarget(Pawn);
+	}
+
 	TArray<Worker_EntityId> ClientInterestedEntities = GetClientInterestedEntityIds(PlayerController);
 
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(PlayerController->GetNetDriver());
@@ -395,6 +401,12 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const APlayerControll
 		{
 			FullInterested.Add(EntityId);
 		}
+
+// 		const FString EntitiesString = FString::JoinBy(FullInterested, TEXT(" "), [](const Worker_EntityId_Key EntityId) {
+// 			return FString::Printf(TEXT("%lld"), EntityId);
+// 		});
+// 
+// 		UE_LOG(LogChangeInterest, Log, TEXT("Interest: %s %s"), *PlayerController->GetName(), *EntitiesString);
 
 		TSet<Worker_EntityId_Key> Add, Remove;
 		if (bOverwrite)
@@ -504,7 +516,9 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 	}
 
 	// If and when the Runtime has a better interest changing API, we can ask for a diff here instead.
+	//FString ViewLocationStr = NetConnection->ViewTarget->GetActorLocation().ToString();
 	TArray<AActor*> ClientInterestedActors = RepGraph->GatherClientInterestedActors(NetConnection);
+	//UE_LOG(LogTemp, Warning, TEXT("Connection %s, location %s"), *NetConnection->GetName(), *ViewLocationStr);
 
 	UNetReplicationGraphConnection* ConnectionDriver =
 		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
