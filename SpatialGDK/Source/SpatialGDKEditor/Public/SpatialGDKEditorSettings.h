@@ -683,7 +683,7 @@ public:
 	static bool IsDeploymentNameValid(const FString& Name);
 	static void TrimTMap(TMap<FString, FString>& Map);
 
-	uint16_t GetLevelSettingsServerPort() const;
+	uint16_t GetDefaultPort() const;
 
 private:
 	const ULevelEditorPlaySettings* LevelEditorPlaySettings;

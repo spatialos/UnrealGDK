@@ -323,7 +323,9 @@ private:
 public:
 	bool GetPreventClientCloudDeploymentAutoConnect() const;
 
-	uint16_t GetLevelSettingsServerPort() const;
+
+	uint16_t GetDefaultPort() const;
+
 
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings",
 			  meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
@@ -377,7 +379,6 @@ private:
 
 	void UpdateServicesRegionFile();
 #endif
-	const ULevelEditorPlaySettings* LevelEditorPlaySettings;
 
 public:
 	/**

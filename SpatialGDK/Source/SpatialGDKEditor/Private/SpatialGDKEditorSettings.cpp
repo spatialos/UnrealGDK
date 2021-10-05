@@ -188,12 +188,16 @@ bool USpatialGDKEditorSettings::IsDeploymentNameValid(const FString& Name)
 	return RegMatcher.FindNext();
 }
 
-uint16_t USpatialGDKEditorSettings::GetLevelSettingsServerPort() const
+uint16_t USpatialGDKEditorSettings::GetDefaultPort() const
 {
+#if WITH_EDITOR
 	uint16_t LevelSettingsServerPort = 0;
 	LevelEditorPlaySettings->GetServerPort(LevelSettingsServerPort);
 
 	return LevelSettingsServerPort;
+#else
+	return SpatialConstants::DEFAULT_PORT;
+#endif // WITH_EDITOR
 }
 
 bool USpatialGDKEditorSettings::IsRegionCodeValid(const ERegionCode::Type RegionCode)

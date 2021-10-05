@@ -248,7 +248,7 @@ public:
 	void LoadDefaults()
 	{
 		UseExternalIp = false;
-		ReceptionistPort = GetDefault<USpatialGDKSettings>()->GetLevelSettingsServerPort();
+		ReceptionistPort = GetDefault<USpatialGDKSettings>()->GetDefaultPort();
 		SetReceptionistHost(GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost);
 	}
 
@@ -320,7 +320,7 @@ private:
 		}
 	}
 
-	void SetReceptionistPort(const uint16 Port) { ReceptionistPort = Port; }
+	void SetReceptionistPort(const uint16_t Port) { ReceptionistPort = Port; }
 
 	FString ReceptionistHost;
 
