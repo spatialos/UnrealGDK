@@ -14,7 +14,7 @@ namespace SpatialGDK
 namespace
 {
 const float AdvancedTime = 0.5f;
-const float LongAdvancedTime = 5.5f;
+const float LongAdvancedTime = 30.5f;
 const Worker_EntityId TestEntityId = 1;
 const Worker_RequestId SuccessRequestId = 1;
 const Worker_RequestId QueueingRequestId = 2;
