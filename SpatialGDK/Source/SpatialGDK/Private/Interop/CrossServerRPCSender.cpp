@@ -30,7 +30,7 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef InTargetObjectRef,
 
 	// We just want a semi-globally unique id for the RPC to avoid false discards.
 	FGuid Guid = FGuid::NewGuid();
-	uint64 UniqueRPCId = (((uint64)Guid.A ^ Guid.B) << 32) + (uint64)(Guid.C ^ Guid.D);
+	uint64 UniqueRPCId = CityHash64((char*)&Guid, sizeof(FGuid));
 	RPCPayload::WriteToSchemaObject(CommandRequest.GetRequestObject(), InTargetObjectRef.Offset, Info.Index, UniqueRPCId,
 									InPayload.PayloadData.GetData(), InPayload.PayloadData.Num());
 
