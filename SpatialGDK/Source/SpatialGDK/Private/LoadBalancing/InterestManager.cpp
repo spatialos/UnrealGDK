@@ -285,7 +285,11 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 
 		Broadphase->ComputeBoxVisibility(Regions, Visibility.GetData());
 	}
-	else if (false)
+
+	constexpr bool bVectorizeRegions = false;
+	constexpr bool bVectorizeEntities = true;
+
+	if (!bVectorizeRegions && !bVectorizeEntities)
 	{
 		// Not-so naively iterate over the region
 		// 24ms, 200k entities, 64 regions
@@ -316,183 +320,185 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			++VisibilityPtr;
 		}
 	}
-	else
+
+	const uint64 AllRegionsMask = [NumRegions] {
+		// To handle the 64 regions case, shifting by 64 could be a nop;
+		uint64 Mask = 1ull << (NumRegions - 1);
+		Mask <<= 1;
+		return Mask - 1ull;
+	}();
+
+	if(bVectorizeRegions)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputationBoxSSE);
 
-		constexpr bool bVectorizeRegions = true;
-		constexpr bool bVectorizeEntities = !bVectorizeRegions;
+		// SSE version, processing 4 regions at a time.
+		// 6ms, 200k entities, 64 regions
+		const uint32 Num4Regions = (NumRegions + 3) / 4;
+		const uint32 NextMultipleOf4 = Num4Regions * 4;
 
-		const uint64 AllRegionsMask = [NumRegions] {
-			// To handle the 64 regions case, shifting by 64 could be a nop;
-			uint64 Mask = 1ull << (NumRegions - 1);
-			Mask <<= 1;
-			return Mask - 1ull;
-		}();
+		TArray<float, TAlignedHeapAllocator<16>> BoxesMinX;
+		TArray<float, TAlignedHeapAllocator<16>> BoxesMinY;
+		TArray<float, TAlignedHeapAllocator<16>> BoxesMaxX;
+		TArray<float, TAlignedHeapAllocator<16>> BoxesMaxY;
+		BoxesMinX.Reserve(NextMultipleOf4);
+		BoxesMinY.Reserve(NextMultipleOf4);
+		BoxesMaxX.Reserve(NextMultipleOf4);
+		BoxesMaxY.Reserve(NextMultipleOf4);
+		for (uint32 j = 0; j < NumRegions; ++j)
+		{
+			BoxesMinX.Add(Regions[j].Min.X);
+			BoxesMinY.Add(Regions[j].Min.Y);
+			BoxesMaxX.Add(Regions[j].Max.X);
+			BoxesMaxY.Add(Regions[j].Max.Y);
+		}
+		for (uint32 j = NumRegions; j < NextMultipleOf4; ++j)
+		{
+			BoxesMinX.Add(0);
+			BoxesMinY.Add(0);
+			BoxesMaxX.Add(0);
+			BoxesMaxY.Add(0);
+		}
 
 		const uint32* Flags = EntityFlags.GetData();
 		uint64* VisibilityPtr = Visibility.GetData();
-		if (bVectorizeRegions)
+		const FVector2D* Pos = EntityPosition.GetData();
+		for (uint32 i = 0; i < NumEntities; ++i)
 		{
-			// SSE version, processing 4 regions at a time.
-			// 10-16ms ?? profiler has wild noise
-			// 200k entities, 64 regions
-			const uint32 Num4Regions = (NumRegions + 3) / 4;
-			const uint32 NextMultipleOf4 = Num4Regions * 4;
+			*VisibilityPtr = ((uint64)(*Flags != 0)) * AllRegionsMask;
 
-			TArray<float, TAlignedHeapAllocator<16>> BoxesMinX;
-			TArray<float, TAlignedHeapAllocator<16>> BoxesMinY;
-			TArray<float, TAlignedHeapAllocator<16>> BoxesMaxX;
-			TArray<float, TAlignedHeapAllocator<16>> BoxesMaxY;
-			BoxesMinX.Reserve(NextMultipleOf4);
-			BoxesMinY.Reserve(NextMultipleOf4);
-			BoxesMaxX.Reserve(NextMultipleOf4);
-			BoxesMaxY.Reserve(NextMultipleOf4);
+			const float* BoxesMinXPtr = BoxesMinX.GetData();
+			const float* BoxesMinYPtr = BoxesMinY.GetData();
+			const float* BoxesMaxXPtr = BoxesMaxX.GetData();
+			const float* BoxesMaxYPtr = BoxesMaxY.GetData();
+
+			VectorRegister RegisterX = VectorSetFloat1(Pos->X);
+			VectorRegister RegisterY = VectorSetFloat1(Pos->Y);
+
+			for (uint32 j = 0; j < NextMultipleOf4 / 4; ++j)
+			{
+				VectorRegister BoxTest = VectorLoadAligned(BoxesMinXPtr);
+				VectorRegister TestResult = VectorCompareGT(RegisterX, BoxTest);
+
+				BoxTest = VectorLoadAligned(BoxesMaxXPtr);
+				TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, RegisterX));
+
+				BoxTest = VectorLoadAligned(BoxesMinYPtr);
+				TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(RegisterY, BoxTest));
+
+				BoxTest = VectorLoadAligned(BoxesMaxYPtr);
+				TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, RegisterY));
+
+				uint64 Mask = VectorMaskBits(TestResult);
+				*VisibilityPtr |= Mask << (j * 4);
+
+				BoxesMinXPtr += 4;
+				BoxesMinYPtr += 4;
+				BoxesMaxXPtr += 4;
+				BoxesMaxYPtr += 4;
+			}
+			++Pos;
+			++Flags;
+			++VisibilityPtr;
+		}
+	}
+	if (bVectorizeEntities)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputationBoxSSE);
+
+		// SSE version, processing 8 positions at a time.
+		// 4ms, 200k entities, 64 regions
+		// ==> NB : Do not mix mm256 and mm128 operations
+		const uint32 Num8Entities = ActiveEntities / 8;
+		const uint32 Rem8Entities = ActiveEntities % 8;
+
+		const uint32* Flags = EntityFlags.GetData();
+		uint64* VisibilityPtr = Visibility.GetData();
+		const float* PosX = EntityPositionX.GetData();
+		const float* PosY = EntityPositionY.GetData();
+
+		__m256i Zero256 = _mm256_set1_epi64x(0);
+		__m256i One256 = _mm256_set1_epi64x(UINT64_MAX);
+		__m256i AllRegions256 = _mm256_set1_epi64x(AllRegionsMask);
+
+		for (uint32 i = 0; i < Num8Entities; ++i)
+		{
+			// Load flags, sign extended to 64 bits integers
+			__m256i FlagsRegLo = _mm256_cvtepi32_epi64(_mm_loadu_epi32(Flags));
+			__m256i FlagsRegHi = _mm256_cvtepi32_epi64(_mm_loadu_epi32(Flags + 4));
+
+			// Visibility flags for the next 8 entities.
+			// Compare to zero to check if any bit is set (could be a different mask).
+			__m256i VisibilityRegLo = _mm256_cmpeq_epi64(Zero256, FlagsRegLo);
+			__m256i VisibilityRegHi = _mm256_cmpeq_epi64(Zero256, FlagsRegHi);
+
+			// Xor the result to get a full mask if any bit was set.
+			VisibilityRegLo = _mm256_xor_si256(One256, VisibilityRegLo);
+			VisibilityRegLo = _mm256_and_si256(AllRegions256, VisibilityRegLo);
+			VisibilityRegHi = _mm256_xor_si256(One256, VisibilityRegHi);
+			VisibilityRegHi = _mm256_and_si256(AllRegions256, VisibilityRegHi);
+
+			const FBox2D* RegionBox = Regions.GetData();
+
+			// Load the X and Y coordinates of the next 8 entities.
+			__m256 RegisterX = _mm256_load_ps(PosX);
+			__m256 RegisterY = _mm256_load_ps(PosY);
+
 			for (uint32 j = 0; j < NumRegions; ++j)
 			{
-				BoxesMinX.Add(Regions[j].Min.X);
-				BoxesMinY.Add(Regions[j].Min.Y);
-				BoxesMaxX.Add(Regions[j].Max.X);
-				BoxesMaxY.Add(Regions[j].Max.Y);
+				const uint64 Mask = 1ull << j;
+
+				__m256 BoxTest = _mm256_set1_ps(RegionBox->Min.X);
+				__m256 TestResult = _mm256_cmp_ps(RegisterX, BoxTest, _CMP_GT_OQ);
+
+				BoxTest = _mm256_set1_ps(RegionBox->Max.X);
+				TestResult = _mm256_and_ps(_mm256_cmp_ps(BoxTest, RegisterX, _CMP_GT_OQ), TestResult);
+
+				BoxTest = _mm256_set1_ps(RegionBox->Min.Y);
+				TestResult = _mm256_and_ps(_mm256_cmp_ps(RegisterY, BoxTest, _CMP_GT_OQ), TestResult);
+
+				BoxTest = _mm256_set1_ps(RegionBox->Max.Y);
+				TestResult = _mm256_and_ps(_mm256_cmp_ps(BoxTest, RegisterY, _CMP_GT_OQ), TestResult);
+
+				// The test result is 0xFFFFFFFF for each entity which is in the box.
+				// Convert it to 64bit, once again with sign extension, to get UINT64_MAX or 0 in order to AND it with the region's mask
+				__m256i TestResult256Lo = _mm256_cvtepi32_epi64(_mm256_extracti128_si256(_mm256_castps_si256(TestResult), 0));
+				__m256i TestResult256Hi = _mm256_cvtepi32_epi64(_mm256_extracti128_si256(_mm256_castps_si256(TestResult), 1));
+
+				// Combine the current result with the entity's visibility mask
+				VisibilityRegLo = _mm256_or_si256(VisibilityRegLo, _mm256_and_si256(_mm256_set1_epi64x(Mask), TestResult256Lo));
+				VisibilityRegHi = _mm256_or_si256(VisibilityRegHi, _mm256_and_si256(_mm256_set1_epi64x(Mask), TestResult256Hi));
+
+				++RegionBox;
 			}
-			for (uint32 j = NumRegions; j < NextMultipleOf4; ++j)
-			{
-				BoxesMinX.Add(0);
-				BoxesMinY.Add(0);
-				BoxesMaxX.Add(0);
-				BoxesMaxY.Add(0);
-			}
+			// Store the result.
+			_mm256_storeu_epi64(VisibilityPtr, VisibilityRegLo);
+			_mm256_storeu_epi64(VisibilityPtr + 4, VisibilityRegHi);
 
-			const VectorRegister Zero = VectorSetFloat1(0);
-
-			const FVector2D* Pos = EntityPosition.GetData();
-			for (uint32 i = 0; i < NumEntities; ++i)
-			{
-				*VisibilityPtr = ((uint64)(*Flags != 0)) * AllRegionsMask;
-
-				const float* BoxesMinXPtr = BoxesMinX.GetData();
-				const float* BoxesMinYPtr = BoxesMinY.GetData();
-				const float* BoxesMaxXPtr = BoxesMaxX.GetData();
-				const float* BoxesMaxYPtr = BoxesMaxY.GetData();
-
-				VectorRegister RegisterX = VectorSetFloat1(Pos->X);
-				VectorRegister RegisterY = VectorSetFloat1(Pos->Y);
-
-				for (uint32 j = 0; j < NextMultipleOf4 / 4; ++j)
-				{
-					VectorRegister BoxTest = VectorLoadAligned(BoxesMinXPtr);
-					VectorRegister TestResult = VectorCompareGT(RegisterX, BoxTest);
-
-					BoxTest = VectorLoadAligned(BoxesMaxXPtr);
-					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, RegisterX));
-
-					BoxTest = VectorLoadAligned(BoxesMinYPtr);
-					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(RegisterY, BoxTest));
-
-					BoxTest = VectorLoadAligned(BoxesMaxYPtr);
-					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, RegisterX));
-
-					uint64 Mask = VectorMaskBits(TestResult);
-					*VisibilityPtr |= Mask << (j * 4);
-
-					BoxesMinXPtr += 4;
-					BoxesMinYPtr += 4;
-					BoxesMaxXPtr += 4;
-					BoxesMaxYPtr += 4;
-				}
-				++Pos;
-				++Flags;
-				++VisibilityPtr;
-			}
+			PosX += 8;
+			PosY += 8;
+			Flags += 8;
+			VisibilityPtr += 8;
 		}
 
-		if (bVectorizeEntities)
+		// Handle the tail entities.
+		const FVector2D* Pos = EntityPosition.GetData() + 8 * Num8Entities;
+		for (uint32 i = 0; i < Rem8Entities; ++i)
 		{
-			// SSE version, processing 4 positions at a time.
-			// 10-16ms ?? profiler has wild noise
-			// 200k entities, 64 regions
-			const uint32 Num4Entities = ActiveEntities / 4;
-			const uint32 Rem4Entities = ActiveEntities % 4;
+			*VisibilityPtr = ((uint64)(*Flags != 0)) * AllRegionsMask;
 
-			const float* PosX = EntityPositionX.GetData();
-			const float* PosY = EntityPositionY.GetData();
+			const FBox2D* RegionBox = Regions.GetData();
 
-			const VectorRegister Zero128 = VectorSetFloat1(0);
-			__m256i Zero256 = _mm256_set1_epi64x(0);
-			__m256i One256 = _mm256_set1_epi64x(UINT64_MAX);
-			__m256i AllRegions256 = _mm256_set1_epi64x(AllRegionsMask);
-
-			for (uint32 i = 0; i < Num4Entities; ++i)
+			for (uint32 j = 0; j < NumRegions; ++j)
 			{
-				// Load flags, sign extended to 64 bits integers
-				__m256i FlagsReg = _mm256_cvtepi32_epi64(_mm_loadu_epi32(Flags));
+				const uint64 Mask = 1ull << j;
+				*VisibilityPtr |= ((uint64)RegionBox->IsInside(*Pos)) * Mask;
 
-				// Visibility flags for the next 4 entities.
-				// Compare to zero to check if any bit is set (could be a different mask).
-				__m256i VisibilityReg = _mm256_cmpeq_epi64(Zero256, FlagsReg);
-
-				// Xor the result to get a full mask if any bit was set.
-				VisibilityReg = _mm256_xor_si256(One256, VisibilityReg);
-				VisibilityReg = _mm256_and_si256(AllRegions256, VisibilityReg);
-
-				const FBox2D* RegionBox = Regions.GetData();
-
-				// Load the X and Y coordinates of the next 4 entities.
-				VectorRegister RegisterX = VectorLoadAligned(PosX);
-				VectorRegister RegisterY = VectorLoadAligned(PosY);
-
-				for (uint32 j = 0; j < NumRegions; ++j)
-				{
-					const uint64 Mask = 1ull << j;
-
-					VectorRegister BoxTest = VectorSetFloat1(RegionBox->Min.X);
-					VectorRegister TestResult = VectorCompareGT(RegisterX, BoxTest);
-
-					BoxTest = VectorSetFloat1(RegionBox->Max.X);
-					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, RegisterX));
-
-					BoxTest = VectorSetFloat1(RegionBox->Min.Y);
-					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(RegisterY, BoxTest));
-
-					BoxTest = VectorSetFloat1(RegionBox->Max.Y);
-					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, RegisterY));
-
-					// The test result is 0xFFFFFFFF for each entity which is in the box.
-					// Convert it to 64bit, once again with sign extension, to get UINT64_MAX or 0 in order to AND it with the region's mask
-					__m256i TestResult256 = _mm256_cvtepi32_epi64(_mm_castps_si128(TestResult));
-
-					// Combine the current result with the entity's visibility mask
-					VisibilityReg = _mm256_or_si256(VisibilityReg, _mm256_and_si256(_mm256_set1_epi64x(Mask), TestResult256));
-					++RegionBox;
-				}
-				// Store the result.
-				_mm256_storeu_epi64(VisibilityPtr, VisibilityReg);
-
-				PosX += 4;
-				PosY += 4;
-				Flags += 4;
-				VisibilityPtr += 4;
+				++RegionBox;
 			}
-
-			// Handle the tail entities.
-			const FVector2D* Pos = EntityPosition.GetData() + 4 * Num4Entities;
-			for (uint32 i = 0; i < Rem4Entities; ++i)
-			{
-				*VisibilityPtr = ((uint64)(*Flags != 0)) * AllRegionsMask;
-
-				const FBox2D* RegionBox = Regions.GetData();
-
-				for (uint32 j = 0; j < NumRegions; ++j)
-				{
-					const uint64 Mask = 1ull << j;
-					*VisibilityPtr |= ((uint64)RegionBox->IsInside(*Pos)) * Mask;
-
-					++RegionBox;
-				}
-				++Pos;
-				++Flags;
-				++VisibilityPtr;
-			}
+			++Pos;
+			++Flags;
+			++VisibilityPtr;
 		}
 	}
 
