@@ -82,6 +82,6 @@ protected:
 
 	TUniquePtr<FBroadphaseImpl> Broadphase;
 
-	TArray<TArray<Worker_EntityId>> CachedServerInterest[3];
+	TArray<TArray<Worker_EntityId_Key>> CachedServerInterest[3];
 };
 } // namespace SpatialGDK

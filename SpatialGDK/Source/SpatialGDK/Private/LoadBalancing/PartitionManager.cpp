@@ -168,7 +168,7 @@ struct FPartitionManager::Impl
 				if (PartitionView.GetCompleteEntities().Num() > 0)
 				{
 					ChangeInterestQuery PartitionQuery;
-					PartitionQuery.Entities = PartitionView.GetCompleteEntities();
+					PartitionQuery.Entities.Append(PartitionView.GetCompleteEntities());
 					PartitionQuery.Components = InterestUpdate.PartitionMetaData;
 					PartitionQuery.Components.Add(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
 					Request.QueriesToAdd.Add(MoveTemp(PartitionQuery));
@@ -176,14 +176,14 @@ struct FPartitionManager::Impl
 				if (SystemWorkersDispatcher.SubView.GetCompleteEntities().Num() > 0)
 				{
 					ChangeInterestQuery WorkerQuery;
-					WorkerQuery.Entities = SystemWorkersDispatcher.SubView.GetCompleteEntities();
+					WorkerQuery.Entities.Append(SystemWorkersDispatcher.SubView.GetCompleteEntities());
 					WorkerQuery.Components = { SpatialConstants::WORKER_COMPONENT_ID, SpatialConstants::SYSTEM_COMPONENT_ID };
 					Request.QueriesToAdd.Add(MoveTemp(WorkerQuery));
 				}
 				if (WorkersDispatcher.SubView.GetCompleteEntities().Num() > 0)
 				{
 					ChangeInterestQuery ServerWorkerQuery;
-					ServerWorkerQuery.Entities = WorkersDispatcher.SubView.GetCompleteEntities();
+					ServerWorkerQuery.Entities.Append(WorkersDispatcher.SubView.GetCompleteEntities());
 					for (auto Entity : ServerWorkerQuery.Entities)
 					{
 						UE_LOG(LogTemp, Log, TEXT("Make worker %llu interested in %llu"), Request.SystemEntityId, Entity);
@@ -206,7 +206,7 @@ struct FPartitionManager::Impl
 				if (InterestUpdate.NewPartition.Num() > 0)
 				{
 					ChangeInterestQuery PartitionQuery;
-					PartitionQuery.Entities = InterestUpdate.NewPartition;
+					PartitionQuery.Entities.Append(InterestUpdate.NewPartition);
 					PartitionQuery.Components = InterestUpdate.PartitionMetaData;
 					PartitionQuery.Components.Add(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
 					Request.QueriesToAdd.Add(MoveTemp(PartitionQuery));
@@ -214,7 +214,7 @@ struct FPartitionManager::Impl
 				if (InterestUpdate.RemovedPartition.Num() > 0)
 				{
 					ChangeInterestQuery PartitionQuery;
-					PartitionQuery.Entities = InterestUpdate.NewPartition;
+					PartitionQuery.Entities.Append(InterestUpdate.NewPartition);
 					PartitionQuery.Components = InterestUpdate.PartitionMetaData;
 					PartitionQuery.Components.Add(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
 					Request.QueriesToRemove.Add(MoveTemp(PartitionQuery));
@@ -222,25 +222,21 @@ struct FPartitionManager::Impl
 				if (InterestUpdate.NewWorker.Num() > 0)
 				{
 					ChangeInterestQuery WorkerQuery;
-					WorkerQuery.Entities = InterestUpdate.NewWorker;
+					WorkerQuery.Entities.Append(InterestUpdate.NewWorker);
 					WorkerQuery.Components = { SpatialConstants::WORKER_COMPONENT_ID, SpatialConstants::SYSTEM_COMPONENT_ID };
 					Request.QueriesToAdd.Add(MoveTemp(WorkerQuery));
 				}
 				if (InterestUpdate.RemovedWorker.Num() > 0)
 				{
 					ChangeInterestQuery WorkerQuery;
-					WorkerQuery.Entities = InterestUpdate.RemovedWorker;
+					WorkerQuery.Entities.Append(InterestUpdate.RemovedWorker);
 					WorkerQuery.Components = { SpatialConstants::WORKER_COMPONENT_ID, SpatialConstants::SYSTEM_COMPONENT_ID };
 					Request.QueriesToRemove.Add(MoveTemp(WorkerQuery));
 				}
 				if (InterestUpdate.NewServerWorker.Num() > 0)
 				{
 					ChangeInterestQuery ServerWorkerQuery;
-					ServerWorkerQuery.Entities = InterestUpdate.NewServerWorker;
-					for (auto Entity : ServerWorkerQuery.Entities)
-					{
-						UE_LOG(LogTemp, Log, TEXT("Make worker %llu interested in %llu"), Request.SystemEntityId, Entity);
-					}
+					ServerWorkerQuery.Entities.Append(InterestUpdate.NewServerWorker);
 					ServerWorkerQuery.Components = { SpatialConstants::SERVER_WORKER_COMPONENT_ID,
 													 SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
 					Request.QueriesToAdd.Add(MoveTemp(ServerWorkerQuery));
@@ -248,7 +244,7 @@ struct FPartitionManager::Impl
 				if (InterestUpdate.RemovedServerWorker.Num() > 0)
 				{
 					ChangeInterestQuery ServerWorkerQuery;
-					ServerWorkerQuery.Entities = InterestUpdate.RemovedServerWorker;
+					ServerWorkerQuery.Entities.Append(InterestUpdate.RemovedServerWorker);
 					ServerWorkerQuery.Components = { SpatialConstants::SERVER_WORKER_COMPONENT_ID,
 													 SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
 					Request.QueriesToRemove.Add(MoveTemp(ServerWorkerQuery));
@@ -336,7 +332,7 @@ struct FPartitionManager::Impl
 		InterestUpdate.NewServerWorker.Append(WorkersDispatcher.EntitiesAdded.Array());
 		InterestUpdate.RemovedServerWorker.Append(WorkersDispatcher.EntitiesRemoved.Array());
 		InterestUpdate.NewWorker.Append(SystemWorkersDispatcher.EntitiesAdded.Array());
-		InterestUpdate.RemovedWorker.Append(SystemWorkersDispatcher.EntitiesAdded.Array());
+		InterestUpdate.RemovedWorker.Append(SystemWorkersDispatcher.EntitiesRemoved.Array());
 
 		TSet<Worker_EntityId_Key> WorkersToInspect = WorkersData.GetModifiedEntities();
 		const TSet<Worker_EntityId_Key>& SystemWorkerModified = SystemWorkersData.GetModifiedEntities();

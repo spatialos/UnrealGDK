@@ -375,29 +375,24 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 				const float* BoxesMaxXPtr = BoxesMaxX.GetData();
 				const float* BoxesMaxYPtr = BoxesMaxY.GetData();
 
-				VectorRegister regX = VectorSetFloat1(Pos->X);
-				VectorRegister regY = VectorSetFloat1(Pos->Y);
+				VectorRegister RegisterX = VectorSetFloat1(Pos->X);
+				VectorRegister RegisterY = VectorSetFloat1(Pos->Y);
 
 				for (uint32 j = 0; j < NextMultipleOf4 / 4; ++j)
 				{
-					VectorRegister BoxTest = VectorLoad(BoxesMinXPtr);
-					BoxTest = VectorSubtract(regX, BoxTest);
-					VectorRegister TestResult = VectorCompareGT(BoxTest, Zero);
+					VectorRegister BoxTest = VectorLoadAligned(BoxesMinXPtr);
+					VectorRegister TestResult = VectorCompareGT(RegisterX, BoxTest);
 
-					BoxTest = VectorLoad(BoxesMaxXPtr);
-					BoxTest = VectorSubtract(BoxTest, regX);
-					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, Zero));
+					BoxTest = VectorLoadAligned(BoxesMaxXPtr);
+					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, RegisterX));
 
-					BoxTest = VectorLoad(BoxesMinYPtr);
-					BoxTest = VectorSubtract(regY, BoxTest);
-					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, Zero));
+					BoxTest = VectorLoadAligned(BoxesMinYPtr);
+					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(RegisterY, BoxTest));
 
-					BoxTest = VectorLoad(BoxesMaxYPtr);
-					BoxTest = VectorSubtract(BoxTest, regY);
-					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, Zero));
-					uint64 Mask = (TestResult.m128_i32[0] & 1) | (TestResult.m128_i32[1] & 1) << 1 | (TestResult.m128_i32[2] & 1) << 2
-								  | (TestResult.m128_i32[3] & 1) << 3;
+					BoxTest = VectorLoadAligned(BoxesMaxYPtr);
+					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, RegisterX));
 
+					uint64 Mask = VectorMaskBits(TestResult);
 					*VisibilityPtr |= Mask << (j * 4);
 
 					BoxesMinXPtr += 4;
@@ -443,28 +438,24 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 				const FBox2D* RegionBox = Regions.GetData();
 
 				// Load the X and Y coordinates of the next 4 entities.
-				VectorRegister regX = VectorLoadAligned(PosX);
-				VectorRegister regY = VectorLoadAligned(PosY);
+				VectorRegister RegisterX = VectorLoadAligned(PosX);
+				VectorRegister RegisterY = VectorLoadAligned(PosY);
 
 				for (uint32 j = 0; j < NumRegions; ++j)
 				{
 					const uint64 Mask = 1ull << j;
 
 					VectorRegister BoxTest = VectorSetFloat1(RegionBox->Min.X);
-					BoxTest = VectorSubtract(regX, BoxTest);
-					VectorRegister TestResult = VectorCompareGT(BoxTest, Zero128);
+					VectorRegister TestResult = VectorCompareGT(RegisterX, BoxTest);
 
 					BoxTest = VectorSetFloat1(RegionBox->Max.X);
-					BoxTest = VectorSubtract(BoxTest, regX);
-					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, Zero128));
+					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, RegisterX));
 
 					BoxTest = VectorSetFloat1(RegionBox->Min.Y);
-					BoxTest = VectorSubtract(regY, BoxTest);
-					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, Zero128));
+					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(RegisterY, BoxTest));
 
 					BoxTest = VectorSetFloat1(RegionBox->Max.Y);
-					BoxTest = VectorSubtract(BoxTest, regY);
-					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, Zero128));
+					TestResult = VectorBitwiseAnd(TestResult, VectorCompareGT(BoxTest, RegisterY));
 
 					// The test result is 0xFFFFFFFF for each entity which is in the box.
 					// Convert it to 64bit, once again with sign extension, to get UINT64_MAX or 0 in order to AND it with the region's mask
