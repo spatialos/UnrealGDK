@@ -206,4 +206,6 @@ private:
 	TWeakObjectPtr<ASpatialDebugger> SpatialDebugger;
 
 	TOptional<FMonitoredProcess> InspectorProcess = {};
+
+	uint16_t PreviousRuntimeGRPCPort;
 };

@@ -66,6 +66,7 @@ FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 	: AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::Never)
 	, bStartingCloudDeployment(false)
 	, SpatialDebugger(nullptr)
+	, PreviousRuntimeGRPCPort(0)
 {
 }
 
@@ -1028,16 +1029,22 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> OnR
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
 	const uint16_t RuntimeGRPCPort = SpatialGDKEditorSettings->GetLevelSettingsServerPort();
+	// If the Runtime port has changed, the previous Inspector process should be killed 
+	bool bShouldKillInspectorProcess = RuntimeGRPCPort != PreviousRuntimeGRPCPort && PreviousRuntimeGRPCPort != 0;
+	PreviousRuntimeGRPCPort = RuntimeGRPCPort;
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion, OnReady, RuntimeGRPCPort] {
-		if (InspectorProcess && InspectorProcess->Update())
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion, OnReady, RuntimeGRPCPort, bShouldKillInspectorProcess] {
+		if (!bShouldKillInspectorProcess)
 		{
-			// We already have an inspector process running. Call ready callback if any.
-			if (OnReady)
+			if (InspectorProcess && InspectorProcess->Update())
 			{
-				OnReady();
+				// We already have an inspector process running. Call ready callback if any.
+				if (OnReady)
+				{
+					OnReady();
+				}
+				return;
 			}
-			return;
 		}
 
 		// Check for any old inspector processes that may be leftover from previous runs. Kill any we find.
@@ -1051,10 +1058,10 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> OnR
 			return;
 		}
 
-
-		FString InspectorArgs = FString::Printf(TEXT("--grpc_addr=%s --http_addr=%s --schema_bundle=\"%s\""),
+		FString InspectorArgs =
+			FString::Printf(TEXT("--grpc_addr=%s --http_addr=%s --schema_bundle=\"%s\""),
 							*(FString::Printf(TEXT("localhost:%s"), *FString::FromInt(RuntimeGRPCPort))),
-			*SpatialGDKServicesConstants::InspectorHTTPAddress, *SpatialGDKServicesConstants::SchemaBundlePath);
+							*SpatialGDKServicesConstants::InspectorHTTPAddress, *SpatialGDKServicesConstants::SchemaBundlePath);
 
 		InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,
 							 SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
