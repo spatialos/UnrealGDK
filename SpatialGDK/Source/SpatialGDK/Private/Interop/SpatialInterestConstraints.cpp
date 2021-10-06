@@ -42,35 +42,43 @@ void UAndConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoM
 
 void USphereConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
 {
-	OutConstraint.SphereConstraint = SpatialGDK::SphereConstraint{ SpatialGDK::Coordinates::FromFVector(Center), static_cast<double>(Radius) / 100.0 };
+	OutConstraint.SphereConstraint =
+		SpatialGDK::SphereConstraint{ SpatialGDK::Coordinates::FromFVector(Center), static_cast<double>(Radius) / 100.0 };
 }
 
-void UCylinderConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
+void UCylinderConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+										   SpatialGDK::QueryConstraint& OutConstraint) const
 {
-	OutConstraint.CylinderConstraint = SpatialGDK::CylinderConstraint{ SpatialGDK::Coordinates::FromFVector(Center), static_cast<double>(Radius) / 100.0 };
+	OutConstraint.CylinderConstraint =
+		SpatialGDK::CylinderConstraint{ SpatialGDK::Coordinates::FromFVector(Center), static_cast<double>(Radius) / 100.0 };
 }
 
 void UBoxConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
 {
-	OutConstraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center), SpatialGDK::Coordinates::FromFVector(EdgeLengths) };
+	OutConstraint.BoxConstraint =
+		SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center), SpatialGDK::Coordinates::FromFVector(EdgeLengths) };
 }
 
-void URelativeSphereConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
+void URelativeSphereConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+												 SpatialGDK::QueryConstraint& OutConstraint) const
 {
 	OutConstraint.RelativeSphereConstraint = SpatialGDK::RelativeSphereConstraint{ static_cast<double>(Radius) / 100.0 };
 }
 
-void URelativeCylinderConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
+void URelativeCylinderConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+												   SpatialGDK::QueryConstraint& OutConstraint) const
 {
 	OutConstraint.RelativeCylinderConstraint = SpatialGDK::RelativeCylinderConstraint{ static_cast<double>(Radius) / 100.0 };
 }
 
-void URelativeBoxConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
+void URelativeBoxConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+											  SpatialGDK::QueryConstraint& OutConstraint) const
 {
 	OutConstraint.RelativeBoxConstraint = SpatialGDK::RelativeBoxConstraint{ SpatialGDK::Coordinates::FromFVector(EdgeLengths) };
 }
 
-void UCheckoutRadiusConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
+void UCheckoutRadiusConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+												 SpatialGDK::QueryConstraint& OutConstraint) const
 {
 	if (!ActorClass.Get())
 	{
@@ -96,7 +104,8 @@ void UCheckoutRadiusConstraint::CreateConstraint(const USpatialClassInfoManager&
 	}
 }
 
-void UActorClassConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
+void UActorClassConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+											 SpatialGDK::QueryConstraint& OutConstraint) const
 {
 	if (!ActorClass.Get())
 	{
@@ -112,14 +121,16 @@ void UActorClassConstraint::CreateConstraint(const USpatialClassInfoManager& Cla
 	}
 }
 
-void UComponentClassConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
+void UComponentClassConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+												 SpatialGDK::QueryConstraint& OutConstraint) const
 {
 	if (!ComponentClass.Get())
 	{
 		return;
 	}
 
-	TArray<Worker_ComponentId> ComponentIds = ClassInfoManager.GetComponentIdsForClassHierarchy(*ComponentClass.Get(), bIncludeDerivedClasses);
+	TArray<Worker_ComponentId> ComponentIds =
+		ClassInfoManager.GetComponentIdsForClassHierarchy(*ComponentClass.Get(), bIncludeDerivedClasses);
 	for (Worker_ComponentId ComponentId : ComponentIds)
 	{
 		SpatialGDK::QueryConstraint ComponentTypeConstraint;

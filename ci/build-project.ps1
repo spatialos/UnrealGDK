@@ -10,17 +10,22 @@ param(
     [string] $build_state,
     [string] $build_target
 )
+. "$PSScriptRoot\common.ps1"
 
 # Clone the testing project
-Write-Output "Downloading the testing project from $($test_repo_url)"
+Write-Output "Downloading the testing project from url: ${test_repo_url}, branch: ${test_repo_branch} to path: ${test_repo_path}."
 git clone -b "$test_repo_branch" "$test_repo_url" "$test_repo_path" --depth 1
 if (-Not $?) {
-    Throw "Failed to clone testing project from $test_repo_url."
+    Throw "Failed to clone testing project from url: ${test_repo_url}, branch: ${test_repo_branch}, to path: ${test_repo_path}."
 }
 
 # The Plugin does not get recognised as an Engine plugin, because we are using a pre-built version of the engine
 # copying the plugin into the project's folder bypasses the issue
 New-Item -ItemType Junction -Name "UnrealGDK" -Path "$test_repo_path\Game\Plugins" -Target "$gdk_home"
+
+# Unreal likes to save some settings outside of the project folders. Let's clean this up to make sure it doesn't cause issues when running the tests.
+$project_name = $(Get-ChildItem $test_repo_uproject_path).BaseName
+Remove-Item $env:LOCALAPPDATA\$project_name\Saved\Config -ErrorAction ignore -Recurse -Force
 
 # Disable tutorials, otherwise the closing of the window will crash the editor due to some graphic context reason
 # Has to be this ugly settings modification, because overriding it from the commandline will not pass on this information

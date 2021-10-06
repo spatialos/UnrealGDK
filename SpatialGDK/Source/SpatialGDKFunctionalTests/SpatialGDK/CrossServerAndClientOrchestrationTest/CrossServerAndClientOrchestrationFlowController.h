@@ -7,7 +7,7 @@
 #include "CrossServerAndClientOrchestrationFlowController.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ACrossServerAndClientOrchestrationFlowController : public ASpatialFunctionalTestFlowController

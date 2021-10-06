@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/CoreNet.h"
 #include "Schema/UnrealObjectRef.h"
+#include "UObject/CoreNet.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialNetSerialize, All, All);
 
@@ -21,6 +21,8 @@ public:
 
 	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
 
+	static void WriteObject(FArchive& Archive, USpatialPackageMapClient* PackageMap, UObject* Object);
+
 protected:
-	void SerializeObjectRef(FUnrealObjectRef& ObjectRef);
+	static void SerializeObjectRef(FArchive& Archive, FUnrealObjectRef& ObjectRef);
 };

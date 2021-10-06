@@ -5,11 +5,11 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 
-FSpatialNetDriverLoadBalancingContext::FSpatialNetDriverLoadBalancingContext(USpatialNetDriver* InNetDriver, TArray<FNetworkObjectInfo*>& InOutNetworkObjects)
+FSpatialNetDriverLoadBalancingContext::FSpatialNetDriverLoadBalancingContext(USpatialNetDriver* InNetDriver,
+																			 TArray<FNetworkObjectInfo*>& InOutNetworkObjects)
 	: NetDriver(InNetDriver)
 	, NetworkObjects(InOutNetworkObjects)
 {
-
 }
 
 void FSpatialNetDriverLoadBalancingContext::UpdateWithAdditionalActors()
@@ -29,52 +29,44 @@ void FSpatialNetDriverLoadBalancingContext::UpdateWithAdditionalActors()
 	}
 }
 
-bool FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
+EActorMigrationResult FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
 {
-	// Auth check.
 	if (!Actor->HasAuthority())
 	{
-		return false;
+		return EActorMigrationResult::NotAuthoritative;
+	}
+
+	if (!Actor->IsActorReady())
+	{
+		return EActorMigrationResult::NotReady;
 	}
 
 	// These checks are extracted from UNetDriver::ServerReplicateActors_BuildNetworkObjects
 
 	if (Actor->IsPendingKillPending())
 	{
-		return false;
+		return EActorMigrationResult::PendingKill;
 	}
 
 	// Verify the actor is actually initialized (it might have been intentionally spawn deferred until a later frame)
 	if (!Actor->IsActorInitialized())
 	{
-		return false;
+		return EActorMigrationResult::NotInitialized;
 	}
 
 	// Don't send actors that may still be streaming in or out
 	ULevel* Level = Actor->GetLevel();
 	if (Level->HasVisibilityChangeRequestPending() || Level->bIsAssociatingLevel)
 	{
-		return false;
+		return EActorMigrationResult::Streaming;
 	}
 
 	if (Actor->NetDormancy == DORM_Initial && Actor->IsNetStartupActor())
 	{
-		return false;
+		return EActorMigrationResult::NetDormant;
 	}
 
-	// Additional check that the actor is seen by the spatial runtime.
-	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
-	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		return false;
-	}
-
-	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
-	{
-		return false;
-	}
-
-	return true;
+	return EActorMigrationResult::Success;
 }
 
 FSpatialNetDriverLoadBalancingContext::FNetworkObjectsArrayAdaptor FSpatialNetDriverLoadBalancingContext::GetActorsBeingReplicated()
@@ -92,7 +84,7 @@ void FSpatialNetDriverLoadBalancingContext::RemoveAdditionalActor(AActor* Actor)
 
 void FSpatialNetDriverLoadBalancingContext::AddActorToReplicate(AActor* Actor)
 {
-	if(FNetworkObjectInfo* Info = NetDriver->FindNetworkObjectInfo(Actor))
+	if (FNetworkObjectInfo* Info = NetDriver->FindNetworkObjectInfo(Actor))
 	{
 		AdditionalActorsToReplicate.Add(Info);
 	}
@@ -102,4 +94,3 @@ TArray<AActor*>& FSpatialNetDriverLoadBalancingContext::GetDependentActors(AActo
 {
 	return Actor->Children;
 }
-

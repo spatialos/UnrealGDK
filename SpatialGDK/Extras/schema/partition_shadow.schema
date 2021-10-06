@@ -1,0 +1,9 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+// This is created on Partition entities to shadow the improbable.restricted.Partition component, which are not
+// saved to snapshots, so that we can query for Partition entities when loading from a snapshot and reconcile
+// the saved AuthorityDelegation and VirtualWorkerTranslation component data.
+component PartitionShadow {
+    id = 9967;
+}

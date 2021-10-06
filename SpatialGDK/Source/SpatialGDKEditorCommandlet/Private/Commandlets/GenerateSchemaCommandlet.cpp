@@ -35,7 +35,7 @@ bool UGenerateSchemaCommandlet::HandleOptions(const TArray<FString>& Switches)
 
 int32 UGenerateSchemaCommandlet::Main(const FString& Args)
 {
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Commandlet Started"));
+	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema generation commandlet started"));
 
 	TGuardValue<bool> UnattendedScriptGuard(GIsRunningUnattendedScript, GIsRunningUnattendedScript || IsRunningCommandlet());
 
@@ -50,9 +50,10 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Args)
 		return 1;
 	}
 
-	UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("Commandlet GenerateSchema has been deprecated in favor of CookAndGenerateSchemaCommandlet."));
-	
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Commandlet Complete"));
+	UE_LOG(LogSpatialGDKEditorCommandlet, Error,
+		   TEXT("Commandlet GenerateSchema has been deprecated in favor of CookAndGenerateSchemaCommandlet."));
+
+	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema generation commandlet complete"));
 
 	return false;
 }

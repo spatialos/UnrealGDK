@@ -20,13 +20,9 @@ struct FComponentIdGenerator
 		return Result;
 	}
 
-	uint32 Peek() const
-	{
-		return NextId;
-	}
+	uint32 Peek() const { return NextId; }
 
 private:
-
 	void ValidateNextId()
 	{
 		if (RESERVED_COMPONENT_ID_START <= NextId && NextId <= RESERVED_COMPONENT_ID_END)

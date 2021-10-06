@@ -116,10 +116,11 @@ namespace ReleaseTool
             }
         }
 
-        public PullRequestMerge MergePullRequest(Repository repository, int pullRequestId, PullRequestMergeMethod mergeMethod)
+        public PullRequestMerge MergePullRequest(Repository repository, int pullRequestId, PullRequestMergeMethod mergeMethod, string commitTitle)
         {
             var mergePullRequest = new MergePullRequest
             {
+                CommitTitle = commitTitle,
                 MergeMethod = mergeMethod
             };
 

@@ -1,8 +1,9 @@
-﻿#include "SpatialView/CommandRequest.h"
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+#include "SpatialView/CommandRequest.h"
 
 namespace SpatialGDK
 {
-
 CommandRequest::CommandRequest(Worker_ComponentId ComponentId, Worker_CommandIndex CommandIndex)
 	: ComponentId(ComponentId)
 	, CommandIndex(CommandIndex)
@@ -17,7 +18,8 @@ CommandRequest::CommandRequest(OwningCommandRequestPtr Data, Worker_ComponentId 
 {
 }
 
-CommandRequest CommandRequest::CreateCopy(const Schema_CommandRequest* Data, Worker_ComponentId ComponentId, Worker_CommandIndex CommandIndex)
+CommandRequest CommandRequest::CreateCopy(const Schema_CommandRequest* Data, Worker_ComponentId ComponentId,
+										  Worker_CommandIndex CommandIndex)
 {
 	return CommandRequest(OwningCommandRequestPtr(Schema_CopyCommandRequest(Data)), ComponentId, CommandIndex);
 }
@@ -56,4 +58,4 @@ Worker_CommandIndex CommandRequest::GetCommandIndex() const
 	return CommandIndex;
 }
 
-}  // SpatialGDK
+} // namespace SpatialGDK

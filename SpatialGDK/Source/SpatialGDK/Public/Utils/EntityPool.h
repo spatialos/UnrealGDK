@@ -7,6 +7,8 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Utils/SchemaUtils.h"
 
+#include "Interop/ReserveEntityIdsHandler.h"
+
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -16,16 +18,13 @@ struct EntityRange
 {
 	Worker_EntityId CurrentEntityId;
 	Worker_EntityId LastEntityId;
-	bool bExpired;
-	uint32 EntityRangeId; // Used to identify an entity range when it has expired.
 };
 
 class USpatialReceiver;
-class FTimerManager;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEntityPool, Log, All)
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FEntityPoolReadyEvent);
+DECLARE_MULTICAST_DELEGATE(FEntityPoolReadyEvent);
 
 UCLASS()
 class SPATIALGDK_API UEntityPool : public UObject
@@ -33,32 +32,25 @@ class SPATIALGDK_API UEntityPool : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver, FTimerManager* TimerManager);
-	void ReserveEntityIDs(int32 EntitiesToReserve);
+	void Init(USpatialNetDriver& InNetDriver);
+	void ReserveEntityIDs(uint32 EntitiesToReserve);
 	Worker_EntityId GetNextEntityId();
 	FEntityPoolReadyEvent& GetEntityPoolReadyDelegate();
 
-	FORCEINLINE bool IsReady() const
-	{
-		return bIsReady;
-	}
+	FORCEINLINE bool IsReady() const { return bIsReady; }
+
+	void Advance();
 
 private:
-	void OnEntityRangeExpired(uint32 ExpiringEntityRangeId);
-
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	UPROPERTY()
-	USpatialReceiver* Receiver;
-
-	FTimerManager* TimerManager;
 	TArray<EntityRange> ReservedEntityIDRanges;
 
-	bool bIsReady;
-	bool bIsAwaitingResponse;
-
-	uint32 NextEntityRangeId;
+	bool bIsReady = false;
+	bool bIsAwaitingResponse = false;
 
 	FEntityPoolReadyEvent EntityPoolReadyDelegate;
+
+	SpatialGDK::FReserveEntityIdsHandler ReserveEntityIdsHandler;
 };

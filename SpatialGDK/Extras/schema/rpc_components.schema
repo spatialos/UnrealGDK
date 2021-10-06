@@ -4,35 +4,7 @@ package unreal;
 import "unreal/gdk/core_types.schema";
 import "unreal/gdk/rpc_payload.schema";
 
-component UnrealClientRPCEndpointLegacy {
-    id = 9990;
-    // Set to true when authority is gained, indicating that RPCs can be received
-    bool ready = 1;
-    event UnrealRPCPayload client_to_server_rpc_event;
-}
-
-component UnrealServerRPCEndpointLegacy {
-    id = 9989;
-    // Set to true when authority is gained, indicating that RPCs can be received
-    bool ready = 1;
-    event UnrealRPCPayload server_to_client_rpc_event;
-}
-
 component UnrealServerToServerCommandEndpoint {
     id = 9973;
     command Void server_to_server_rpc_command(UnrealRPCPayload);
 }
-
-component UnrealMulticastRPCEndpointLegacy {
-    id = 9987;
-    event UnrealRPCPayload unreliable_multicast_rpc;
-}
-
-// Component that contains a list of RPCs to be executed
-// as a part of entity creation request
-component RPCsOnEntityCreation {
-    id = 9985;
-    list<UnrealRPCPayload> rpcs = 1;
-    command Void clear_rpcs(Void);
-}
-

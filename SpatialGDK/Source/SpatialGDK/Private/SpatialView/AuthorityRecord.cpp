@@ -1,16 +1,17 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "SpatialView/AuthorityRecord.h"
 
 namespace SpatialGDK
 {
-
 void AuthorityRecord::SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority)
 {
-	const EntityComponentId Id = {EntityId, ComponentId};
+	const EntityComponentId Id = { EntityId, ComponentId };
 
 	switch (Authority)
 	{
 	case WORKER_AUTHORITY_NOT_AUTHORITATIVE:
-		// If the entity-component as recorded as authority-gained then remove it. 
+		// If the entity-component as recorded as authority-gained then remove it.
 		// If not then ensure it's only recorded as authority lost.
 		if (!AuthorityGained.RemoveSingleSwap(Id))
 		{
@@ -27,9 +28,6 @@ void AuthorityRecord::SetAuthority(Worker_EntityId EntityId, Worker_ComponentId 
 		{
 			AuthorityGained.Push(Id);
 		}
-		break;
-	case WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT:
-		// Deliberately ignore loss imminent.
 		break;
 	}
 }

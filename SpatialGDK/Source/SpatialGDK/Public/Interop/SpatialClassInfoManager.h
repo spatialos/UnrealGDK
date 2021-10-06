@@ -11,6 +11,11 @@
 
 #include "SpatialClassInfoManager.generated.h"
 
+namespace SpatialGDK
+{
+struct EntityViewElement;
+}
+
 FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(ESchemaComponentType)> Callback)
 {
 	for (int32 Type = SCHEMA_Begin; Type < SCHEMA_Count; Type++)
@@ -21,12 +26,19 @@ FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(ESchemaComponentType)
 
 FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condition)
 {
+	static_assert(SCHEMA_Count == 4,
+				  "Unexpected number of Schema type components, please make sure GetGroupFromCondition is still correct.");
+
 	switch (Condition)
 	{
 	case COND_AutonomousOnly:
 	case COND_ReplayOrOwner:
 	case COND_OwnerOnly:
 		return SCHEMA_OwnerOnly;
+	case COND_InitialOnly:
+		return SCHEMA_InitialOnly;
+	case COND_ServerOnly:
+		return SCHEMA_ServerOnly;
 	default:
 		return SCHEMA_Data;
 	}
@@ -38,17 +50,9 @@ struct FRPCInfo
 	uint32 Index;
 };
 
-struct FHandoverPropertyInfo
-{
-	uint16 Handle;
-	int32 Offset;
-	int32 ArrayIdx;
-	GDK_PROPERTY(Property)* Property;
-};
-
 struct FInterestPropertyInfo
 {
-	GDK_PROPERTY(Property)* Property;
+	GDK_PROPERTY(Property) * Property;
 	int32 Offset;
 };
 
@@ -62,17 +66,19 @@ struct FClassInfo
 	// Exists for all classes
 	TArray<UFunction*> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
-	TArray<FHandoverPropertyInfo> HandoverProperties;
 	TArray<FInterestPropertyInfo> InterestProperties;
 
 	// For Actors and default Subobjects belonging to Actors
 	Worker_ComponentId SchemaComponents[ESchemaComponentType::SCHEMA_Count] = {};
 
 	// Only for Actors
-	TMap<uint32, TSharedRef<const FClassInfo>> SubobjectInfo;
+	TMap<ObjectOffset, TSharedRef<const FClassInfo>> SubobjectInfo;
 
 	// Only for default Subobjects belonging to Actors
 	FName SubobjectName;
+
+	// Only true on class FClassInfos that represent a dynamic subobject
+	bool bDynamicSubobject = false;
 
 	// Only for Subobject classes
 	TArray<TSharedRef<const FClassInfo>> DynamicSubobjectInfo;
@@ -88,7 +94,6 @@ class SPATIALGDK_API USpatialClassInfoManager : public UObject
 	GENERATED_BODY()
 
 public:
-
 	bool TryInit(USpatialNetDriver* InNetDriver);
 
 	// Checks whether a class is supported and quits the game if not. This is to avoid crashing
@@ -104,12 +109,14 @@ public:
 	const FClassInfo& GetClassInfoByComponentId(Worker_ComponentId ComponentId);
 
 	UClass* GetClassByComponentId(Worker_ComponentId ComponentId);
-	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
+	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, ObjectOffset& OutOffset);
 	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
+	const TArray<Schema_FieldId>& GetFieldIdsByComponentId(Worker_ComponentId ComponentId);
+	const TArray<Schema_FieldId>& GetListIdsByComponentId(Worker_ComponentId ComponentId);
 
 	Worker_ComponentId GetComponentIdForClass(const UClass& Class) const;
 	TArray<Worker_ComponentId> GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;
-	
+
 	const FRPCInfo& GetRPCInfo(UObject* Object, UFunction* Function);
 
 	Worker_ComponentId GetComponentIdFromLevelPath(const FString& LevelPath) const;
@@ -119,16 +126,17 @@ public:
 
 	Worker_ComponentId GetComponentIdForNetCullDistance(float NetCullDistance) const;
 	Worker_ComponentId ComputeActorInterestComponentId(const AActor* Actor) const;
+	Worker_ComponentId GetExistingInterestBucketComponentId(const SpatialGDK::EntityViewElement& Entity) const;
+	bool IsInterestBucketComponentId(const Worker_ComponentId ComponentId) const;
 
 	bool IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const;
-
-	const TArray<Worker_ComponentId>& GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const;
 
 	// Used to check if component is used for qbi tracking only
 	bool IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const;
 
 	// Tries to find ClassInfo corresponding to an unused dynamic subobject on the given entity
-	const FClassInfo* GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId, USpatialPackageMapClient* PackageMapClient);
+	const FClassInfo* GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId,
+												  USpatialPackageMapClient* PackageMapClient);
 
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
@@ -142,14 +150,18 @@ private:
 	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 
-	bool ShouldTrackHandoverProperties() const;
+	bool IsComponentIdForTypeValid(const Worker_ComponentId ComponentId, const ESchemaComponentType Type) const;
 
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
+	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>, FDefaultSetAllocator,
+		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>, false>>
+		ClassInfoMap;
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;
-	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
+	TMap<Worker_ComponentId, ObjectOffset> ComponentToOffsetMap;
 	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;
+
+	TOptional<bool> bHandoverActive;
 };

@@ -6,7 +6,6 @@
 
 namespace SpatialGDK
 {
-
 struct SplitOpListData : OpListData
 {
 	TSharedPtr<OpListData> Data;
@@ -24,12 +23,13 @@ struct SplitOpListPair
 		check(InitialOpListCount <= OriginalOpList.Count);
 		// Transfer ownership to a shared pointer.
 		TSharedPtr<OpListData> SplitData(OriginalOpList.Storage.Release());
-		Head = {OriginalOpList.Ops, InitialOpListCount, MakeUnique<SplitOpListData>(SplitData)};
-		Tail = {OriginalOpList.Ops + InitialOpListCount, OriginalOpList.Count - InitialOpListCount, MakeUnique<SplitOpListData>(MoveTemp(SplitData))};
+		Head = { OriginalOpList.Ops, InitialOpListCount, MakeUnique<SplitOpListData>(SplitData) };
+		Tail = { OriginalOpList.Ops + InitialOpListCount, OriginalOpList.Count - InitialOpListCount,
+				 MakeUnique<SplitOpListData>(MoveTemp(SplitData)) };
 	}
 
 	OpList Head;
 	OpList Tail;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

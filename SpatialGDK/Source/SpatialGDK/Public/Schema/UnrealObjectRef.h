@@ -7,6 +7,8 @@
 #include "Utils/SchemaOption.h"
 #include <WorkerSDK/Improbable/c_worker.h>
 
+typedef uint32 ObjectOffset;
+
 class USpatialPackageMapClient;
 
 struct SPATIALGDK_API FUnrealObjectRef
@@ -14,24 +16,27 @@ struct SPATIALGDK_API FUnrealObjectRef
 	FUnrealObjectRef() = default;
 	FUnrealObjectRef(const FUnrealObjectRef&) = default;
 
-	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset)
+	FUnrealObjectRef(Worker_EntityId Entity, ObjectOffset Offset)
 		: Entity(Entity)
 		, Offset(Offset)
-	{}
+	{
+	}
 
-	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset, FString Path, FUnrealObjectRef Outer, bool bNoLoadOnClient = false)
+	FUnrealObjectRef(Worker_EntityId Entity, ObjectOffset Offset, FString Path, FUnrealObjectRef Outer, bool bNoLoadOnClient)
 		: Entity(Entity)
 		, Offset(Offset)
 		, Path(Path)
 		, Outer(Outer)
 		, bNoLoadOnClient(bNoLoadOnClient)
-	{}
+	{
+	}
 
 	FUnrealObjectRef& operator=(const FUnrealObjectRef&) = default;
 
 	FORCEINLINE FString ToString() const
 	{
-		return FString::Printf(TEXT("(entity ID: %lld, offset: %u)"), Entity, Offset);
+		return FString::Printf(TEXT("(entity ID: %lld, offset: %u, path: %s)"), Entity, Offset,
+							   Path.IsSet() ? *Path.GetValue() : TEXT("not set"));
 	}
 
 	FORCEINLINE FUnrealObjectRef GetLevelReference() const
@@ -53,23 +58,16 @@ struct SPATIALGDK_API FUnrealObjectRef
 
 	FORCEINLINE bool operator==(const FUnrealObjectRef& Other) const
 	{
-		return Entity == Other.Entity &&
-			Offset == Other.Offset &&
-			((!Path && !Other.Path) || (Path && Other.Path && Path->Equals(*Other.Path))) &&
-			((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer)) &&
-			// Intentionally don't compare bNoLoadOnClient since it does not affect equality.
-			bUseClassPathToLoadObject == Other.bUseClassPathToLoadObject;
+		return Entity == Other.Entity && Offset == Other.Offset
+			   && ((!Path && !Other.Path) || (Path && Other.Path && Path->Equals(*Other.Path)))
+			   && ((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer)) &&
+			   // Intentionally don't compare bNoLoadOnClient since it does not affect equality.
+			   bUseClassPathToLoadObject == Other.bUseClassPathToLoadObject;
 	}
 
-	FORCEINLINE bool operator!=(const FUnrealObjectRef& Other) const
-	{
-		return !operator==(Other);
-	}
+	FORCEINLINE bool operator!=(const FUnrealObjectRef& Other) const { return !operator==(Other); }
 
-	FORCEINLINE bool IsValid() const
-	{
-		return (*this != NULL_OBJECT_REF && *this != UNRESOLVED_OBJECT_REF);
-	}
+	FORCEINLINE bool IsValid() const { return (*this != NULL_OBJECT_REF && *this != UNRESOLVED_OBJECT_REF); }
 
 	static UObject* ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpatialPackageMapClient* PackageMap, bool& bOutUnresolved);
 	static FSoftObjectPath ToSoftObjectPath(const FUnrealObjectRef& ObjectRef);
@@ -83,10 +81,10 @@ struct SPATIALGDK_API FUnrealObjectRef
 	static const FUnrealObjectRef UNRESOLVED_OBJECT_REF;
 
 	Worker_EntityId Entity;
-	uint32 Offset;
+	ObjectOffset Offset;
 	SpatialGDK::TSchemaOption<FString> Path;
 	SpatialGDK::TSchemaOption<FUnrealObjectRef> Outer;
-	bool bNoLoadOnClient = false;
+	bool bNoLoadOnClient = true;
 	// If this field is set to true, we are saying that the Actor will exist at most once on the given worker.
 	// In addition, if we receive information for an Actor of this class over the network, then this data
 	// should be applied to the Actor we've already spawned (where another worker created the entity). This

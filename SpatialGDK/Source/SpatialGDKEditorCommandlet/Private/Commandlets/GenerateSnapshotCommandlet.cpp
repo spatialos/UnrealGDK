@@ -1,13 +1,13 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "GenerateSnapshotCommandlet.h"
-#include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditor.h"
+#include "SpatialGDKEditorCommandletPrivate.h"
 
-#include "Kismet/GameplayStatics.h"
 #include "Engine/ObjectLibrary.h"
 #include "Engine/World.h"
 #include "FileHelpers.h"
+#include "Kismet/GameplayStatics.h"
 #include "Misc/Paths.h"
 
 UGenerateSnapshotCommandlet::UGenerateSnapshotCommandlet()
@@ -65,15 +65,17 @@ bool UGenerateSnapshotCommandlet::GenerateSnapshotForMap(FString MapPath)
 	// Generate the Snapshot!
 	bool bSnapshotGenSuccess = false;
 	FSpatialGDKEditor SpatialGDKEditor;
-	SpatialGDKEditor.GenerateSnapshot(
-		GWorld, FPaths::SetExtension(FPaths::GetCleanFilename(MapPath), TEXT(".snapshot")),
-		FSimpleDelegate::CreateLambda([&bSnapshotGenSuccess]()
-		{
-			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Success!"));
-			bSnapshotGenSuccess = true;
-		}),
-		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed")); }),
-		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("%s"), *ErrorText); }));
+	SpatialGDKEditor.GenerateSnapshot(GWorld, FPaths::SetExtension(FPaths::GetCleanFilename(MapPath), TEXT(".snapshot")),
+									  FSimpleDelegate::CreateLambda([&bSnapshotGenSuccess]() {
+										  UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Success!"));
+										  bSnapshotGenSuccess = true;
+									  }),
+									  FSimpleDelegate::CreateLambda([]() {
+										  UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed"));
+									  }),
+									  FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) {
+										  UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("%s"), *ErrorText);
+									  }));
 	return bSnapshotGenSuccess;
 }
 

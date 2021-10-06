@@ -15,7 +15,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestRepossession : public ASpatialFu
 public:
 	ASpatialTestRepossession();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

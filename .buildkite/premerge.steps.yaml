@@ -1,58 +1,45 @@
 ---
-# This is designed to trap and retry failures because agent lost
-# connection. Agent exits with -1 in this case.
-agent_transients: &agent_transients
-  exit_status: -1
-  limit: 3
-# BK system error
-bk_system_error: &bk_system_error
-  exit_status: 255
-  limit: 3
-# job was interrupted by a signal (e.g. ctrl+c etc)
-bk_interrupted_by_signal: &bk_interrupted_by_signal
-  exit_status: 15
-  limit: 3
-
-script_runner: &script_runner
-  agents:
-  - "agent_count=8"
-  - "capable_of_building=platform"
-  - "environment=production"
-  - "machine_type=quarter"
-  - "permission_set=builder"
-  - "platform=linux"
-  - "queue=${CI_LINUX_BUILDER_QUEUE:-v4-2019-12-12-bk5225-daecba805768d787}"
-  - "scaler_version=2"
-  - "working_hours_time_zone=london"
-
-windows: &windows
-  agents:
-    - "agent_count=1"
-    - "capable_of_building=gdk-for-unreal"
-    - "environment=production"
-    - "machine_type=single-high-cpu"  # this name matches to SpatialOS node-size names
-    - "platform=windows"
-    - "permission_set=builder"
-    - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-03-26-102432-bk9951-8afe0ffb}"
-  retry:
-    automatic:
-      - <<: *agent_transients
-      - <<: *bk_system_error
-      - <<: *bk_interrupted_by_signal
-  timeout_in_minutes: 60
-  plugins:
-    - ca-johnson/taskkill#v4.1: ~
-
-# NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
-# These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
+ci_version: &ci_version "${CI_VERSION:-main}"
+common_env_vars: &common_env_vars
+  BUILD_TYPE: "GDK"
+  GDK_BRANCH: "main_branch::${BUILDKITE_BRANCH}"
+  PROJECT_BRANCH: "${PROJECT_BRANCH:-match_branch_name_pref::master}"
+  USE_FASTBUILD: "${USE_FASTBUILD:-True}"
+  IS_BUILDKITE_BUILD: "${IS_BUILDKITE_BUILD:-True}"
+  BUILD_ANDROID: "${BUILD_ANDROID:-False}"
+  CLEAN_BUILD: "${CLEAN_BUILD:-False}"
+  RUN_DEFAULT_TESTS: "${RUN_DEFAULT_TESTS:-True}"
+  SLOW_TESTS: "${SLOW_TESTS:-False}"
+  EXTRA_TESTS: "${EXTRA_TESTS:-}"
+  EXTRA_TESTS_RUN_NATIVE: "${EXTRA_TESTS_RUN_NATIVE:-False}"
+  EXTRA_TESTS_RUN_REPGRAPH: "${EXTRA_TESTS_RUN_REPGRAPH:-False}"
+  EXTRA_TESTS_RUNS: "${EXTRA_TESTS_RUNS:-1}"
 
 steps:
-  - label: "enforce-version-restrictions"
-    command: "ci/check-version-file.sh"
-    <<: *script_runner
-  # No point in running other steps if the listed versions are invalid
-  - wait: ~
+  # New build pipeline
+  # Trigger a 4.27 build
+  - trigger: "unrealgdkbuild-ci"
+    label: "gdk-ci-4.27"
+    async: false
+    build:
+      branch: *ci_version
+      message: "gdk-4.27 ${BUILDKITE_MESSAGE}"
+      env:
+        <<: *common_env_vars
+        ENGINE_BRANCH: "${ENGINE_BRANCH_427:-match_branch_name_pref_engine::4.27-SpatialOSUnrealGDK}"
+        ENGINE_MAJOR: "4.27"
+
+  # Trigger a 4.26 build
+  - trigger: "unrealgdkbuild-ci"
+    label: "gdk-ci-4.26"
+    async: false
+    build:
+      branch: *ci_version
+      message: "gdk-4.26 ${BUILDKITE_MESSAGE}"
+      env:
+        <<: *common_env_vars
+        ENGINE_BRANCH: "${ENGINE_BRANCH_426:-match_branch_name_pref_engine::4.26-SpatialOSUnrealGDK}"
+        ENGINE_MAJOR: "4.26"
 
   # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
   - trigger: "unrealgdkexampleproject-nightly"
@@ -63,21 +50,3 @@ steps:
       env:
         NIGHTLY_BUILD: "${NIGHTLY_BUILD:-false}"
         GDK_BRANCH: "${BUILDKITE_BRANCH}"
-
-  - label: "generate-pipeline-steps"
-    commands:
-      - "ci/generate-and-upload-build-steps.sh"
-    <<: *script_runner
-
-  - wait: ~
-    continue_on_failure: true
-  
-  - label: "upload-test-metrics"
-    if: build.env("NIGHTLY_BUILD") == "true"
-    command: "ci/upload-test-metrics.sh"
-    <<: *script_runner
-  
-  - label: "slack-notify"
-    if: (build.env("SLACK_NOTIFY") == "true" || build.branch == "master") && build.env("SLACK_NOTIFY") != "false" && build.env("ENGINE_NET_TEST") != "true"
-    commands: "powershell ./ci/build-and-send-slack-notification.ps1"
-    <<: *windows

@@ -4,27 +4,26 @@
 
 #include "SpatialView/AuthorityRecord.h"
 
-#define AUTHORITYRECORD_TEST(TestName) \
-	GDK_TEST(Core, AuthorityRecord, TestName)
+#define AUTHORITYRECORD_TEST(TestName) GDK_TEST(Core, AuthorityRecord, TestName)
 
 using namespace SpatialGDK;
 
 namespace
 {
-	class AuthorityChangeRecordFixture
-	{
-	public:
-		const Worker_EntityId kTestEntityId = 1337;
-		const Worker_ComponentId kTestComponentId = 1338;
+class AuthorityChangeRecordFixture
+{
+public:
+	const Worker_EntityId kTestEntityId = 1337;
+	const Worker_ComponentId kTestComponentId = 1338;
 
-		const EntityComponentId kEntityComponentId{ kTestEntityId, kTestComponentId };
+	const EntityComponentId kEntityComponentId{ kTestEntityId, kTestComponentId };
 
-		AuthorityRecord Record;
+	AuthorityRecord Record;
 
-		TArray<EntityComponentId> ExpectedAuthorityGained;
-		TArray<EntityComponentId> ExpectedAuthorityLost;
-		TArray<EntityComponentId> ExpectedAuthorityLostTemporarily;
-	};
+	TArray<EntityComponentId> ExpectedAuthorityGained;
+	TArray<EntityComponentId> ExpectedAuthorityLost;
+	TArray<EntityComponentId> ExpectedAuthorityLostTemporarily;
+};
 } // anonymous namespace
 
 AUTHORITYRECORD_TEST(GIVEN_EmptyAuthorityRecord_WHEN_set_to_authoritative_THEN_AuthorityRecord_has_AuthorityGainedRecord)
@@ -39,7 +38,8 @@ AUTHORITYRECORD_TEST(GIVEN_EmptyAuthorityRecord_WHEN_set_to_authoritative_THEN_A
 	Fixture.ExpectedAuthorityGained.Push(Fixture.kEntityComponentId);
 	TestTrue(TEXT("Comparing AuthorityGained"), Fixture.Record.GetAuthorityGained() == Fixture.ExpectedAuthorityGained);
 	TestTrue(TEXT("Comparing AuthorityLost"), Fixture.Record.GetAuthorityLost() == Fixture.ExpectedAuthorityLost);
-	TestTrue(TEXT("Comparing AuthorityLostTemporarily"), Fixture.Record.GetAuthorityLostTemporarily() == Fixture.ExpectedAuthorityLostTemporarily);
+	TestTrue(TEXT("Comparing AuthorityLostTemporarily"),
+			 Fixture.Record.GetAuthorityLostTemporarily() == Fixture.ExpectedAuthorityLostTemporarily);
 
 	return true;
 }
@@ -56,7 +56,8 @@ AUTHORITYRECORD_TEST(GIVEN_AuthorityRecord_with_AuthoritativeRecord_WHEN_set_to_
 	// THEN
 	TestTrue(TEXT("Comparing AuthorityGained"), Fixture.Record.GetAuthorityGained() == Fixture.ExpectedAuthorityGained);
 	TestTrue(TEXT("Comparing AuthorityLost"), Fixture.Record.GetAuthorityLost() == Fixture.ExpectedAuthorityLost);
-	TestTrue(TEXT("Comparing AuthorityLostTemporarily"), Fixture.Record.GetAuthorityLostTemporarily() == Fixture.ExpectedAuthorityLostTemporarily);
+	TestTrue(TEXT("Comparing AuthorityLostTemporarily"),
+			 Fixture.Record.GetAuthorityLostTemporarily() == Fixture.ExpectedAuthorityLostTemporarily);
 
 	return true;
 }
@@ -73,7 +74,8 @@ AUTHORITYRECORD_TEST(GIVEN_empty_AuthorityRecord_WHEN_set_to_NonAuthoritative_TH
 	Fixture.ExpectedAuthorityLost.Push(Fixture.kEntityComponentId);
 	TestTrue(TEXT("Comparing AuthorityGained"), Fixture.Record.GetAuthorityGained() == Fixture.ExpectedAuthorityGained);
 	TestTrue(TEXT("Comparing AuthorityLost"), Fixture.Record.GetAuthorityLost() == Fixture.ExpectedAuthorityLost);
-	TestTrue(TEXT("Comparing AuthorityLostTemporarily"), Fixture.Record.GetAuthorityLostTemporarily() == Fixture.ExpectedAuthorityLostTemporarily);
+	TestTrue(TEXT("Comparing AuthorityLostTemporarily"),
+			 Fixture.Record.GetAuthorityLostTemporarily() == Fixture.ExpectedAuthorityLostTemporarily);
 
 	return true;
 }
@@ -91,12 +93,14 @@ AUTHORITYRECORD_TEST(GIVEN_AuthorityRecord_with_NonAuthoritativeRecord_WHEN_set_
 	Fixture.ExpectedAuthorityLostTemporarily.Push(Fixture.kEntityComponentId);
 	TestTrue(TEXT("Comparing AuthorityGained"), Fixture.Record.GetAuthorityGained() == Fixture.ExpectedAuthorityGained);
 	TestTrue(TEXT("Comparing AuthorityLost"), Fixture.Record.GetAuthorityLost() == Fixture.ExpectedAuthorityLost);
-	TestTrue(TEXT("Comparing AuthorityLostTemporarily"), Fixture.Record.GetAuthorityLostTemporarily() == Fixture.ExpectedAuthorityLostTemporarily);
+	TestTrue(TEXT("Comparing AuthorityLostTemporarily"),
+			 Fixture.Record.GetAuthorityLostTemporarily() == Fixture.ExpectedAuthorityLostTemporarily);
 
 	return true;
 }
 
-AUTHORITYRECORD_TEST(GIVEN_AuthorityRecord_with_NonAuthoritativeRecord_WHEN_set_to_Authoritative_and_NonAuthoritative_THEN_has_AuthorityLostRecord)
+AUTHORITYRECORD_TEST(
+	GIVEN_AuthorityRecord_with_NonAuthoritativeRecord_WHEN_set_to_Authoritative_and_NonAuthoritative_THEN_has_AuthorityLostRecord)
 {
 	// GIVEN
 	AuthorityChangeRecordFixture Fixture;
@@ -110,12 +114,14 @@ AUTHORITYRECORD_TEST(GIVEN_AuthorityRecord_with_NonAuthoritativeRecord_WHEN_set_
 	Fixture.ExpectedAuthorityLost.Push(Fixture.kEntityComponentId);
 	TestTrue(TEXT("Comparing AuthorityGained"), Fixture.Record.GetAuthorityGained() == Fixture.ExpectedAuthorityGained);
 	TestTrue(TEXT("Comparing AuthorityLost"), Fixture.Record.GetAuthorityLost() == Fixture.ExpectedAuthorityLost);
-	TestTrue(TEXT("Comparing AuthorityLostTemporarily"), Fixture.Record.GetAuthorityLostTemporarily() == Fixture.ExpectedAuthorityLostTemporarily);
+	TestTrue(TEXT("Comparing AuthorityLostTemporarily"),
+			 Fixture.Record.GetAuthorityLostTemporarily() == Fixture.ExpectedAuthorityLostTemporarily);
 
 	return true;
 }
 
-AUTHORITYRECORD_TEST(GIVEN_AuthorityRecord_with_AuthoritativeRecord_NonAuthoritativeRecord_and_AuthorityLostTemporarilyRecorde_WHEN_Cleared_THEN_has_no_records)
+AUTHORITYRECORD_TEST(
+	GIVEN_AuthorityRecord_with_AuthoritativeRecord_NonAuthoritativeRecord_and_AuthorityLostTemporarilyRecorde_WHEN_Cleared_THEN_has_no_records)
 {
 	// GIVEN
 	AuthorityChangeRecordFixture Fixture;
@@ -128,7 +134,8 @@ AUTHORITYRECORD_TEST(GIVEN_AuthorityRecord_with_AuthoritativeRecord_NonAuthorita
 	Fixture.ExpectedAuthorityLostTemporarily.Push(EntityComponentId{ Fixture.kTestEntityId, 3 });
 	TestTrue(TEXT("Comparing AuthorityGained"), Fixture.Record.GetAuthorityGained() == Fixture.ExpectedAuthorityGained);
 	TestTrue(TEXT("Comparing AuthorityLost"), Fixture.Record.GetAuthorityLost() == Fixture.ExpectedAuthorityLost);
-	TestTrue(TEXT("Comparing AuthorityLostTemporarily"), Fixture.Record.GetAuthorityLostTemporarily() == Fixture.ExpectedAuthorityLostTemporarily);
+	TestTrue(TEXT("Comparing AuthorityLostTemporarily"),
+			 Fixture.Record.GetAuthorityLostTemporarily() == Fixture.ExpectedAuthorityLostTemporarily);
 
 	// WHEN
 	Fixture.Record.Clear();
@@ -139,7 +146,8 @@ AUTHORITYRECORD_TEST(GIVEN_AuthorityRecord_with_AuthoritativeRecord_NonAuthorita
 	Fixture.ExpectedAuthorityLostTemporarily.Empty();
 	TestTrue(TEXT("Comparing AuthorityGained"), Fixture.Record.GetAuthorityGained() == Fixture.ExpectedAuthorityGained);
 	TestTrue(TEXT("Comparing AuthorityLost"), Fixture.Record.GetAuthorityLost() == Fixture.ExpectedAuthorityLost);
-	TestTrue(TEXT("Comparing AuthorityLostTemporarily"), Fixture.Record.GetAuthorityLostTemporarily() == Fixture.ExpectedAuthorityLostTemporarily);
+	TestTrue(TEXT("Comparing AuthorityLostTemporarily"),
+			 Fixture.Record.GetAuthorityLostTemporarily() == Fixture.ExpectedAuthorityLostTemporarily);
 
 	return true;
 }

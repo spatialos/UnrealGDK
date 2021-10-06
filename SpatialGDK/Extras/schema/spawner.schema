@@ -6,6 +6,7 @@ type SpawnPlayerRequest {
     bytes unique_id = 2;
     string online_platform_name = 3;
     bool simulated = 4;
+    EntityId client_system_entity_id = 5;
 }
 
 type SpawnPlayerResponse { }

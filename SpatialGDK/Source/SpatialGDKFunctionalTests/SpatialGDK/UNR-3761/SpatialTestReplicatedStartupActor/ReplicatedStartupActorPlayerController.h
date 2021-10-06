@@ -11,8 +11,8 @@ UCLASS()
 class AReplicatedStartupActorPlayerController : public APlayerController
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	UFUNCTION(Server, Reliable)
 	void ClientToServerRPC(ASpatialTestReplicatedStartupActor* Test, AActor* ReplicatedActor);
 

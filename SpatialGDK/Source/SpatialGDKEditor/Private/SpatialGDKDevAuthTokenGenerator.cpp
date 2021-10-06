@@ -19,10 +19,8 @@ FSpatialGDKDevAuthTokenGenerator::FSpatialGDKDevAuthTokenGenerator()
 void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthTokenTasks()
 {
 	bool bIsRunningInChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, bIsRunningInChina]
-	{
-		AsyncTask(ENamedThreads::GameThread, [this]()
-		{
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, bIsRunningInChina] {
+		AsyncTask(ENamedThreads::GameThread, [this]() {
 			ShowTaskStartedNotification(TEXT("Generating Development Authentication Token"));
 		});
 
@@ -30,17 +28,16 @@ void FSpatialGDKDevAuthTokenGenerator::DoGenerateDevAuthTokenTasks()
 		FText ErrorMessage;
 		if (SpatialCommandUtils::GenerateDevAuthToken(bIsRunningInChina, DevAuthToken, ErrorMessage))
 		{
-			AsyncTask(ENamedThreads::GameThread, [this, DevAuthToken]()
-			{
+			AsyncTask(ENamedThreads::GameThread, [this, DevAuthToken]() {
 				GetMutableDefault<USpatialGDKEditorSettings>()->SetDevelopmentAuthenticationToken(DevAuthToken);
 				EndTask(/* bSuccess */ true);
 			});
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Error, TEXT("Failed to generate a Development Authentication Token: %s"), *ErrorMessage.ToString());
-			AsyncTask(ENamedThreads::GameThread, [this]()
-			{
+			UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Error, TEXT("Failed to generate a Development Authentication Token: %s"),
+				   *ErrorMessage.ToString());
+			AsyncTask(ENamedThreads::GameThread, [this]() {
 				EndTask(/* bSuccess */ false);
 			});
 		}
@@ -56,7 +53,8 @@ void FSpatialGDKDevAuthTokenGenerator::AsyncGenerateDevAuthToken()
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Display, TEXT("A previous Development Authentication Token request is still pending. New request for generation ignored."));
+		UE_LOG(LogSpatialGDKDevAuthTokenGenerator, Display,
+			   TEXT("A previous Development Authentication Token request is still pending. New request for generation ignored."));
 	}
 }
 
@@ -88,7 +86,8 @@ void FSpatialGDKDevAuthTokenGenerator::EndTask(bool bSuccess)
 	bIsGenerating = false;
 }
 
-void FSpatialGDKDevAuthTokenGenerator::ShowTaskEndedNotification(const FString& NotificationText, SNotificationItem::ECompletionState CompletionState)
+void FSpatialGDKDevAuthTokenGenerator::ShowTaskEndedNotification(const FString& NotificationText,
+																 SNotificationItem::ECompletionState CompletionState)
 {
 	TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
 	if (Notification.IsValid())

@@ -9,6 +9,7 @@ param(
 
     [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production/UnrealEngine"
 )
+. "$PSScriptRoot\common.ps1"
 
 Push-Location "$($gdk_home)"
 
@@ -38,7 +39,7 @@ Push-Location "$($gdk_home)"
             $unreal_version = $(gsutil cp $head_pointer_gcs_path -) # the '-' at the end instructs gsutil to download the file and output the contents to stdout
         }
         else {
-            $unreal_version = $version_description
+            $unreal_version = "UnrealEngine-$version_description"
         }
     Pop-Location
 

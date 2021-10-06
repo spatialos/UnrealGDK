@@ -17,7 +17,6 @@ class SPATIALGDKEDITOR_API UTransientUObjectEditor : public UObject
 {
 	GENERATED_BODY()
 public:
-
 	template <typename T>
 	static T* LaunchTransientUObjectEditor(const FText& EditorName, TSharedPtr<SWindow> ParentWindow)
 	{
@@ -25,5 +24,6 @@ public:
 	}
 
 private:
-	static UTransientUObjectEditor* LaunchTransientUObjectEditor(const FText& EditorName, UClass* ObjectClass, TSharedPtr<SWindow> ParentWindow);
+	static UTransientUObjectEditor* LaunchTransientUObjectEditor(const FText& EditorName, UClass* ObjectClass,
+																 TSharedPtr<SWindow> ParentWindow);
 };

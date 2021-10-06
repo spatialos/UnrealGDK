@@ -22,7 +22,6 @@ enum class ECheckBoxState : uint8;
 class SSpatialGDKCloudDeploymentConfiguration : public SCompoundWidget
 {
 public:
-
 	SLATE_BEGIN_ARGS(SSpatialGDKCloudDeploymentConfiguration) {}
 
 	/** A reference to the parent window */
@@ -32,11 +31,9 @@ public:
 	SLATE_END_ARGS()
 
 public:
-
 	void Construct(const FArguments& InArgs);
 
 private:
-
 	/** The parent window of this widget */
 	TWeakPtr<SWindow> ParentWindowPtr;
 
@@ -47,6 +44,7 @@ private:
 	TSharedPtr<IErrorReportingWidget> ProjectNameInputErrorReporting;
 	TSharedPtr<IErrorReportingWidget> AssemblyNameInputErrorReporting;
 	TSharedPtr<IErrorReportingWidget> DeploymentNameInputErrorReporting;
+	TSharedPtr<IErrorReportingWidget> SimulatedPlayersDeploymentNameInputErrorReporting;
 
 	/** Delegate to commit project name */
 	void OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType);

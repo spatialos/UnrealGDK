@@ -1,6 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "SpatialFunctionalTestAutoDestroyComponent.h"
 
 USpatialFunctionalTestAutoDestroyComponent::USpatialFunctionalTestAutoDestroyComponent()
@@ -8,10 +7,7 @@ USpatialFunctionalTestAutoDestroyComponent::USpatialFunctionalTestAutoDestroyCom
 {
 #if ENGINE_MINOR_VERSION <= 23
 	bReplicates = true;
-#else 
+#else
 	SetIsReplicatedByDefault(true);
 #endif
 }
-
-
-

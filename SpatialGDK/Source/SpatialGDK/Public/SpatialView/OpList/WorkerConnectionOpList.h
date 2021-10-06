@@ -8,7 +8,6 @@
 
 namespace SpatialGDK
 {
-
 struct WorkerConnectionOpListData : OpListData
 {
 	struct Deleter
@@ -24,7 +23,8 @@ struct WorkerConnectionOpListData : OpListData
 
 	TUniquePtr<Worker_OpList, Deleter> OpList;
 
-	explicit WorkerConnectionOpListData(Worker_OpList* OpList) : OpList(OpList)
+	explicit WorkerConnectionOpListData(Worker_OpList* OpList)
+		: OpList(OpList)
 	{
 	}
 };
@@ -32,7 +32,7 @@ struct WorkerConnectionOpListData : OpListData
 inline OpList GetOpListFromConnection(Worker_Connection* Connection)
 {
 	Worker_OpList* Ops = Worker_Connection_GetOpList(Connection, 0);
-	return {Ops->ops, Ops->op_count, MakeUnique<WorkerConnectionOpListData>(Ops)};
+	return { Ops->ops, Ops->op_count, MakeUnique<WorkerConnectionOpListData>(Ops) };
 }
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

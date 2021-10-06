@@ -6,6 +6,7 @@ ARPCInInterfaceActor::ARPCInInterfaceActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bAlwaysRelevant = true;
+	bReplicates = true;
 }
 
 void ARPCInInterfaceActor::RPCInInterface_Implementation()

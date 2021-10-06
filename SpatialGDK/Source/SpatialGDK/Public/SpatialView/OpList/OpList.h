@@ -7,8 +7,8 @@
 
 namespace SpatialGDK
 {
-
-struct OpListData {
+struct OpListData
+{
 	virtual ~OpListData() = default;
 };
 
@@ -19,4 +19,4 @@ struct OpList
 	TUniquePtr<OpListData> Storage;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

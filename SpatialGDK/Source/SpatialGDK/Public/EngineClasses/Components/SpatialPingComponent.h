@@ -80,7 +80,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Ping")
 	float GetPing() const;
 
-	// Returns the average, min, and max values for the last PingMeasurementsWindowSize measurements as well as the total average, min, and max.
+	// Returns the average, min, and max values for the last PingMeasurementsWindowSize measurements as well as the total average, min, and
+	// max.
 	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Ping")
 	FSpatialPingAverageData GetAverageData() const;
 

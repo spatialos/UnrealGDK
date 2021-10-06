@@ -9,6 +9,6 @@ class UWorld;
 
 namespace SpatialGDKConsoleCommands
 {
-	void ConsoleCommand_ConnectToLocator(const TArray<FString>& Args, UWorld* World);
+void ConsoleCommand_ConnectToLocator(const TArray<FString>& Args, UWorld* World);
 }
 // namespace

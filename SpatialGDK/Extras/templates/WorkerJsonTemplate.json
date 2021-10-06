@@ -18,17 +18,6 @@
       }
     ]
   },
-  "bridge": {
-    "worker_attribute_set": {
-      "attributes": [
-        "{{WorkerTypeName}}"
-      ]
-    },
-    "component_delivery": {
-      "default": "RELIABLE_ORDERED",
-      "checkout_all_initially": true
-    }
-  },
   "managed": {
     "windows": {
       "artifact_name": "UnrealEditor@Windows.zip",
@@ -42,17 +31,17 @@
         "-nopause",
         "-messaging",
         "-SaveToUserDir",
-        "+appName",
+        "-appName",
         "${IMPROBABLE_PROJECT_NAME}",
-        "+receptionistHost",
+        "-receptionistHost",
         "${IMPROBABLE_RECEPTIONIST_HOST}",
-        "+receptionistPort",
+        "-receptionistPort",
         "${IMPROBABLE_RECEPTIONIST_PORT}",
-        "+workerType",
+        "-workerType",
         "${IMPROBABLE_WORKER_NAME}",
-        "+workerId",
+        "-workerId",
         "${IMPROBABLE_WORKER_ID}",
-        "+linkProtocol",
+        "-linkProtocol",
         "Tcp",
         "-abslog=${IMPROBABLE_LOG_FILE}",
         "-NoVerifyGC"
@@ -64,17 +53,17 @@
       "arguments": [
         "${IMPROBABLE_WORKER_ID}",
         "${IMPROBABLE_LOG_FILE}",
-        "+appName",
+        "-appName",
         "${IMPROBABLE_PROJECT_NAME}",
-        "+receptionistHost",
+        "-receptionistHost",
         "${IMPROBABLE_RECEPTIONIST_HOST}",
-        "+receptionistPort",
+        "-receptionistPort",
         "${IMPROBABLE_RECEPTIONIST_PORT}",
-        "+workerType",
+        "-workerType",
         "${IMPROBABLE_WORKER_NAME}",
-        "+workerId",
+        "-workerId",
         "${IMPROBABLE_WORKER_ID}",
-        "+linkProtocol",
+        "-linkProtocol",
         "Tcp",
         "-NoVerifyGC"
       ]

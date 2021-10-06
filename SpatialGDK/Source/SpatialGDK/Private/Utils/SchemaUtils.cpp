@@ -6,7 +6,6 @@
 
 namespace SpatialGDK
 {
-
 void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath)
 {
 	if (!ObjectRef.Path.IsSet())

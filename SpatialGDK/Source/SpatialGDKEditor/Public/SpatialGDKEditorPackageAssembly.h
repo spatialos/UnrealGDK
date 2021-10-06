@@ -51,7 +51,7 @@ private:
 
 	void LaunchTask(const FString& Exe, const FString& Args, const FString& WorkingDir);
 
-	void BuildAssembly(const FString& ProjectName, const FString& Platform, const FString& Configuration, const FString& AdditionalArgs);
+	void BuildAssembly(const FString& TargetName, const FString& Platform, const FString& Configuration, const FString& AdditionalArgs);
 	void UploadAssembly(const FString& AssemblyName, bool bForceAssemblyOverwrite);
 
 	bool NextStep();
@@ -62,4 +62,6 @@ private:
 	void OnTaskCompleted(int32 TaskResult);
 	void OnTaskOutput(FString Message);
 	void OnTaskCanceled();
+
+	FString GetExtraArgsForClientTarget();
 };

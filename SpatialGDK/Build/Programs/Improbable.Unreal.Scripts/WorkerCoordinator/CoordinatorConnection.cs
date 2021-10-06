@@ -2,7 +2,7 @@
 
 using System;
 using System.Threading;
-using Improbable.Worker;
+using Improbable.Worker.CInterop;
 
 namespace Improbable.WorkerCoordinator
 {
@@ -18,7 +18,7 @@ namespace Improbable.WorkerCoordinator
                 WorkerType = coordinatorWorkerType,
                 Network =
                 {
-                    ConnectionType = NetworkConnectionType.ModularTcp,
+                    ConnectionType = NetworkConnectionType.Tcp,
                     UseExternalIp = false
                 }
             };
@@ -47,20 +47,28 @@ namespace Improbable.WorkerCoordinator
         {
             var thread = new Thread(() =>
             {
-                Dispatcher dispatcher = new Dispatcher();
                 var isConnected = true;
-
-                dispatcher.OnDisconnect(op =>
-                {
-                    logger.WriteError("[disconnect] " + op.Reason, logToConnectionIfExists: false);
-                    isConnected = false;
-                });
 
                 while (isConnected)
                 {
-                    using (var opList = connection.GetOpList(GetOpListTimeoutInMilliseconds))
+                    using (OpList opList = connection.GetOpList(GetOpListTimeoutInMilliseconds))
                     {
-                        dispatcher.Process(opList);
+                        var OpCount = opList.GetOpCount();
+                        for (var i = 0; i < OpCount; ++i)
+                        {
+                            switch (opList.GetOpType(i))
+                            {
+                                case OpType.Disconnect:
+                                    {
+                                        DisconnectOp op = opList.GetDisconnectOp(i);
+                                        logger.WriteError("[disconnect] " + op.Reason, logToConnectionIfExists: false);
+                                        isConnected = false;
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
                     }
                 }
             });

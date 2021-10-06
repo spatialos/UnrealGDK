@@ -8,11 +8,11 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/Docking/TabManager.h"
 #include "Misc/FileHelper.h"
-#include "SpatialCommandUtils.h"
 #include "SSpatialOutputLog.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
+#include "SpatialCommandUtils.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesPrivate.h"
 #include "Widgets/Docking/SDockTab.h"
@@ -24,21 +24,23 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKServices);
 IMPLEMENT_MODULE(FSpatialGDKServicesModule, SpatialGDKServices);
 
 static const FName SpatialOutputLogTabName = FName(TEXT("SpatialOutputLog"));
+TWeakPtr<SSpatialOutputLog> SpatialOutputLog;
 
 TSharedRef<SDockTab> SpawnSpatialOutputLog(const FSpawnTabArgs& Args)
 {
+	TSharedRef<SSpatialOutputLog> SpatialOutputLogRef = SNew(SSpatialOutputLog);
+	SpatialOutputLog = TWeakPtr<SSpatialOutputLog>(SpatialOutputLogRef);
+
 	return SNew(SDockTab)
 		.Icon(FEditorStyle::GetBrush("Log.TabIcon"))
 		.TabRole(ETabRole::NomadTab)
-		.Label(NSLOCTEXT("SpatialOutputLog", "TabTitle", "Spatial Output"))
-		[
-			SNew(SSpatialOutputLog)
-		];
+		.Label(NSLOCTEXT("SpatialOutputLog", "TabTitle", "Spatial Output"))[SpatialOutputLogRef];
 }
 
 void FSpatialGDKServicesModule::StartupModule()
 {
-	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(SpatialOutputLogTabName, FOnSpawnTab::CreateStatic(&SpawnSpatialOutputLog))
+	FGlobalTabmanager::Get()
+		->RegisterNomadTabSpawner(SpatialOutputLogTabName, FOnSpawnTab::CreateStatic(&SpawnSpatialOutputLog))
 		.SetDisplayName(NSLOCTEXT("UnrealEditor", "SpatialOutputLogTab", "Spatial Output Log"))
 		.SetTooltipText(NSLOCTEXT("UnrealEditor", "SpatialOutputLogTooltipText", "Open the Spatial Output Log tab."))
 		.SetGroup(WorkspaceMenu::GetMenuStructure().GetDeveloperToolsLogCategory())
@@ -65,6 +67,11 @@ FLocalReceptionistProxyServerManager* FSpatialGDKServicesModule::GetLocalRecepti
 	return &LocalReceptionistProxyServerManager;
 }
 
+TWeakPtr<SSpatialOutputLog> FSpatialGDKServicesModule::GetSpatialOutputLog()
+{
+	return SpatialOutputLog;
+}
+
 FString FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(const FString& AppendPath)
 {
 	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
@@ -83,21 +90,15 @@ bool FSpatialGDKServicesModule::SpatialPreRunChecks(bool bIsInChina)
 {
 	FString SpatialExistenceCheckResult;
 	int32 ExitCode;
-	bool bSuccess = SpatialCommandUtils::SpatialVersion(bIsInChina, SpatialGDKServicesConstants::SpatialOSDirectory, SpatialExistenceCheckResult, ExitCode);
+	bool bSuccess = SpatialCommandUtils::SpatialVersion(bIsInChina, SpatialGDKServicesConstants::SpatialOSDirectory,
+														SpatialExistenceCheckResult, ExitCode);
 
 	if (!bSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("%s does not exist on this machine! Please make sure Spatial is installed before trying to start a local deployment. %s"), *SpatialGDKServicesConstants::SpatialExe, *SpatialExistenceCheckResult);
-		return false;
-	}
-
-	FString SpotExistenceCheckResult;
-	FString StdErr;
-	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpotExe, TEXT("version"), &ExitCode, &SpotExistenceCheckResult, &StdErr);
-
-	if (ExitCode != 0)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("%s does not exist on this machine! Please make sure to run Setup.bat in the UnrealGDK Plugin before trying to start a local deployment."), *SpatialGDKServicesConstants::SpotExe);
+		UE_LOG(
+			LogSpatialDeploymentManager, Warning,
+			TEXT("%s does not exist on this machine! Please make sure Spatial is installed before trying to start a local deployment. %s"),
+			*SpatialGDKServicesConstants::SpatialExe, *SpatialExistenceCheckResult);
 		return false;
 	}
 
@@ -110,21 +111,24 @@ bool FSpatialGDKServicesModule::ParseJson(const FString& RawJsonString, TSharedP
 	return FJsonSerializer::Deserialize(JsonReader, JsonParsed);
 }
 
-// ExecuteAndReadOutput exists so that a spatial command window does not spawn when using 'spatial.exe'. It does not however allow reading from StdErr.
-// For other processes which do not spawn cmd windows, use ExecProcess instead.
-void FSpatialGDKServicesModule::ExecuteAndReadOutput(const FString& Executable, const FString& Arguments, const FString& DirectoryToRun, FString& OutResult, int32& ExitCode)
+// ExecuteAndReadOutput exists so that a spatial command window does not spawn when using 'spatial.exe'. It does not however allow reading
+// from StdErr. For other processes which do not spawn cmd windows, use ExecProcess instead.
+void FSpatialGDKServicesModule::ExecuteAndReadOutput(const FString& Executable, const FString& Arguments, const FString& DirectoryToRun,
+													 FString& OutResult, int32& ExitCode)
 {
-	UE_LOG(LogSpatialGDKServices, Verbose, TEXT("Executing '%s' with arguments '%s' in directory '%s'"), *Executable, *Arguments, *DirectoryToRun);
+	UE_LOG(LogSpatialGDKServices, Verbose, TEXT("Executing '%s' with arguments '%s' in directory '%s'"), *Executable, *Arguments,
+		   *DirectoryToRun);
 
 	void* ReadPipe = nullptr;
 	void* WritePipe = nullptr;
 	ensure(FPlatformProcess::CreatePipe(ReadPipe, WritePipe));
 
-	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*Executable, *Arguments, false, true, true, nullptr, 1 /*PriorityModifer*/, *DirectoryToRun, WritePipe);
+	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*Executable, *Arguments, false, true, true, nullptr, 1 /*PriorityModifer*/,
+														  *DirectoryToRun, WritePipe);
 
 	if (ProcHandle.IsValid())
 	{
-		for (bool bProcessFinished = false; !bProcessFinished; )
+		for (bool bProcessFinished = false; !bProcessFinished;)
 		{
 			bProcessFinished = FPlatformProcess::GetProcReturnCode(ProcHandle, &ExitCode);
 
@@ -136,7 +140,8 @@ void FSpatialGDKServicesModule::ExecuteAndReadOutput(const FString& Executable, 
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKServices, Error, TEXT("Execution failed. '%s' with arguments '%s' in directory '%s' "), *Executable, *Arguments, *DirectoryToRun);
+		UE_LOG(LogSpatialGDKServices, Error, TEXT("Execution failed. '%s' with arguments '%s' in directory '%s' "), *Executable, *Arguments,
+			   *DirectoryToRun);
 	}
 
 	FPlatformProcess::ClosePipe(0, ReadPipe);
@@ -150,7 +155,8 @@ void FSpatialGDKServicesModule::SetProjectName(const FString& InProjectName)
 	TSharedPtr<FJsonObject> JsonParsedSpatialFile = ParseProjectFile();
 	if (!JsonParsedSpatialFile.IsValid())
 	{
-		UE_LOG(LogSpatialGDKServices, Error, TEXT("Failed to update project name(%s). Please ensure that the following file exists: %s"), *InProjectName, *SpatialGDKServicesConstants::SpatialOSConfigFileName);
+		UE_LOG(LogSpatialGDKServices, Error, TEXT("Failed to update project name(%s). Please ensure that the following file exists: %s"),
+			   *InProjectName, *SpatialGDKServicesConstants::SpatialOSConfigFileName);
 		return;
 	}
 	JsonParsedSpatialFile->SetStringField("name", InProjectName);
@@ -158,12 +164,15 @@ void FSpatialGDKServicesModule::SetProjectName(const FString& InProjectName)
 	TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&SpatialFileResult);
 	if (!FJsonSerializer::Serialize(JsonParsedSpatialFile.ToSharedRef(), JsonWriter))
 	{
-		UE_LOG(LogSpatialGDKServices, Error, TEXT("Failed to write project name to parsed spatial file. Unable to serialize content to json file."));
+		UE_LOG(LogSpatialGDKServices, Error,
+			   TEXT("Failed to write project name to parsed spatial file. Unable to serialize content to json file."));
 		return;
 	}
-	if (!FFileHelper::SaveStringToFile(SpatialFileResult, *FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, SpatialGDKServicesConstants::SpatialOSConfigFileName)))
+	if (!FFileHelper::SaveStringToFile(SpatialFileResult, *FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory,
+																		   SpatialGDKServicesConstants::SpatialOSConfigFileName)))
 	{
-		UE_LOG(LogSpatialGDKServices, Error, TEXT("Failed to write file content to %s"), *SpatialGDKServicesConstants::SpatialOSConfigFileName);
+		UE_LOG(LogSpatialGDKServices, Error, TEXT("Failed to write file content to %s"),
+			   *SpatialGDKServicesConstants::SpatialOSConfigFileName);
 	}
 	ProjectName = InProjectName;
 }
@@ -193,7 +202,8 @@ TSharedPtr<FJsonObject> FSpatialGDKServicesModule::ParseProjectFile()
 	FString SpatialFileResult;
 	TSharedPtr<FJsonObject> JsonParsedSpatialFile;
 
-	if (FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, SpatialGDKServicesConstants::SpatialOSConfigFileName)))
+	if (FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory,
+																		  SpatialGDKServicesConstants::SpatialOSConfigFileName)))
 	{
 		if (ParseJson(SpatialFileResult, JsonParsedSpatialFile))
 		{

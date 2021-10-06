@@ -2,32 +2,31 @@
 
 #pragma once
 
+#include "SpatialView/ComponentSetData.h"
 #include "SpatialView/MessagesToSend.h"
-#include "SpatialView/ViewDelta.h"
 #include "SpatialView/OpList/OpList.h"
-#include "Containers/Set.h"
+#include "SpatialView/ViewDelta.h"
 
 namespace SpatialGDK
 {
-
 class WorkerView
 {
 public:
-	WorkerView();
+	explicit WorkerView(FComponentSetData ComponentSetData);
 
-	// Process queued op lists to create a new view delta.
-	// The view delta will exist until the next call to advance.
-	ViewDelta GenerateViewDelta();
+	// Process op lists to create a new view delta.
+	// The view delta will exist until the next call to AdvanceViewDelta.
+	void AdvanceViewDelta(TArray<OpList> OpLists);
 
-	// Add an OpList to generate the next ViewDelta.
-	void EnqueueOpList(OpList Ops);
+	const ViewDelta& GetViewDelta() const;
+	const EntityView& GetView() const;
 
 	// Ensure all local changes have been applied and return the resulting MessagesToSend.
 	TUniquePtr<MessagesToSend> FlushLocalChanges();
 
-	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data);
-	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId);
+	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId);
+	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
 	void SendReserveEntityIdsRequest(ReserveEntityIdsRequest Request);
 	void SendCreateEntityRequest(CreateEntityRequest Request);
 	void SendDeleteEntityRequest(DeleteEntityRequest Request);
@@ -39,11 +38,10 @@ public:
 	void SendLogMessage(LogMessage Log);
 
 private:
-	TArray<OpList> QueuedOps;
-	TArray<OpList> OpenCriticalSectionOps;
+	FComponentSetData ComponentSetData;
+	EntityView View;
+	ViewDelta Delta;
 
 	TUniquePtr<MessagesToSend> LocalChanges;
-	TSet<EntityComponentId> AddedComponents;
 };
-
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

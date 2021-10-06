@@ -5,6 +5,7 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 
 #include "CoreMinimal.h"
+#include "Templates/SubclassOf.h"
 
 #include "LayerInfo.generated.h"
 
@@ -26,7 +27,9 @@ struct FLayerInfo
 	FLayerInfo(FName InName, TSet<TSoftClassPtr<AActor>> InActorClasses, UClass* InLoadBalanceStrategy)
 		: Name(InName)
 		, ActorClasses(InActorClasses)
-		, LoadBalanceStrategy(InLoadBalanceStrategy) {}
+		, LoadBalanceStrategy(InLoadBalanceStrategy)
+	{
+	}
 
 	UPROPERTY(EditAnywhere, Category = "Load Balancing")
 	FName Name;

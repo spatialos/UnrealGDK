@@ -11,4 +11,16 @@ type UnrealRPCPayload {
     uint32 rpc_index = 2;
     bytes rpc_payload = 3;
     option<TracePayload> rpc_trace = 4;
+    option<uint64> rpc_id = 5;
+}
+
+type ACKItem {
+    EntityId sender = 1;
+    uint64 rpc_id = 2;
+    uint64 result = 3;
+}
+
+type CrossServerRPCInfo {
+    EntityId sender = 1;
+    uint64 rpc_id = 2;
 }

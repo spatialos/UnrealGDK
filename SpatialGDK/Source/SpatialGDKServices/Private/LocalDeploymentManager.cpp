@@ -2,60 +2,47 @@
 
 #include "LocalDeploymentManager.h"
 
-#include "AssetRegistryModule.h"
 #include "Async/Async.h"
 #include "DirectoryWatcherModule.h"
-#include "Editor.h"
-#include "FileCache.h"
-#include "GeneralProjectSettings.h"
-#include "Internationalization/Regex.h"
-#include "Internationalization/Internationalization.h"
+#include "Engine/World.h"
+#include "HAL/FileManagerGeneric.h"
+#include "HttpModule.h"
+#include "IAutomationControllerModule.h"
 #include "IPAddress.h"
-#include "Json/Public/Dom/JsonObject.h"
+#include "Improbable/SpatialGDKSettingsBridge.h"
+#include "Interfaces/IHttpResponse.h"
+#include "Internationalization/Internationalization.h"
+#include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
-#include "Sockets.h"
+#include "Misc/MonitoredProcess.h"
+#include "SSpatialOutputLog.h"
 #include "SocketSubsystem.h"
+#include "Sockets.h"
 #include "SpatialCommandUtils.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
-#include "UObject/CoreNet.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
 #define LOCTEXT_NAMESPACE "FLocalDeploymentManager"
 
-static const FString SpatialServiceVersion(TEXT("20200611.170527.924b1f1c45"));
-
 FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
-	, bSpatialServiceRunning(false)
-	, bSpatialServiceInProjectDirectory(false)
 	, bStartingDeployment(false)
 	, bStoppingDeployment(false)
-	, bStartingSpatialService(false)
-	, bStoppingSpatialService(false)
+	, bTestRunnning(false)
 {
+}
+
+FLocalDeploymentManager::~FLocalDeploymentManager()
+{
+	// The idea behind this lock is to try and make the thread calling the destructor wait for the thread that is cleaning up processes
+	// if something tries to run on this object after the destructor then we're ruined anyway
+	FScopeLock StoppingDeploymentScoped(&StoppingDeployment);
 }
 
 void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
 {
-	bIsInChina = bChinaEnabled;
-	// Don't kick off background processes when running commandlets
-	const bool bCommandletRunning = IsRunningCommandlet();
-
-	// Check for the existence of Spatial and Spot. If they don't exist then don't start any background processes.
-	const bool bSpatialServicesAvailable = FSpatialGDKServicesModule::SpatialPreRunChecks(bIsInChina);
-
-	if (bCommandletRunning || !bSpatialServicesAvailable)
-	{
-		if (!bSpatialServicesAvailable)
-		{
-			UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Pre run checks for LocalDeploymentManager failed. Local deployments cannot be started."));
-		}
-		bLocalDeploymentManagerEnabled = false;
-		return;
-	}
-
 	// Ensure the worker.jsons are up to date.
 	WorkerBuildConfigAsync();
 
@@ -63,32 +50,12 @@ void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
 	StartUpWorkerConfigDirectoryWatcher();
 }
 
-void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
+void FLocalDeploymentManager::Init()
 {
-	if (bLocalDeploymentManagerEnabled)
-	{
-		// If a service was running, restart to guarantee that the service is running in this project with the correct settings.
-		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("(Re)starting Spatial service in this project."));
-
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeIPToExpose]
-		{
-			// Stop existing spatial service to guarantee that any new existing spatial service would be running in the current project.
-			TryStopSpatialService();
-			// Start spatial service in the current project if spatial networking is enabled
-
-			if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
-			{
-				TryStartSpatialService(RuntimeIPToExpose);
-			}
-			else
-			{
-				UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("SpatialOS daemon not started because spatial networking is disabled."));
-			}
-
-			// Ensure we have an up to date state of the spatial service and local deployment.
-			RefreshServiceStatus();
-		});
-	}
+	// Kill any existing runtime processes.
+	// We cannot attach to old runtime processes as they may be 'zombie' and not killable (even if they are not blocking ports).
+	// Usually caused by a driver bug, see: https://stackoverflow.com/questions/49988/really-killing-a-process-in-windows
+	SpatialCommandUtils::TryKillProcessWithName(SpatialGDKServicesConstants::RuntimeExe);
 }
 
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
@@ -101,29 +68,42 @@ void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 
 		if (FPaths::DirectoryExists(WorkerConfigDirectory))
 		{
-			WorkerConfigDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FLocalDeploymentManager::OnWorkerConfigDirectoryChanged);
-			DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(WorkerConfigDirectory, WorkerConfigDirectoryChangedDelegate, WorkerConfigDirectoryChangedDelegateHandle);
+			WorkerConfigDirectoryChangedDelegate =
+				IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FLocalDeploymentManager::OnWorkerConfigDirectoryChanged);
+			DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(WorkerConfigDirectory, WorkerConfigDirectoryChangedDelegate,
+																	  WorkerConfigDirectoryChangedDelegateHandle);
 		}
 		else
 		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Worker config directory does not exist! Please ensure you have your worker configurations at %s"), *WorkerConfigDirectory);
+			UE_LOG(LogSpatialDeploymentManager, Error,
+				   TEXT("Worker config directory does not exist! Please ensure you have your worker configurations at %s"),
+				   *WorkerConfigDirectory);
 		}
 	}
 }
 
 void FLocalDeploymentManager::OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
 {
-	UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Worker config files updated. Regenerating worker descriptors ('spatial worker build build-config')."));
-	WorkerBuildConfigAsync();
+	const bool ShouldRebuild = FileChanges.ContainsByPredicate([](FFileChangeData& FileChange) {
+		return FileChange.Filename.EndsWith(".worker.json");
+	});
+
+	if (ShouldRebuild)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Log,
+			   TEXT("Worker config files updated. Regenerating worker descriptors ('spatial worker build build-config')."));
+
+		WorkerBuildConfigAsync();
+	}
 }
 
 void FLocalDeploymentManager::WorkerBuildConfigAsync()
 {
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
-	{
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
 		FString WorkerBuildConfigResult;
 		int32 ExitCode;
-		bool bSuccess = SpatialCommandUtils::BuildWorkerConfig(bIsInChina, SpatialGDKServicesConstants::SpatialOSDirectory, WorkerBuildConfigResult, ExitCode);
+		bool bSuccess = SpatialCommandUtils::BuildWorkerConfig(bIsInChina, SpatialGDKServicesConstants::SpatialOSDirectory,
+															   WorkerBuildConfigResult, ExitCode);
 
 		if (bSuccess)
 		{
@@ -131,37 +111,10 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 		}
 		else
 		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Building worker configurations failed. Please ensure your .worker.json files are correct. Result: %s"), *WorkerBuildConfigResult);
+			UE_LOG(LogSpatialDeploymentManager, Error,
+				   TEXT("Building worker configurations failed. Please ensure your .worker.json files are correct. Result: %s"),
+				   *WorkerBuildConfigResult);
 		}
-	});
-}
-
-void FLocalDeploymentManager::RefreshServiceStatus()
-{
-	if(!bLocalDeploymentManagerEnabled)
-	{
-		return;
-	}
-
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
-	{
-		IsServiceRunningAndInCorrectDirectory();
-		GetLocalDeploymentStatus();
-
-		// Timers must be started on the game thread.
-		AsyncTask(ENamedThreads::GameThread, [this]
-		{
-			// It's possible that GEditor won't exist when shutting down.
-			if (GEditor != nullptr)
-			{
-				// Start checking for the service status.
-				FTimerHandle RefreshTimer;
-				GEditor->GetTimerManager()->SetTimer(RefreshTimer, [this]()
-				{
-					RefreshServiceStatus();
-				}, RefreshFrequency, false);
-			}
-		});
 	});
 }
 
@@ -191,12 +144,14 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 		// Bind to our listen port.
 		if (ListenSocket->Bind(*ListenAddr))
 		{
-			bCanBindToPort = ListenSocket->Listen(0 /* MaxBacklog*/ );
+			bCanBindToPort = ListenSocket->Listen(0 /* MaxBacklog*/);
 			ListenSocket->Close();
 		}
 		else
 		{
-			UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Failed to bind listen socket to addr (%s) for %s, the port is likely in use"), *ListenAddr->ToString(true), *SocketName);
+			UE_LOG(LogSpatialDeploymentManager, Verbose,
+				   TEXT("Failed to bind listen socket to addr (%s) for %s, the port is likely in use"), *ListenAddr->ToString(true),
+				   *SocketName);
 		}
 	}
 	else
@@ -227,485 +182,344 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 {
 	bool bSuccess = true;
 
-	// Check for the known runtime port (5301) which could be blocked.
-	if (CheckIfPortIsBound(RequiredRuntimePort))
-	{
-		// If it exists offer the user the ability to kill it.
-		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillPortBlockingProcess", "A required port is blocked by another process (potentially by an old deployment). Would you like to kill this process?")) == EAppReturnType::Yes)
-		{
-			bSuccess = KillProcessBlockingPort(RequiredRuntimePort);
-		}
-		else
-		{
-			bSuccess = false;
-		}
-	}
+	// Check for the known runtime ports which could be blocked by other processes.
+	TArray<int32> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, SpatialGDKServicesConstants::RuntimeGRPCPort };
 
-	if (!bSpatialServiceInProjectDirectory && bSpatialServiceRunning)
+	for (int32 RuntimePort : RequiredRuntimePorts)
 	{
-		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("StopSpatialServiceFromDifferentProject", "An instance of the SpatialOS Runtime is running with another project. Would you like to stop it and start the Runtime for this project?")) == EAppReturnType::Yes)
+		if (CheckIfPortIsBound(RuntimePort))
 		{
-			bSuccess = TryStopSpatialService();
-		}
-		else
-		{
-			bSuccess = false;
+			// If it exists offer the user the ability to kill it.
+			FText DialogMessage = LOCTEXT("KillPortBlockingProcess",
+										  "A required port is blocked by another process (potentially by an old "
+										  "deployment). Would you like to kill this process?");
+			if (FMessageDialog::Open(EAppMsgType::YesNo, DialogMessage) == EAppReturnType::Yes)
+			{
+				bSuccess &= KillProcessBlockingPort(RuntimePort);
+			}
+			else
+			{
+				bSuccess = false;
+			}
 		}
 	}
 
 	return bSuccess;
 }
 
-bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose)
+void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
+													  const FString& SnapshotName, const FString& RuntimeIPToExpose,
+													  const LocalDeploymentCallback& CallBack)
 {
-	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=localdeployment --project-name=%s --json --starting-snapshot-id=\"%s\" --runtime-version=%s %s"), *LaunchConfig, *FSpatialGDKServicesModule::GetProjectName(), *SnapshotName, *RuntimeVersion, *LaunchArgs);
-
-	FDateTime SpotCreateStart = FDateTime::Now();
-
-	FString SpotCreateResult;
-	FString StdErr;
-	int32 ExitCode;
-	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpotExe, *SpotCreateArgs, &ExitCode, &SpotCreateResult, &StdErr);
-	bStartingDeployment = false;
-
-	if (ExitCode != ExitCodeSuccess)
+	int NumRetries = RuntimeStartRetries;
+	while (NumRetries > 0)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Creation of local deployment failed. Result: %s - Error: %s"), *SpotCreateResult, *StdErr);
-		return false;
-	}
-
-	bool bSuccess = false;
-
-	TSharedPtr<FJsonObject> SpotJsonResult;
-	bool bParsingSuccess = FSpatialGDKServicesModule::ParseJson(SpotCreateResult, SpotJsonResult);
-	if (!bParsingSuccess)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot create result failed. Result: %s"), *SpotCreateResult);
-	}
-
-	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
-	if (bParsingSuccess && !SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'content' does not exist in Json result from 'spot create': %s"), *SpotCreateResult);
-		bParsingSuccess = false;
-	}
-
-	FString DeploymentStatus;
-	if (bParsingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("status"), DeploymentStatus))
-	{
-		if (DeploymentStatus == TEXT("RUNNING"))
+		NumRetries--;
+		ERuntimeStartResponse Response =
+			StartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose, CallBack);
+		if (Response != ERuntimeStartResponse::Timeout)
 		{
-			FString DeploymentID = SpotJsonContent->Get()->GetStringField(TEXT("id"));
-			LocalRunningDeploymentID = DeploymentID;
-			bLocalDeploymentRunning = true;
+			break;
+		}
 
-			FDateTime SpotCreateEnd = FDateTime::Now();
-			FTimespan Span = SpotCreateEnd - SpotCreateStart;
-
-			AsyncTask(ENamedThreads::GameThread, [this]
-			{
-				OnDeploymentStart.Broadcast();
-			});
-
-			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
-			bSuccess = true;
+		if (NumRetries == 0)
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Runtime startup timed out too many times. Giving up."));
 		}
 		else
 		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Local deployment creation failed. Deployment status: %s. Please check the 'Spatial Output' window for more details."), *DeploymentStatus);
+			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime startup timed out. Will attempt to retry. Retries remaining: %d"),
+				   NumRetries);
 		}
 	}
-	else
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot create': %s"), *SpotCreateResult);
-	}
-
-	return true;
 }
 
-void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName, FString RuntimeIPToExpose, const LocalDeploymentCallback& CallBack)
+FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLocalDeployment(
+	const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs, const FString& SnapshotName,
+	const FString& RuntimeIPToExpose, const LocalDeploymentCallback& CallBack)
 {
-	if (!bLocalDeploymentManagerEnabled)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Local deployment manager is disabled because spatial services are unavailable."));
-		if (CallBack)
-		{
-			CallBack(false);
-		}
-		return;
-	}
-
+	RuntimeStartTime = FDateTime::Now();
 	bRedeployRequired = false;
 
-	if (bStoppingDeployment)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Local deployment is in the process of stopping. New deployment will start when previous one has stopped."));
-		while (bStoppingDeployment)
-		{
-			FPlatformProcess::Sleep(0.1f);
-		}
-	}
-
-	if (bLocalDeploymentRunning)
+	if (bLocalDeploymentRunning || bStartingDeployment)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start a local deployment but one is already running."));
 		if (CallBack)
 		{
 			CallBack(false);
 		}
-		return;
+		return ERuntimeStartResponse::AlreadyRunning;
 	}
 
 	if (!LocalDeploymentPreRunChecks())
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Tried to start a local deployment but a required port is already bound by another process."));
+		UE_LOG(LogSpatialDeploymentManager, Error,
+			   TEXT("Tried to start a local deployment but a required port is already bound by another process."));
 		if (CallBack)
 		{
 			CallBack(false);
 		}
-		return;
+		return ERuntimeStartResponse::PreRunChecksFailed;
 	}
-
-	LocalRunningDeploymentID.Empty();
 
 	bStartingDeployment = true;
 
-	// Stop the currently running service if the runtime IP is to be exposed, but is different from the one specified
-	if (ExposedRuntimeIP != RuntimeIPToExpose)
+	FString SchemaBundle = SpatialGDKServicesConstants::SchemaBundlePath;
+
+	// Give the snapshot path a timestamp to ensure we don't overwrite snapshots from older deployments.
+	// The snapshot service saves snapshots with the name `snapshot-n.snapshot` for a given deployment,
+	// where 'n' is the number of snapshots taken since starting the deployment.
+	CurrentSnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, *RuntimeStartTime.ToString());
+
+	// Create the folder for storing the snapshots.
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	PlatformFile.CreateDirectoryTree(*CurrentSnapshotPath);
+
+	// Use the runtime start timestamp as the log directory, e.g. `<Project>/spatial/localdeployment/<timestamp>/`
+	FString LocalDeploymentLogsDir = FPaths::Combine(SpatialGDKServicesConstants::LocalDeploymentLogsDir, RuntimeStartTime.ToString());
+
+	// Store these logs alongside the GDK ones for convenience
+	const TCHAR* RuntimeEventLogPaths = TEXT("EventTracing/runtime");
+	FString EventTracingPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectSavedDir(), RuntimeEventLogPaths));
+	if (!PlatformFile.CreateDirectoryTree(*EventTracingPath))
 	{
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Settings for exposing runtime IP have changed since service startup. Restarting service to reflect changes."));
-		TryStopSpatialService();
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to create runtime event log path."));
 	}
 
-	// If the service is not running then start it.
-	if (!bSpatialServiceRunning)
+	// runtime.exe --config=squid_config.json --snapshot=snapshots/default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
+	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots/<timestamp>
+	// --schema-bundle=spatial/build/assembly/schema/schema.sb
+	// --event - tracing - logs - directory = `<Project > / spatial / localdeployment / <timestamp> / `
+	FString RuntimeArgs = FString::Printf(
+		TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
+			 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
+		*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
+		*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *CurrentSnapshotPath, *SchemaBundle, *EventTracingPath, *LaunchArgs);
+
+	if (!RuntimeIPToExpose.IsEmpty())
 	{
-		TryStartSpatialService(RuntimeIPToExpose);
+		RuntimeArgs.Append(FString::Printf(TEXT(" --worker-external-host %s"), *RuntimeIPToExpose));
 	}
 
-	SnapshotName.RemoveFromEnd(TEXT(".snapshot"));
+	// Setup the runtime file logger.
+	SetupRuntimeFileLogger(LocalDeploymentLogsDir);
 
+	RuntimePath = SpatialGDKServicesConstants::GetRuntimeExecutablePath(RuntimeVersion);
 
-	AttemptSpatialAuthResult = Async(EAsyncExecution::Thread, [this]() { return SpatialCommandUtils::AttemptSpatialAuth(bIsInChina); },
-		[this, LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose, CallBack]()
-	{
-		bool bSuccess = AttemptSpatialAuthResult.IsReady() && AttemptSpatialAuthResult.Get() == true;
-		if (bSuccess)
+	RuntimeProcess = { *RuntimePath, *RuntimeArgs, SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
+					   /*InCreatePipes*/ true };
+
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
+
+	RuntimeProcess->OnOutput().BindLambda([&RuntimeLogFileHandle = RuntimeLogFileHandle, &bLocalDeploymentRunning = bLocalDeploymentRunning,
+										   SpatialOutputLog](const FString& Output) {
+		if (SpatialOutputLog.IsValid())
 		{
-			bSuccess = FinishLocalDeployment(LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose);
+			// Format and output the log to the editor window `SpatialOutputLog`
+			SpatialOutputLog.Pin()->FormatAndPrintRawLogLine(Output);
 		}
-		else
-		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to authenticate against SpatialOS while attempting to start a local deployment."));
-		}
-		bStartingDeployment = false;
 
-		if (CallBack)
+		// Save the raw runtime output to disk.
+		if (RuntimeLogFileHandle.IsValid())
 		{
-			CallBack(bSuccess);
+			// In order to get the correct length of the ANSI converted string, we must create the converted string here.
+			auto OutputANSI = StringCast<ANSICHAR>(*Output);
+
+			RuntimeLogFileHandle->Write((const uint8*)OutputANSI.Get(), OutputANSI.Length());
+
+			// Always add a newline
+			RuntimeLogFileHandle->Write((const uint8*)LINE_TERMINATOR_ANSI, 1);
+		}
+
+		// Timeout detection.
+		if (!bLocalDeploymentRunning && Output.Contains(TEXT("startup completed")))
+		{
+			bLocalDeploymentRunning = true;
 		}
 	});
 
-	return;
+	RuntimeProcess->Launch();
+
+	// Wait for runtime to start or timeout
+	while (!bLocalDeploymentRunning && RuntimeProcess->Update() && RuntimeProcess->GetDuration().GetTotalSeconds() <= RuntimeTimeout) {}
+
+	bStartingDeployment = false;
+	if (!bLocalDeploymentRunning)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Timed out waiting for the Runtime to start."));
+		return ERuntimeStartResponse::Timeout;
+	}
+
+	FTimespan Span = FDateTime::Now() - RuntimeStartTime;
+	UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
+
+	AsyncTask(ENamedThreads::GameThread, [this] {
+		OnDeploymentStart.Broadcast();
+	});
+
+	IAutomationControllerModule& AutomationControllerModule =
+		FModuleManager::LoadModuleChecked<IAutomationControllerModule>(TEXT("AutomationController"));
+	IAutomationControllerManagerPtr AutomationController = AutomationControllerModule.GetAutomationController();
+	EAutomationControllerModuleState::Type TestState = AutomationController->GetTestState();
+	bTestRunnning = TestState == EAutomationControllerModuleState::Type::Running;
+
+	if (CallBack)
+	{
+		CallBack(/*bSuccess*/ true);
+	}
+
+	return ERuntimeStartResponse::Success;
+}
+
+bool FLocalDeploymentManager::SetupRuntimeFileLogger(const FString& RuntimeLogDir)
+{
+	// Ensure any old log file is cleaned up.
+	RuntimeLogFileHandle.Reset();
+
+	FString RuntimeLogFilePath = FPaths::Combine(RuntimeLogDir, TEXT("runtime.log"));
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	const bool bSuccess = PlatformFile.CreateDirectoryTree(*RuntimeLogDir);
+
+	if (bSuccess)
+	{
+		RuntimeLogFileHandle.Reset(PlatformFile.OpenWrite(*RuntimeLogFilePath, /*bAppend*/ false, /*bAllowRead*/ true));
+	}
+
+	if (!bSuccess || RuntimeLogFileHandle == nullptr)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Could not create runtime log file at '%s'. Saving logs to disk will be disabled."),
+			   *RuntimeLogFilePath);
+		return false;
+	}
+
+	UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime logs will be saved to %s"), *RuntimeLogFilePath);
+	return true;
 }
 
 bool FLocalDeploymentManager::TryStopLocalDeployment()
 {
-	if (!bLocalDeploymentRunning || LocalRunningDeploymentID.IsEmpty())
+	FScopeLock StoppingDeploymentScoped(&StoppingDeployment);
+	if (!StartLocalDeploymentShutDown())
+	{
+		return false;
+	}
+
+	const bool bRuntimeShutDownSuccessfully = ForceShutdownAndWaitForTermination();
+	FinishLocalDeploymentShutDown();
+
+	return bRuntimeShutDownSuccessfully;
+}
+
+bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
+{
+	if (bTestRunnning)
+	{
+		bTestRunnning = false;
+		return TryStopLocalDeployment();
+	}
+
+	FScopeLock StoppingDeploymentScoped(&StoppingDeployment);
+	if (!StartLocalDeploymentShutDown())
+	{
+		return false;
+	}
+
+	bool bShutdownSuccess = GracefulShutdownAndWaitForTermination();
+	if (!bShutdownSuccess)
+	{
+		bShutdownSuccess = ForceShutdownAndWaitForTermination();
+	}
+
+	FinishLocalDeploymentShutDown();
+	return bShutdownSuccess;
+}
+
+bool FLocalDeploymentManager::StartLocalDeploymentShutDown()
+{
+	if (!bLocalDeploymentRunning)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to stop local deployment but no active deployment exists."));
 		return false;
 	}
 
+	if (bStoppingDeployment)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to stop local deployment but stopping process is already in progress."));
+		return false;
+	}
+
 	bStoppingDeployment = true;
-
-	FString SpotDeleteArgs = FString::Printf(TEXT("alpha deployment delete --id=%s --json"), *LocalRunningDeploymentID);
-
-	FString SpotDeleteResult;
-	FString StdErr;
-	int32 ExitCode;
-	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpotExe, *SpotDeleteArgs, &ExitCode, &SpotDeleteResult, &StdErr);
-	bStoppingDeployment = false;
-
-	if (ExitCode != ExitCodeSuccess)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to stop local deployment! Result: %s - Error: %s"), *SpotDeleteResult, *StdErr);
-	}
-
-	bool bSuccess = false;
-
-	TSharedPtr<FJsonObject> SpotJsonResult;
-	bool bParsingSuccess = FSpatialGDKServicesModule::ParseJson(SpotDeleteResult, SpotJsonResult);
-	if (!bParsingSuccess)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot delete result failed. Result: %s"), *SpotDeleteResult);
-	}
-
-	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
-	if (bParsingSuccess && !SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'content' does not exist in Json result from 'spot delete': %s"), *SpotDeleteResult);
-		bParsingSuccess = false;
-	}
-
-	FString DeploymentStatus;
-	if (bParsingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("status"), DeploymentStatus))
-	{
-		if (DeploymentStatus == TEXT("STOPPED"))
-		{
-			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully stopped local deplyoment"));
-			LocalRunningDeploymentID.Empty();
-			bLocalDeploymentRunning = false;
-			bSuccess = true;
-		}
-		else
-		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Stopping local deployment failed. Deployment status: %s"), *DeploymentStatus);
-		}
-	}
-	else
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot delete': %s"), *SpotDeleteResult);
-	}
-
-	return bSuccess;
+	return true;
 }
 
-bool FLocalDeploymentManager::TryStartSpatialService(FString RuntimeIPToExpose)
+bool FLocalDeploymentManager::GracefulShutdownAndWaitForTermination()
 {
-	if (!bLocalDeploymentManagerEnabled)
+	if (RuntimeProcess.IsSet())
 	{
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Local deployment manager is disabled because spatial services are unavailable."));
-		return false;
+		const FString RuntimeProcName = RuntimePath.Replace(TEXT("/"), TEXT("\\"));
+		SpatialCommandUtils::TryGracefullyKill(RuntimeProcName, RuntimeProcess->GetProcessHandle());
+
+		const bool bGracefulShutdownSuccess = WaitForRuntimeProcessToShutDown();
+		return bGracefulShutdownSuccess;
 	}
-
-	if (bSpatialServiceRunning)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start spatial service but it is already running."));
-		return false;
-	}
-	else if (bStartingSpatialService)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start spatial service but it is already being started."));
-		return false;
-	}
-
-	bStartingSpatialService = true;
-
-	FString ServiceStartResult;
-	int32 ExitCode;
-	bool bSuccess = SpatialCommandUtils::StartSpatialService(*SpatialServiceVersion, *RuntimeIPToExpose, bIsInChina,
-		SpatialGDKServicesConstants::SpatialOSDirectory, ServiceStartResult, ExitCode);
-
-	bStartingSpatialService = false;
-
-	if (bSuccess && ServiceStartResult.Contains(TEXT("RUNNING")))
-	{
-		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Spatial service started!"));
-		ExposedRuntimeIP = RuntimeIPToExpose;
-		bSpatialServiceRunning = true;
-		return true;
-	}
-	else
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service failed to start! %s"), *ServiceStartResult);
-		ExposedRuntimeIP = TEXT("");
-		bSpatialServiceRunning = false;
-		bLocalDeploymentRunning = false;
-		return false;
-	}
-}
-
-bool FLocalDeploymentManager::TryStopSpatialService()
-{
-	if (!bLocalDeploymentManagerEnabled)
-	{
-		return false;
-	}
-
-	if (bStoppingSpatialService)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Tried to stop spatial service but it is already being stopped."));
-		return false;
-	}
-
-	bStoppingSpatialService = true;
-
-	FString ServiceStopResult;
-	int32 ExitCode;
-	bool bSuccess = SpatialCommandUtils::StopSpatialService(bIsInChina, SpatialGDKServicesConstants::SpatialOSDirectory, ServiceStopResult, ExitCode);
-
-	bStoppingSpatialService = false;
-
-	if (bSuccess)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Spatial service stopped!"));
-		ExposedRuntimeIP = TEXT("");
-		bSpatialServiceRunning = false;
-		bSpatialServiceInProjectDirectory = true;
-		bLocalDeploymentRunning = false;
-		return true;
-	}
-
+	UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Trying to stop deployment gracefully but RuntimeProcess is not set."));
 	return false;
 }
 
-bool FLocalDeploymentManager::GetLocalDeploymentStatus()
+bool FLocalDeploymentManager::ForceShutdownAndWaitForTermination()
 {
-	if (!bSpatialServiceRunning)
+	RuntimeProcess->Stop();
+	const bool bForcefulShutdownSuccess = WaitForRuntimeProcessToShutDown();
+	return bForcefulShutdownSuccess;
+}
+
+bool FLocalDeploymentManager::WaitForRuntimeProcessToShutDown()
+{
+	double RuntimeStopTime = RuntimeProcess->GetDuration().GetTotalSeconds();
+
+	// Update returns true while the process is still running. Wait for it to finish.
+	while (RuntimeProcess->Update())
 	{
-		bLocalDeploymentRunning = false;
-		return bLocalDeploymentRunning;
-	}
-
-	FString SpotListArgs = FString::Printf(TEXT("alpha deployment list --project-name=%s --json --view BASIC --status-filter NOT_STOPPED_DEPLOYMENTS"), *FSpatialGDKServicesModule::GetProjectName());
-
-	FString SpotListResult;
-	FString StdErr;
-	int32 ExitCode;
-	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpotExe, *SpotListArgs, &ExitCode, &SpotListResult, &StdErr);
-
-	if (ExitCode != ExitCodeSuccess)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to check local deployment status. Result: %s - Error: %s"), *SpotListResult, *StdErr);
-		return false;
-	}
-
-	TSharedPtr<FJsonObject> SpotJsonResult;
-	bool bParsingSuccess = FSpatialGDKServicesModule::ParseJson(SpotListResult, SpotJsonResult);
-
-	if (!bParsingSuccess)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot list result failed. Result: %s"), *SpotListResult);
-	}
-
-	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
-	if (bParsingSuccess && SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
-	{
-		const TArray<TSharedPtr<FJsonValue>>* JsonDeployments;
-		if (!SpotJsonContent->Get()->TryGetArrayField(TEXT("deployments"), JsonDeployments))
+		// If the runtime did not stop after some timeout then inform the user as something is amiss.
+		if (RuntimeProcess->GetDuration().GetTotalSeconds() > RuntimeStopTime + RuntimeTimeout)
 		{
-			UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("No local deployments running."));
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to stop."));
 			return false;
 		}
-
-		for (TSharedPtr<FJsonValue> JsonDeployment : *JsonDeployments)
-		{
-			FString DeploymentStatus;
-			if (JsonDeployment->AsObject()->TryGetStringField(TEXT("status"), DeploymentStatus))
-			{
-				if (DeploymentStatus == TEXT("RUNNING"))
-				{
-					FString DeploymentId = JsonDeployment->AsObject()->GetStringField(TEXT("id"));
-
-					UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Running deployment found: %s"), *DeploymentId);
-
-					LocalRunningDeploymentID = DeploymentId;
-					bLocalDeploymentRunning = true;
-					return true;
-				}
-			}
-		}
 	}
-	else
+
+	return true;
+}
+
+void FLocalDeploymentManager::FinishLocalDeploymentShutDown()
+{
+	// Kill the log file handle.
+	RuntimeLogFileHandle.Reset();
+
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	const auto IsDirectoryEmpty = [&PlatformFile](const TCHAR* Directory) -> bool {
+		bool bDirectoryIsEmpty = true;
+		PlatformFile.IterateDirectory(Directory, [&bDirectoryIsEmpty](const TCHAR* FilenameOrDirectory, bool bIsDirectory) -> bool {
+			bDirectoryIsEmpty = false;
+			return false;
+		});
+		return bDirectoryIsEmpty;
+	};
+
+	if (IsDirectoryEmpty(*CurrentSnapshotPath))
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot list result failed. Can't check deployment status."));
+		PlatformFile.DeleteDirectory(*CurrentSnapshotPath);
 	}
 
-	LocalRunningDeploymentID.Empty();
 	bLocalDeploymentRunning = false;
-	return false;
-}
-
-bool FLocalDeploymentManager::IsServiceRunningAndInCorrectDirectory()
-{
-	if (!bLocalDeploymentManagerEnabled)
-	{
-		return false;
-	}
-
-	FString SpotProjectInfoArgs = TEXT("alpha service project-info --json");
-	FString SpotProjectInfoResult;
-	FString StdErr;
-	int32 ExitCode;
-
-	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpotExe, *SpotProjectInfoArgs, &ExitCode, &SpotProjectInfoResult, &StdErr);
-
-	if (ExitCode != ExitCodeSuccess)
-	{
-		if (ExitCode == ExitCodeNotRunning)
-		{
-			UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Spatial service is not running: %s"), *SpotProjectInfoResult);
-		}
-		else
-		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to get spatial service project info: %s"), *SpotProjectInfoResult);
-		}
-
-		bSpatialServiceInProjectDirectory = false;
-		bSpatialServiceRunning = false;
-		bLocalDeploymentRunning = false;
-		return false;
-	}
-
-	TSharedPtr<FJsonObject> SpotJsonResult;
-	bool bParsingSuccess = FSpatialGDKServicesModule::ParseJson(SpotProjectInfoResult, SpotJsonResult);
-	if (!bParsingSuccess)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot project info result failed. Result: %s"), *SpotProjectInfoResult);
-	}
-
-	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
-	if (bParsingSuccess && !SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'content' does not exist in Json result from 'spot service project-info': %s"), *SpotProjectInfoResult);
-		bParsingSuccess = false;
-	}
-
-	FString SpatialServiceProjectPath;
-	// Get the project file path and ensure it matches the one for the currently running project.
-	if (bParsingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("projectFilePath"), SpatialServiceProjectPath))
-	{
-		FString CurrentProjectSpatialPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("spatialos.json"));
-		FPaths::NormalizeDirectoryName(SpatialServiceProjectPath);
-		FPaths::RemoveDuplicateSlashes(SpatialServiceProjectPath);
-
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Spatial service running at path: %s "), *SpatialServiceProjectPath);
-
-		if (CurrentProjectSpatialPath.Equals(SpatialServiceProjectPath, ESearchCase::IgnoreCase))
-		{
-			bSpatialServiceInProjectDirectory = true;
-			bSpatialServiceRunning = true;
-			return true;
-		}
-		else
-		{
-			UE_LOG(LogSpatialDeploymentManager, Error,
-				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to start deployments in the current project. Service at: %s"), *SpatialServiceProjectPath);
-
-			ExposedRuntimeIP = TEXT("");
-			bSpatialServiceInProjectDirectory = false;
-			bSpatialServiceRunning = false;
-			bLocalDeploymentRunning = false;
-			return false;
-		}
-	}
-	else
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot service project-info': %s"), *SpotProjectInfoResult);
-	}
-
-	return false;
+	bStoppingDeployment = false;
 }
 
 bool FLocalDeploymentManager::IsLocalDeploymentRunning() const
 {
 	return bLocalDeploymentRunning;
-}
-
-bool FLocalDeploymentManager::IsSpatialServiceRunning() const
-{
-	return bSpatialServiceRunning;
 }
 
 bool FLocalDeploymentManager::IsDeploymentStarting() const
@@ -716,16 +530,6 @@ bool FLocalDeploymentManager::IsDeploymentStarting() const
 bool FLocalDeploymentManager::IsDeploymentStopping() const
 {
 	return bStoppingDeployment;
-}
-
-bool FLocalDeploymentManager::IsServiceStarting() const
-{
-	return bStartingSpatialService;
-}
-
-bool FLocalDeploymentManager::IsServiceStopping() const
-{
-	return bStoppingSpatialService;
 }
 
 bool FLocalDeploymentManager::IsRedeployRequired() const
@@ -753,6 +557,56 @@ bool FLocalDeploymentManager::ShouldWaitForDeployment() const
 void FLocalDeploymentManager::SetAutoDeploy(bool bInAutoDeploy)
 {
 	bAutoDeploy = bInAutoDeploy;
+}
+
+void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken)
+{
+	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
+#if ENGINE_MINOR_VERSION >= 26
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = HttpModule.Get().CreateRequest();
+#else
+	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
+#endif
+
+	HttpRequest->OnProcessRequestComplete().BindLambda(
+		[World, OnSnapshotTaken](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
+			if (!bSucceeded)
+			{
+				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to trigger snapshot at '%s'; received '%s'"),
+					   *HttpRequest->GetURL(), *HttpResponse->GetContentAsString());
+				if (OnSnapshotTaken != nullptr)
+				{
+					OnSnapshotTaken(false /* bSuccess */, FString() /* PathToSnapshot */);
+				}
+				return;
+			}
+
+			FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+			FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+
+			IFileManager& FileManager = FFileManagerGeneric::Get();
+
+			FString NewestSnapshotFilePath = HttpResponse->GetContentAsString();
+			FPaths::NormalizeFilename(NewestSnapshotFilePath);
+
+			bool bSuccess = FPaths::FileExists(NewestSnapshotFilePath);
+
+			if (!bSuccess)
+			{
+				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed find snapshot file at '%s'"), *NewestSnapshotFilePath);
+			}
+
+			if (OnSnapshotTaken != nullptr)
+			{
+				OnSnapshotTaken(bSuccess, NewestSnapshotFilePath);
+			}
+		});
+
+	FString URL = FString::Printf(TEXT("http://localhost:%d/snapshot"), HTTPPort);
+	HttpRequest->SetURL(URL);
+	HttpRequest->SetVerb("GET");
+
+	HttpRequest->ProcessRequest();
 }
 
 #undef LOCTEXT_NAMESPACE

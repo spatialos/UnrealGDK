@@ -13,31 +13,29 @@ TSharedRef<IPropertyTypeCustomization> FWorkerTypeCustomization::MakeInstance()
 	return MakeShared<FWorkerTypeCustomization>();
 }
 
-void FWorkerTypeCustomization::CustomizeHeader(TSharedRef<class IPropertyHandle> StructPropertyHandle, class FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
+void FWorkerTypeCustomization::CustomizeHeader(TSharedRef<class IPropertyHandle> StructPropertyHandle, class FDetailWidgetRow& HeaderRow,
+											   IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
 	TSharedPtr<IPropertyHandle> WorkerTypeNameProperty = StructPropertyHandle->GetChildHandle("WorkerTypeName");
 
 	if (WorkerTypeNameProperty->IsValidHandle())
 	{
-		HeaderRow.NameContent()
-			[
-				StructPropertyHandle->CreatePropertyNameWidget()
-			]
-		.ValueContent()
-			[
-				PropertyCustomizationHelpers::MakePropertyComboBox(WorkerTypeNameProperty,
-				FOnGetPropertyComboBoxStrings::CreateStatic(&FWorkerTypeCustomization::OnGetStrings),
+		HeaderRow.NameContent()[StructPropertyHandle->CreatePropertyNameWidget()]
+			.ValueContent()[PropertyCustomizationHelpers::MakePropertyComboBox(
+				WorkerTypeNameProperty, FOnGetPropertyComboBoxStrings::CreateStatic(&FWorkerTypeCustomization::OnGetStrings),
 				FOnGetPropertyComboBoxValue::CreateStatic(&FWorkerTypeCustomization::OnGetValue, WorkerTypeNameProperty),
-				FOnPropertyComboBoxValueSelected::CreateStatic(&FWorkerTypeCustomization::OnValueSelected, WorkerTypeNameProperty))
-			];
+				FOnPropertyComboBoxValueSelected::CreateStatic(&FWorkerTypeCustomization::OnValueSelected, WorkerTypeNameProperty))];
 	}
 }
 
-void FWorkerTypeCustomization::CustomizeChildren(TSharedRef<class IPropertyHandle> StructPropertyHandle, class IDetailChildrenBuilder& StructBuilder, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
+void FWorkerTypeCustomization::CustomizeChildren(TSharedRef<class IPropertyHandle> StructPropertyHandle,
+												 class IDetailChildrenBuilder& StructBuilder,
+												 IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
 }
 
-void FWorkerTypeCustomization::OnGetStrings(TArray<TSharedPtr<FString>>& OutComboBoxStrings, TArray<TSharedPtr<class SToolTip>>& OutToolTips, TArray<bool>& OutRestrictedItems)
+void FWorkerTypeCustomization::OnGetStrings(TArray<TSharedPtr<FString>>& OutComboBoxStrings,
+											TArray<TSharedPtr<class SToolTip>>& OutToolTips, TArray<bool>& OutRestrictedItems)
 {
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{

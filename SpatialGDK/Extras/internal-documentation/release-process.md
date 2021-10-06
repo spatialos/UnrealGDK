@@ -6,8 +6,17 @@ This document outlines the process for releasing a version of the GDK for Unreal
 * **GDK release version** is the version of the SpatialOS GDK for Unreal that you are releasing by performing the steps in this document. It's [semantically versioned](https://semver.org/) and looks like `x.y.z`.
 * **Previous GDK version** is the version of the SpatialOS GDK for Unreal that is currently at HEAD of the `release` branch. You can find out what this version is [here](https://github.com/spatialos/UnrealGDK/releases).
 
+## IMPORTANT NOTE:
+After creating the release candidate branches, each repository needs updating with the correct default rc branches (e.g. `0.14.0-rc`) for building in their respective `steps.yaml` files. 
+This is a *required* manual step until we fix-up the release tool to work nicely with new CI.
+Additionally, you will need to update the default branches for building in `UnrealGDKBuild` `ci.steps.yaml` and `engine.py`. This is to ensure the created rc / tag branches in new CI build the correct repo versions.
+Finally, you will need to update these `steps.yaml` files for each repositiory before finalising the release, this should be the final tagged versions of these releases (e.g. `0.14.0`)
+
 ## Release
-1. Notify `#dev-unreal-internal` that you intend to commence a release. Ask if anyone `@here` knows of any blocking defects in code or documentation that should be resolved prior to commencement of the release process.
+1. Before you start working towards a release, ask product and engineering management to define it, so that all stakeholders are on the same page. They should use [this template](https://brevi.link/justify-your-release).
+1. Check [this filter](https://improbableio.atlassian.net/issues/?filter=-1&jql=project%20%3D%20UNR%20AND%20priority%20%3D%20Blocker%20AND%20resolution%20%3D%20Unresolved%20order%20by%20updated%20DESC&atlOrigin=eyJpIjoiMDk0ZDY1ZWY5OGEzNDUyNzg2YjVjZjg5ZWI0YzRiNDMiLCJwIjoiaiJ9) for unresolved blockers in the UNR Jira Project. All blockers must be resolved prior to the creation of the release candidate.
+1. Notify `#unreal-eng-safespace` that you intend to commence a release. Ask if anyone `@here` knows of any blocking defects in code or documentation that should be resolved prior to commencement of the release process.
+1. Notify `@techwriters` in #docs that they may commence their [CHANGELOG review process](https://improbableio.atlassian.net/l/c/4FsZzbHk).
 1. If nobody objects to the release, navigate to [unrealgdk-release](https://buildkite.com/improbable/unrealgdk-release/) and select the New Build button.
 1. In the Message field type "Releasing [GDK release version]".
 1. The "Commit" field is prepopulated with `HEAD`, leave it as is.
@@ -17,11 +26,15 @@ This document outlines the process for releasing a version of the GDK for Unreal
 1. In the "UnrealGDK component release version" field enter the GDK release version.
 1. The "UnrealGDK source branch" field is prepopulated with `master`. Leave it as is if you're executing a major or minor release, change it to `release` if you're executing a patch release.
 1. The "UnrealEngine source branches" field should be prepopulated with the source branches of the latest fully supported and legacy supported Unreal Engine versions. If you're executing a patch release you'll need to suffix each branch with `-release`.<details> <summary>Wrong prepopulated branches?</summary> If the prepopulated branches are wrong, select the button with an X at the upper-right corner of the form, and then select "Cancel" to stop this build of unrealgdk-release. Then, on the UnrealGDK's `master` branch at [`.buildkite/release.steps.yaml#L32`](https://github.com/spatialos/UnrealGDK/blob/master/.buildkite/release.steps.yaml#L32), update the default branches to the latest, merge that change and restart this release process </details>
+1. Notify `#unreal-eng-safespace` that: "@here I'm about to cut release candidates from master branches. DO NOT MERGE into master branches in any repos until I give the all clear.". (Note: This step is not necessary if you're executing a patch release, as these are cut from the `release` branch).
 1. Select "Continue" and move onto the next step.
-1. Wait for the "Prepare the release" step to run, it takes about 20 minutes, maybe grab a coffee?
-1. Once the "Prepare the release" step has passed the "Build & upload all UnrealEngine release candidates" step will commence.<br> While those builds run, take a look at the top of the build page, where you'll notice a new [annotation](https://buildkite.com/docs/agent/v3/cli-annotate): "your human labour is now required to complete the tasks listed in the PR descriptions and unblock the pipeline to resume the release."<br>Click through to the PRs using the links in the annotations and follow the steps. Come back when you're done.
+1. Wait for the "Prepare the release" step to run, it takes about 45 minutes, maybe grab a coffee?
+1. Once the "Prepare the release" step has passed, notify `#unreal-eng-safespace` that: "Release candidates have been cut, feel free to merge into master again"
+1. **IMPORTANT TEMP STEP** You must now update all the `rc` branches in all repositories. You must manually update the `yaml.steps` files to use the correct `rc` branches for a given release (e.g. `0.14.0-rc`). This is to get builds working. Additionally, you will need to update the default branches for building in `UnrealGDKBuild` `prepare_steps.py`. This is to ensure the created rc branches in new CI build the correct repo versions.
+1. The "Build & upload all UnrealEngine release candidates" step will now commence.<br> While those builds run, take a look at the top of the build page, where you'll notice a new [annotation](https://buildkite.com/docs/agent/v3/cli-annotate): "your human labour is now required to complete the tasks listed in the PR descriptions and unblock the pipeline to resume the release."<br>Click through to the PRs using the links in the annotations and follow the steps. Come back when you're done.
 1. As soon as the "Build & upload all UnrealEngine release candidates" step has passed, select "Run all tests".
 1. Once all test have passed, all PRs are approved and all tasks listed in the PR descriptions are complete, select "Unblock the release". This will trigger "Release `ci/release.sh`".
+1. **IMPORTANT TEMP STEP** You must now update all the `rc` branches in all repositories. You must manually update the `yaml.steps` files to use the correct release tag for a given release (e.g. `0.14.0`). This is to get builds working post release. Additionally, you will need to update the default branches for building in `UnrealGDKBuild` `ci.steps.yaml` and `engine.py`. This is to ensure the created tag branches in new CI build the correct repo versions.
 1. When "Release `ci/release.sh`" is complete, the unrealgdk-release pipeline will pass.<br>
 Take a look at the top of the build page, where you'll notice a new [annotation](https://buildkite.com/docs/agent/v3/cli-annotate):<br>
 "Release Successful!"<br>

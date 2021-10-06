@@ -3,12 +3,11 @@
 #pragma once
 
 #include "Templates/UniquePtr.h"
-#include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
+#include <improbable/c_worker.h>
 
 namespace SpatialGDK
 {
-
 class ComponentUpdate;
 
 struct ComponentDataDeleter
@@ -25,7 +24,7 @@ struct ComponentDataDeleter
 using OwningComponentDataPtr = TUniquePtr<Schema_ComponentData, ComponentDataDeleter>;
 
 // An RAII wrapper for component data.
-class ComponentData
+class SPATIALGDK_API ComponentData
 {
 public:
 	// Creates a new component data.
@@ -50,8 +49,6 @@ public:
 
 	// Appends the fields from the provided update.
 	// Returns true if the update was successfully applied and false otherwise.
-	// This will cause the size of the component data to increase.
-	// To resize use DeepCopy to create a new data object with the serialized size of the data.
 	bool ApplyUpdate(const ComponentUpdate& Update);
 
 	Schema_Object* GetFields() const;

@@ -2,18 +2,18 @@
 
 #pragma once
 
-#include "Containers/Queue.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "Interop/SpatialCommandsHandler.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
-#include <WorkerSDK/improbable/c_worker.h>
-#include <WorkerSDK/improbable/c_schema.h>
-
 #include "CoreMinimal.h"
+
+#include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
 
-class SpatialVirtualWorkerTranslator;
 class SpatialOSDispatcherInterface;
 class SpatialOSWorkerInterface;
 
@@ -34,37 +34,38 @@ class SpatialOSWorkerInterface;
 class SPATIALGDK_API SpatialVirtualWorkerTranslationManager
 {
 public:
-	SpatialVirtualWorkerTranslationManager(SpatialOSDispatcherInterface* InReceiver,
-		SpatialOSWorkerInterface* InConnection,
-		SpatialVirtualWorkerTranslator* InTranslator);
+	struct PartitionInfo
+	{
+		Worker_EntityId PartitionEntityId;
+		VirtualWorkerId VirtualWorker;
+		Worker_EntityId SimulatingWorkerSystemEntityId;
+	};
+
+	SpatialVirtualWorkerTranslationManager(SpatialOSWorkerInterface* InConnection, USpatialNetDriver* NetDriver,
+										   SpatialVirtualWorkerTranslator* InTranslator);
 
 	void SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers);
 
-	// The translation manager only cares about changes to the authority of the translation mapping.
-	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
+	const TArray<PartitionInfo>& GetAllPartitions() const { return Partitions; };
 
-private:
-	SpatialOSDispatcherInterface* Receiver;
-	SpatialOSWorkerInterface* Connection;
+	void Advance(const TArray<Worker_Op>& Ops);
 
 	SpatialVirtualWorkerTranslator* Translator;
 
-	TMap<VirtualWorkerId, TPair<PhysicalWorkerName, Worker_EntityId>> VirtualToPhysicalWorkerMapping;
-	TMap<PhysicalWorkerName, VirtualWorkerId> PhysicalToVirtualWorkerMapping;
-	TQueue<VirtualWorkerId> UnassignedVirtualWorkers;
+	using FVirtualToPhysicalWorkerMapping = TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation>;
+
+	const FVirtualToPhysicalWorkerMapping& GetVirtualWorkerMapping() const;
+
+private:
+	SpatialOSWorkerInterface* Connection;
+	USpatialNetDriver* NetDriver;
+
+	TArray<VirtualWorkerId> VirtualWorkersToAssign;
+	TArray<PartitionInfo> Partitions;
+	FVirtualToPhysicalWorkerMapping VirtualToPhysicalWorkerMapping;
+	uint32 NumVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;
 
-	// Serialization and deserialization of the mapping.
-	void WriteMappingToSchema(Schema_Object* Object) const;
-
-	// The following methods are used to query the Runtime for all worker entities and update the mapping
-	// based on the response.
-	void QueryForServerWorkerEntities();
-	void ServerWorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op);
-	void ConstructVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
-	void SendVirtualWorkerMappingUpdate() const;
-
-	void AssignWorker(const PhysicalWorkerName& WorkerId, const Worker_EntityId& ServerWorkerEntityId);
+	SpatialGDK::FCommandsHandler CommandsHandler;
 };
-

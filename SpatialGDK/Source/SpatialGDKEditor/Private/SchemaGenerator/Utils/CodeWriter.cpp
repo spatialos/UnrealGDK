@@ -1,9 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "CodeWriter.h"
+#include "Utils/CodeWriter.h"
 #include "Misc/FileHelper.h"
 
-FCodeWriter::FCodeWriter() : Scope(0)
+FCodeWriter::FCodeWriter()
+	: Scope(0)
 {
 }
 
@@ -37,7 +38,7 @@ FCodeWriter& FCodeWriter::Print(const FString& String)
 	// Replace 4 spaces with tabs.
 	for (auto& Line : Lines)
 	{
-		Line.Replace(TEXT("    "), TEXT("\t"));
+		Line = Line.Replace(TEXT("    "), TEXT("\t"));
 	}
 
 	// Determine scope to trim by.
@@ -109,6 +110,17 @@ FCodeWriter& FCodeWriter::End()
 	Outdent();
 	Print("}");
 	return *this;
+}
+
+void FCodeWriter::RemoveTrailingComma()
+{
+	const int32 TrailingCommaIndex = OutputSource.FindLastCharByPredicate([](TCHAR c) {
+		return c == TEXT(',');
+	});
+	if (TrailingCommaIndex != INDEX_NONE)
+	{
+		OutputSource.RemoveAt(TrailingCommaIndex);
+	}
 }
 
 void FCodeWriter::WriteToFile(const FString& Filename)

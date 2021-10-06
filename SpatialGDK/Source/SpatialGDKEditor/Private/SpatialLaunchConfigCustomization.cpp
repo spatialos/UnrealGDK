@@ -2,8 +2,8 @@
 
 #include "SpatialLaunchConfigCustomization.h"
 
-#include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKSettings.h"
 
 #include "IDetailChildrenBuilder.h"
 #include "IDetailGroup.h"
@@ -19,17 +19,21 @@ TSharedRef<IPropertyTypeCustomization> FSpatialLaunchConfigCustomization::MakeIn
 	return MakeShared<FSpatialLaunchConfigCustomization>();
 }
 
-void FSpatialLaunchConfigCustomization::CustomizeHeader(TSharedRef<class IPropertyHandle> StructPropertyHandle, class FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
+void FSpatialLaunchConfigCustomization::CustomizeHeader(TSharedRef<class IPropertyHandle> StructPropertyHandle,
+														class FDetailWidgetRow& HeaderRow,
+														IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
-	
 }
 
-void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IPropertyHandle> StructPropertyHandle, class IDetailChildrenBuilder& StructBuilder, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
+void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IPropertyHandle> StructPropertyHandle,
+														  class IDetailChildrenBuilder& StructBuilder,
+														  IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
 	TArray<UObject*> EditedObject;
 	StructPropertyHandle->GetOuterObjects(EditedObject);
 
-	const FName& PinnedGDKRuntimeLocalPropertyName = GET_MEMBER_NAME_CHECKED(FSpatialLaunchConfigDescription, bUseDefaultTemplateForRuntimeVariant);
+	const FName& PinnedGDKRuntimeLocalPropertyName =
+		GET_MEMBER_NAME_CHECKED(FSpatialLaunchConfigDescription, bUseDefaultTemplateForRuntimeVariant);
 
 	if (EditedObject.Num() == 0)
 	{
@@ -53,33 +57,14 @@ void FSpatialLaunchConfigCustomization::CustomizeChildren(TSharedRef<class IProp
 
 			const FSpatialLaunchConfigDescription* LaunchConfigDesc = reinterpret_cast<const FSpatialLaunchConfigDescription*>(StructPtr);
 
-			FText PinnedTemplateDisplay = FText::Format(LOCTEXT("DefaultTemplate", "Default: {0}"), FText::FromString(LaunchConfigDesc->GetDefaultTemplateForRuntimeVariant()));
+			FText PinnedTemplateDisplay = FText::Format(LOCTEXT("DefaultTemplate", "Default: {0}"),
+														FText::FromString(LaunchConfigDesc->GetDefaultTemplateForRuntimeVariant()));
 
 			IDetailPropertyRow& CustomRow = StructBuilder.AddProperty(ChildProperty.ToSharedRef());
 
-			CustomRow.CustomWidget()
-				.NameContent()
-				[
-					ChildProperty->CreatePropertyNameWidget()
-				]
-				.ValueContent()
-				[
-					SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot()
-				.HAlign(HAlign_Left)
-				.AutoWidth()
-				[
-					ChildProperty->CreatePropertyValueWidget()
-				]
-				+ SHorizontalBox::Slot()
-				.Padding(5)
-				.HAlign(HAlign_Center)
-				.AutoWidth()
-				[
-					SNew(STextBlock)
-					.Text(PinnedTemplateDisplay)
-				]
-				];
+			CustomRow.CustomWidget().NameContent()[ChildProperty->CreatePropertyNameWidget()].ValueContent()
+				[SNew(SHorizontalBox) + SHorizontalBox::Slot().HAlign(HAlign_Left).AutoWidth()[ChildProperty->CreatePropertyValueWidget()]
+				 + SHorizontalBox::Slot().Padding(5).HAlign(HAlign_Center).AutoWidth()[SNew(STextBlock).Text(PinnedTemplateDisplay)]];
 		}
 		else
 		{

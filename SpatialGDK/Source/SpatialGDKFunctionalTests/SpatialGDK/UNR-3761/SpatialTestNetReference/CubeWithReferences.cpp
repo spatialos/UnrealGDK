@@ -1,6 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "CubeWithReferences.h"
 #include "Net/UnrealNetwork.h"
 
@@ -16,7 +15,7 @@ int ACubeWithReferences::CountValidNeighbours()
 
 	if (IsValid(Neighbour1))
 	{
-	 	ValidNeighbours++;
+		ValidNeighbours++;
 	}
 
 	if (IsValid(Neighbour2))

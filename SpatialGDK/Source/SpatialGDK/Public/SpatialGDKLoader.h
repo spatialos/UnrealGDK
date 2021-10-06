@@ -31,7 +31,7 @@ public:
 
 #if TRACE_LIB_ACTIVE
 
-		FString TraceFilePath = Path / TEXT("trace_dynamic.dll");
+		FString TraceFilePath = Path / TEXT("legacy_trace_dynamic.dll");
 		TraceLibraryHandle = FPlatformProcess::GetDllHandle(*TraceFilePath);
 		if (TraceLibraryHandle == nullptr)
 		{
@@ -41,7 +41,11 @@ public:
 #endif // TRACE_LIB_ACTIVE
 
 #elif PLATFORM_PS4
-		WorkerLibraryHandle = FPlatformProcess::GetDllHandle(TEXT("libworker.prx"));
+		WorkerLibraryHandle = FPlatformProcess::GetDllHandle(TEXT("libimprobable_worker.prx"));
+		if (WorkerLibraryHandle == nullptr)
+		{
+			UE_LOG(LogTemp, Fatal, TEXT("Failed to load libimprobable_worker.prx"));
+		}
 #endif
 	}
 

@@ -5,6 +5,14 @@ component AlwaysRelevant {
     id = 9983;
 }
 
+component ServerOnlyAlwaysRelevant {
+    id = 9968;
+}
+
 component Dormant {
     id = 9981;
+}
+
+component Visible {
+    id = 9970;
 }

@@ -2,8 +2,13 @@
 
 #include "SpatialGDKEditorModule.h"
 
-#include "GeneralProjectSettings.h"
+// clang-format off
+#include "SpatialConstants.h"
+#include "SpatialConstants.cxx"
+// clang-format on
+
 #include "Editor.h"
+#include "GeneralProjectSettings.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
@@ -21,8 +26,12 @@
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialLaunchConfigCustomization.h"
-#include "Utils/LaunchConfigurationEditor.h"
 #include "SpatialRuntimeVersionCustomization.h"
+
+#include "Engine/World.h"
+#include "EngineClasses/SpatialWorldSettings.h"
+#include "EngineUtils.h"
+#include "Utils/LaunchConfigurationEditor.h"
 #include "WorkerTypeCustomization.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorModule);
@@ -31,8 +40,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorModule);
 
 FSpatialGDKEditorModule::FSpatialGDKEditorModule()
 	: CommandLineArgsManager(MakeUnique<FSpatialGDKEditorCommandLineArgsManager>())
+	, SpatialTestSettings(MakeUnique<FSpatialTestSettings>())
 {
-
 }
 
 void FSpatialGDKEditorModule::StartupModule()
@@ -55,9 +64,16 @@ void FSpatialGDKEditorModule::ShutdownModule()
 	}
 }
 
+void FSpatialGDKEditorModule::TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken)
+{
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	GDKServices.GetLocalDeploymentManager()->TakeSnapshot(World, OnSnapshotTaken);
+}
+
 bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
 {
-	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment;
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
+		   && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment;
 }
 
 FString FSpatialGDKEditorModule::GetSpatialOSLocalDeploymentIP() const
@@ -72,7 +88,8 @@ bool FSpatialGDKEditorModule::ShouldStartPIEClientsWithLocalLaunchOnDevice() con
 
 bool FSpatialGDKEditorModule::ShouldConnectToCloudDeployment() const
 {
-	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment;
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
+		   && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment;
 }
 
 FString FSpatialGDKEditorModule::GetDevAuthToken() const
@@ -95,7 +112,9 @@ bool FSpatialGDKEditorModule::TryStartLocalReceptionistProxyServer() const
 	if (ShouldConnectToCloudDeployment() && ShouldConnectServerToCloud())
 	{
 		const USpatialGDKEditorSettings* EditorSettings = GetDefault<USpatialGDKEditorSettings>();
-		bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(GetDefault<USpatialGDKSettings>()->IsRunningInChina(), EditorSettings->GetPrimaryDeploymentName(), EditorSettings->ListeningAddress, EditorSettings->LocalReceptionistPort);
+		bool bSuccess = LocalReceptionistProxyServerManager->TryStartReceptionistProxyServer(
+			GetDefault<USpatialGDKSettings>()->IsRunningInChina(), EditorSettings->GetPrimaryDeploymentName(),
+			EditorSettings->ListeningAddress, EditorSettings->LocalReceptionistPort);
 
 		if (bSuccess)
 		{
@@ -103,7 +122,9 @@ bool FSpatialGDKEditorModule::TryStartLocalReceptionistProxyServer() const
 		}
 		else
 		{
-			FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("ReceptionistProxyFailure", "Failed to start local receptionist proxy server. See the logs for more information."));
+			FMessageDialog::Open(
+				EAppMsgType::Ok,
+				LOCTEXT("ReceptionistProxyFailure", "Failed to start local receptionist proxy server. See the logs for more information."));
 		}
 
 		return bSuccess;
@@ -119,9 +140,23 @@ bool FSpatialGDKEditorModule::CanExecuteLaunch() const
 
 bool FSpatialGDKEditorModule::CanStartSession(FText& OutErrorMessage) const
 {
-	if (!SpatialGDKEditorInstance->IsSchemaGenerated())
+	FSpatialGDKEditor::ESchemaDatabaseValidationResult SchemaCheck = SpatialGDKEditorInstance->ValidateSchemaDatabase();
+	switch (SchemaCheck)
 	{
-		OutErrorMessage = LOCTEXT("MissingSchema", "Attempted to start a local deployment but schema is not generated. You can generate it by clicking on the Schema button in the toolbar.");
+	case FSpatialGDKEditor::NotFound:
+		OutErrorMessage = LOCTEXT("MissingSchema",
+								  "Attempted to start a local deployment but schema is not generated. You can generate it by clicking on "
+								  "the Schema button in the toolbar.");
+		return false;
+	case FSpatialGDKEditor::OldVersion:
+		OutErrorMessage = LOCTEXT("OldSchema",
+								  "Attempted to start a local deployment but schema is out of date. You can generate it by clicking on "
+								  "the Schema button in the toolbar.");
+		return false;
+	case FSpatialGDKEditor::RingBufferSizeChanged:
+		OutErrorMessage = LOCTEXT("RingBufferSizeChanged",
+								  "Attempted to start a local deployment but RPC ring buffer size(s) have changed. You need to regenerate "
+								  "schema by clicking on the Schema button in the toolbar.");
 		return false;
 	}
 
@@ -129,13 +164,16 @@ bool FSpatialGDKEditorModule::CanStartSession(FText& OutErrorMessage) const
 	{
 		if (GetDevAuthToken().IsEmpty())
 		{
-			OutErrorMessage = LOCTEXT("MissingDevelopmentAuthenticationToken", "You have to generate or provide a development authentication token in the SpatialOS GDK Editor Settings section to enable connecting to a cloud deployment.");
+			OutErrorMessage = LOCTEXT("MissingDevelopmentAuthenticationToken",
+									  "You have to generate or provide a development authentication token in the SpatialOS GDK Editor "
+									  "Settings section to enable connecting to a cloud deployment.");
 			return false;
 		}
 
 		const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
 		bool bIsRunningInChina = GetDefault<USpatialGDKSettings>()->IsRunningInChina();
-		if (!Settings->GetPrimaryDeploymentName().IsEmpty() && !SpatialCommandUtils::HasDevLoginTag(Settings->GetPrimaryDeploymentName(), bIsRunningInChina, OutErrorMessage))
+		if (!Settings->GetPrimaryDeploymentName().IsEmpty()
+			&& !SpatialCommandUtils::HasDevLoginTag(Settings->GetPrimaryDeploymentName(), bIsRunningInChina, OutErrorMessage))
 		{
 			return false;
 		}
@@ -163,7 +201,9 @@ bool FSpatialGDKEditorModule::CanStartLaunchSession(FText& OutErrorMessage) cons
 
 	if (ShouldConnectToLocalDeployment() && GetSpatialOSLocalDeploymentIP().IsEmpty())
 	{
-		OutErrorMessage = LOCTEXT("MissingLocalDeploymentIP", "You have to enter this machine's local network IP in the 'Local Deployment IP' field to enable connecting to a local deployment.");
+		OutErrorMessage = LOCTEXT("MissingLocalDeploymentIP",
+								  "You have to enter this machine's local network IP in the 'Local Deployment IP' field to enable "
+								  "connecting to a local deployment.");
 		return false;
 	}
 
@@ -180,7 +220,8 @@ FString FSpatialGDKEditorModule::GetMobileClientCommandLineArgs() const
 	else if (ShouldConnectToCloudDeployment())
 	{
 		// 127.0.0.1 is only used to indicate that we want to connect to a deployment.
-		// This address won't be used when actually trying to connect, but Unreal will try to resolve the address and close the connection if it fails.
+		// This address won't be used when actually trying to connect, but Unreal will try to resolve the address and close the connection
+		// if it fails.
 		CommandLine = TEXT("127.0.0.1 -devAuthToken ") + GetDevAuthToken();
 		FString CloudDeploymentName = GetSpatialOSCloudDeploymentName();
 		if (!CloudDeploymentName.IsEmpty())
@@ -189,7 +230,9 @@ FString FSpatialGDKEditorModule::GetMobileClientCommandLineArgs() const
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKEditorModule, Display, TEXT("Cloud deployment name is empty. If there are multiple running deployments with 'dev_login' tag, the game will choose one randomly."));
+			UE_LOG(LogSpatialGDKEditorModule, Display,
+				   TEXT("Cloud deployment name is empty. If there are multiple running deployments with 'dev_login' tag, the game will "
+						"choose one randomly."));
 		}
 	}
 	return CommandLine;
@@ -203,15 +246,15 @@ bool FSpatialGDKEditorModule::ShouldPackageMobileCommandLineArgs() const
 uint32 GetPIEServerWorkers()
 {
 	const USpatialGDKEditorSettings* EditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	if (EditorSettings->bGenerateDefaultLaunchConfig && EditorSettings->LaunchConfigDesc.ServerWorkerConfig.bAutoNumEditorInstances)
+	if (EditorSettings->bGenerateDefaultLaunchConfig && !EditorSettings->LaunchConfigDesc.ServerWorkerConfiguration.bAutoNumEditorInstances)
+	{
+		return EditorSettings->LaunchConfigDesc.ServerWorkerConfiguration.NumEditorInstances;
+	}
+	else
 	{
 		UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
 		check(EditorWorld);
 		return GetWorkerCountFromWorldSettings(*EditorWorld);
-	}
-	else
-	{
-		return EditorSettings->LaunchConfigDesc.ServerWorkerConfig.NumEditorInstances;
 	}
 }
 
@@ -226,10 +269,36 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 			AdditionalServerIndex++;
 		}
 
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+		{
+			Function(SpatialConstants::RoutingWorkerType, AdditionalServerIndex);
+			++AdditionalServerIndex;
+		}
+
+		if (Settings->bRunStrategyWorker)
+		{
+			Function(SpatialConstants::StrategyWorkerType, AdditionalServerIndex);
+			++AdditionalServerIndex;
+		}
+
 		return true;
 	}
 
 	return false;
+}
+
+void FSpatialGDKEditorModule::OverrideSettingsForTesting(UWorld* World, const FString& MapName)
+{
+	SpatialTestSettings->Override(MapName);
+
+	OverrideSettingsForTestingDelegate.Broadcast(World, MapName);
+}
+
+void FSpatialGDKEditorModule::RevertSettingsForTesting()
+{
+	// Revert settings from ini file
+	SpatialTestSettings->Revert();
 }
 
 bool FSpatialGDKEditorModule::ShouldStartLocalServer() const
@@ -260,10 +329,10 @@ void FSpatialGDKEditorModule::RegisterSettings()
 		ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
 
 		SettingsContainer->DescribeCategory("SpatialGDKEditor", LOCTEXT("RuntimeWDCategoryName", "SpatialOS GDK for Unreal"),
-			LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialOS GDK for Unreal"));
+											LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialOS GDK for Unreal"));
 
-		ISettingsSectionPtr EditorSettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Editor Settings",
-			LOCTEXT("SpatialEditorGeneralSettingsName", "Editor Settings"),
+		ISettingsSectionPtr EditorSettingsSection = SettingsModule->RegisterSettings(
+			"Project", "SpatialGDKEditor", "Editor Settings", LOCTEXT("SpatialEditorGeneralSettingsName", "Editor Settings"),
 			LOCTEXT("SpatialEditorGeneralSettingsDescription", "Editor configuration for the SpatialOS GDK for Unreal"),
 			GetMutableDefault<USpatialGDKEditorSettings>());
 
@@ -272,8 +341,8 @@ void FSpatialGDKEditorModule::RegisterSettings()
 			EditorSettingsSection->OnModified().BindRaw(this, &FSpatialGDKEditorModule::HandleEditorSettingsSaved);
 		}
 
-		ISettingsSectionPtr RuntimeSettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Runtime Settings",
-			LOCTEXT("SpatialRuntimeGeneralSettingsName", "Runtime Settings"),
+		ISettingsSectionPtr RuntimeSettingsSection = SettingsModule->RegisterSettings(
+			"Project", "SpatialGDKEditor", "Runtime Settings", LOCTEXT("SpatialRuntimeGeneralSettingsName", "Runtime Settings"),
 			LOCTEXT("SpatialRuntimeGeneralSettingsDescription", "Runtime configuration for the SpatialOS GDK for Unreal"),
 			GetMutableDefault<USpatialGDKSettings>());
 
@@ -284,10 +353,16 @@ void FSpatialGDKEditorModule::RegisterSettings()
 	}
 
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
-	PropertyModule.RegisterCustomPropertyTypeLayout("WorkerType", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWorkerTypeCustomization::MakeInstance));
-	PropertyModule.RegisterCustomPropertyTypeLayout("SpatialLaunchConfigDescription", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FSpatialLaunchConfigCustomization::MakeInstance));
-	PropertyModule.RegisterCustomPropertyTypeLayout("RuntimeVariantVersion", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FSpatialRuntimeVersionCustomization::MakeInstance));
-	PropertyModule.RegisterCustomClassLayout(USpatialGDKEditorSettings::StaticClass()->GetFName(), FOnGetDetailCustomizationInstance::CreateStatic(&FSpatialGDKEditorLayoutDetails::MakeInstance));
+	PropertyModule.RegisterCustomPropertyTypeLayout(
+		"WorkerType", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWorkerTypeCustomization::MakeInstance));
+	PropertyModule.RegisterCustomPropertyTypeLayout(
+		"SpatialLaunchConfigDescription",
+		FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FSpatialLaunchConfigCustomization::MakeInstance));
+	PropertyModule.RegisterCustomPropertyTypeLayout(
+		"RuntimeVariantVersion", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FSpatialRuntimeVersionCustomization::MakeInstance));
+	PropertyModule.RegisterCustomClassLayout(
+		USpatialGDKEditorSettings::StaticClass()->GetFName(),
+		FOnGetDetailCustomizationInstance::CreateStatic(&FSpatialGDKEditorLayoutDetails::MakeInstance));
 }
 
 void FSpatialGDKEditorModule::UnregisterSettings()
@@ -313,6 +388,11 @@ bool FSpatialGDKEditorModule::HandleRuntimeSettingsSaved()
 	GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
 
 	return true;
+}
+
+bool FSpatialGDKEditorModule::UsesActorInteractionSemantics() const
+{
+	return GetDefault<USpatialGDKSettings>()->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker;
 }
 
 #undef LOCTEXT_NAMESPACE

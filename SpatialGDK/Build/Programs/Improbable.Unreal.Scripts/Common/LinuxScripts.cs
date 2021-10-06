@@ -61,6 +61,7 @@ sleep 5
 
 chmod +x WorkerCoordinator.exe
 chmod +x StartSimulatedClient.sh
+chmod +x StopSimulatedClient.sh
 chmod +x {0}.sh
 
 NEW_USER=unrealworker
@@ -69,6 +70,11 @@ chown -R $NEW_USER:$NEW_USER $(pwd) 2> /improbable/logs/CoordinatorErrors.log
 chmod -R o+rw /improbable/logs 2> /improbable/logs/CoordinatorErrors.log
 
 mono WorkerCoordinator.exe $@ 2> /improbable/logs/CoordinatorErrors.log";
+
+        public const string StopSimulatedPlayerWorkerShellScript =
+@"#!/bin/bash
+PLAYER_ID=$1
+ps -ef | grep $PLAYER_ID | grep -v grep | grep -v .sh | awk '{print $2'} | xargs kill -9";
 
         // Returns a version of UnrealWorkerShellScript with baseGameName templated into the right places.
         // baseGameName should be the base name of your Unreal game.
@@ -82,6 +88,11 @@ mono WorkerCoordinator.exe $@ 2> /improbable/logs/CoordinatorErrors.log";
         public static string GetSimulatedPlayerWorkerShellScript(string baseGameName)
         {
             return string.Format(SimulatedPlayerWorkerShellScript, baseGameName);
+        }
+
+        public static string GetStopSimulatedPlayerWorkerShellScript(string baseGameName)
+        {
+            return StopSimulatedPlayerWorkerShellScript;
         }
 
         // Returns a version of SimulatedPlayerCoordinatorShellScript with baseGameName templated into the right places.

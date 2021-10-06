@@ -8,10 +8,8 @@ pushd "$(dirname "$0")"
     PROJECT_ABSOLUTE_PATH="$(pwd)/../../${BUILD_PROJECT}"
     GDK_IN_TEST_REPO="${PROJECT_ABSOLUTE_PATH}/Game/Plugins/UnrealGDK"
 
-    # Workaround for UNR-2156 and UNR-2076, where spatiald / runtime processes sometimes never close, or where runtimes are orphaned
-    # Clean up any spatiald and java (i.e. runtime) processes that may not have been shut down
-    spatial service stop
-    pkill -9 -f java
+    # Clean up any runtime processes that may not have been shut down
+    pkill -9 -f runtime
 
     rm -rf ${UNREAL_PATH}
     rm -rf ${GDK_IN_TEST_REPO}

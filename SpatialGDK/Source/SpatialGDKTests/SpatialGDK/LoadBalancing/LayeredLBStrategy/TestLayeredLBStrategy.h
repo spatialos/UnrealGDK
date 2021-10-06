@@ -13,12 +13,13 @@
  * This class is for testing purposes only.
  */
 UCLASS(HideDropdown, NotBlueprintable)
-class SPATIALGDKTESTS_API UTwoByFourLBGridStrategy : public UGridBasedLBStrategy 
+class SPATIALGDKTESTS_API UTwoByFourLBGridStrategy : public UGridBasedLBStrategy
 {
 	GENERATED_BODY()
 
 public:
-	UTwoByFourLBGridStrategy(): Super()
+	UTwoByFourLBGridStrategy()
+		: Super()
 	{
 		Rows = 2;
 		Cols = 4;
@@ -33,7 +34,6 @@ class SPATIALGDKTESTS_API ALayer1Pawn : public ADefaultPawn
 {
 	GENERATED_BODY()
 };
-
 
 /**
  * Same as a Default pawn but for testing

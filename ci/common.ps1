@@ -44,8 +44,7 @@ function Finish-Event() {
 }
 
 function Stop-Runtime() {
-    & spatial "service" "stop"
-    Stop-Process -Name "java" -Force -ErrorAction SilentlyContinue
+    Stop-Process -Name "runtime" -Force -ErrorAction SilentlyContinue
 }
 
 $ErrorActionPreference = 'Stop'
