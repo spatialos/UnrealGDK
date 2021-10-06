@@ -393,6 +393,10 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const APlayerControll
 	{
 		const_cast<APlayerController*>(PlayerController)->SetViewTarget(Pawn);
 	}
+	if (NetConnection->ViewTarget == nullptr)
+	{
+		NetConnection->ViewTarget = NetConnection->PlayerController->GetViewTarget();
+	}
 
 	TArray<Worker_EntityId> ClientInterestedEntities = GetClientInterestedEntityIds(PlayerController);
 
