@@ -684,7 +684,4 @@ public:
 	static void TrimTMap(TMap<FString, FString>& Map);
 
 	uint16_t GetDefaultPort() const;
-
-private:
-	const ULevelEditorPlaySettings* LevelEditorPlaySettings;
 };

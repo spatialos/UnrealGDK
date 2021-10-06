@@ -64,7 +64,6 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bPackageMobileCommandLineArgs(true)
 	, bStartPIEClientsWithLocalLaunchOnDevice(false)
 	, SpatialOSNetFlowType(ESpatialOSNetFlow::LocalDeployment)
-	, LevelEditorPlaySettings(GetDefault<ULevelEditorPlaySettings>())
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
@@ -192,7 +191,7 @@ uint16_t USpatialGDKEditorSettings::GetDefaultPort() const
 {
 #if WITH_EDITOR
 	uint16_t LevelSettingsServerPort = 0;
-	LevelEditorPlaySettings->GetServerPort(LevelSettingsServerPort);
+	GetDefault<ULevelEditorPlaySettings>()->GetServerPort(LevelSettingsServerPort);
 
 	return LevelSettingsServerPort;
 #else

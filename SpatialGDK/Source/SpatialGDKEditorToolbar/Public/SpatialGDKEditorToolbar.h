@@ -207,5 +207,5 @@ private:
 
 	TOptional<FMonitoredProcess> InspectorProcess = {};
 
-	uint16_t PreviousRuntimeGRPCPort;
+	uint16_t CachedRuntimeGRPCPort;
 };
