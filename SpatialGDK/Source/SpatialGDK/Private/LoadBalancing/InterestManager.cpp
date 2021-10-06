@@ -196,6 +196,7 @@ void FInterestManager::MoveEntry(int32 SlotSrc, int32 SlotDest)
 	EntityPositionY[SlotDest] = EntityPositionY[SlotSrc];
 	EntityFlags[SlotDest] = EntityFlags[SlotSrc];
 	ActiveTimestamp[SlotDest] = ActiveTimestamp[SlotSrc];
+	Visibility[SlotDest] = Visibility[SlotSrc];
 }
 
 void FInterestManager::SwapEntries(int32 Slot1, int32 Slot2)
@@ -212,6 +213,7 @@ void FInterestManager::SwapEntries(int32 Slot1, int32 Slot2)
 	Swap(EntityPositionY[Slot1], EntityPositionY[Slot2]);
 	Swap(EntityFlags[Slot1], EntityFlags[Slot2]);
 	Swap(ActiveTimestamp[Slot1], ActiveTimestamp[Slot2]);
+	Swap(Visibility[Slot1], Visibility[Slot2]);
 
 	if (Broadphase)
 	{
