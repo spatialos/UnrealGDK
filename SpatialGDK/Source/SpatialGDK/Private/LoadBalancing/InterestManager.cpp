@@ -288,8 +288,8 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 		Broadphase->ComputeBoxVisibility(Regions, Visibility.GetData());
 	}
 
-	constexpr bool bVectorizeRegions = false;
-	constexpr bool bVectorizeEntities = true;
+	constexpr bool bVectorizeRegions = true;
+	constexpr bool bVectorizeEntities = false;
 
 	if (!bVectorizeRegions && !bVectorizeEntities)
 	{
@@ -404,6 +404,8 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			++VisibilityPtr;
 		}
 	}
+// Disabled until we find how to make it work on linux.
+#if 0
 	if (bVectorizeEntities)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputationBoxSSE);
@@ -503,7 +505,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			++VisibilityPtr;
 		}
 	}
-
+#endif
 	{
 		// 8ms 200k entities, 64 regions, 5% overlap
 		SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputationSort);
