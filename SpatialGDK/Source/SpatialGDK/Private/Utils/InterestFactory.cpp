@@ -402,11 +402,11 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const APlayerControll
 			FullInterested.Add(EntityId);
 		}
 
-// 		const FString EntitiesString = FString::JoinBy(FullInterested, TEXT(" "), [](const Worker_EntityId_Key EntityId) {
-// 			return FString::Printf(TEXT("%lld"), EntityId);
-// 		});
-// 
-// 		UE_LOG(LogChangeInterest, Log, TEXT("Interest: %s %s"), *PlayerController->GetName(), *EntitiesString);
+		// 		const FString EntitiesString = FString::JoinBy(FullInterested, TEXT(" "), [](const Worker_EntityId_Key EntityId) {
+		// 			return FString::Printf(TEXT("%lld"), EntityId);
+		// 		});
+		//
+		// 		UE_LOG(LogChangeInterest, Log, TEXT("Interest: %s %s"), *PlayerController->GetName(), *EntitiesString);
 
 		TSet<Worker_EntityId_Key> Add, Remove;
 		if (bOverwrite)
@@ -516,9 +516,16 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 	}
 
 	// If and when the Runtime has a better interest changing API, we can ask for a diff here instead.
-	//FString ViewLocationStr = NetConnection->ViewTarget->GetActorLocation().ToString();
+	// FString ViewLocationStr = NetConnection->ViewTarget->GetActorLocation().ToString();
 	TArray<AActor*> ClientInterestedActors = RepGraph->GatherClientInterestedActors(NetConnection);
-	//UE_LOG(LogTemp, Warning, TEXT("Connection %s, location %s"), *NetConnection->GetName(), *ViewLocationStr);
+	// UE_LOG(LogTemp, Warning, TEXT("Connection %s, location %s"), *NetConnection->GetName(), *ViewLocationStr);
+	// 	if (NetConnection->PlayerController && NetConnection->PlayerController->GetViewTarget())
+	// 	{
+	// 		FVector ViewLocation = FVector::ZeroVector;
+	// 		FRotator ViewRotation = NetConnection->PlayerController->GetControlRotation();
+	// 		NetConnection->PlayerController->GetPlayerViewPoint(ViewLocation, ViewRotation);
+	// 		UE_LOG(LogTemp, Warning, TEXT("Connection %s, location %s"), *NetConnection->GetName(), *ViewLocation.ToString());
+	// 	}
 
 	UNetReplicationGraphConnection* ConnectionDriver =
 		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());

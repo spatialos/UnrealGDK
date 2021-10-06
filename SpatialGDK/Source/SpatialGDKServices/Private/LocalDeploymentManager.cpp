@@ -286,16 +286,20 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to create runtime event log path."));
 	}
 
+	FString SessionLogsDir = FPaths::Combine(LocalDeploymentLogsDir, TEXT("session_logs"));
+	PlatformFile.CreateDirectoryTree(*SessionLogsDir);
+
 	// runtime.exe --config=squid_config.json --snapshot=snapshots/default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
 	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots/<timestamp>
 	// --schema-bundle=spatial/build/assembly/schema/schema.sb
-	// --event - tracing - logs - directory = `<Project > / spatial / localdeployment / <timestamp> / `
+	// --event-tracing-logs-directory=`<Project>/spatial/localdeployment/<timestamp>/`
 	FString RuntimeArgs =
 		FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
-							 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
+							 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"
+							 "--record-session --recording-directory=\"%s\""),
 						*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
 						*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *CurrentSnapshotPath, *SchemaBundle,
-						*EventTracingPath, *LaunchArgs);
+						*EventTracingPath, *LaunchArgs, *SessionLogsDir);
 
 	if (!RuntimeIPToExpose.IsEmpty())
 	{
