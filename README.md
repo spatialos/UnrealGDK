@@ -27,7 +27,7 @@ In order to transform Unreal from a single-server engine to a distributed model,
 In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the GDK for Unreal without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
 
 ## Documentation
-Find high-level documentation about SpatialOS and the GDKs at networking.docs.improbable.io. If you wish to get full access to the documentation please contact us at [ims.improbable.io/contact](https://ims.improbable.io/contact) with details about your project.
+Find high-level documentation about SpatialOS and the GDKs at [networking.docs.improbable.io](networking.docs.improbable.io). If you wish to get full access to the documentation please contact us at [ims.improbable.io/contact](https://ims.improbable.io/contact) with details about your project.
 
 ------
 
