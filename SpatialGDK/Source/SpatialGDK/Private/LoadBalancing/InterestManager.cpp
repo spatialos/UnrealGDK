@@ -328,7 +328,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 		return Mask - 1ull;
 	}();
 
-	if(bVectorizeRegions)
+	if (bVectorizeRegions)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputationBoxSSE);
 
@@ -571,7 +571,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 	}
 
 	{
-		for (uint32 j = 0; false && j < NumRegions; ++j)
+		for (uint32 j = 0; j < NumRegions; ++j)
 		{
 			auto& Added = CachedServerInterest[1][j];
 			auto& Removed = CachedServerInterest[2][j];
