@@ -41,8 +41,8 @@ ASpatialTestCharacterMigration::ASpatialTestCharacterMigration()
 	Description = TEXT("Test Character Migration");
 	TimeLimit = 300;
 
-	PositionOnServerOne = FVector(-200.0f, 0.0f, 40.0f);
-	PositionOnServerTwo = FVector(200.0f, 0.0f, 40.0f);
+	PositionOnServerOne = FVector(-250.0f, 0.0f, 40.0f);
+	PositionOnServerTwo = FVector(250.0f, 0.0f, 40.0f);
 }
 
 void ASpatialTestCharacterMigration::PrepareTest()
@@ -115,7 +115,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			if (bShouldRunRequires)
 			{
 				const bool bReachDestination =
-					GetTargetDistanceOnLine(StartPos, EndPos, Character->GetActorLocation()) > -40.0f; // 40cm overlap
+					GetTargetDistanceOnLine(StartPos, EndPos, Character->GetActorLocation()) > -20.0f; // 20cm overlap
 				RequireEqual_Bool(bReachDestination, true,
 								  FString::Printf(TEXT("%s on %s reached destination"), *Character->GetName(), *WorkerId));
 			}
