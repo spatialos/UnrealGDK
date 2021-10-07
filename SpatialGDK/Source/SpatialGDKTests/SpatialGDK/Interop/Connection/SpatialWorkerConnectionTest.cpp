@@ -322,6 +322,10 @@ WORKERCONNECTION_TEST(GIVEN_deployment_created_and_workers_connected_successfull
 
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(&ClientConnectionManager, true));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(&ServerConnectionManager, false));
+
+	// Reset the Server Port as soon as possible to decrease the risk of the test tempering with the original value
+	ADD_LATENT_AUTOMATION_COMMAND(FChangeServerPort(PreviousServerPort));
+
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForClientAndServerWorkerConnection());
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, &ClientConnectionManager, bIsConnected));
@@ -334,8 +338,7 @@ WORKERCONNECTION_TEST(GIVEN_deployment_created_and_workers_connected_successfull
 	ADD_LATENT_AUTOMATION_COMMAND(FCleanupConnectionManager(&ClientConnectionManager));
 	ADD_LATENT_AUTOMATION_COMMAND(FCleanupConnectionManager(&ServerConnectionManager));
 
-	// Reset the Server Port
-	ADD_LATENT_AUTOMATION_COMMAND(FChangeServerPort(PreviousServerPort));
+	// Check if the Server Port was properly reset
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckPortReset(this, PreviousServerPort));
 
 	return true;
