@@ -30,6 +30,8 @@ const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedProperties = {
 	TEXT("CurrentStepIndex"),			// Multiple
 	TEXT("bActorEnableCollision"),		// SpatialWorldSettings
 	TEXT("PlayerState")					// Multiple - BP_EventTracerCharacter_C, TestPawnBase_RepGraphAlwaysReplicate, DefaultPawn
+	TEXT("Role")
+	TEXT("RemoteRole")
 };
 
 void USpatialNetDriverAuthorityDebugger::Init(USpatialNetDriver& InNetDriver)
