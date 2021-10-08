@@ -236,6 +236,7 @@ bool FCleanupConnectionManager::Update()
 	return true;
 }
 
+#if WITH_EDITOR
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FChangeServerPort, uint16_t, NewServerPort);
 bool FChangeServerPort::Update()
 {
@@ -253,6 +254,7 @@ bool FCheckPortReset::Update()
 
 	return true;
 }
+#endif // WITH_EDITOR
 
 WORKERCONNECTION_TEST(GIVEN_running_local_deployment_WHEN_connecting_client_and_server_worker_THEN_connected_successfully)
 {

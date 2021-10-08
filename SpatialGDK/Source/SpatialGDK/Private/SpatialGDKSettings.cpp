@@ -394,8 +394,12 @@ bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 uint16_t USpatialGDKSettings::GetDefaultPort() const
 {
 #if WITH_EDITOR
-	uint16 LevelSettingsServerPort = 0;
+	uint16_t LevelSettingsServerPort = 0;
 	GetDefault<ULevelEditorPlaySettings>()->GetServerPort(LevelSettingsServerPort);
+	if (!LevelSettingsServerPort)
+	{
+		UE_LOG(LogSpatialGDKSettings, Error, TEXT("Could not retrieve ServerPort from LevelEditorPlaySettings"));
+	}
 
 	return LevelSettingsServerPort;
 #else
