@@ -2247,15 +2247,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-		Connection->Advance(DeltaTime);
-
-		if (Connection->HasDisconnected())
-		{
-			Receiver->OnDisconnect(Connection->GetConnectionStatus(), Connection->GetDisconnectReason());
-			Connection = nullptr; // prevent worker from processing stale command retries - probably want a proper shutdown process here
-			return;
-		}
-
 		const bool bIsDefaultServerOrClientWorker = [this] {
 			if (IsServer())
 			{
@@ -2265,6 +2256,18 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			// Assume client, since the GameInstance might not be around.
 			return true;
 		}();
+
+		Connection->Advance(DeltaTime);
+
+		if (Connection->HasDisconnected())
+		{
+			if (bIsDefaultServerOrClientWorker)
+			{
+				Receiver->OnDisconnect(Connection->GetConnectionStatus(), Connection->GetDisconnectReason());
+			}
+			Connection = nullptr; // prevent worker from processing stale command retries - probably want a proper shutdown process here
+			return;
+		}
 
 		if (bIsDefaultServerOrClientWorker)
 		{
