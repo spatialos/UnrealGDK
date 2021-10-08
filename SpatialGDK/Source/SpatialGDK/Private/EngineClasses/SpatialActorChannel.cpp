@@ -692,7 +692,8 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	if (!bCreatingNewEntity)
 	{
-		if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries && Actor->IsA<APlayerController>())
+		if (SpatialGDKSettings->bUseClientEntityInterestQueries && !SpatialGDKSettings->bComputeClientInterestOnStrategyWorker
+			&& Actor->IsA<APlayerController>())
 		{
 			CheckForClientEntityInterestUpdate();
 		}

@@ -562,7 +562,9 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 
 						// Flush PC interest on handover
-						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries && Actor->IsA<APlayerController>())
+						const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+						if (SpatialSettings->bUseClientEntityInterestQueries && !SpatialSettings->bComputeClientInterestOnStrategyWorker
+							&& Actor->IsA<APlayerController>())
 						{
 							const Worker_EntityId ControllerEntityId =
 								NetDriver->PackageMap->GetEntityIdFromObject(Actor->GetNetConnection()->PlayerController);
@@ -1619,8 +1621,9 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 
 	// When we check out a startup Actor entity spawned by another server, call the notify function so relevant
 	// rep graph nodes can have their interest flagged as dirty.
-	if (NetDriver->IsServer() && GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries && !EntityActor.HasAuthority()
-		&& EntityActor.bNetStartup)
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	if (NetDriver->IsServer() && SpatialSettings->bUseClientEntityInterestQueries
+		&& !SpatialSettings->bComputeClientInterestOnStrategyWorker && !EntityActor.HasAuthority() && EntityActor.bNetStartup)
 	{
 		if (UReplicationGraph* RepGraph = Cast<UReplicationGraph>(NetDriver->GetReplicationDriver()))
 		{

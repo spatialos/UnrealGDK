@@ -234,8 +234,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		Error = TEXT("Failed to load Spatial SchemaDatabase! Make sure that schema has been generated for your project");
 		return false;
 	}
-
-	if (!bInitAsClient && GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	if (!bInitAsClient && SpatialSettings->bUseClientEntityInterestQueries && !SpatialSettings->bUseClientEntityInterestQueries)
 	{
 		if (UReplicationGraph* RepGraph = Cast<UReplicationGraph>(GetReplicationDriver()))
 		{

@@ -15,8 +15,6 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialLegacyLoadBalancing)
 
-//#define BENCH_INTEREST_PERF
-
 namespace SpatialGDK
 {
 class FActorGroupStorage : public TLBDataStorage<ActorGroupMember>
@@ -72,6 +70,19 @@ public:
 	FRandomStream Rand;
 };
 
+class DbgPlayerStorage : public FPlayerControllerTagStorage
+{
+public:
+	DbgPlayerStorage(uint32 Num)
+	{
+		for (uint32 i = 0; i < Num; ++i)
+		{
+			Modified.Add(i + 1);
+			TaggedObjects.Add(i + 1);
+		}
+	}
+};
+
 static const FBox2D TestBox = FBox2D(FVector2D(-100000, -100000), FVector2D(100000, 100000));
 
 FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, SpatialVirtualWorkerTranslator& InTranslator)
@@ -100,6 +111,7 @@ FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, S
 
 	AlwaysRelevantStorage = MakeUnique<FAlwaysRelevantStorage>();
 	ServerAlwaysRelevantStorage = MakeUnique<FServerAlwaysRelevantStorage>();
+	PlayerControllerStorage = MakeUnique<FPlayerControllerTagStorage>();
 }
 
 FLegacyLoadBalancing::~FLegacyLoadBalancing() {}
@@ -110,10 +122,10 @@ void FLegacyLoadBalancing::Advance(ISpatialOSWorker& Connection, const TSet<Work
 	if (InterestManager)
 	{
 #ifndef BENCH_INTEREST_PERF
-		InterestManager->Advance(DeletedEntities);
+		InterestManager->Advance(Connection, DeletedEntities);
 #else
 		static_cast<DbgPositionStorage&>(InterestManager->GetPositions()).MoveStuff(2000);
-		InterestManager->Advance(TSet<Worker_EntityId_Key>());
+		InterestManager->Advance(Connection, TSet<Worker_EntityId_Key>());
 #endif
 	}
 }
@@ -166,6 +178,7 @@ void FLegacyLoadBalancing::QueryTranslation(ISpatialOSWorker& Connection)
 
 void FLegacyLoadBalancing::Flush(ISpatialOSWorker& Connection)
 {
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	if (ConnectedWorkers.Num() == ExpectedWorkers && !bTranslatorIsReady)
 	{
 		QueryTranslation(Connection);
@@ -209,7 +222,24 @@ void FLegacyLoadBalancing::Flush(ISpatialOSWorker& Connection)
 		}
 #endif
 
-		InterestManager->ComputeInterest(Connection, Workers, Regions);
+#ifndef BENCH_INTEREST_PERF
+		if (Settings->bUserSpaceServerInterest)
+#endif
+		{
+			InterestManager->ComputeInterest(Connection, Workers, Regions);
+		}
+
+#ifdef BENCH_INTEREST_PERF
+		const float PlayerInterestRadius = TestBox.GetSize().X / 100;
+#else
+
+		const float PlayerInterestRadius = FMath::Sqrt(Cast<AActor>(AActor::StaticClass()->GetDefaultObject())->NetCullDistanceSquared);
+		if (Settings->bUseClientEntityInterestQueries && Settings->bComputeClientInterestOnStrategyWorker)
+
+#endif
+		{
+			InterestManager->ComputePlayersInterest(Connection, PlayerInterestRadius, 0.0);
+		}
 	}
 }
 
@@ -244,17 +274,20 @@ void FLegacyLoadBalancing::Init(FLoadBalancingSharedData InSharedData, TArray<FL
 
 	OutLoadBalancingData.Add(AlwaysRelevantStorage.Get());
 	OutLoadBalancingData.Add(ServerAlwaysRelevantStorage.Get());
+	OutLoadBalancingData.Add(PlayerControllerStorage.Get());
 
 #ifndef BENCH_INTEREST_PERF
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	if (Settings->bUserSpaceServerInterest)
+	if (Settings->bUserSpaceServerInterest
+		|| (Settings->bUseClientEntityInterestQueries && Settings->bComputeClientInterestOnStrategyWorker))
 	{
-		InterestManager =
-			MakeUnique<FInterestManager>(SharedData->InterestF, *PositionStorage, *AlwaysRelevantStorage, *ServerAlwaysRelevantStorage);
+		InterestManager = MakeUnique<FInterestManager>(SharedData->InterestF, *PositionStorage, *AlwaysRelevantStorage,
+													   *ServerAlwaysRelevantStorage, *PlayerControllerStorage);
 	}
 #else
-	InterestManager = MakeUnique<FInterestManager>(SharedData->InterestF, *new DbgPositionStorage(TestBox, 210000),
-												   *new FAlwaysRelevantStorage, *new FServerAlwaysRelevantStorage);
+	InterestManager =
+		MakeUnique<FInterestManager>(SharedData->InterestF, *new DbgPositionStorage(TestBox, 210000), *new FAlwaysRelevantStorage,
+									 *new FServerAlwaysRelevantStorage, *new DbgPlayerStorage(1000));
 #endif
 }
 

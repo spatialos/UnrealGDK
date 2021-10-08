@@ -484,6 +484,9 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Client Entity Interest")
 	bool bUseClientEntityInterestQueries;
 
+	UPROPERTY(EditAnywhere, Config, Category = "Client Entity Interest")
+	bool bComputeClientInterestOnStrategyWorker;
+
 	/**
 	 * How many times per second will a client's entity ID list query be updated (set to 0 to ignore).
 	 */

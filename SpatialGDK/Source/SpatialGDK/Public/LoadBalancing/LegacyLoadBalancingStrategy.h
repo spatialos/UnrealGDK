@@ -18,6 +18,7 @@ class FCustomWorkerAssignmentStorage;
 class FActorSetSystem;
 class FAlwaysRelevantStorage;
 class FServerAlwaysRelevantStorage;
+class FPlayerControllerTagStorage;
 class FInterestManager;
 
 class FLegacyLoadBalancing : public FLoadBalancingStrategy
@@ -77,6 +78,7 @@ protected:
 	// +++ EXPERIMENTAL Interest computations
 	TUniquePtr<FAlwaysRelevantStorage> AlwaysRelevantStorage;
 	TUniquePtr<FServerAlwaysRelevantStorage> ServerAlwaysRelevantStorage;
+	TUniquePtr<FPlayerControllerTagStorage> PlayerControllerStorage;
 	TUniquePtr<FInterestManager> InterestManager;
 	// --- EXPERIMENTAL Interest computations
 };
