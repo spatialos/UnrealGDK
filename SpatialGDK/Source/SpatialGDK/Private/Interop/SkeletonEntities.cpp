@@ -20,18 +20,6 @@ static ComponentData Convert(const FWorkerComponentData& WorkerComponentData)
 	return ComponentData(OwningComponentDataPtr(WorkerComponentData.schema_type), WorkerComponentData.component_id);
 }
 
-static bool IsManifestFilled(const Worker_EntityId, const EntityViewElement& Entity)
-{
-	const ComponentData* ManifestComponentDataPtr =
-		Entity.Components.FindByPredicate(ComponentIdEquality{ FSkeletonEntityManifest::ComponentId });
-	if (ensure(ManifestComponentDataPtr != nullptr))
-	{
-		const FSkeletonEntityManifest Manifest(*ManifestComponentDataPtr);
-		return Manifest.bAckedManifest && Manifest.PopulatedEntities.Num() == Manifest.EntitiesToPopulate.Num();
-	}
-	return false;
-}
-
 bool SkeletonEntityFunctions::IsCompleteSkeleton(const EntityViewElement& Entity)
 {
 	bool bHasSkeletonTag = false;
@@ -84,6 +72,18 @@ Worker_EntityId SkeletonEntityFunctions::CreateSkeletonEntityForActor(AActor& Ac
 	CreateHandler.AddRequest(CreateEntityRequestId, MoveTemp(OnCreated));
 
 	return ActorEntityId;
+}
+
+static bool IsManifestFilled(const Worker_EntityId, const EntityViewElement& Entity)
+{
+	const ComponentData* ManifestComponentDataPtr =
+		Entity.Components.FindByPredicate(ComponentIdEquality{ FSkeletonEntityManifest::ComponentId });
+	if (ensure(ManifestComponentDataPtr != nullptr))
+	{
+		const FSkeletonEntityManifest Manifest(*ManifestComponentDataPtr);
+		return Manifest.bAckedManifest && Manifest.PopulatedEntities.Num() == Manifest.EntitiesToPopulate.Num();
+	}
+	return false;
 }
 
 const FSubView& SkeletonEntityFunctions::CreateFilledManifestSubView(ViewCoordinator& Coordinator)

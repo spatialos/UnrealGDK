@@ -151,8 +151,8 @@ void FDiscoverExistingPartitionsStep::OnPartitionQueryComplete(const Worker_Enti
 			const Worker_Entity& PartitionEntity = QueryResponse.results[WorkerPartitionIndex];
 			for (uint32 ComponentIdx = 0; ComponentIdx < PartitionEntity.component_count; ++ComponentIdx)
 			{
-				OwningComponentDataPtr DataPtr(PartitionEntity.components[ComponentIdx].schema_type);
-				ComponentData Data(MoveTemp(DataPtr), PartitionEntity.components[ComponentIdx].component_id);
+				const Worker_ComponentData& WorkerData = PartitionEntity.components[ComponentIdx];
+				ComponentData Data = ComponentData::CreateCopy(WorkerData.schema_type, WorkerData.component_id);
 				Components.Components.Add(MoveTemp(Data));
 			}
 			DiscoveredPartitionEntityIds.Emplace(PartitionEntity.entity_id, MoveTemp(Components));
