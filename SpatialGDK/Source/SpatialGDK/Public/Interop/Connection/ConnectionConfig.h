@@ -248,8 +248,9 @@ public:
 	void LoadDefaults()
 	{
 		UseExternalIp = false;
-		ReceptionistPort = GetDefault<USpatialGDKSettings>()->GetDefaultPort();
-		SetReceptionistHost(GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost);
+		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+		ReceptionistPort = SpatialGDKSettings->GetDefaultPort();
+		SetReceptionistHost(SpatialGDKSettings->DefaultReceptionistHost);
 	}
 
 	bool TryLoadCommandLineArgs()

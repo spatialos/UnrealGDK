@@ -178,7 +178,7 @@ bool FLocalDeploymentManager::KillProcessBlockingPort(uint16_t Port)
 	return bSuccess;
 }
 
-bool FLocalDeploymentManager::LocalDeploymentPreRunChecks(const uint16_t& RuntimeGRPCPort)
+bool FLocalDeploymentManager::LocalDeploymentPreRunChecks(const uint16_t RuntimeGRPCPort)
 {
 	bool bSuccess = true;
 
@@ -210,7 +210,7 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks(const uint16_t& Runtim
 
 void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
 													  const FString& SnapshotName, const FString& RuntimeIPToExpose,
-													  const uint16_t& RuntimeGRPCPort, const LocalDeploymentCallback& CallBack)
+													  const uint16_t RuntimeGRPCPort, const LocalDeploymentCallback& CallBack)
 {
 	int NumRetries = RuntimeStartRetries;
 	while (NumRetries > 0)
@@ -237,7 +237,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfi
 
 FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLocalDeployment(
 	const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs, const FString& SnapshotName,
-	const FString& RuntimeIPToExpose, const uint16_t& RuntimeGRPCPort, const LocalDeploymentCallback& CallBack)
+	const FString& RuntimeIPToExpose, const uint16_t RuntimeGRPCPort, const LocalDeploymentCallback& CallBack)
 {
 	RuntimeStartTime = FDateTime::Now();
 	bRedeployRequired = false;
