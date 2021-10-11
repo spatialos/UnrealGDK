@@ -144,7 +144,7 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	// If there were pending migrations, meld them with the migration requests
 	for (auto PendingMigration : PendingMigrations)
 	{
-		if (!Ctx.EntitiesToMigrate.Contains(PendingMigration.Key))
+		if (!Ctx.EntitiesToMigrate.Contains(PendingMigration.Key) && !DataStorages.EntitiesRemoved.Contains(PendingMigration.Key))
 		{
 			Ctx.EntitiesToMigrate.Add(PendingMigration);
 		}

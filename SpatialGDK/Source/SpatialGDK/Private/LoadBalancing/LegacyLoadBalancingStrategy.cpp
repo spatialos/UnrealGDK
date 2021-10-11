@@ -538,6 +538,11 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 			TSet<Worker_EntityId_Key> NotChecked;
 			ToRefresh = ToRefresh.Union(Ctx.ModifiedEntities);
 			ToRefresh = ToRefresh.Difference(Ctx.DeletedEntities);
+			for (auto DeletedEntity : Ctx.DeletedEntities)
+			{
+				Assignment.Remove(DeletedEntity);
+				UE_LOG(LogSpatialLegacyLoadBalancing, Log, TEXT("Entity deleted : %llu"), DeletedEntity);
+			}
 #if !UE_BUILD_SHIPPING
 			if (ServerWorkerCustomAssignment->GetModifiedEntities().Contains(WorkerForCustomAssignment))
 			{
@@ -568,11 +573,19 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 					continue;
 				}
 
-				const ActorGroupMember& Group = GroupStorage->GetObjects().FindChecked(EntityId);
-				FLegacyLBContext::Layer& Layer = LBContext.Layers[Group.ActorGroupId];
+				const ActorGroupMember* Group = GroupStorage->GetObjects().Find(EntityId);
+				const FVector* Position = PositionStorage->GetPositions().Find(EntityId);
+				const bool bHasGroup = Group != nullptr;
+				const bool bHasPosition = Position != nullptr;
+				if (!ensureAlwaysMsgf(bHasGroup && bHasPosition,
+					TEXT("Missing data membership for entity %llu. Has position : %s, Has group : %s",
+						EntityId, bHasGroup ? TEXT("true"), TEXT("false"), bHasPosition ? TEXT("true"), TEXT("false"))))
+				{
+					continue;
+				}
 
-				const FVector& Position = PositionStorage->GetPositions().FindChecked(EntityId);
-				const FVector2D Actor2DLocation(Position);
+				FLegacyLBContext::Layer& Layer = LBContext.Layers[Group->ActorGroupId];
+				const FVector2D Actor2DLocation(*Position);
 
 				int32& CurAssignment = Assignment.FindOrAdd(EntityId, -1);
 
