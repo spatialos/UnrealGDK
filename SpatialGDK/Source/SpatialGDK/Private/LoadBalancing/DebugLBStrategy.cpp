@@ -109,3 +109,20 @@ UAbstractLBStrategy* UDebugLBStrategy::GetLBStrategyForVisualRendering() const
 	check(WrappedStrategy);
 	return WrappedStrategy->GetLBStrategyForVisualRendering();
 }
+
+bool UDebugLBStrategy::IsStrategyWorkerAware() const
+{
+	return true;
+}
+
+void UDebugLBStrategy::GetLegacyLBInformation(FLegacyLBContext& Ctx) const
+{
+	check(WrappedStrategy);
+	return WrappedStrategy->GetLegacyLBInformation(Ctx);
+}
+
+TArray<SpatialGDK::ComponentData> UDebugLBStrategy::CreateStaticLoadBalancingData(const AActor& Actor) const
+{
+	check(WrappedStrategy);
+	return WrappedStrategy->CreateStaticLoadBalancingData(Actor);
+}

@@ -48,6 +48,22 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	PreparationTimeLimit = 30.0f;
 	bReadyToSpawnServerControllers = false;
 	CachedTestResult = EFunctionalTestResult::Default;
+
+	bIsStandaloneTest = false;
+	GeneratedTestMap = nullptr;
+	bIsGeneratingMap = false;
+}
+
+ASpatialFunctionalTest::ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients /*=1*/,
+											   const FVector& InTestPositionInWorld /*=FVector::ZeroVector*/)
+	: ASpatialFunctionalTest()
+{
+	bIsStandaloneTest = true;
+	TestPositionInWorld = InTestPositionInWorld;
+
+	GeneratedTestMap = UGeneratedTestMap::MakeGeneratedTestMap(MapCiCategory, this->GetClass()->GetName());
+
+	GeneratedTestMap->SetNumberOfClients(NumberOfClients);
 }
 
 void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -1115,4 +1131,44 @@ void ASpatialFunctionalTest::ClearAllTakenSnapshots()
 {
 	bWasLoadedFromTakenSnapshot = false;
 	TakenSnapshots.Empty();
+}
+
+void ASpatialFunctionalTest::GenerateMap()
+{
+	bIsGeneratingMap = true;
+	GeneratedTestMap->GenerateMap();
+	CreateCustomContentForMap();
+	GeneratedTestMap->AddActorToLevel(GeneratedTestMap->GetWorld()->GetCurrentLevel(), this->GetClass(), FTransform(TestPositionInWorld));
+	bIsGeneratingMap = false;
+}
+
+bool ASpatialFunctionalTest::ShouldGenerateMap()
+{
+	return bIsStandaloneTest;
+}
+
+bool ASpatialFunctionalTest::SaveMap()
+{
+	return GeneratedTestMap->SaveMap();
+}
+
+bool ASpatialFunctionalTest::GenerateCustomConfig()
+{
+	return GeneratedTestMap->GenerateCustomConfig();
+}
+
+FString ASpatialFunctionalTest::GetMapName()
+{
+	return GeneratedTestMap->GetMapName();
+}
+
+void ASpatialFunctionalTest::SetCustomConfigForMap(FString& String)
+{
+	GeneratedTestMap->SetCustomConfig(String);
+}
+
+ASpatialWorldSettings* ASpatialFunctionalTest::GetWorldSettingsForMap()
+{
+	checkf(bIsGeneratingMap, TEXT("GetWorldSettingsForMap should only be called from within an overridden CreateCustomContentForMap."));
+	return CastChecked<ASpatialWorldSettings>(GeneratedTestMap->GetWorld()->GetWorldSettings());
 }

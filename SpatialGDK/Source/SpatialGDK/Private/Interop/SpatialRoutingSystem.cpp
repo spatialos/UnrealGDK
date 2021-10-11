@@ -134,9 +134,9 @@ void SpatialRoutingSystem::OnSenderChanged(Worker_EntityId SenderId, RoutingComp
 		auto& Slots = Components.SenderACKState.RPCSlots.FindOrAdd(RPC.Key);
 		if (Slots.ACKSlot < 0)
 		{
-			// This is a race we could solve with either blank entities, or timeout
-			UE_LOG(LogSpatialRoutingSystem, Error, TEXT("Receiver missing from view. RPC will be dropped. Receiver: %llu, Sender: %llu"),
-				   RPC.Value, SenderId);
+			UE_LOG(LogSpatialRoutingSystem, Verbose,
+				   TEXT("Receiver missing from view. RPC will be resent if receiver not deleted. Receiver: %llu, Sender: %llu"), RPC.Value,
+				   SenderId);
 			Slots.CounterpartEntity = RPC.Value;
 			WriteACKToSender(RPC.Key, Components, CrossServer::Result::TargetUnknown);
 		}

@@ -15,18 +15,20 @@ struct FControllerPawnPair
 	GENERATED_BODY()
 
 	UPROPERTY()
-	ATestPossessionPlayerController* PlayerController;
+	ATestPossessionPlayerController* PlayerController = nullptr;
 
 	UPROPERTY()
-	APawn* Pawn;
+	APawn* Pawn = nullptr;
 };
 
-UCLASS()
+UCLASS(Abstract)
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestRemotePossession : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
 public:
 	ASpatialTestRemotePossession();
+
+	ASpatialTestRemotePossession(const EMapCategory MapCiCategory, const int32 NumberOfClients);
 
 	virtual void PrepareTest() override;
 
