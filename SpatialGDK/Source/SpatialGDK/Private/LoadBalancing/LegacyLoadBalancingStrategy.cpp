@@ -578,8 +578,8 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 				const bool bHasGroup = Group != nullptr;
 				const bool bHasPosition = Position != nullptr;
 				if (!ensureAlwaysMsgf(bHasGroup && bHasPosition,
-					TEXT("Missing data membership for entity %llu. Has position : %s, Has group : %s",
-						EntityId, bHasGroup ? TEXT("true"), TEXT("false"), bHasPosition ? TEXT("true"), TEXT("false"))))
+					TEXT("Missing data membership for entity %llu. Has position : %s, Has group : %s"),
+						EntityId, bHasGroup ? TEXT("true") : TEXT("false"), bHasPosition ? TEXT("true") : TEXT("false")))
 				{
 					continue;
 				}
