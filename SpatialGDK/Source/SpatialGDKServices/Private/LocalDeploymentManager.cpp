@@ -118,7 +118,7 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 	});
 }
 
-bool FLocalDeploymentManager::CheckIfPortIsBound(uint16_t Port)
+bool FLocalDeploymentManager::CheckIfPortIsBound(uint16_t Port) const
 {
 	ISocketSubsystem* SocketSubsystem = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
 	bool bCanBindToPort = false;
@@ -184,9 +184,9 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks(const uint16_t Runtime
 
 	// Check for the known runtime ports which could be blocked by other processes.
 
-	TArray<uint16_t> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, RuntimeGRPCPort};
+	const TArray<uint16_t> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, RuntimeGRPCPort};
 	
-	for (uint16_t RequiredPort : RequiredRuntimePorts)
+	for (const uint16_t RequiredPort : RequiredRuntimePorts)
 	{
 		if (CheckIfPortIsBound(RequiredPort))
 		{

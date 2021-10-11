@@ -25,7 +25,7 @@ public:
 
 	void SPATIALGDKSERVICES_API Init();
 
-	bool CheckIfPortIsBound(uint16_t Port);
+	bool CheckIfPortIsBound(uint16_t Port) const;
 	bool KillProcessBlockingPort(uint16_t Port);
 	bool LocalDeploymentPreRunChecks(const uint16_t RuntimeGRPCPort);
 

@@ -1030,7 +1030,7 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> OnR
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
 	const uint16_t RuntimeGRPCPort = SpatialGDKEditorSettings->GetDefaultPort();
 	// If the Runtime port has changed, the previous Inspector process should be killed 
-	bool bShouldKillInspectorProcess = RuntimeGRPCPort != CachedRuntimeGRPCPort && CachedRuntimeGRPCPort != 0;
+	const bool bShouldKillInspectorProcess = RuntimeGRPCPort != CachedRuntimeGRPCPort && CachedRuntimeGRPCPort != 0;
 	CachedRuntimeGRPCPort = RuntimeGRPCPort;
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion, OnReady, RuntimeGRPCPort, bShouldKillInspectorProcess] {
