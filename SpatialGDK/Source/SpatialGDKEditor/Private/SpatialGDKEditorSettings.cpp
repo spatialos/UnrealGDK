@@ -189,18 +189,9 @@ bool USpatialGDKEditorSettings::IsDeploymentNameValid(const FString& Name)
 
 uint16_t USpatialGDKEditorSettings::GetDefaultPort() const
 {
-#if WITH_EDITOR
-	uint16_t LevelSettingsServerPort = 0;
-	GetDefault<ULevelEditorPlaySettings>()->GetServerPort(LevelSettingsServerPort);
-	if (!LevelSettingsServerPort)
-	{
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Could not retrieve ServerPort from LevelEditorPlaySettings"));
-	}
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-	return LevelSettingsServerPort;
-#else
-	return SpatialConstants::DEFAULT_PORT;
-#endif // WITH_EDITOR
+	return SpatialGDKSettings->GetDefaultPort();
 }
 
 bool USpatialGDKEditorSettings::IsRegionCodeValid(const ERegionCode::Type RegionCode)

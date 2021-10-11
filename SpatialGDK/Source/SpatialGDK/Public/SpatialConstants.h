@@ -339,7 +339,6 @@ extern const FString SpatialSessionIdURLOption;
 extern const FString LOCATOR_HOST;
 extern const FString LOCATOR_HOST_CN;
 const uint16_t LOCATOR_PORT = 443;
-const uint16_t DEFAULT_PORT = 7777;
 
 extern const FString CONSOLE_HOST;
 extern const FString CONSOLE_HOST_CN;

@@ -311,7 +311,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (EditCondition = "!bUseGDKPinnedInspectorVersion"))
 	FString InspectorVersionOverride;
 
-
 	/** Returns the version information for the currently set inspector*/
 	const FString& GetInspectorVersion() const
 	{
@@ -510,7 +509,6 @@ public:
 			  meta = (DisplayName = "Start PIE Clients when launching on a device with local deployment flow"))
 	bool bStartPIEClientsWithLocalLaunchOnDevice;
 
-
 public:
 	/** If you have selected **Auto-generate launch configuration file**, you can change the default options in the file from the drop-down
 	 * menu. */
@@ -683,5 +681,9 @@ public:
 	static bool IsDeploymentNameValid(const FString& Name);
 	static void TrimTMap(TMap<FString, FString>& Map);
 
+	/**
+	 * Gets the correct port needed to start a deployment and the Inspector process
+	 * Implemented by calling USpatialGDKSettings::GetDefaultPort()
+	 */
 	uint16_t GetDefaultPort() const;
 };

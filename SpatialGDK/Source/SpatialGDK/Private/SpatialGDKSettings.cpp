@@ -396,14 +396,15 @@ uint16_t USpatialGDKSettings::GetDefaultPort() const
 #if WITH_EDITOR
 	uint16_t LevelSettingsServerPort = 0;
 	GetDefault<ULevelEditorPlaySettings>()->GetServerPort(LevelSettingsServerPort);
-	if (!LevelSettingsServerPort)
+	if (LevelSettingsServerPort == 0)
 	{
 		UE_LOG(LogSpatialGDKSettings, Error, TEXT("Could not retrieve ServerPort from LevelEditorPlaySettings"));
+		return DEFAULT_PORT;
 	}
 
 	return LevelSettingsServerPort;
 #else
-	return SpatialConstants::DEFAULT_PORT;
+	return DEFAULT_PORT;
 #endif // WITH_EDITOR
 }
 

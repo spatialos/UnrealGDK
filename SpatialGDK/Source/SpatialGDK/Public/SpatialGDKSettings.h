@@ -318,14 +318,23 @@ private:
 	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
 	bool bEventTracingEnabledWithEditor;
 
+	/**
+	 * Default port value used for Worker connections, starting a deployment and the Inspector process,
+	 * has to coincide with the ULevelEditorPlaySettings default ServerPort value
+	 */
+	const uint16 DEFAULT_PORT = 7777;
+
 	friend class AEventTracingSettingsOverride;
 
 public:
 	bool GetPreventClientCloudDeploymentAutoConnect() const;
 
-
+	/**
+	 * Gets the correct port needed to create Worker connections
+	 * When compiled WITH_EDITOR, the port is given by the value of ServerPort in ULevelEditorPlaySettings
+	 * When not using editor, the class member DEFAULT_PORT is the correct value
+	*/
 	uint16_t GetDefaultPort() const;
-
 
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings",
 			  meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
