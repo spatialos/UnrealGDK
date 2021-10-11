@@ -21,6 +21,7 @@ DEFINE_LOG_CATEGORY(LogLocalReceptionistProxyServerManager);
 
 FLocalReceptionistProxyServerManager::FLocalReceptionistProxyServerManager()
 	: RunningCloudDeploymentName(TEXT(""))
+	, RunningProxyReceptionistPort(0)
 {
 }
 
