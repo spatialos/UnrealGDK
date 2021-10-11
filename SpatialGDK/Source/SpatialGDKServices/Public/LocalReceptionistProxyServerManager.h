@@ -27,8 +27,8 @@ private:
 
 	FProcHandle ProxyServerProcHandle;
 	FString RunningCloudDeploymentName;
-	uint16 RunningProxyReceptionistPort;
 	FString RunningProxyListeningAddress;
+	uint16 RunningProxyReceptionistPort;
 
 	bool bProxyIsRunning = false;
 };
