@@ -246,7 +246,7 @@ bool SpatialCommandUtils::HasDevLoginTag(const FString& DeploymentName, bool bIs
 }
 
 FProcHandle SpatialCommandUtils::StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName,
-																   const FString& ListeningAddress, const uint16_t Port, FString& OutResult,
+																   const FString& ListeningAddress, const uint16 Port, FString& OutResult,
 																   int32& OutExitCode)
 {
 	FString Command = FString::Printf(TEXT("cloud connect external %s --listening_address %s --local_receptionist_port %u"),
@@ -413,7 +413,7 @@ void SpatialCommandUtils::TryGracefullyKillWindows(const FString& ProcName)
 }
 #endif
 
-bool SpatialCommandUtils::GetProcessInfoFromPort(uint16_t Port, FString& OutPid, FString& OutState, FString& OutProcessName)
+bool SpatialCommandUtils::GetProcessInfoFromPort(uint16 Port, FString& OutPid, FString& OutState, FString& OutProcessName)
 {
 #if PLATFORM_WINDOWS
 	const FString Command = FString::Printf(TEXT("netstat"));

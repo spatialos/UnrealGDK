@@ -25,15 +25,15 @@ public:
 
 	void SPATIALGDKSERVICES_API Init();
 
-	bool CheckIfPortIsBound(uint16_t Port) const;
-	bool KillProcessBlockingPort(uint16_t Port);
-	bool LocalDeploymentPreRunChecks(const uint16_t RuntimeGRPCPort);
+	bool CheckIfPortIsBound(uint16 Port) const;
+	bool KillProcessBlockingPort(uint16 Port);
+	bool LocalDeploymentPreRunChecks(const uint16 RuntimeGRPCPort);
 
 	using LocalDeploymentCallback = TFunction<void(bool)>;
 
 	void SPATIALGDKSERVICES_API TryStartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion,
 														const FString& LaunchArgs, const FString& SnapshotName,
-														const FString& RuntimeIPToExpose, const uint16_t RuntimeGRPCPort, const LocalDeploymentCallback& CallBack);
+														const FString& RuntimeIPToExpose, const uint16 RuntimeGRPCPort, const LocalDeploymentCallback& CallBack);
 
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
 	bool SPATIALGDKSERVICES_API TryStopLocalDeploymentGracefully();
@@ -81,7 +81,7 @@ private:
 	};
 
 	ERuntimeStartResponse StartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
-											   const FString& SnapshotName, const FString& RuntimeIPToExpose, const uint16_t RuntimeGRPCPort,
+											   const FString& SnapshotName, const FString& RuntimeIPToExpose, const uint16 RuntimeGRPCPort,
 											   const LocalDeploymentCallback& CallBack);
 
 	FCriticalSection StoppingDeployment;
@@ -92,9 +92,9 @@ private:
 	TUniquePtr<IFileHandle> RuntimeLogFileHandle;
 	FDateTime RuntimeStartTime;
 
-	static const uint16_t RequiredRuntimePort = 5301;
-	static const uint16_t WorkerPort = 8018;
-	static const uint16_t HTTPPort = 5006;
+	static const uint16 RequiredRuntimePort = 5301;
+	static const uint16 WorkerPort = 8018;
+	static const uint16 HTTPPort = 5006;
 
 	static constexpr double RuntimeTimeout = 10.0;
 	static constexpr int32 RuntimeStartRetries = 3;

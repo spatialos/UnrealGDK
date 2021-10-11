@@ -945,7 +945,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 	const FString SnapshotName = ForceSnapshot.IsEmpty() ? SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad() : ForceSnapshot;
 	const FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, SnapshotName);
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
-	const uint16_t RuntimeGRPCPort = SpatialGDKEditorSettings->GetDefaultPort();
+	const uint16 RuntimeGRPCPort = SpatialGDKEditorSettings->GetDefaultPort();
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotPath, RuntimeVersion,
 															 RuntimeGRPCPort] {
@@ -1028,7 +1028,7 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> OnR
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
-	const uint16_t RuntimeGRPCPort = SpatialGDKEditorSettings->GetDefaultPort();
+	const uint16 RuntimeGRPCPort = SpatialGDKEditorSettings->GetDefaultPort();
 	// If the Runtime port has changed, the previous Inspector process should be killed 
 	const bool bShouldKillInspectorProcess = RuntimeGRPCPort != CachedRuntimeGRPCPort && CachedRuntimeGRPCPort != 0;
 	CachedRuntimeGRPCPort = RuntimeGRPCPort;

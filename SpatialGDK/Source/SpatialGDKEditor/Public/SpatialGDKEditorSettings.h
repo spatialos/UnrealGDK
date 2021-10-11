@@ -685,5 +685,5 @@ public:
 	 * Gets the correct port needed to start a deployment and the Inspector process
 	 * Implemented by calling USpatialGDKSettings::GetDefaultPort()
 	 */
-	uint16_t GetDefaultPort() const;
+	uint16 GetDefaultPort() const;
 };

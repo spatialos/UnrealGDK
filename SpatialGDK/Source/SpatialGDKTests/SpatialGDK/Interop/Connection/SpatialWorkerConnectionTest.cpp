@@ -237,7 +237,7 @@ bool FCleanupConnectionManager::Update()
 }
 
 #if WITH_EDITOR
-DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FChangeServerPort, uint16_t, NewServerPort);
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FChangeServerPort, uint16, NewServerPort);
 bool FChangeServerPort::Update()
 {
 	GetMutableDefault<ULevelEditorPlaySettings>()->SetServerPort(NewServerPort);
@@ -245,10 +245,10 @@ bool FChangeServerPort::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FCheckPortReset, FAutomationTestBase*, Test, uint16_t, PreviousServerPort);
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FCheckPortReset, FAutomationTestBase*, Test, uint16, PreviousServerPort);
 bool FCheckPortReset::Update()
 {
-	uint16_t CurrentServerPort;
+	uint16 CurrentServerPort;
 	GetDefault<ULevelEditorPlaySettings>()->GetServerPort(CurrentServerPort);
 	Test->TestTrue(TEXT("Correctly reset the Server Port"), PreviousServerPort == CurrentServerPort);
 
@@ -306,11 +306,11 @@ WORKERCONNECTION_TEST(GIVEN_deployment_created_and_workers_connected_successfull
 
 	// WHEN
 	// Cache the previous Server Port to be able to restore it at the end of the test
-	uint16_t PreviousServerPort = 0;
+	uint16 PreviousServerPort = 0;
 	GetDefault<ULevelEditorPlaySettings>()->GetServerPort(PreviousServerPort);
 
 	// Change the Server Port to a fixed value that is likely currently not in use
-	const uint16_t NewServerPort = 54321;
+	const uint16 NewServerPort = 54321;
 	TestTrue(TEXT("New port value is not different from the current port value, change the current Server Port and try again!"), PreviousServerPort != NewServerPort);
 
 	ADD_LATENT_AUTOMATION_COMMAND(FChangeServerPort(NewServerPort));

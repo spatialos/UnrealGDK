@@ -187,7 +187,7 @@ bool USpatialGDKEditorSettings::IsDeploymentNameValid(const FString& Name)
 	return RegMatcher.FindNext();
 }
 
-uint16_t USpatialGDKEditorSettings::GetDefaultPort() const
+uint16 USpatialGDKEditorSettings::GetDefaultPort() const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 

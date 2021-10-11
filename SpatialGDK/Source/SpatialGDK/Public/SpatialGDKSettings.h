@@ -334,7 +334,7 @@ public:
 	 * When compiled WITH_EDITOR, the port is given by the value of ServerPort in ULevelEditorPlaySettings
 	 * When not using editor, the class member DEFAULT_PORT is the correct value
 	*/
-	uint16_t GetDefaultPort() const;
+	uint16 GetDefaultPort() const;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings",
 			  meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))

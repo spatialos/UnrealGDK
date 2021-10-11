@@ -194,7 +194,7 @@ public:
 	}
 
 	FString LocatorHost;
-	int32 LocatorPort;
+	uint16 LocatorPort;
 	FString PlayerIdentityToken;
 	FString LoginToken;
 };
@@ -310,7 +310,7 @@ public:
 
 	FString GetReceptionistHost() const { return ReceptionistHost; }
 
-	uint16_t GetReceptionistPort() const { return ReceptionistPort; }
+	uint16 GetReceptionistPort() const { return ReceptionistPort; }
 
 private:
 	void SetReceptionistHost(const FString& Host)
@@ -321,9 +321,9 @@ private:
 		}
 	}
 
-	void SetReceptionistPort(const uint16_t Port) { ReceptionistPort = Port; }
+	void SetReceptionistPort(const uint16 Port) { ReceptionistPort = Port; }
 
 	FString ReceptionistHost;
 
-	uint16_t ReceptionistPort;
+	uint16 ReceptionistPort;
 };

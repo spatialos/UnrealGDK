@@ -118,7 +118,7 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 	});
 }
 
-bool FLocalDeploymentManager::CheckIfPortIsBound(uint16_t Port) const
+bool FLocalDeploymentManager::CheckIfPortIsBound(uint16 Port) const
 {
 	ISocketSubsystem* SocketSubsystem = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
 	bool bCanBindToPort = false;
@@ -163,7 +163,7 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(uint16_t Port) const
 	return !bCanBindToPort;
 }
 
-bool FLocalDeploymentManager::KillProcessBlockingPort(uint16_t Port)
+bool FLocalDeploymentManager::KillProcessBlockingPort(uint16 Port)
 {
 	FString PID;
 	FString State;
@@ -178,15 +178,15 @@ bool FLocalDeploymentManager::KillProcessBlockingPort(uint16_t Port)
 	return bSuccess;
 }
 
-bool FLocalDeploymentManager::LocalDeploymentPreRunChecks(const uint16_t RuntimeGRPCPort)
+bool FLocalDeploymentManager::LocalDeploymentPreRunChecks(const uint16 RuntimeGRPCPort)
 {
 	bool bSuccess = true;
 
 	// Check for the known runtime ports which could be blocked by other processes.
 
-	const TArray<uint16_t> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, RuntimeGRPCPort};
+	const TArray<uint16> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, RuntimeGRPCPort};
 	
-	for (const uint16_t RequiredPort : RequiredRuntimePorts)
+	for (const uint16 RequiredPort : RequiredRuntimePorts)
 	{
 		if (CheckIfPortIsBound(RequiredPort))
 		{
@@ -210,7 +210,7 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks(const uint16_t Runtime
 
 void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
 													  const FString& SnapshotName, const FString& RuntimeIPToExpose,
-													  const uint16_t RuntimeGRPCPort, const LocalDeploymentCallback& CallBack)
+													  const uint16 RuntimeGRPCPort, const LocalDeploymentCallback& CallBack)
 {
 	int NumRetries = RuntimeStartRetries;
 	while (NumRetries > 0)
@@ -237,7 +237,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfi
 
 FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLocalDeployment(
 	const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs, const FString& SnapshotName,
-	const FString& RuntimeIPToExpose, const uint16_t RuntimeGRPCPort, const LocalDeploymentCallback& CallBack)
+	const FString& RuntimeIPToExpose, const uint16 RuntimeGRPCPort, const LocalDeploymentCallback& CallBack)
 {
 	RuntimeStartTime = FDateTime::Now();
 	bRedeployRequired = false;

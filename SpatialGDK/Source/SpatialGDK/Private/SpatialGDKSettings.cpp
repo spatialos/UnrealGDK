@@ -391,10 +391,10 @@ bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 	return (IsRunningGame() || IsRunningClientOnly()) && bPreventClientCloudDeploymentAutoConnect;
 }
 
-uint16_t USpatialGDKSettings::GetDefaultPort() const
+uint16 USpatialGDKSettings::GetDefaultPort() const
 {
 #if WITH_EDITOR
-	uint16_t LevelSettingsServerPort = 0;
+	uint16 LevelSettingsServerPort = 0;
 	GetDefault<ULevelEditorPlaySettings>()->GetServerPort(LevelSettingsServerPort);
 	if (LevelSettingsServerPort == 0)
 	{
