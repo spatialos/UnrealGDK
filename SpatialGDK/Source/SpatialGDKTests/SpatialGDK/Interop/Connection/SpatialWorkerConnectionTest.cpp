@@ -309,12 +309,10 @@ WORKERCONNECTION_TEST(GIVEN_deployment_created_and_workers_connected_successfull
 	uint16_t PreviousServerPort = 0;
 	GetDefault<ULevelEditorPlaySettings>()->GetServerPort(PreviousServerPort);
 
-	// Change the Server Port to a random value that is likely currently not in use
-	uint16_t NewServerPort = FMath::RandRange(55000, 65000);
-	while (NewServerPort == PreviousServerPort)
-	{
-		NewServerPort = FMath::RandRange(55000, 65000);
-	}
+	// Change the Server Port to a fixed value that is likely currently not in use
+	const uint16_t NewServerPort = 54321;
+	TestTrue(TEXT("New port value is not different from the current port value, change the current Server Port and try again!"), PreviousServerPort != NewServerPort);
+
 	ADD_LATENT_AUTOMATION_COMMAND(FChangeServerPort(NewServerPort));
 
 	// THEN
