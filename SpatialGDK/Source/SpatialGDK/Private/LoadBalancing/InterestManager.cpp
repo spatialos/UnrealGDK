@@ -1027,7 +1027,7 @@ void FInterestManager::ComputePlayersInterest(ISpatialOSWorker& Connection, floa
 				const uint32* Flags = EntityFlags.GetData();
 				for (uint32 i = 0; i < NumEntities; ++i)
 				{
-					const uint64 Mask = UINT64_MAX;
+					const uint64 Mask = GetRegionMask(NumPlayersToProcess);
 					*VisibilityPtr = ((uint64)(*Flags & AlwaysRelevantFlag)) * Mask;
 					++VisibilityPtr;
 					++Flags;

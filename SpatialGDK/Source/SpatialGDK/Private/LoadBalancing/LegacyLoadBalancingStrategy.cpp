@@ -230,7 +230,7 @@ void FLegacyLoadBalancing::Flush(ISpatialOSWorker& Connection)
 		}
 
 #ifdef BENCH_INTEREST_PERF
-		const float PlayerInterestRadius = TestBox.GetSize().X / 100;
+		const float PlayerInterestRadius = TestBox.GetSize().X / 50;
 #else
 
 		const float PlayerInterestRadius = FMath::Sqrt(Cast<AActor>(AActor::StaticClass()->GetDefaultObject())->NetCullDistanceSquared);

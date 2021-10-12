@@ -3,7 +3,7 @@
 #include "Interop/SpatialCommandsHandler.h"
 #include "LoadBalancing/LBDataStorage.h"
 
-//#define BENCH_INTEREST_PERF
+#define BENCH_INTEREST_PERF
 
 namespace SpatialGDK
 {
