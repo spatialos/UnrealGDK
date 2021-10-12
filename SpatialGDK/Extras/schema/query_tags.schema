@@ -27,6 +27,10 @@ component RoutingWorkerEntityTag {
     id = 2009;
 }
 
+component StrategyWorkerEntityTag {
+    id = 2010;
+}
+
 component PartitionAuthTag {
     id = 2012;
 }

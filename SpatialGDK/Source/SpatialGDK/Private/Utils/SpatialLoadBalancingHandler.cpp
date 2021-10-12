@@ -4,6 +4,7 @@
 
 #include "EngineClasses/Components/RemotePossessionComponent.h"
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialHandoverManager.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
@@ -291,4 +292,47 @@ VirtualWorkerId FSpatialLoadBalancingHandler::GetWorkerId(const AActor* NetOwner
 		}
 	}
 	return NewAuthVirtualWorkerId;
+}
+
+void FSpatialLoadBalancingHandler::UpdateActorsHandedOver(USpatialNetDriver& InNetDriver,
+														  const TSet<Worker_EntityId_Key>& EntitiesHandedOver,
+														  const TSet<AActor*>& ActorsHandedOver)
+{
+	const bool bStrategyWorkerEnabled = USpatialStatics::IsStrategyWorkerEnabled();
+	const bool bDirectAssignment = bStrategyWorkerEnabled && !InNetDriver.LoadBalanceStrategy->IsStrategyWorkerAware();
+
+	if (!ensure(bStrategyWorkerEnabled))
+	{
+		return;
+	}
+
+	if (!bDirectAssignment)
+	{
+		for (AActor* Actor : ActorsHandedOver)
+		{
+			// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy
+			Actor->Role = ROLE_SimulatedProxy;
+			Actor->RemoteRole = ROLE_Authority;
+
+			Actor->OnAuthorityLost();
+		}
+
+		for (auto EntityId : InNetDriver.HandoverManager->GetActorsToCheckForAuth())
+		{
+			TWeakObjectPtr<UObject> ObjectPtr = InNetDriver.PackageMap->GetObjectFromEntityId(EntityId);
+			AActor* Actor = Cast<AActor>(ObjectPtr.Get());
+			if (Actor == nullptr || Actor->HasAuthority())
+			{
+				continue;
+			}
+			else if (Actor != nullptr)
+			{
+				Actor->Role = ROLE_Authority;
+				Actor->RemoteRole = ROLE_SimulatedProxy;
+
+				Actor->OnAuthorityGained();
+			}
+		}
+	}
+	InNetDriver.HandoverManager->Flush(InNetDriver.Connection->GetCoordinator(), EntitiesHandedOver);
 }

@@ -29,8 +29,8 @@ class FPartitionManager;
 class FSpatialStrategySystem
 {
 public:
-	FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionMgr, const FSubView& InLBView, const FSubView& InServerWorkerView,
-						   TUniquePtr<FLoadBalancingStrategy> Strategy);
+	FSpatialStrategySystem(ViewCoordinator& Coordinator, const FSubView& InLBView, const FSubView& InServerWorkerView,
+						   TUniquePtr<FLoadBalancingStrategy> Strategy, TUniquePtr<InterestFactory> InInterestF);
 
 	~FSpatialStrategySystem();
 
@@ -42,6 +42,7 @@ private:
 	const FSubView& LBView;
 
 	TUniquePtr<FPartitionManager> PartitionsMgr;
+	TUniquePtr<InterestFactory> InterestF;
 
 	// +++ Components watched to implement the strategy +++
 	TLBDataStorage<AuthorityIntentACK> AuthACKView;

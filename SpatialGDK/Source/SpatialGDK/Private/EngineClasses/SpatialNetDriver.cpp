@@ -2200,35 +2200,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	{
 		if (bStrategyWorkerEnabled)
 		{
-			if (!bDirectAssignment)
-			{
-				for (AActor* Actor : ActorsHandedOver)
-				{
-					// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy
-					Actor->Role = ROLE_SimulatedProxy;
-					Actor->RemoteRole = ROLE_Authority;
-
-					Actor->OnAuthorityLost();
-				}
-
-				for (auto EntityId : HandoverManager->GetActorsToCheckForAuth())
-				{
-					TWeakObjectPtr<UObject> ObjectPtr = PackageMap->GetObjectFromEntityId(EntityId);
-					AActor* Actor = Cast<AActor>(ObjectPtr.Get());
-					if (Actor == nullptr || Actor->HasAuthority())
-					{
-						continue;
-					}
-					else if (Actor != nullptr)
-					{
-						Actor->Role = ROLE_Authority;
-						Actor->RemoteRole = ROLE_SimulatedProxy;
-
-						Actor->OnAuthorityGained();
-					}
-				}
-			}
-			HandoverManager->Flush(Connection->GetCoordinator(), EntitiesHandedOver);
+			FSpatialLoadBalancingHandler::UpdateActorsHandedOver(*this, EntitiesHandedOver, ActorsHandedOver);
 		}
 		if (!bStrategyWorkerEnabled || bDirectAssignment)
 		{
@@ -2275,15 +2247,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-		Connection->Advance(DeltaTime);
-
-		if (Connection->HasDisconnected())
-		{
-			Receiver->OnDisconnect(Connection->GetConnectionStatus(), Connection->GetDisconnectReason());
-			Connection = nullptr; // prevent worker from processing stale command retries - probably want a proper shutdown process here
-			return;
-		}
-
 		const bool bIsDefaultServerOrClientWorker = [this] {
 			if (IsServer())
 			{
@@ -2293,6 +2256,18 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			// Assume client, since the GameInstance might not be around.
 			return true;
 		}();
+
+		Connection->Advance(DeltaTime);
+
+		if (Connection->HasDisconnected())
+		{
+			if (bIsDefaultServerOrClientWorker)
+			{
+				Receiver->OnDisconnect(Connection->GetConnectionStatus(), Connection->GetDisconnectReason());
+			}
+			Connection = nullptr; // prevent worker from processing stale command retries - probably want a proper shutdown process here
+			return;
+		}
 
 		if (bIsDefaultServerOrClientWorker)
 		{
@@ -3309,17 +3284,12 @@ void USpatialNetDriver::TryFinishStartup()
 			SpatialGDK::FSubView& ServerWorkerView = Connection->GetCoordinator().CreateSubView(
 				SpatialConstants::SERVER_WORKER_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-			auto PartitionMgr = MakeUnique<SpatialGDK::FPartitionManager>(ServerWorkerView, Connection->GetWorkerSystemEntityId(),
-																		  Connection->GetCoordinator(),
-																		  MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
-
-			PartitionMgr->Init(Connection->GetCoordinator());
-
 			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy =
 				MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy, *VirtualWorkerTranslator);
 
 			StrategySystem =
-				MakeUnique<SpatialGDK::FSpatialStrategySystem>(MoveTemp(PartitionMgr), LBView, ServerWorkerView, MoveTemp(Strategy));
+				MakeUnique<SpatialGDK::FSpatialStrategySystem>(Connection->GetCoordinator(), LBView, ServerWorkerView, MoveTemp(Strategy),
+															   MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
 
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();

@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Schema/ChangeInterest.h"
+#include "SpatialView/SpatialOSWorker.h"
 
 DEFINE_LOG_CATEGORY(LogChangeInterest);
 
@@ -23,24 +24,24 @@ inline void AddUint32ListToSchema(Schema_Object* Object, Schema_FieldId Id, TArr
 void ChangeInterestQuery::DebugOutput(const FString& DiffType) const
 {
 	// Minimal output
-	if (ComponentSets.Find(SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID) != INDEX_NONE)
-	{
-		UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: client auth interest"));
-	}
-	else
-	{
-		UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: client non auth interest"));
-	}
+	// if (ComponentSets.Find(SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID) != INDEX_NONE)
+	//{
+	//	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: client auth interest"));
+	//}
+	// else
+	//{
+	//	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: client non auth interest"));
+	//}
 
 	const FString ComponentsString = FString::JoinBy(Components, TEXT(" "), [](const Worker_ComponentId ComponentId) {
 		return FString::Printf(TEXT("%d"), ComponentId);
 	});
-	UE_LOG(LogChangeInterest, Verbose, TEXT("Interest diff: components %s"), *ComponentsString);
+	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: components %s"), *ComponentsString);
 
 	const FString ComponentSetsString = FString::JoinBy(ComponentSets, TEXT(" "), [](const Worker_ComponentSetId ComponentSetId) {
 		return FString::Printf(TEXT("%d"), ComponentSetId);
 	});
-	UE_LOG(LogChangeInterest, Verbose, TEXT("Interest diff: component sets %s"), *ComponentSetsString);
+	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: component sets %s"), *ComponentSetsString);
 
 	const FString EntitiesString = FString::JoinBy(Entities, TEXT(" "), [](const Worker_EntityId_Key EntityId) {
 		return FString::Printf(TEXT("%lld"), EntityId);
@@ -72,6 +73,20 @@ void ChangeInterestRequest::DebugOutput() const
 	}
 
 	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: overwrite %d"), bOverwrite);
+}
+
+inline void AddEntityListToSchema(Schema_Object* Object, Schema_FieldId Id, TArrayView<const Worker_EntityId> Entities)
+{
+	uint8* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(Worker_EntityId) * Entities.Num());
+	FMemory::Memcpy(PayloadBuffer, Entities.GetData(), sizeof(Worker_EntityId) * Entities.Num());
+	Schema_AddEntityIdList(Object, Id, (const Worker_EntityId*)PayloadBuffer, Entities.Num());
+}
+
+inline void AddUint32ListToSchema(Schema_Object* Object, Schema_FieldId Id, TArrayView<const uint32> IntList)
+{
+	uint8* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(uint32) * IntList.Num());
+	FMemory::Memcpy(PayloadBuffer, IntList.GetData(), sizeof(uint32) * IntList.Num());
+	Schema_AddUint32List(Object, Id, (const uint32*)PayloadBuffer, IntList.Num());
 }
 
 Worker_CommandRequest ChangeInterestRequest::CreateRequest() const
@@ -115,6 +130,14 @@ Worker_CommandRequest ChangeInterestRequest::CreateRequest() const
 
 	Schema_AddBool(RequestObject, 4, bOverwrite);
 	return Request;
+}
+
+Worker_RequestId ChangeInterestRequest::SendRequest(ISpatialOSWorker& Connection)
+{
+	Worker_CommandRequest InterestRequestData = CreateRequest();
+	CommandRequest InterestRequest(OwningCommandRequestPtr(InterestRequestData.schema_type), InterestRequestData.component_id,
+								   InterestRequestData.command_index);
+	return Connection.SendEntityCommandRequest(SystemEntityId, MoveTemp(InterestRequest));
 }
 
 } // namespace SpatialGDK
