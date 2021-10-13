@@ -97,6 +97,8 @@ class FSpatialServerStartupHandler;
 class FSpatialClientStartupHandler;
 class FPartitionSystemImpl;
 class FServerWorkerSystemImpl;
+class FSkeletonManifestPublisher;
+class FSkeletonEntityPopulator;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -250,8 +252,8 @@ public:
 	TUniquePtr<SpatialGDK::FSpatialHandoverManager> HandoverManager;
 	TUniquePtr<SpatialGDK::UnrealServerInterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
-
-	TUniquePtr<SpatialGDK::FSkeletonEntityCreationStartupStep> SkeletonEntityCreationStep;
+	TUniquePtr<SpatialGDK::FSkeletonManifestPublisher> ManifestPublisher;
+	TUniquePtr<SpatialGDK::FSkeletonEntityPopulator> SkeletonPopulator;
 
 	TUniquePtr<SpatialGDK::FSpatialServerStartupHandler> StartupHandler;
 	TUniquePtr<SpatialGDK::FSpatialClientStartupHandler> ClientStartupHandler;
@@ -260,6 +262,7 @@ public:
 	TUniquePtr<SpatialGDK::InitialOnlyFilter> InitialOnlyFilter;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
+	Worker_PartitionId StagingPartitionId = SpatialConstants::INVALID_ENTITY_ID;
 
 #if !UE_BUILD_SHIPPING
 	int32 GetConsiderListSize() const { return ConsiderListSize; }

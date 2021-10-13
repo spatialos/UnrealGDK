@@ -1,0 +1,14 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+import "improbable/standard_library.schema";
+
+component LoadBalancerPartitionTag{
+     id = 2017;
+}
+
+component PartitionIntentAck{
+     id = 9956;
+     uint64 assignment_counter_ack = 1;
+}
+

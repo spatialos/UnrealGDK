@@ -2,7 +2,7 @@
 package unreal;
 
 import "improbable/standard_library.schema";
-import "unreal/gdk/authority_intent.schema";
+import "unreal/gdk/partition_components.schema";
 
 component_set PartitionWorkerAuth {
   id = 9911;

@@ -7,6 +7,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/PlayerController.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/LegacyLoadBalancingPartitionSystem.h"
 #include "SpatialFunctionalTest.h"
 #include "SpatialFunctionalTestFlowController.h"
 

@@ -261,6 +261,7 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
 	{ NET_OWNING_CLIENT_WORKER_COMPONENT_ID, "unreal.NetOwningClientWorker" },
 	{ NOT_STREAMED_COMPONENT_ID, "unreal.NotStreamed" },
 	{ ALWAYS_RELEVANT_COMPONENT_ID, "unreal.AlwaysRelevant" },
+	{ SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID, "unreal.ServerOnlyAlwaysRelevant" },
 	{ DORMANT_COMPONENT_ID, "unreal.Dormant" },
 	{ VISIBLE_COMPONENT_ID, "unreal.Visible" },
 	{ SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, "unreal.UnrealServerToServerCommandEndpoint" },
