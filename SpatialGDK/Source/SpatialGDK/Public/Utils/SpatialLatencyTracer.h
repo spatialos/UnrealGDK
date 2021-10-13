@@ -8,7 +8,6 @@
 #include "Containers/StaticArray.h"
 #include "SpatialConstants.h"
 #include "SpatialLatencyPayload.h"
-#include "Utils/GDKPropertyMacros.h"
 
 #if TRACE_LIB_ACTIVE
 #include <WorkerSDK/improbable/legacy_trace.h>
@@ -143,7 +142,7 @@ public:
 
 private:
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
-	using ActorPropertyKey = TPair<const AActor*, const GDK_PROPERTY(Property)*>;
+	using ActorPropertyKey = TPair<const AActor*, const FProperty*>;
 	using ActorTagKey = TPair<const AActor*, FString>;
 	using TraceSpan = improbable::legacy::trace::Span;
 

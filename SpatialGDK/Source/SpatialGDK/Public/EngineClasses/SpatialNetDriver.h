@@ -281,10 +281,6 @@ public:
 
 	SpatialGDK::SpatialRPCService* GetRPCService() const { return RPCService.Get(); }
 
-#if ENGINE_MINOR_VERSION <= 24
-	float GetElapsedTime() { return Time; }
-#endif
-
 	// Check if we have already logged this actor / migration failure, if not update the log record
 	bool IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure);
 

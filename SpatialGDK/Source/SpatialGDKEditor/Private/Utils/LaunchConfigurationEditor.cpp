@@ -79,7 +79,7 @@ namespace
 // Copied from FPropertyEditorModule::CreateFloatingDetailsView.
 bool ShouldShowProperty(const FPropertyAndParent& PropertyAndParent, bool bHaveTemplate)
 {
-	const GDK_PROPERTY(Property)& Property = PropertyAndParent.Property;
+	const FProperty& Property = PropertyAndParent.Property;
 
 	if (bHaveTemplate)
 	{

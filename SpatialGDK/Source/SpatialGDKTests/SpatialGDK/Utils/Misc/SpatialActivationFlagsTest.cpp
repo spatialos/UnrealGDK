@@ -6,8 +6,6 @@
 #include "Tests/AutomationCommon.h"
 #include "Tests/TestDefinitions.h"
 
-#include "Utils/GDKPropertyMacros.h"
-
 namespace
 {
 bool bEarliestFlag;
@@ -79,8 +77,7 @@ struct SpatialActivationFlagTestFixture
 		CommandLineArgs.Append(TEXT(" -nullRHI"));
 		CommandLineArgs.Append(TEXT(" -stdout"));
 
-		SpatialFlagProperty =
-			GDK_CASTFIELD<GDK_PROPERTY(BoolProperty)>(UGeneralProjectSettings::StaticClass()->FindPropertyByName("bSpatialNetworking"));
+		SpatialFlagProperty = CastField<FBoolProperty>(UGeneralProjectSettings::StaticClass()->FindPropertyByName("bSpatialNetworking"));
 		Test.TestNotNull("Property existence", SpatialFlagProperty);
 
 		ProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
@@ -107,7 +104,7 @@ struct SpatialActivationFlagTestFixture
 
 private:
 	FString ProjectPath;
-	GDK_PROPERTY(BoolProperty) * SpatialFlagProperty;
+	FBoolProperty* SpatialFlagProperty;
 	UGeneralProjectSettings* ProjectSettings;
 	void* SpatialFlagPtr;
 	bool bSavedFlagValue;

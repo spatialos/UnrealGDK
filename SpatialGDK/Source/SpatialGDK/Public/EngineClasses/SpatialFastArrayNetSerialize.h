@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 
 class FSpatialNetBitReader;
@@ -62,9 +61,9 @@ struct FSpatialNetDeltaSerializeInfo : FNetDeltaSerializeInfo
 	FSpatialNetDeltaSerializeInfo() { bIsSpatialType = true; }
 
 	static bool DeltaSerializeRead(USpatialNetDriver* NetDriver, FSpatialNetBitReader& Reader, UObject* Object, int32 ArrayIndex,
-								   GDK_PROPERTY(Property) * ParentProperty, UScriptStruct* NetDeltaStruct);
+								   FProperty* ParentProperty, UScriptStruct* NetDeltaStruct);
 	static bool DeltaSerializeWrite(USpatialNetDriver* NetDriver, FSpatialNetBitWriter& Writer, UObject* Object, int32 ArrayIndex,
-									GDK_PROPERTY(Property) * ParentProperty, UScriptStruct* NetDeltaStruct);
+									FProperty* ParentProperty, UScriptStruct* NetDeltaStruct);
 };
 
 PRAGMA_ENABLE_DEPRECATION_WARNINGS // TODO: UNR-2371 - Remove when we update our usage of FNetDeltaSerializeInfo

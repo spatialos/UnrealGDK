@@ -32,7 +32,6 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityFactory.h"
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaOption.h"
@@ -1023,14 +1022,14 @@ FObjectReplicator* USpatialActorChannel::GetObjectReplicatorForSpatialUpdate(UOb
 	return &Replicator;
 }
 
-void USpatialActorChannel::InvokeRepNotifies(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-											 const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds)
+void USpatialActorChannel::InvokeRepNotifies(UObject* TargetObject, const TArray<FProperty*>& RepNotifies,
+											 const TMap<FProperty*, FSpatialGDKSpanId>& PropertySpanIds)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 
 	Replicator.RepState->GetReceivingRepState()->RepNotifies = RepNotifies;
 
-	auto PreCallRepNotify = [EventTracer = EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {
+	auto PreCallRepNotify = [EventTracer = EventTracer, PropertySpanIds](FProperty* Property) {
 		const FSpatialGDKSpanId* SpanId = PropertySpanIds.Find(Property);
 		if (SpanId != nullptr)
 		{
@@ -1038,7 +1037,7 @@ void USpatialActorChannel::InvokeRepNotifies(UObject* TargetObject, const TArray
 		}
 	};
 
-	auto PostCallRepNotify = [EventTracer = EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {
+	auto PostCallRepNotify = [EventTracer = EventTracer, PropertySpanIds](FProperty* Property) {
 		const FSpatialGDKSpanId* SpanId = PropertySpanIds.Find(Property);
 		if (SpanId != nullptr)
 		{
@@ -1115,12 +1114,12 @@ void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId I
 	}
 }
 
-void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
+void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<FProperty*>& RepNotifies, const FRepLayout& RepLayout,
 															   const FObjectReferencesMap& RefMap, const UObject* Object) const
 {
 	// Prevent rep notify callbacks from being issued when unresolved obj references exist inside UStructs.
 	// This prevents undefined behaviour when engine rep callbacks are issued where they don't expect unresolved objects in native flow.
-	RepNotifies.RemoveAll([&](GDK_PROPERTY(Property) * Property) {
+	RepNotifies.RemoveAll([&](FProperty* Property) {
 		for (auto& ObjRef : RefMap)
 		{
 			if (!ensureAlwaysMsgf(ObjRef.Value.ParentIndex >= 0, TEXT("ParentIndex should always be >= 0, but it was %d."),
@@ -1136,8 +1135,8 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPER
 			}
 
 			bool bIsSameRepNotify = RepLayout.Parents[ObjRef.Value.ParentIndex].Property == Property;
-			bool bIsArray = RepLayout.Parents[ObjRef.Value.ParentIndex].Property->ArrayDim > 1
-							|| GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property) != nullptr;
+			bool bIsArray =
+				RepLayout.Parents[ObjRef.Value.ParentIndex].Property->ArrayDim > 1 || CastField<FArrayProperty>(Property) != nullptr;
 			if (bIsSameRepNotify && !bIsArray)
 			{
 				UE_LOG(LogSpatialActorChannel, Verbose, TEXT("RepNotify %s on %s ignored due to unresolved Actor"), *Property->GetName(),
