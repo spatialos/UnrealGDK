@@ -132,7 +132,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			return TestActors[0]->IsActorReady();
 		},
 		[this]() {
-			CHECK_DEFAULT_LAYER_RET();
+			CHECK_DEFAULT_LAYER_RET(void());
 
 			AddInterestOnTag(GetTestTag());
 			FinishStep();
@@ -146,7 +146,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			return WaitToSeeActors(AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), Workers.Num());
 		},
 		[this]() {
-			CHECK_DEFAULT_LAYER_RET();
+			CHECK_DEFAULT_LAYER_RET(void());
 
 			UWorld* World = GetWorld();
 
@@ -162,7 +162,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 	AddStep(
 		TEXT("Force actor delegation"), FWorkerDefinition::AllServers, nullptr, nullptr,
 		[this](float DeltaTime) {
-			CHECK_DEFAULT_LAYER_RET();
+			CHECK_DEFAULT_LAYER_RET(void());
 
 			int32 CurAuthWorker = DelegationStep / 2;
 			int32 WorkerSubStep = DelegationStep % 2;
@@ -201,7 +201,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 	AddStep(
 		TEXT("Create new actors"), FWorkerDefinition::AllServers, nullptr,
 		[this] {
-			CHECK_DEFAULT_LAYER_RET();
+			CHECK_DEFAULT_LAYER_RET(void());
 
 			UWorld* World = GetWorld();
 
@@ -222,7 +222,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 		},
 		nullptr,
 		[this](float DeltaTime) {
-			CHECK_DEFAULT_LAYER_RET();
+			CHECK_DEFAULT_LAYER_RET(void());
 
 			int32_t CurAuthWorker = Workers.Num() - 1;
 
@@ -246,7 +246,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 	AddStep(
 		TEXT("Remove extra interest"), FWorkerDefinition::AllServers, nullptr,
 		[this]() {
-			CHECK_DEFAULT_LAYER_RET();
+			CHECK_DEFAULT_LAYER_RET(void());
 
 			RemoveInterestOnTag(GetTestTag());
 			FinishStep();
@@ -270,7 +270,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 	AddStep(
 		TEXT("Add extra interest again"), FWorkerDefinition::AllServers, nullptr,
 		[this]() {
-			CHECK_DEFAULT_LAYER_RET();
+			CHECK_DEFAULT_LAYER_RET(void());
 
 			AddInterestOnTag(GetTestTag());
 			FinishStep();
@@ -291,7 +291,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 	AddStep(
 		TEXT("Remove actor tags"), FWorkerDefinition::AllServers, nullptr,
 		[this] {
-			CHECK_DEFAULT_LAYER_RET();
+			CHECK_DEFAULT_LAYER_RET(void());
 
 			TArray<AActor*> TestActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), TestActors);
@@ -316,7 +316,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 		},
 		nullptr,
 		[this](float DeltaTime) {
-			CHECK_DEFAULT_LAYER_RET();
+			CHECK_DEFAULT_LAYER_RET(void());
 
 			bool bExpectedResult = true;
 			uint32 NumAuth = 0;
@@ -341,7 +341,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 	AddStep(
 		TEXT("Add tag and remove delegation"), FWorkerDefinition::AllServers, nullptr,
 		[this]() {
-			CHECK_DEFAULT_LAYER_RET();
+			CHECK_DEFAULT_LAYER_RET(void());
 
 			uint32 NumUpdated = 0;
 
@@ -370,7 +370,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			return WaitToSeeActors(AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), Workers.Num() * 2);
 		},
 		[this]() {
-			CHECK_DEFAULT_LAYER_RET();
+			CHECK_DEFAULT_LAYER_RET(void());
 
 			bool bExpectedResult = true;
 			TArray<AActor*> TestActors;
@@ -390,7 +390,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 	AddStep(
 		TEXT("Shutdown debugging"), FWorkerDefinition::AllServers, nullptr,
 		[this]() {
-			CHECK_DEFAULT_LAYER_RET();
+			CHECK_DEFAULT_LAYER_RET(void());
 
 			ClearTagDelegationAndInterest();
 			FinishStep();
@@ -406,7 +406,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 		},
 		nullptr,
 		[this](float DeltaTime) {
-			CHECK_DEFAULT_LAYER_RET();
+			CHECK_DEFAULT_LAYER_RET(void());
 
 			bool bExpectedResult = true;
 
