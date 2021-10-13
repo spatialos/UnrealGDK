@@ -283,6 +283,11 @@ WORKERCONNECTION_TEST(GIVEN_running_local_deployment_WHEN_connecting_client_and_
 }
 
 #if WITH_EDITOR
+/*
+ * Note that the interruption of this test might leave the LevelEditorPlaySettings in a modified state,
+ * leaving ServerPort to have the value of NewServerPort defined in the test definition.
+ * Furthermore, this test might fail if the port number stored in NewServerPort is already in use by a different process.
+*/
 WORKERCONNECTION_TEST(GIVEN_deployment_created_and_workers_connected_successfully_WHEN_changing_server_port_THEN_deployment_created_and_workers_connected_successfully)
 {
 	// GIVEN
@@ -311,7 +316,7 @@ WORKERCONNECTION_TEST(GIVEN_deployment_created_and_workers_connected_successfull
 
 	// Change the Server Port to a fixed value that is likely currently not in use
 	const uint16 NewServerPort = 54321;
-	TestTrue(TEXT("New port value is not different from the current port value, change the current Server Port and try again!"), PreviousServerPort != NewServerPort);
+	checkf(PreviousServerPort != NewServerPort, TEXT("New port value is not different from the current port value, change the current Server Port and try again!"));
 
 	ADD_LATENT_AUTOMATION_COMMAND(FChangeServerPort(NewServerPort));
 
