@@ -34,6 +34,7 @@ class SPATIALGDK_API USpatialConnectionManager : public UObject
 public:
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
+	~USpatialConnectionManager();
 
 	using LoginTokenResponseCallback = TFunction<bool(const Worker_LoginTokensResponse*)>;
 	using LogCallback = TFunction<void(const Worker_LogData*)>;
@@ -78,6 +79,8 @@ private:
 	void OnConnectionSuccess();
 	void OnConnectionFailure(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
 
+	void StartPollingForConnection();
+
 	ESpatialConnectionType GetConnectionType() const;
 
 	void StartDevelopmentAuth(const FString& DevAuthToken);
@@ -100,4 +103,9 @@ private:
 	LoginTokenResponseCallback LoginTokenResCallback;
 	LogCallback SpatialLogCallback;
 	SpatialGDK::FComponentSetData ComponentSetData;
+
+	Worker_ConnectionFuture* ConnectionFuture;
+	FDelegateHandle OnWorldTickStartHandle;
+	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer;
+	void OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaTime);
 };
