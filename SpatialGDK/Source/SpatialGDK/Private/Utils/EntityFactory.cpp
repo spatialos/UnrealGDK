@@ -135,6 +135,7 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	const Worker_PartitionId AuthoritativeClientPartitionId = GetConnectionOwningPartitionId(Actor);
 
 	// Add Load Balancer Attribute. If this is a single worker deployment, this will be just be the single worker.
+	// NB : This is only used for the debugger.
 	const VirtualWorkerId IntendedVirtualWorkerId =
 		bUsesDistributedLoadBalancer ? NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId() : 0;
 	checkf(!bUsesDistributedLoadBalancer || IntendedVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID,

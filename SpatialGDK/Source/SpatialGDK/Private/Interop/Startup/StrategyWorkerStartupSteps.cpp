@@ -10,66 +10,13 @@
 
 namespace SpatialGDK
 {
-FWaitForGSMAuthOrInitialManifest::FWaitForGSMAuthOrInitialManifest(TSharedRef<FServerWorkerStartupContext> InState,
-																   USpatialNetDriver& InNetDriver,
-																   UGlobalStateManager& InGlobalStateManager)
-	: State(InState)
-	, NetDriver(InNetDriver)
-	, GlobalStateManager(InGlobalStateManager)
-{
-	StepName = "Wait for GSM Auth or manifest";
-}
-
-void FWaitForGSMAuthOrInitialManifest::Start()
-{
-	// Initialize all actors role to simulated while the skeletons are created.
-	for (AActor* Actor : TActorRange<AActor>(NetDriver.GetWorld()))
-	{
-		if (!IsValid(Actor))
-		{
-			continue;
-		}
-
-		if (!Actor->GetIsReplicated())
-		{
-			continue;
-		}
-
-		const bool bIsStartupActor = Actor->IsNetStartupActor();
-		const bool bIsStablyNamedAndReplicated = Actor->IsNameStableForNetworking();
-
-		if (!bIsStablyNamedAndReplicated && !FUnrealObjectRef::IsUniqueActorClass(Actor->GetClass()))
-		{
-			continue;
-		}
-
-		Actor->Role = ROLE_SimulatedProxy;
-		Actor->RemoteRole = ROLE_Authority;
-	}
-}
-
-bool FWaitForGSMAuthOrInitialManifest::TryFinish()
-{
-	if (GlobalStateManager.HasAuthority())
-	{
-		State->bHasGSMAuth = true;
-		GlobalStateManager.SetDeploymentState();
-		return true;
-	}
-	if (NetDriver.SkeletonPopulator->HasReceivedManifests())
-	{
-		return true;
-	}
-	return false;
-}
-
 FCreateStagingPartition::FCreateStagingPartition(TSharedRef<FServerWorkerStartupContext> InState, USpatialNetDriver& InNetDriver,
 												 UGlobalStateManager& InGlobalStateManager)
 	: State(InState)
 	, NetDriver(InNetDriver)
 	, GlobalStateManager(InGlobalStateManager)
 {
-	StepName = "Create local worker staging partition";
+	StepName = TEXT("Create local worker staging partition");
 }
 
 void FCreateStagingPartition::Start()
@@ -114,6 +61,57 @@ bool FCreateStagingPartition::TryFinish()
 	Schema_AddBool(MarkAsReady.GetFields(), SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, true);
 	Coordinator.SendComponentUpdate(*State->WorkerEntityId, MoveTemp(MarkAsReady));
 	return true;
+}
+
+FWaitForGSMAuthOrInitialManifest::FWaitForGSMAuthOrInitialManifest(TSharedRef<FServerWorkerStartupContext> InState,
+																   USpatialNetDriver& InNetDriver,
+																   UGlobalStateManager& InGlobalStateManager)
+	: State(InState)
+	, NetDriver(InNetDriver)
+	, GlobalStateManager(InGlobalStateManager)
+{
+	StepName = TEXT("Wait for GSM Auth or manifest");
+}
+
+void FWaitForGSMAuthOrInitialManifest::Start()
+{
+	// Initialize all actors role to simulated while the skeletons are created.
+	for (AActor* Actor : TActorRange<AActor>(NetDriver.GetWorld()))
+	{
+		if (!IsValid(Actor))
+		{
+			continue;
+		}
+
+		if (!Actor->GetIsReplicated())
+		{
+			continue;
+		}
+
+		const bool bIsStartupActor = Actor->IsNetStartupActor();
+		const bool bIsStablyNamedAndReplicated = Actor->IsNameStableForNetworking();
+
+		if (!bIsStablyNamedAndReplicated && !FUnrealObjectRef::IsUniqueActorClass(Actor->GetClass()))
+		{
+			continue;
+		}
+
+		Actor->Role = ROLE_SimulatedProxy;
+		Actor->RemoteRole = ROLE_Authority;
+	}
+}
+
+bool FWaitForGSMAuthOrInitialManifest::TryFinish()
+{
+	// The strategy worker will decide which worker is the GSM auth worker.
+	if (GlobalStateManager.HasAuthority())
+	{
+		State->bHasGSMAuth = true;
+		GlobalStateManager.SetDeploymentState();
+		return true;
+	}
+
+	return NetDriver.SkeletonPopulator->HasReceivedManifests();
 }
 
 } // namespace SpatialGDK

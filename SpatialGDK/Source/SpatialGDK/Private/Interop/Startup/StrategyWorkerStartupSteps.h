@@ -12,21 +12,6 @@ class UGlobalStateManager;
 
 namespace SpatialGDK
 {
-class FWaitForGSMAuthOrInitialManifest : public FStartupStep
-{
-public:
-	FWaitForGSMAuthOrInitialManifest(TSharedRef<FServerWorkerStartupContext> InState, USpatialNetDriver& InNetDriver,
-									 UGlobalStateManager& InGlobalStateManager);
-
-	virtual void Start() override;
-	virtual bool TryFinish() override;
-
-private:
-	TSharedRef<FServerWorkerStartupContext> State;
-	USpatialNetDriver& NetDriver;
-	UGlobalStateManager& GlobalStateManager;
-};
-
 class FCreateStagingPartition : public FStartupStep
 {
 public:
@@ -45,6 +30,21 @@ private:
 	FCommandsHandler CommandsHandler;
 
 	bool bPartitionClaimed = false;
+};
+
+class FWaitForGSMAuthOrInitialManifest : public FStartupStep
+{
+public:
+	FWaitForGSMAuthOrInitialManifest(TSharedRef<FServerWorkerStartupContext> InState, USpatialNetDriver& InNetDriver,
+									 UGlobalStateManager& InGlobalStateManager);
+
+	virtual void Start() override;
+	virtual bool TryFinish() override;
+
+private:
+	TSharedRef<FServerWorkerStartupContext> State;
+	USpatialNetDriver& NetDriver;
+	UGlobalStateManager& GlobalStateManager;
 };
 
 } // namespace SpatialGDK
