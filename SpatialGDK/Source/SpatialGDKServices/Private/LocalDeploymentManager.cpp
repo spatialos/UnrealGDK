@@ -187,7 +187,7 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 
 	for (int32 RuntimePort : RequiredRuntimePorts)
 	{
-		if (CheckIfPortIsBound(RequiredRuntimePort))
+		if (CheckIfPortIsBound(RuntimePort))
 		{
 			// If it exists offer the user the ability to kill it.
 			FText DialogMessage = LOCTEXT("KillPortBlockingProcess",
@@ -195,7 +195,7 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 										  "deployment). Would you like to kill this process?");
 			if (FMessageDialog::Open(EAppMsgType::YesNo, DialogMessage) == EAppReturnType::Yes)
 			{
-				bSuccess &= KillProcessBlockingPort(RequiredRuntimePort);
+				bSuccess &= KillProcessBlockingPort(RuntimePort);
 			}
 			else
 			{

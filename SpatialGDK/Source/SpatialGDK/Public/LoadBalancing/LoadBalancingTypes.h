@@ -25,6 +25,33 @@ struct FPartitionDesc : TSharedFromThis<FPartitionDesc>
 };
 using FPartitionHandle = TSharedPtr<FPartitionDesc>;
 
+class FActorSetSystem;
+class FPartitionManager;
+class FSkeletonManifestPublisher;
+
+// Some abstractions from SpatialOS and Unreal that are expected to be available to all load balancing systems.
+struct FLoadBalancingSharedData
+{
+	FLoadBalancingSharedData(FPartitionManager& InPartitionManager, FActorSetSystem& InActorSets,
+							 FSkeletonManifestPublisher& InManifestPublisher)
+		: PartitionManager(InPartitionManager)
+		, ActorSets(InActorSets)
+		, ManifestPublisher(InManifestPublisher)
+	{
+	}
+
+	FLoadBalancingSharedData(const FLoadBalancingSharedData& Other)
+		: PartitionManager(Other.PartitionManager)
+		, ActorSets(Other.ActorSets)
+		, ManifestPublisher(Other.ManifestPublisher)
+	{
+	}
+
+	FPartitionManager& PartitionManager;
+	FActorSetSystem& ActorSets;
+	FSkeletonManifestPublisher& ManifestPublisher;
+};
+
 struct FMigrationContext
 {
 	FMigrationContext(const TSet<Worker_EntityId_Key>& InMigratingEntities, const TSet<Worker_EntityId_Key>& InModifiedEntities,
@@ -34,7 +61,6 @@ struct FMigrationContext
 		, DeletedEntities(InDeletedEntities)
 	{
 	}
-
 	const TSet<Worker_EntityId_Key>& MigratingEntities;
 	const TSet<Worker_EntityId_Key>& ModifiedEntities;
 	const TSet<Worker_EntityId_Key>& DeletedEntities;

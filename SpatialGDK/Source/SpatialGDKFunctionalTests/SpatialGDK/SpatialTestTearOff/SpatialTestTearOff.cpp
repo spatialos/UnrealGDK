@@ -62,18 +62,22 @@ void ASpatialTestTearOff::PrepareTest()
 	});
 
 	// All workers set a reference to the ReplicatedTearOffActor placed in the map.
-	AddStep(TEXT("SpatialTestTearOffUniversalStartupActorReferenceSetup"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
-		TArray<AActor*> ReplicatedTearOffActors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTearOffActor::StaticClass(), ReplicatedTearOffActors);
+	AddStep(
+		TEXT("SpatialTestTearOffUniversalStartupActorReferenceSetup"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
+		[this](float) {
+			TArray<AActor*> ReplicatedTearOffActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTearOffActor::StaticClass(), ReplicatedTearOffActors);
 
-		checkf(ReplicatedTearOffActors.Num() == 1, TEXT("Exactly one ReplicatedTearOffActor is expected at this stage"));
-
-		StartupTearOffActor = Cast<AReplicatedTearOffActor>(ReplicatedTearOffActors[0]);
-		if (IsValid(StartupTearOffActor))
-		{
-			FinishStep();
-		}
-	});
+			if (ReplicatedTearOffActors.Num() == 1) //, TEXT("Exactly one ReplicatedTearOffActor is expected at this stage"));
+			{
+				StartupTearOffActor = Cast<AReplicatedTearOffActor>(ReplicatedTearOffActors[0]);
+				if (IsValid(StartupTearOffActor))
+				{
+					FinishStep();
+				}
+			}
+		},
+		5.0f);
 
 	// This is required to make the test pass in Native since calling TearOff does not immediately stop the Actor from replicating.
 	AddStepFromDefinition(WorkerWaitForTimeStepDefinition, FWorkerDefinition::AllWorkers);

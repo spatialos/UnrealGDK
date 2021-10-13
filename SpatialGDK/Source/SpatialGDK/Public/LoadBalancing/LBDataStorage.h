@@ -116,12 +116,4 @@ protected:
 	TMap<Worker_EntityId_Key, T> SchemaObjects;
 };
 
-class FActorGroupStorage : public TLBDataStorage<ActorGroupMember>
-{
-};
-
-class FDirectAssignmentStorage : public TLBDataStorage<AuthorityIntent>
-{
-};
-
 } // namespace SpatialGDK

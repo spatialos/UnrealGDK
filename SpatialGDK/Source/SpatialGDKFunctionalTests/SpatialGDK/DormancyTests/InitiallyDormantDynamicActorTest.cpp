@@ -17,8 +17,7 @@ void AInitiallyDormantDynamicActorTest::PrepareTest()
 
 	// Step 1 - Spawn dormancy actor
 	AddStep(TEXT("ServerSpawnDormancyActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		AActor* Actor = CreateDormancyTestActor();
-		RegisterAutoDestroyActor(Actor);
+		SpawnActor<ADormancyTestActor>();
 		FinishStep();
 	});
 
@@ -26,7 +25,7 @@ void AInitiallyDormantDynamicActorTest::PrepareTest()
 	AddStep(
 		TEXT("ClientRequireDormancyTestState"), FWorkerDefinition::Server(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireEqual_Int(CountActors<ADormancyTestActor>(GetWorld()), 1,TEXT("Number of TestDormancyActors in world"));
+			RequireEqual_Int(CountActors<ADormancyTestActor>(GetWorld()), 1, TEXT("Number of TestDormancyActors in world"));
 			RequireDormancyTestState(DORM_Initial, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 			FinishStep();
 		},

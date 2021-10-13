@@ -4,8 +4,10 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialServerWorkerSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/SpatialPartitionSystemImpl.h"
+#include "Interop/SpatialServerWorkerSystemImpl.h"
 #include "Schema/ServerWorker.h"
 #include "Schema/StandardLibrary.h"
 #include "SpatialGDKSettings.h"
@@ -13,6 +15,7 @@
 #include "SpatialView/CommandRetryHandler.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
+#include "SpatialView/EntityComponentTypes.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
 
@@ -88,6 +91,16 @@ void ServerWorkerEntityCreator::CreateWorkerEntity()
 	for (FWorkerComponentData& Component : Components)
 	{
 		ComponentDatas.Emplace(ToComponentData(Component));
+	}
+
+	if (NetDriver.ServerWorkerSystemImpl)
+	{
+		TArray<ComponentData> DataArray = MoveTemp(NetDriver.ServerWorkerSystemImpl->InitialData);
+		for (auto& Data : DataArray)
+		{
+			NetDriver.ServerWorkerSystemImpl->ServerWorkerComponents.Add(Data.GetComponentId());
+			ComponentDatas.Add(MoveTemp(Data));
+		}
 	}
 
 	const Worker_RequestId CreateEntityRequestId =

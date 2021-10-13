@@ -47,10 +47,9 @@ void AOwnerOnlyPropertyReplication::PrepareTest()
 
 	{ // Step 1 - Set TestIntProp to 42.
 		AddStep(TEXT("ServerCreateActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			Pawn = GetWorld()->SpawnActor<AOwnerOnlyTestPawn>(FVector::ZeroVector, FRotator::ZeroRotator);
+			Pawn = SpawnActor<AOwnerOnlyTestPawn>();
 			Pawn->SetReplicates(true);
 			Pawn->TestInt = 42;
-			RegisterAutoDestroyActor(Pawn);
 
 			FinishStep();
 		});
@@ -75,8 +74,7 @@ void AOwnerOnlyPropertyReplication::PrepareTest()
 		AddStep(TEXT("ServerPossessActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			if (Pawn)
 			{
-				ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-				APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
+				APlayerController* PlayerController = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
 
 				OriginalPawns.Add(TPair<AController*, APawn*>(PlayerController, PlayerController->GetPawn()));
 

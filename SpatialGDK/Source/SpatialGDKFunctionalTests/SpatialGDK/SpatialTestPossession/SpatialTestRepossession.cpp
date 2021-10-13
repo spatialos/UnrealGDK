@@ -43,9 +43,7 @@ void ASpatialTestRepossession::PrepareTest()
 			{
 				continue;
 			}
-			ATestPossessionPawn* TestPawn = GetWorld()->SpawnActor<ATestPossessionPawn>(FVector(0.0f, YToSpawnAt, 50.0f),
-																						FRotator::ZeroRotator, FActorSpawnParameters());
-			RegisterAutoDestroyActor(TestPawn);
+			ATestPossessionPawn* TestPawn = SpawnActor<ATestPossessionPawn>(FVector(0.0f, YToSpawnAt, 50.0f));
 
 			TestPawns.Add(TestPawn);
 			YToSpawnAt += YSpawnIncrement;

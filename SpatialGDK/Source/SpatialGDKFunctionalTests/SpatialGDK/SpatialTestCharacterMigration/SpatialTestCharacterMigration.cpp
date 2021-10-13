@@ -73,18 +73,13 @@ void ASpatialTestCharacterMigration::PrepareTest()
 
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.Owner = PlayerController;
-			AActor* TestActor = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), FTransform(), SpawnParams);
-			TestActor->SetReplicates(
-				true); // NOTE: this currently causes parent not to migrate after a delay and outputs a warning in the test
-			RegisterAutoDestroyActor(TestActor);
+			AActor* TestActor = SpawnActor<AActor>(SpawnParams);
+			TestActor->SetReplicates(true);
 		}
 		FinishStep();
 	});
 
-	// Move character forward
-	FSpatialFunctionalTestStepDefinition MoveForwardStepDefinition(/*bIsNativeDefinition*/ true);
-	MoveForwardStepDefinition.StepName = TEXT("MoveForwardStepDefinition");
-	MoveForwardStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
+	auto MoveLambda = [this](const VirtualWorkerId ExpectedVirtualWorker, float MovementInX, FVector StartPos, FVector EndPos) {
 		int32 Count = 0;
 
 		const UGameInstance* GameInstance = GetGameInstance();
@@ -97,7 +92,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 		{
 			if (Character->IsLocallyControlled())
 			{
-				Character->AddMovementInput(FVector(1.0f, 0.0f, 0.0f), 10.0f, true);
+				Character->AddMovementInput(FVector(MovementInX, 0.0f, 0.0f), 10.0f, true);
 
 				const float MaxExpectedSpeed = Character->GetCharacterMovement()->MaxWalkSpeed * 1.2f;
 				AssertValue_Float(Character->Speed, EComparisonMethod::Less_Than, MaxExpectedSpeed, TEXT("Actor not speeding"));
@@ -106,7 +101,6 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			bool bShouldRunRequires = true;
 			if (bLoadBalanceStrategyValid)
 			{
-				const VirtualWorkerId ExpectedVirtualWorker = 2;
 				const VirtualWorkerId LocalVirtualWorker = SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId();
 				bShouldRunRequires = LocalVirtualWorker == ExpectedVirtualWorker;
 
@@ -114,17 +108,18 @@ void ASpatialTestCharacterMigration::PrepareTest()
 				{
 					const VirtualWorkerId VirtualWorker = SpatialNetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Character);
 					RequireEqual_Int(VirtualWorker, ExpectedVirtualWorker,
-									 FString::Printf(TEXT("%s on %s crossed boundary"), *Character->GetName(), *WorkerId));
+									 FString::Printf(TEXT("TestMovementCharacter %lld on %s crossed boundary"),
+													 SpatialNetDriver->GetActorEntityId(*Character), *WorkerId));
 				}
 			}
 
 			if (bShouldRunRequires)
 			{
 				const bool bReachDestination =
-					GetTargetDistanceOnLine(PositionOnServerOne, PositionOnServerTwo, Character->GetActorLocation())
-					> -40.0f; // 40cm overlap
+					GetTargetDistanceOnLine(StartPos, EndPos, Character->GetActorLocation()) > -40.0f; // 40cm overlap
 				RequireEqual_Bool(bReachDestination, true,
-								  FString::Printf(TEXT("%s on %s reached destination"), *Character->GetName(), *WorkerId));
+								  FString::Printf(TEXT("TestMovementCharacter %lld on %s reached destination"),
+												  SpatialNetDriver->GetActorEntityId(*Character), *WorkerId));
 			}
 
 			Count++;
@@ -132,59 +127,22 @@ void ASpatialTestCharacterMigration::PrepareTest()
 
 		RequireEqual_Int(Count, 2, TEXT("Check actor count"));
 		FinishStep();
+	};
+
+	// Move character forward
+	FSpatialFunctionalTestStepDefinition MoveForwardStepDefinition(/*bIsNativeDefinition*/ true);
+	MoveForwardStepDefinition.StepName = TEXT("MoveForwardStepDefinition");
+	MoveForwardStepDefinition.NativeTickEvent.BindLambda([this, MoveLambda](float DeltaTime) {
+		// Expect the character to end up on worker 2, and move it in the positive X direction
+		MoveLambda(2, 1.0f, PositionOnServerOne, PositionOnServerTwo);
 	});
 
 	// Move character backward
 	FSpatialFunctionalTestStepDefinition MoveBackwardStepDefinition(/*bIsNativeDefinition*/ true);
 	MoveBackwardStepDefinition.StepName = TEXT("MoveBackwardStepDefinition");
-	MoveBackwardStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
-		int32 Count = 0;
-
-		const UGameInstance* GameInstance = GetGameInstance();
-		const FString WorkerId = GameInstance->GetSpatialWorkerId();
-
-		const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
-		const bool bLoadBalanceStrategyValid = SpatialNetDriver != nullptr && SpatialNetDriver->LoadBalanceStrategy != nullptr;
-
-		for (ATestMovementCharacter* Character : TActorRange<ATestMovementCharacter>(GetWorld()))
-		{
-			if (Character->IsLocallyControlled())
-			{
-				Character->AddMovementInput(FVector(-1.0f, 0.0f, 0.0f), 10.0f, true);
-
-				const float MaxExpectedSpeed = Character->GetCharacterMovement()->MaxWalkSpeed * 1.2f;
-				AssertValue_Float(Character->Speed, EComparisonMethod::Less_Than, MaxExpectedSpeed, TEXT("Actor not speeding"));
-			}
-
-			bool bShouldRunRequires = true;
-			if (bLoadBalanceStrategyValid)
-			{
-				const VirtualWorkerId ExpectedVirtualWorker = 1;
-				const VirtualWorkerId LocalVirtualWorker = SpatialNetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId();
-				bShouldRunRequires = LocalVirtualWorker == ExpectedVirtualWorker;
-
-				if (bShouldRunRequires)
-				{
-					const VirtualWorkerId VirtualWorker = SpatialNetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Character);
-					RequireEqual_Int(VirtualWorker, ExpectedVirtualWorker,
-									 FString::Printf(TEXT("%s on %s crossed boundary"), *Character->GetName(), *WorkerId));
-				}
-			}
-
-			if (bShouldRunRequires)
-			{
-				const bool bReachDestination =
-					GetTargetDistanceOnLine(PositionOnServerTwo, PositionOnServerOne, Character->GetActorLocation())
-					> -40.0f; // 40cm overlap
-				RequireEqual_Bool(bReachDestination, true,
-								  FString::Printf(TEXT("%s on %s reached destination"), *Character->GetName(), *WorkerId));
-			}
-
-			Count++;
-		}
-
-		RequireEqual_Int(Count, 2, TEXT("Check actor count"));
-		FinishStep();
+	MoveBackwardStepDefinition.NativeTickEvent.BindLambda([this, MoveLambda](float DeltaTime) {
+		// Expect the character to end up on worker 1, and move it in the negative X direction
+		MoveLambda(1, -1.0f, PositionOnServerTwo, PositionOnServerOne);
 	});
 
 	AddStepFromDefinition(WaitForStationaryActorStepDefinition, FWorkerDefinition::AllClients);

@@ -18,6 +18,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineStats.h"
+#include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/GlobalStateManager.h"
@@ -25,6 +26,7 @@
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ActorOwnership.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -252,11 +254,6 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		return;
 	}
 
-	if (!NetDriver->IsAuthoritativeDestructionAllowed())
-	{
-		return;
-	}
-
 	const bool bHasAuthority = NetDriver->HasServerAuthority(EntityId);
 	if (Actor != nullptr)
 	{
@@ -281,7 +278,7 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 				NetDriver->ActorSystem->RetireEntity(EntityId, Actor->IsNetStartupActor());
 			}
 		}
-		else if (bCreatedEntity) // We have not gained authority yet
+		else if (NetDriver->ActorSystem->IsCreateEntityRequestInFlight(EntityId)) // We have not gained authority yet
 		{
 			if (ensureMsgf(Actor->HasAuthority(), TEXT("EntityId %lld Actor %s doesn't have authority, can't disable replication"),
 						   EntityId, *Actor->GetName()))
@@ -713,14 +710,6 @@ int64 USpatialActorChannel::ReplicateActor()
 			bCreatedEntity = true;
 
 			SetAutonomousProxyOnAuthority(Actor->RemoteRole == ROLE_AutonomousProxy);
-
-			// We preemptively set the Actor role to SimulatedProxy if load balancing is disabled
-			// (since the legacy behaviour is to wait until Spatial tells us we have authority)
-			if (NetDriver->LoadBalanceStrategy == nullptr)
-			{
-				Actor->Role = ROLE_SimulatedProxy;
-				Actor->RemoteRole = ROLE_Authority;
-			}
 		}
 		else
 		{
@@ -1253,6 +1242,17 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	if (!bUpdatedThisActor)
 	{
 		return;
+	}
+
+	const bool bShouldWriteLoadBalancingData = IsValid(Connection) && USpatialStatics::IsStrategyWorkerEnabled();
+
+	if (bShouldWriteLoadBalancingData)
+	{
+		if (ensureAlwaysMsgf(IsValid(Actor), TEXT("Tried to process ownership changes for invalid channel Actor. Entity: %lld"), EntityId))
+		{
+			const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*NetDriver->PackageMap, *Actor);
+			NetDriver->Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
+		}
 	}
 
 	// Changes to NetConnection and InterestBucket for an Actor also affect all descendants which we

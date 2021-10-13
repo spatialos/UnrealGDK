@@ -18,7 +18,7 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 
 	// Step 1 - Check actor exists and that it's NetDormancy and TestIntProp are correct on the server.
 	AddStep(TEXT("ServerCheckkDormancyAndRepProperty"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		RequireEqual_Int(CountActors<ADormancyTestActor>(GetWorld()), 1,TEXT("Number of TestDormancyActors in world"));
+		RequireEqual_Int(CountActors<ADormancyTestActor>(GetWorld()), 1, TEXT("Number of TestDormancyActors in world"));
 		RequireDormancyTestState(DORM_Initial, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 		FinishStep();
 	});
@@ -27,7 +27,7 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 	AddStep(
 		TEXT("ClientRequireDormancyTestState"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireEqual_Int(CountActors<ADormancyTestActor>(GetWorld()), 1,TEXT("Number of TestDormancyActors in world"));
+			RequireEqual_Int(CountActors<ADormancyTestActor>(GetWorld()), 1, TEXT("Number of TestDormancyActors in world"));
 			RequireDormancyTestState(DORM_Initial, /*TestRepProperty*/ 0, /*ActorCount*/ 1);
 			FinishStep();
 		},
@@ -95,7 +95,7 @@ void AInitiallyDormantMapActorTest::PrepareTest()
 	AddStep(
 		TEXT("ClientCheckActorDestroyed"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireEqual_Int(CountActors<ADormancyTestActor>(GetWorld()), 0,TEXT("Number of TestDormancyActors in world"));
+			RequireEqual_Int(CountActors<ADormancyTestActor>(GetWorld()), 0, TEXT("Number of TestDormancyActors in world"));
 			FinishStep();
 		},
 		5.0f);

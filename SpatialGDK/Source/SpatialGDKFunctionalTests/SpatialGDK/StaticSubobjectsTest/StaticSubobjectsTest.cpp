@@ -74,18 +74,13 @@ void AStaticSubobjectsTest::PrepareTest()
 
 	// Step 0 - The server spawns a TestMovementCharacter and makes Client 1 possess it.
 	AddStep(TEXT("StaticSubobjectsTestSetup"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		ASpatialFunctionalTestFlowController* ClientOneFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-		APlayerController* PlayerOneController = Cast<APlayerController>(ClientOneFlowController->GetOwner());
+		APlayerController* PlayerOneController = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
 
-		if (AssertIsValid(PlayerOneController, TEXT("PlayerOneController should be valid")))
-		{
-			ClientSpawnedPawn = GetWorld()->SpawnActor<ATestMovementCharacter>(PawnSpawnLocation, FRotator::ZeroRotator);
-			RegisterAutoDestroyActor(ClientSpawnedPawn);
-			ClientDefaultPawn = PlayerOneController->GetPawn();
-			PlayerOneController->Possess(ClientSpawnedPawn);
+		ClientSpawnedPawn = SpawnActor<ATestMovementCharacter>(PawnSpawnLocation);
+		ClientDefaultPawn = PlayerOneController->GetPawn();
+		PlayerOneController->Possess(ClientSpawnedPawn);
 
-			FinishStep();
-		}
+		FinishStep();
 	});
 
 	// Step 1 - All workers check for one AStaticSubobjectTestActor in the world and initialise it.
@@ -208,14 +203,10 @@ void AStaticSubobjectsTest::PrepareTest()
 	// Step 19 - Server Cleanup.
 	AddStep(TEXT("StaticSubobjectsTestServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Possess the original pawn, so that the spawned character can get destroyed correctly
-		ASpatialFunctionalTestFlowController* ClientOneFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-		APlayerController* PlayerController = Cast<APlayerController>(ClientOneFlowController->GetOwner());
+		APlayerController* PlayerController = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
 
-		if (AssertIsValid(PlayerController, TEXT("PlayerController should be valid")))
-		{
-			PlayerController->Possess(ClientDefaultPawn);
-			FinishStep();
-		}
+		PlayerController->Possess(ClientDefaultPawn);
+		FinishStep();
 	});
 }
 

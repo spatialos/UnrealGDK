@@ -25,7 +25,7 @@ struct FCommandsHandler
 	}
 
 	Worker_RequestId ClaimPartition(ISpatialOSWorker& WorkerInterface, Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim,
-						FSystemEntityCommandDelegate Delegate)
+									FSystemEntityCommandDelegate Delegate)
 	{
 		return ClaimPartitionHandler.ClaimPartition(WorkerInterface, SystemEntityId, PartitionToClaim, MoveTemp(Delegate));
 	}

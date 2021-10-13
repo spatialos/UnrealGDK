@@ -2,42 +2,38 @@
 
 ![](SpatialGDK/Documentation/spatialos-gdkforunreal-header.png)
 
-The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine fork and plugin with associated projects. It gives you the features of [SpatialOS](https://documentation.improbable.io/spatialos-overview/docs), within the familiar workflows and APIs of Unreal Engine. For more information, please see the GDK's [documentation website](https://documentation.improbable.io/gdk-for-unreal/docs).
+The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine fork and plugin with associated projects. It gives you the features of [SpatialOS](https://networking.docs.improbable.io/spatialos-overview), within the familiar workflows and APIs of Unreal Engine. For more information, please see the GDK's [documentation website](https://networking.docs.improbable.io/gdk-for-unreal/).
 
-This is the repository for the GDK plugin, which includes the Starter Template (a blank starter project).
 
+This is the repository for the last version of the GDK plugin that is compatible with the SpatialOS legacy platform. The GDK is frozen for users who have not yet migrated their project to SpatialOS running on zeuz. 
+
+* If you have a current project using the SpatialOS GDK for Unreal and would like to discuss migrating your project to SpatialOS running on zeuz, please contact us at migration@improbable.io before the 30th December 2021. 
+
+* If you would like to start development of your game on SpatialOS and would like access to the latest version of the GDK for Unreal, please contact us at [ims.improbable.io/contact](https://ims.improbable.io/contact) with details about your project.
+
+## About the GDK
 In addition to the plugin, the GDK also includes:
 
 * [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine)
 
-    You must be a member of the [Epic Games organization](https://github.com/EpicGames) on GitHub to access this. If you aren't, the link returns a 404 error.
+   You must be a member of the [Epic Games organization](https://github.com/EpicGames) on GitHub to access this. If you aren't, the link returns a 404 error.
+
 * [The Example Project](https://github.com/spatialos/UnrealGDKExampleProject)
-  
-If you’re an Unreal game developer and you’re ready to try out the GDK, follow the [Get started guide](https://documentation.improbable.io/gdk-for-unreal/docs/get-started-introduction). 
+
+If you’re an Unreal game developer and wish to get access please contact us at [ims.improbable.io/contact](https://ims.improbable.io/contact) with details about your project.
 
 ## SpatialOS Unreal Engine fork changes
-In order to transform Unreal from a single-server engine to a distributed model, we made a number of small changes to Unreal Engine code. We are attempting to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in the [SpatialOS Unreal Engine fork repository](https://github.com/improbableio/UnrealEngine).
+In order to transform Unreal from a single-server engine to a distributed model, we made a number of small changes to Unreal Engine code. You can see the changes in the [SpatialOS Unreal Engine fork repository](https://github.com/improbableio/UnrealEngine).
 
-> In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the GDK for Unreal without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
+In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the GDK for Unreal without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
+(https://github.com/spatialos/UnrealGDK/projects/2)
 
-## Recommended use
-To understand the feature-completeness, stability, performance, and support levels you can expect from the GDK, see the [product maturity lifecycle page](https://documentation.improbable.io/gdk-for-unreal/docs/product-maturity-lifecycle). For more information, visit the [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support](https://documentation.improbable.io/gdk-for-unreal/docs/unreal-features-support) pages, and contact us via our forums, or on Discord.
 
-## Versioning and support
-Please visit [this page](https://documentation.improbable.io/gdk-for-unreal/docs/versioning-scheme) for a description of the GDK's versioning scheme, and which branches to use when developing.
-
-## Contributions
-We welcome [Github issues](https://github.com/spatialos/UnrealGDK/issues) from all users, and accept public contributions subject to the signing of our Contributors License Agreement - please see our [contributions](CONTRIBUTING.md) policy for more details. 
-
-## Run into problems?
-* [Troubleshooting](https://documentation.improbable.io/gdk-for-unreal/docs/troubleshooting)
-* [Known issues](https://github.com/spatialos/UnrealGDK/projects/2)
-
-## Give us feedback
-We have released the GDK for Unreal this early in development because we want your feedback. Please come and talk to us about the software and the documentation via: [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368) - [Forums](https://forums.improbable.io/) - [GitHub issues in this repository](https://github.com/spatialos/UnrealGDK/issues).
+## Documentation
+Find high-level documentation about SpatialOS and the GDKs at [networking.docs.improbable.io](networking.docs.improbable.io). If you wish to get full access to the documentation please contact us at [ims.improbable.io/contact](https://ims.improbable.io/contact) with details about your project.
 
 ------
 
 * Your access to and use of the Unreal Engine is governed by the [Unreal Engine End User License Agreement](https://www.unrealengine.com/en-US/previous-versions/udk-licensing-resources?sessionInvalidated=true). Please ensure that you have agreed to those terms before you access or use the Unreal Engine.
 
-(c) 2020 Improbable
+(c) 2021 Improbable

@@ -6,7 +6,6 @@
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
 
-#include "EngineClasses/SpatialPartitionSystem.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RPCContainer.h"
 
@@ -15,6 +14,8 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSettings, Log, All);
 
 class ASpatialDebugger;
+class USpatialPartitionSystem;
+class USpatialServerWorkerSystem;
 
 /**
  * Enum that maps Unreal's log verbosity to allow use in settings.
@@ -343,6 +344,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
+	/** Toggle to allow debug checking of invalid data modification on non-auth workers when using Spatial Networking */
+	UPROPERTY(config, EditAnywhere, Category = "Debug", meta = (DisplayName = "SpatialOS Networking Authority Debugger"))
+	bool bSpatialAuthorityDebugger;
+
 	/** Enables multi-worker, if false uses single worker strategy in the editor.  */
 	UPROPERTY(EditAnywhere, config, Category = "Load Balancing", meta = (DisplayName = "Enable multi-worker in editor"))
 	bool bEnableMultiWorker;
@@ -353,6 +358,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL PartitionSystem to use"))
 	TSubclassOf<USpatialPartitionSystem> PartitionSystemClass;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL ServerWorkerSystem to use"))
+	TSubclassOf<USpatialServerWorkerSystem> ServerWorkerSystemClass;
 
 #if WITH_EDITOR
 	void SetMultiWorkerEditorEnabled(const bool bIsEnabled);
@@ -552,12 +560,6 @@ public:
 		*/
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Enable Initial Only Replication Condition"))
 	bool bEnableInitialOnlyReplicationCondition;
-
-	/*
-	 * Enables writing of ActorSetMember and ActorGroupMember components to load balancing entities
-	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication")
-	bool bEnableStrategyLoadBalancingComponents;
 
 	/**	-- EXPERIMENTAL --
 		Enables skeleton entities. If enabled, skeleton entities for level actors would be created during startup.

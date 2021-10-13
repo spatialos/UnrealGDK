@@ -48,6 +48,22 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	PreparationTimeLimit = 30.0f;
 	bReadyToSpawnServerControllers = false;
 	CachedTestResult = EFunctionalTestResult::Default;
+
+	bIsStandaloneTest = false;
+	GeneratedTestMap = nullptr;
+	bIsGeneratingMap = false;
+}
+
+ASpatialFunctionalTest::ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients /*=1*/,
+											   const FVector& InTestPositionInWorld /*=FVector::ZeroVector*/)
+	: ASpatialFunctionalTest()
+{
+	bIsStandaloneTest = true;
+	TestPositionInWorld = InTestPositionInWorld;
+
+	GeneratedTestMap = UGeneratedTestMap::MakeGeneratedTestMap(MapCiCategory, this->GetClass()->GetName());
+
+	GeneratedTestMap->SetNumberOfClients(NumberOfClients);
 }
 
 void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -231,7 +247,8 @@ bool ASpatialFunctionalTest::IsReady_Implementation()
 
 	for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
 	{
-		if (FlowController->IsReadyToRunTest()) // Check if the owner already finished initialization
+		const bool bFlowControllerReadyToRun = FlowController->IsReadyToRunTest();
+		if (bFlowControllerReadyToRun) // Check if the owner already finished initialization
 		{
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 			{
@@ -681,16 +698,17 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(
 			return FlowController;
 		}
 	}
+	checkf(false, TEXT("We should always find a flow controller."));
 	return nullptr;
 }
 
 APlayerController* ASpatialFunctionalTest::GetFlowPlayerController(const ESpatialFunctionalTestWorkerType WorkerType, const int WorkerId)
 {
-	if (ASpatialFunctionalTestFlowController* FlowController = GetFlowController(WorkerType, WorkerId))
-	{
-		return Cast<APlayerController>(FlowController->GetOwner());
-	}
-	return nullptr;
+	ASpatialFunctionalTestFlowController* FlowController = GetFlowController(WorkerType, WorkerId);
+	APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
+	checkf(IsValid(PlayerController), TEXT("The parent of a FlowController should always be a valid PlayerController."));
+
+	return PlayerController;
 }
 
 APlayerController* ASpatialFunctionalTest::GetLocalFlowPlayerController()
@@ -1116,4 +1134,44 @@ void ASpatialFunctionalTest::ClearAllTakenSnapshots()
 {
 	bWasLoadedFromTakenSnapshot = false;
 	TakenSnapshots.Empty();
+}
+
+void ASpatialFunctionalTest::GenerateMap()
+{
+	bIsGeneratingMap = true;
+	GeneratedTestMap->GenerateMap();
+	CreateCustomContentForMap();
+	GeneratedTestMap->AddActorToLevel(GeneratedTestMap->GetWorld()->GetCurrentLevel(), this->GetClass(), FTransform(TestPositionInWorld));
+	bIsGeneratingMap = false;
+}
+
+bool ASpatialFunctionalTest::ShouldGenerateMap()
+{
+	return bIsStandaloneTest;
+}
+
+bool ASpatialFunctionalTest::SaveMap()
+{
+	return GeneratedTestMap->SaveMap();
+}
+
+bool ASpatialFunctionalTest::GenerateCustomConfig()
+{
+	return GeneratedTestMap->GenerateCustomConfig();
+}
+
+FString ASpatialFunctionalTest::GetMapName()
+{
+	return GeneratedTestMap->GetMapName();
+}
+
+void ASpatialFunctionalTest::SetCustomConfigForMap(FString& String)
+{
+	GeneratedTestMap->SetCustomConfig(String);
+}
+
+ASpatialWorldSettings* ASpatialFunctionalTest::GetWorldSettingsForMap()
+{
+	checkf(bIsGeneratingMap, TEXT("GetWorldSettingsForMap should only be called from within an overridden CreateCustomContentForMap."));
+	return CastChecked<ASpatialWorldSettings>(GeneratedTestMap->GetWorld()->GetWorldSettings());
 }

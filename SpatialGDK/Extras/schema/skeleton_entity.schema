@@ -5,6 +5,7 @@ component SkeletonEntityManifest {
 	id = 9989;
 	list<EntityId> skeleton_entities_to_populate = 1;
 	list<EntityId> populated_skeleton_entities = 2;
+    bool acked_manifest = 3;
 }
 
 component_set SkeletonEntityAuthComponentSet {

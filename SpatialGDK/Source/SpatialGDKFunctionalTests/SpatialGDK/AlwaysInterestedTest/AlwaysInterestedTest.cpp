@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "AlwaysInterestedTest.h"
+#include "GameFramework/PlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/AlwaysInterestedTestActors.h"
 
@@ -73,40 +74,26 @@ void AAlwaysInterestedTest::PrepareTest()
 
 			if (HasAuthority())
 			{
-				ActorWithAlwaysInterestedProperty =
-					GetWorld()->SpawnActor<AAlwaysInterestedTestActor>(LocalWorkerPosition, FRotator::ZeroRotator, FActorSpawnParameters());
+				ActorWithAlwaysInterestedProperty = SpawnActor<AAlwaysInterestedTestActor>(LocalWorkerPosition);
 
-				InterestedInThisReplicatedActor =
-					GetWorld()->SpawnActor<ASmallNCDActor>(LocalWorkerPosition, FRotator::ZeroRotator, FActorSpawnParameters());
+				InterestedInThisReplicatedActor = SpawnActor<ASmallNCDActor>(LocalWorkerPosition);
 
-				NotInterestedInThisReplicatedActor =
-					GetWorld()->SpawnActor<ASmallNCDActor>(LocalWorkerPosition, FRotator::ZeroRotator, FActorSpawnParameters());
+				NotInterestedInThisReplicatedActor = SpawnActor<ASmallNCDActor>(LocalWorkerPosition);
 
 				// This actor is used later as a replacement for InterestedInThisReplicatedActor, so isn't immediate added to
 				// AlwaysInterested
-				OtherInterestedInThisReplicatedActor =
-					GetWorld()->SpawnActor<ASmallNCDActor>(LocalWorkerPosition, FRotator::ZeroRotator, FActorSpawnParameters());
+				OtherInterestedInThisReplicatedActor = SpawnActor<ASmallNCDActor>(LocalWorkerPosition);
 
 				ActorWithAlwaysInterestedProperty->InterestedActors.Push(InterestedInThisReplicatedActor);
 
-				AController* PlayerController1 =
-					Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
-				if (!AssertTrue(IsValid(PlayerController1), TEXT("Should have spawned a PlayerController 1")))
-				{
-					return;
-				}
+				AController* PlayerController1 = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
 
 				if (!AssertTrue(PlayerController1->HasAuthority(), TEXT("Should have authority over the PlayerController 1")))
 				{
 					return;
 				}
 
-				AController* PlayerController2 =
-					Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 2)->GetOwner());
-				if (!AssertTrue(IsValid(PlayerController2), TEXT("Should have spawned a PlayerController 2")))
-				{
-					return;
-				}
+				AController* PlayerController2 = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 2);
 
 				if (!AssertTrue(PlayerController2->HasAuthority(), TEXT("Should have authority over the PlayerController 2")))
 				{
@@ -121,11 +108,6 @@ void AAlwaysInterestedTest::PrepareTest()
 				PlayerController2->GetPawn()->SetActorLocation(LocalWorkerPosition - FVector(200.f, 0.f, 0.f));
 
 				ActorWithAlwaysInterestedProperty->SetOwner(PlayerController1);
-
-				RegisterAutoDestroyActor(ActorWithAlwaysInterestedProperty);
-				RegisterAutoDestroyActor(InterestedInThisReplicatedActor);
-				RegisterAutoDestroyActor(NotInterestedInThisReplicatedActor);
-				RegisterAutoDestroyActor(OtherInterestedInThisReplicatedActor);
 			}
 
 			FinishStep();

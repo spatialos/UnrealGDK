@@ -20,9 +20,7 @@ void AUnresolvedReferenceTest::PrepareTest()
 
 	// Create actor holding references to the other actors
 	AddStep(TEXT("MakeReferenceActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		AUnresolvedReferenceTestActor* RefsActor =
-			GetWorld()->SpawnActor<AUnresolvedReferenceTestActor>(FVector::ZeroVector, FRotator::ZeroRotator);
-		RegisterAutoDestroyActor(RefsActor);
+		SpawnActor<AUnresolvedReferenceTestActor>();
 
 		FinishStep();
 	});
@@ -39,10 +37,8 @@ void AUnresolvedReferenceTest::PrepareTest()
 		{
 			for (int i = 0; i < NumActors; i++)
 			{
-				AReplicatedTestActorBase* Actor =
-					GetWorld()->SpawnActor<AReplicatedTestActorBase>(FVector::ZeroVector, FRotator::ZeroRotator);
+				AReplicatedTestActorBase* Actor = SpawnActor<AReplicatedTestActorBase>();
 				RefsActor->ActorRefs.Add(Actor);
-				RegisterAutoDestroyActor(Actor);
 			}
 		}
 		FinishStep();

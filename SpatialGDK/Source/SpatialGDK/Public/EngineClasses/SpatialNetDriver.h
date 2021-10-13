@@ -50,6 +50,8 @@ class USpatialReceiver;
 class USpatialSender;
 class USpatialWorkerConnection;
 class USpatialWorkerFlags;
+class USpatialShadowActor;
+class USpatialNetDriverAuthorityDebugger;
 
 DECLARE_DELEGATE(PostWorldWipeDelegate);
 DECLARE_MULTICAST_DELEGATE(FShutdownEvent);
@@ -94,6 +96,9 @@ class FSkeletonEntityCreationStartupStep;
 class FSpatialServerStartupHandler;
 class FSpatialClientStartupHandler;
 class FPartitionSystemImpl;
+class FServerWorkerSystemImpl;
+class FSkeletonManifestPublisher;
+class FSkeletonEntityPopulator;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -226,6 +231,8 @@ public:
 	USpatialNetDriverGameplayDebuggerContext* GameplayDebuggerCtx;
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
+	UPROPERTY()
+	USpatialNetDriverAuthorityDebugger* AuthorityDebugger;
 
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
 	TOptional<SpatialGDK::FOwnershipCompletenessHandler> OwnershipCompletenessHandler;
@@ -240,12 +247,13 @@ public:
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
 	TUniquePtr<SpatialGDK::FSpatialStrategySystem> StrategySystem;
 	TUniquePtr<SpatialGDK::FPartitionSystemImpl> PartitionSystemImpl;
+	TUniquePtr<SpatialGDK::FServerWorkerSystemImpl> ServerWorkerSystemImpl;
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialGDK::FSpatialHandoverManager> HandoverManager;
 	TUniquePtr<SpatialGDK::UnrealServerInterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
-
-	TUniquePtr<SpatialGDK::FSkeletonEntityCreationStartupStep> SkeletonEntityCreationStep;
+	TUniquePtr<SpatialGDK::FSkeletonManifestPublisher> ManifestPublisher;
+	TUniquePtr<SpatialGDK::FSkeletonEntityPopulator> SkeletonPopulator;
 
 	TUniquePtr<SpatialGDK::FSpatialServerStartupHandler> StartupHandler;
 	TUniquePtr<SpatialGDK::FSpatialClientStartupHandler> ClientStartupHandler;
@@ -254,10 +262,7 @@ public:
 	TUniquePtr<SpatialGDK::InitialOnlyFilter> InitialOnlyFilter;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
-
-	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
-	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
-	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
+	Worker_PartitionId StagingPartitionId = SpatialConstants::INVALID_ENTITY_ID;
 
 #if !UE_BUILD_SHIPPING
 	int32 GetConsiderListSize() const { return ConsiderListSize; }
@@ -316,7 +321,6 @@ private:
 
 	FTimerManager TimerManager;
 
-	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;
 	bool bPersistSpatialConnection;
 	bool bWaitingToSpawn;
@@ -410,4 +414,8 @@ private:
 
 	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
+
+	// Store the last received state of the actor over the network by Entity ID so that we can check for non-auth changes.
+	UPROPERTY()
+	TMap<int64, USpatialShadowActor*> SpatialShadowActors;
 };

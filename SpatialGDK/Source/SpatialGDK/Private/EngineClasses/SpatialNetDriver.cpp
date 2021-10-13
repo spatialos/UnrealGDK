@@ -10,6 +10,7 @@
 #include "EngineGlobals.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
+#include "Misc/EngineVersionComparison.h"
 #include "Net/DataReplication.h"
 #include "SocketSubsystem.h"
 #include "UObject/UObjectIterator.h"
@@ -20,6 +21,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialHandoverManager.h"
 #include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriverAuthorityDebugger.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialNetDriverGameplayDebuggerContext.h"
 #include "EngineClasses/SpatialNetDriverRPC.h"
@@ -27,8 +29,9 @@
 #include "EngineClasses/SpatialPartitionSystem.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
+#include "EngineClasses/SpatialServerWorkerSystem.h"
+#include "EngineClasses/SpatialShadowActor.h"
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSubviews.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
@@ -41,8 +44,9 @@
 #include "Interop/MigrationDiagnosticsSystem.h"
 #include "Interop/OwnershipCompletenessHandler.h"
 #include "Interop/RPCExecutor.h"
-#include "Interop/SkeletonEntities.h"
 #include "Interop/SkeletonEntityCreationStep.h"
+#include "Interop/SkeletonEntityManifestPublisher.h"
+#include "Interop/SkeletonEntityPopulator.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialNetDriverLoadBalancingHandler.h"
@@ -52,6 +56,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialRoutingSystem.h"
 #include "Interop/SpatialSender.h"
+#include "Interop/SpatialServerWorkerSystemImpl.h"
 #include "Interop/SpatialSnapshotManager.h"
 #include "Interop/SpatialStrategySystem.h"
 #include "Interop/SpatialWorkerFlags.h"
@@ -66,7 +71,6 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "LoadBalancing/PartitionManager.h"
 #include "Schema/ActorOwnership.h"
-#include "Schema/ActorSetMember.h"
 #include "Schema/SpatialDebugging.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -116,8 +120,8 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, LoadBalanceStrategy(nullptr)
 	, DebugCtx(nullptr)
 	, GameplayDebuggerCtx(nullptr)
+	, AuthorityDebugger(nullptr)
 	, LoadBalanceEnforcer(nullptr)
-	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
 	, bWaitingToSpawn(false)
@@ -141,6 +145,14 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 #endif
 
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
+
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST) && ENGINE_MINOR_VERSION >= 26
+	if (GetDefault<USpatialGDKSettings>()->bSpatialAuthorityDebugger)
+	{
+		AuthorityDebugger = NewObject<USpatialNetDriverAuthorityDebugger>();
+		AuthorityDebugger->Init(*this);
+	}
+#endif
 }
 
 USpatialNetDriver::~USpatialNetDriver() = default;
@@ -153,7 +165,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 		if (GameInstance != nullptr)
 		{
-			if (GameInstance->GetSpatialWorkerType() == SpatialConstants::RoutingWorkerType)
+			if (GameInstance->GetSpatialWorkerType() == SpatialConstants::RoutingWorkerType
+				|| GameInstance->GetSpatialWorkerType() == SpatialConstants::StrategyWorkerType)
 			{
 				NetServerMaxTickRate = 120;
 			}
@@ -446,11 +459,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		Sender = NewObject<USpatialSender>();
 		Receiver = NewObject<USpatialReceiver>();
 
-		if (IsServer() && GetDefault<USpatialGDKSettings>()->bEnableSkeletonEntityCreation)
-		{
-			SkeletonEntityCreationStep = MakeUnique<SpatialGDK::FSkeletonEntityCreationStartupStep>(*this);
-		}
-
 		// TODO: UNR-2452
 		// Ideally the GlobalStateManager and StaticComponentView would be created as part of USpatialWorkerConnection::Init
 		// however, this causes a crash upon the second instance of running PIE due to a destroyed USpatialNetDriver still being reference.
@@ -484,12 +492,19 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			if (Partitions)
 			{
 				SpatialGDK::FSubView& PartitionsSubView =
-					Connection->GetCoordinator().CreateSubView(SpatialConstants::PARTITION_ACK_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
-															   SpatialGDK::FSubView::NoDispatcherCallbacks);
+					Connection->GetCoordinator().CreateSubView(SpatialConstants::LOADBALANCER_PARTITION_TAG_COMPONENT_ID,
+															   SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
 				PartitionSystemImpl = MakeUnique<SpatialGDK::FPartitionSystemImpl>(PartitionsSubView);
 				PartitionSystemImpl->PartitionData.DataStorages = Partitions->GetData();
 				Partitions->SetImpl(*PartitionSystemImpl);
+			}
+
+			USpatialServerWorkerSystem* ServerWorkerData = GameInstance->GetSubsystem<USpatialServerWorkerSystem>();
+			if (ServerWorkerData)
+			{
+				ServerWorkerSystemImpl = MakeUnique<SpatialGDK::FServerWorkerSystemImpl>();
+				ServerWorkerData->SetImpl(*ServerWorkerSystemImpl);
 			}
 		}
 
@@ -511,6 +526,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	if (WorkerType == SpatialConstants::DefaultServerWorkerType)
 	{
+		auto& FilledManifestSubView = SpatialGDK::SkeletonEntityFunctions::CreateFilledManifestSubView(Connection->GetCoordinator());
+
+		ManifestPublisher = MakeUnique<SpatialGDK::FSkeletonManifestPublisher>(FilledManifestSubView);
+		SkeletonPopulator = MakeUnique<SpatialGDK::FSkeletonEntityPopulator>(*this);
+
 		StartupHandler = MakeUnique<SpatialGDK::FSpatialServerStartupHandler>(
 			*this, SpatialGDK::FInitialSetup{ static_cast<int32>(LoadBalanceStrategy->GetMinimumRequiredWorkers()) });
 	}
@@ -709,10 +729,13 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialSettings->bRunStrategyWorker)
 	{
+		const SpatialGDK::FSubView& UnfilteredLBView = Connection->GetCoordinator().CreateSubView(
+			SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+
 		const SpatialGDK::FSubView& PartitionAuthSubView = Connection->GetCoordinator().CreateSubView(
 			SpatialConstants::PARTITION_AUTH_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-		HandoverManager = MakeUnique<SpatialGDK::FSpatialHandoverManager>(*LBSubView, PartitionAuthSubView);
+		HandoverManager = MakeUnique<SpatialGDK::FSpatialHandoverManager>(UnfilteredLBView, PartitionAuthSubView);
 	}
 
 	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
@@ -778,6 +801,14 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 void USpatialNetDriver::OnActorSpawned(AActor* Actor) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	// Allocate entity ids for dynamically spawned actors
+	if (Actor->GetIsReplicated() && Actor->HasAuthority() && Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType)
+		&& IsReady())
+	{
+		PackageMap->TryResolveObjectAsEntity(Actor);
+	}
+
 	if (SpatialGDKSettings->bEnableCrossLayerActorSpawning)
 	{
 		return;
@@ -897,7 +928,9 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 		}
 	}
 
+#if UE_VERSION_OLDER_THAN(4, 27, 0)
 	FGuid NextMapGuid = UEngine::GetPackageGuid(FName(*NextMap), World->IsPlayInEditor());
+#endif
 
 	FString NewURL = URL;
 
@@ -909,7 +942,11 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 
 	// Notify clients we're switching level and give them time to receive.
 	FString URLMod = NewURL;
+#if UE_VERSION_OLDER_THAN(4, 27, 0)
 	APlayerController* LocalPlayer = GameMode->ProcessClientTravel(URLMod, NextMapGuid, bSeamless, bAbsolute);
+#else
+	APlayerController* LocalPlayer = GameMode->ProcessClientTravel(URLMod, bSeamless, bAbsolute);
+#endif
 
 	// We can't have the NextURL set this early when using SpatialProcessServerTravel so empty the string here.
 	// The reason for this is, on the next WorldTick the current World and NetDriver will be unloaded.
@@ -1239,23 +1276,10 @@ void USpatialNetDriver::NotifyStreamingLevelUnload(class ULevel* Level)
 
 void USpatialNetDriver::ProcessOwnershipChanges()
 {
-	const bool bShouldWriteLoadBalancingData =
-		IsValid(Connection) && GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents;
-
 	for (Worker_EntityId EntityId : OwnershipChangedEntities)
 	{
 		if (USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId))
 		{
-			if (bShouldWriteLoadBalancingData)
-			{
-				if (ensureAlwaysMsgf(IsValid(Channel->Actor),
-									 TEXT("Tried to process ownership changes for invalid channel Actor. Entity: %lld"), EntityId))
-				{
-					const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, *Channel->Actor);
-					Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
-				}
-			}
-
 			Channel->ServerProcessOwnershipChange();
 		}
 	}
@@ -2103,34 +2127,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 					ActorsHandedOver.Add(Actor);
 					EntitiesHandedOver.Add(EntityId);
-
-					AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
-					if (HierarchyRoot->HasAuthority())
-					{
-						TFunction<void(AActor*)> ForceReplicateChildren;
-						ForceReplicateChildren = [&](AActor* HierarchyActor) {
-							if (HierarchyActor != Actor)
-							{
-								if (FNetworkObjectInfo const* ActorInfo = FindNetworkObjectInfo(HierarchyActor))
-								{
-									if (!ActorInfo->bPendingNetUpdate)
-									{
-										LoadBalancingContext.AddActorToReplicate(HierarchyActor);
-									}
-								}
-
-								if (USpatialActorChannel* Channel = GetOrCreateSpatialActorChannel(HierarchyActor))
-								{
-									Channel->ForcePositionReplication();
-								}
-							}
-							for (AActor* ChildActor : HierarchyActor->Children)
-							{
-								ForceReplicateChildren(ChildActor);
-							}
-						};
-						ForceReplicateChildren(HierarchyRoot);
-					}
 				}
 			}
 		}
@@ -2206,6 +2202,23 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 					Actor->OnAuthorityLost();
 				}
+
+				for (auto EntityId : HandoverManager->GetActorsToCheckForAuth())
+				{
+					TWeakObjectPtr<UObject> ObjectPtr = PackageMap->GetObjectFromEntityId(EntityId);
+					AActor* Actor = Cast<AActor>(ObjectPtr.Get());
+					if (Actor == nullptr || Actor->HasAuthority())
+					{
+						continue;
+					}
+					else if (Actor != nullptr)
+					{
+						Actor->Role = ROLE_Authority;
+						Actor->RemoteRole = ROLE_SimulatedProxy;
+
+						Actor->OnAuthorityGained();
+					}
+				}
 			}
 			HandoverManager->Flush(Connection->GetCoordinator(), EntitiesHandedOver);
 		}
@@ -2274,6 +2287,16 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (bIsDefaultServerOrClientWorker)
 		{
+			if (ManifestPublisher.IsValid())
+			{
+				ManifestPublisher->Advance(Connection->GetCoordinator());
+			}
+
+			if (SkeletonPopulator.IsValid())
+			{
+				SkeletonPopulator->Advance(Connection->GetCoordinator());
+			}
+
 			if (PartitionSystemImpl.IsValid())
 			{
 				PartitionSystemImpl->Advance();
@@ -2420,7 +2443,12 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			SpatialMetrics->TickMetrics(GetElapsedTime());
 		}
-
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+		if (AuthorityDebugger != nullptr)
+		{
+			AuthorityDebugger->CheckUnauthorisedDataChanges();
+		}
+#endif
 		if (AsyncPackageLoadFilter != nullptr)
 		{
 			AsyncPackageLoadFilter->ProcessActorsFromAsyncLoading();
@@ -2601,8 +2629,32 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 			{
 				ActorSystem->ProcessPositionUpdates();
 			}
+
+			if (ServerWorkerSystemImpl.IsValid())
+			{
+				ServerWorkerSystemImpl->Flush(WorkerEntityId, Connection->GetCoordinator());
+			}
 		}
 #endif // WITH_SERVER_CODE
+	}
+
+	if (HandoverManager)
+	{
+		TSet<Worker_EntityId_Key> SkeletonsToHandover = HandoverManager->GetActorsToHandover();
+		auto& Coordinator = Connection->GetCoordinator();
+		for (auto Iter = SkeletonsToHandover.CreateIterator(); Iter; ++Iter)
+		{
+			const SpatialGDK::EntityViewElement* Entity = Coordinator.GetView().Find(*Iter);
+			if (!ensure(Entity != nullptr))
+			{
+				continue;
+			}
+			if (SpatialGDK::SkeletonEntityFunctions::IsCompleteSkeleton(*Entity))
+			{
+				Iter.RemoveCurrent();
+			}
+		}
+		HandoverManager->Flush(Coordinator, SkeletonsToHandover);
 	}
 
 	if (RPCService != nullptr)
@@ -3066,6 +3118,21 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 		return;
 	}
 
+	if (!Connection->GetCoordinator().HasEntity(EntityId))
+	{
+		if (ActorSystem != nullptr && ActorSystem->IsCreateEntityRequestInFlight(EntityId))
+		{
+			ActorSystem->RefreshActorDormancyOnEntityCreation(EntityId, bMakeDormant);
+			return;
+		}
+		else
+		{
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to flush dormancy on actor (%s), entity (%lld) not in view"),
+				   *Actor->GetName(), EntityId);
+			return;
+		}
+	}
+
 	const bool bHasAuthority = HasServerAuthority(EntityId);
 	if (bHasAuthority == false)
 	{
@@ -3254,16 +3321,29 @@ void USpatialNetDriver::TryFinishStartup()
 				Connection->GetCoordinator().CreateSubView(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID,
 														   SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-			auto PartitionMgr =
-				MakeUnique<SpatialGDK::FPartitionManager>(Connection->GetWorkerSystemEntityId(), Connection->GetCoordinator(),
-														  MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
+			SpatialGDK::FSubView& ServerWorkerView = Connection->GetCoordinator().CreateSubView(
+				SpatialConstants::SERVER_WORKER_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+
+			const SpatialGDK::FSubView& LocallyAuthSkeletonEntityManifestsSubview =
+				SpatialGDK::SkeletonEntityFunctions::CreateLocallyAuthManifestSubView(Connection->GetCoordinator());
+			const SpatialGDK::FSubView& FilledManifestSubView =
+				SpatialGDK::SkeletonEntityFunctions::CreateFilledManifestSubView(Connection->GetCoordinator());
+
+			auto PartitionMgr = MakeUnique<SpatialGDK::FPartitionManager>(ServerWorkerView, Connection->GetWorkerSystemEntityId(),
+																		  Connection->GetCoordinator(),
+																		  MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
 
 			PartitionMgr->Init(Connection->GetCoordinator());
 
 			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy =
 				MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy, *VirtualWorkerTranslator);
 
-			StrategySystem = MakeUnique<SpatialGDK::FSpatialStrategySystem>(MoveTemp(PartitionMgr), LBView, MoveTemp(Strategy));
+			SpatialGDK::FStrategySystemViews Views(
+				{ LBView, ServerWorkerView, LocallyAuthSkeletonEntityManifestsSubview, FilledManifestSubView });
+
+			StrategySystem = MakeUnique<SpatialGDK::FSpatialStrategySystem>(MoveTemp(PartitionMgr), Views, MoveTemp(Strategy));
+
+			StrategySystem->Init(Connection->GetCoordinator());
 
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();
