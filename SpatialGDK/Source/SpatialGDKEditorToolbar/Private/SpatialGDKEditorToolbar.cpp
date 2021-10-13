@@ -1059,9 +1059,7 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> OnR
 		}
 
 		FString InspectorArgs =
-			FString::Printf(TEXT("--grpc_addr=%s --http_addr=%s --schema_bundle=\"%s\""),
-							*(FString::Printf(TEXT("localhost:%s"), *FString::FromInt(RuntimeGRPCPort))),
-							*SpatialGDKServicesConstants::InspectorHTTPAddress, *SpatialGDKServicesConstants::SchemaBundlePath);
+			FString::Printf(TEXT("--grpc_addr=localhost:%hu --http_addr=%s --schema_bundle=\"%s\""), RuntimeGRPCPort, *SpatialGDKServicesConstants::InspectorHTTPAddress, *SpatialGDKServicesConstants::SchemaBundlePath);
 
 		InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,
 							 SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
