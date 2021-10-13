@@ -1,8 +1,8 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
-#include "Interop/SkeletonEntities.h"
+#include "Interop/SkeletonEntitiesStartup.h"
 
 class USpatialNetDriver;
 
@@ -26,6 +26,5 @@ private:
 	USpatialNetDriver* NetDriver;
 	bool bWasInitialized = false;
 	TOptional<FDistributedStartupActorSkeletonEntityCreator> ServerEntityCreator;
-	TOptional<FSkeletonEntityPopulator> EntityPopulator;
 };
 } // namespace SpatialGDK

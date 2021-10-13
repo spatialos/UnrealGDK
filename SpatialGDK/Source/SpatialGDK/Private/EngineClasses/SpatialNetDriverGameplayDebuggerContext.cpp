@@ -75,7 +75,10 @@ void USpatialNetDriverGameplayDebuggerContext::Init(const SpatialGDK::FSubView& 
 	LBStrategy = NewObject<UGameplayDebuggerLBStrategy>();
 	LBStrategy->Init(*this, *NetDriver->LoadBalanceStrategy);
 	NetDriver->LoadBalanceStrategy = LBStrategy;
-	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
+	if (!USpatialStatics::IsStrategyWorkerEnabled())
+	{
+		NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
+	}
 
 	TSet<VirtualWorkerId> VirtualWorkerIds = LBStrategy->GetVirtualWorkerIds();
 

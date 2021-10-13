@@ -1,9 +1,10 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SkeletonEntityCreationStep.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/GlobalStateManager.h"
+#include "Interop/SkeletonEntityPopulator.h"
 
 namespace SpatialGDK
 {
@@ -25,11 +26,7 @@ bool FSkeletonEntityCreationStartupStep::TryFinish()
 		bDidFinish = bDidFinish && ServerEntityCreator->IsReady();
 	}
 
-	if (EntityPopulator)
-	{
-		EntityPopulator->Advance();
-		bDidFinish = bDidFinish && EntityPopulator->IsReady();
-	}
+	bDidFinish = bDidFinish && NetDriver->SkeletonPopulator->IsReady();
 
 	return bDidFinish;
 }
@@ -42,12 +39,6 @@ void FSkeletonEntityCreationStartupStep::Initialize()
 
 		ServerEntityCreator.Emplace(*NetDriver);
 		ServerEntityCreator->CreateSkeletonEntitiesForWorld(*NetDriver->GetWorld());
-	}
-
-	{
-		UE_LOG(LogSpatialSkeletonEntityCreationStep, Log, TEXT("Starting skeleton entity population step"));
-
-		EntityPopulator.Emplace(*NetDriver);
 	}
 }
 

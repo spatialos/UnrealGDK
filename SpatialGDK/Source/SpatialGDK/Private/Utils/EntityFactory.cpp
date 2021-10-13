@@ -127,17 +127,24 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
-	const Worker_PartitionId AuthoritativeServerPartitionId = NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId();
+	const bool bUsesDistributedLoadBalancer =
+		!(SpatialSettings->bRunStrategyWorker && NetDriver->LoadBalanceStrategy->IsStrategyWorkerAware());
+
+	const Worker_PartitionId AuthoritativeServerPartitionId =
+		bUsesDistributedLoadBalancer ? NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId() : NetDriver->StagingPartitionId;
 	const Worker_PartitionId AuthoritativeClientPartitionId = GetConnectionOwningPartitionId(Actor);
 
 	// Add Load Balancer Attribute. If this is a single worker deployment, this will be just be the single worker.
-	const VirtualWorkerId IntendedVirtualWorkerId = NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId();
-	checkf(IntendedVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
+	// NB : This is only used for the debugger.
+	const VirtualWorkerId IntendedVirtualWorkerId =
+		bUsesDistributedLoadBalancer ? NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId() : 0;
+	checkf(!bUsesDistributedLoadBalancer || IntendedVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
 		   TEXT("Load balancing strategy provided invalid local virtual worker ID during Actor spawn. "
 				"Actor: %s. Strategy: %s"),
 		   *Actor->GetName(), *NetDriver->LoadBalanceStrategy->GetName());
 
 	AuthorityDelegationMap DelegationMap;
+
 	DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
 	if (!SpatialSettings->bRunStrategyWorker)
 	{
@@ -155,11 +162,14 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 #if !UE_BUILD_SHIPPING
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
-		if (ensureAlwaysMsgf(NetDriver->VirtualWorkerTranslator != nullptr,
+		if (ensureAlwaysMsgf(SpatialSettings->bRunStrategyWorker || NetDriver->VirtualWorkerTranslator != nullptr,
 							 TEXT("Failed to add debugging utilities. Translator was invalid")))
 		{
+			FString DummyWorkerName(TEXT("Beats me..."));
 			const PhysicalWorkerName* PhysicalWorkerName =
-				NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
+				SpatialSettings->bRunStrategyWorker
+					? &DummyWorkerName
+					: NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
 			const FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
 			const FColor IntentColor =
 				PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
@@ -177,7 +187,7 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId).CreateComponentData());
 	if (SpatialSettings->bRunStrategyWorker)
 	{
-		ComponentDatas.Add(AuthorityIntentV2(AuthoritativeServerPartitionId).CreateComponentData());
+		ComponentDatas.Add(AuthorityIntentV2().CreateComponentData());
 		ComponentDatas.Add(AuthorityIntentACK().CreateComponentData());
 		if (NetDriver->LoadBalanceStrategy->IsStrategyWorkerAware())
 		{
@@ -191,14 +201,15 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 			}
 		}
 	}
-	if (!(SpatialSettings->bRunStrategyWorker && NetDriver->LoadBalanceStrategy->IsStrategyWorkerAware()))
+	if (bUsesDistributedLoadBalancer)
 	{
 		ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
 	}
 
 	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
-	if (USpatialStatics::IsStrategyWorkerEnabled())
+	// Actor set information.
+	if (SpatialSettings->bRunStrategyWorker)
 	{
 		const auto AddComponentData = [&ComponentDatas](ComponentData Data) {
 			Worker_ComponentData ComponentData;
@@ -216,9 +227,19 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 
 void EntityFactory::WriteRPCComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel& Channel)
 {
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+
 	checkf(RPCService != nullptr, TEXT("Attempting to create an entity with a null RPCService."));
 	ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(Channel.GetEntityId()));
 	ComponentDatas.Append(NetDriver->RPCs->GetRPCComponentsOnEntityCreation(Channel.GetEntityId()));
+
+	if (SpatialSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+	{
+		// Addition of CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID is handled in GetRPCComponentsOnEntityCreation
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID));
+	}
 }
 
 void EntityFactory::CheckStablyNamedActorPath(const TArray<FWorkerComponentData>& ComponentDatas, const AActor* Actor,
@@ -317,13 +338,6 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 	Channel->SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor));
 
-	if (SpatialSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
-	{
-		// Addition of CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID is handled in GetRPCComponentsOnEntityCreation
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID));
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID));
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID));
-	}
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
 
 	// Only add subobjects which are replicating
@@ -404,6 +418,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
 {
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	TArray<FWorkerComponentData> ComponentDatas = CreateMinimalEntityComponents(Actor);
 
 	// LB components also contain authority delegation, giving this worker ServerAuth.
@@ -412,6 +427,14 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 	// Empty RPC components.
 	Algo::Transform(SpatialRPCService::GetRPCComponents(), ComponentDatas, &ComponentFactory::CreateEmptyComponentData);
 	Algo::Transform(FSpatialNetDriverRPC::GetRPCComponentIds(), ComponentDatas, &ComponentFactory::CreateEmptyComponentData);
+
+	if (SpatialSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+	{
+		// Addition of CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID is handled in GetRPCComponentsOnEntityCreation
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID));
+	}
 
 	// Skeleton entity markers.
 	ComponentDatas.Emplace(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID));
