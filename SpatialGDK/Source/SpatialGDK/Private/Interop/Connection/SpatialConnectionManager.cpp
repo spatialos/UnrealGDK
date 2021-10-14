@@ -459,33 +459,38 @@ void USpatialConnectionManager::StartPollingForConnection()
 	OnWorldTickStartHandle = FWorldDelegates::OnWorldTickStart.AddUObject(this, &USpatialConnectionManager::OnWorldTickStart);
 }
 
+void USpatialConnectionManager::FinishConnecting(Worker_Connection* NewCAPIWorkerConnection)
+{
+	const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
+
+	if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
+	{
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+		WorkerConnection = NewObject<USpatialWorkerConnection>(this);
+
+		WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracer), ComponentSetData);
+		OnConnectionSuccess();
+	}
+	else
+	{
+		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
+		Worker_Connection_Destroy(NewCAPIWorkerConnection);
+		OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
+	}
+}
+
 void USpatialConnectionManager::OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaTime)
 {
 	// Poll the Worker API to check if the Worker_Connection is ready
 	const uint32_t TimeoutMiliseconds = 0;
-	Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, TimeoutMiliseconds);
+	Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, &TimeoutMiliseconds);
 
 	if (NewCAPIWorkerConnection != nullptr)
 	{
-		// If the Worker_Conenction is ready, finish setting it up
+		FinishConnecting(NewCAPIWorkerConnection);
+
+		// We received the Worker_Connection, destroy the future and stop polling the C API
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
-
-		const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
-
-		if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
-		{
-			const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-			WorkerConnection = NewObject<USpatialWorkerConnection>(this);
-
-			WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracer), ComponentSetData);
-			OnConnectionSuccess();
-		}
-		else
-		{
-			const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
-			Worker_Connection_Destroy(NewCAPIWorkerConnection);
-			OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
-		}
 		if (OnWorldTickStartHandle.IsValid())
 		{
 			FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);

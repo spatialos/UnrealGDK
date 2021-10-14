@@ -74,7 +74,7 @@ public:
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
-	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture, TSharedPtr<SpatialGDK::SpatialEventTracer> InEventTracer);
+	void FinishConnecting(Worker_Connection* NewCAPIWorkerConnection);
 
 	void OnConnectionSuccess();
 	void OnConnectionFailure(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
