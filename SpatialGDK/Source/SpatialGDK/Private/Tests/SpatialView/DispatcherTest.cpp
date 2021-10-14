@@ -7,7 +7,7 @@
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/EntityComponentOpList.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 #include "Tests/SpatialView/ComponentTestUtils.h"
 #include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Tests/TestDefinitions.h"

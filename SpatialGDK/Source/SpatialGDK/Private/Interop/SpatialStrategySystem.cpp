@@ -4,6 +4,7 @@
 
 #include "LoadBalancing/LoadBalancingStrategy.h"
 #include "Schema/AuthorityIntent.h"
+#include "Schema/SkeletonEntityManifest.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/SpatialOSWorker.h"
 #include "Utils/EntityFactory.h"
@@ -16,17 +17,22 @@ DEFINE_LOG_CATEGORY(LogSpatialStrategySystem);
 
 namespace SpatialGDK
 {
-FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionsMgr, const FSubView& InLBView,
-											   const FSubView& InServerWorkerView, TUniquePtr<FLoadBalancingStrategy> InStrategy)
-	: LBView(InLBView)
+FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionsMgr, FStrategySystemViews InViews,
+											   TUniquePtr<FLoadBalancingStrategy> InStrategy)
+	: Views(InViews)
 	, PartitionsMgr(MoveTemp(InPartitionsMgr))
-	, DataStorages(InLBView)
-	, UserDataStorages(InLBView)
-	, ServerWorkerDataStorages(InServerWorkerView)
+	, ManifestPublisher(InViews.FilledManifestSubView)
+	, DataStorages(InViews.LBView)
+	, UserDataStorages(InViews.LBView)
+	, ServerWorkerDataStorages(InViews.ServerWorkerView)
 	, Strategy(MoveTemp(InStrategy))
 {
-	FLoadBalancingSharedData SharedData(*PartitionsMgr, ActorSetSystem);
-	Strategy->Init(SharedData, UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
+}
+
+void FSpatialStrategySystem::Init(ISpatialOSWorker& Connection)
+{
+	FLoadBalancingSharedData SharedData(*PartitionsMgr, ActorSetSystem, ManifestPublisher);
+	Strategy->Init(Connection, SharedData, UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
 	DataStorages.DataStorages.Add(&AuthACKView);
 	DataStorages.DataStorages.Add(&NetOwningClientView);
 	DataStorages.DataStorages.Add(&SetMemberView);
@@ -42,6 +48,11 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 {
 	PartitionsMgr->AdvanceView(Connection);
 
+	if (!PartitionsMgr->IsReady())
+	{
+		return;
+	}
+
 	TArray<FLBWorkerHandle> DisconnectedWorkers = PartitionsMgr->GetDisconnectedWorkers();
 
 	if (DisconnectedWorkers.Num() > 0)
@@ -56,18 +67,44 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 		Strategy->OnWorkersConnected(ConnectedWorkers);
 	}
 
+	for (auto const& Delta : Views.SkeletonManifestView.GetViewDelta().EntityDeltas)
+	{
+		if (Delta.Type == EntityDelta::ADD)
+		{
+			const EntityViewElement* Element = Views.SkeletonManifestView.GetView().Find(Delta.EntityId);
+			if (!ensure(Element != nullptr))
+			{
+				continue;
+			}
+			const ComponentData* ManifestData =
+				Element->Components.FindByPredicate(ComponentIdEquality({ SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID }));
+			if (!ensure(ManifestData != nullptr))
+			{
+				continue;
+			}
+			Strategy->OnSkeletonManifestReceived(Delta.EntityId, FSkeletonEntityManifest(*ManifestData));
+		}
+	}
+
+	Strategy->Advance(Connection);
+	if (!Strategy->IsReady())
+	{
+		return;
+	}
+
+	ManifestPublisher.Advance(Connection);
 	DataStorages.Advance();
 	UserDataStorages.Advance();
 	ServerWorkerDataStorages.Advance();
 
 	TSet<Worker_EntityId_Key> RemovedEntities;
-	for (const EntityDelta& Delta : LBView.GetViewDelta().EntityDeltas)
+	for (const EntityDelta& Delta : Views.LBView.GetViewDelta().EntityDeltas)
 	{
 		switch (Delta.Type)
 		{
 		case EntityDelta::ADD:
 		{
-			const SpatialGDK::EntityViewElement& Element = LBView.GetView().FindChecked(Delta.EntityId);
+			const SpatialGDK::EntityViewElement& Element = Views.LBView.GetView().FindChecked(Delta.EntityId);
 			{
 				const SpatialGDK::ComponentData* IntentData = Element.Components.FindByPredicate(
 					SpatialGDK::ComponentIdEquality{ SpatialConstants::AUTHORITY_INTENTV2_COMPONENT_ID });
@@ -97,14 +134,12 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 	}
 
 	ActorSetSystem.Update(SetMemberView, RemovedEntities);
-
-	Strategy->Advance(Connection);
 }
 
 void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 {
 	// Update worker's interest if needed (now, only when additional data storage has been added)
-	if (bStrategySystemInterestDirty)
+	if (bStrategySystemInterestDirty && Strategy->IsReady())
 	{
 		UpdateStrategySystemInterest(Connection);
 	}
@@ -112,6 +147,11 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	// Manage updates to partitions
 	Strategy->TickPartitions();
 	PartitionsMgr->Flush(Connection);
+
+	if (!Strategy->IsReady())
+	{
+		return;
+	}
 
 	// Iterator over the data storage to collect the entities which have been modified this frame.
 	TSet<Worker_EntityId_Key> ModifiedEntities = ActorSetSystem.GetEntitiesToEvaluate();
@@ -243,8 +283,10 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 		if (AuthACK.AssignmentCounter == AuthIntent.AssignmentCounter)
 		{
 			AuthorityDelegation& AuthDelegation = AuthorityDelegationView.FindChecked(EntityToMigrate);
-
-			AuthDelegation.Delegations.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthIntent.PartitionId);
+			if (AuthIntent.PartitionId != 0)
+			{
+				AuthDelegation.Delegations.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthIntent.PartitionId);
+			}
 			MigratingEntities.Remove(EntityToMigrate);
 		}
 	}
@@ -320,6 +362,13 @@ void FSpatialStrategySystem::UpdateStrategySystemInterest(ISpatialOSWorker& Conn
 		ServerQuery.ResultComponentIds = { SpatialConstants::PARTITION_ACK_COMPONENT_ID };
 		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::PARTITION_ACK_COMPONENT_ID;
 		InterestSet.Queries.Add(ServerQuery);
+	}
+
+	{
+		Query SkeletonEntityManifestsQuery = {};
+		SkeletonEntityManifestsQuery.ResultComponentIds = { SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID };
+		SkeletonEntityManifestsQuery.Constraint.ComponentConstraint = SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID;
+		InterestSet.Queries.Add(SkeletonEntityManifestsQuery);
 	}
 
 	ComponentUpdate Update(OwningComponentUpdatePtr(ServerInterest.CreateInterestUpdate().schema_type), Interest::ComponentId);

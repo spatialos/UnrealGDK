@@ -26,6 +26,8 @@ struct FLegacyLBContext
 		VirtualWorkerId WorkerId;
 		FBox2D Region;
 		float Border;
+
+		bool IsInside(const FVector2D& Location) const;
 	};
 
 	struct Layer

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
@@ -39,5 +39,6 @@ struct FSkeletonEntityManifest
 
 	TSet<Worker_EntityId_Key> EntitiesToPopulate;
 	TSet<Worker_EntityId_Key> PopulatedEntities;
+	bool bAckedManifest = false;
 };
 } // namespace SpatialGDK

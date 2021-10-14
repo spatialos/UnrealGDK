@@ -14,37 +14,6 @@
 
 namespace SpatialGDK
 {
-struct FAuthCreateAndAssignPartitions::FPartitionCreationSharedState : public TSharedFromThis<FPartitionCreationSharedState>
-{
-	TArray<Worker_EntityId> DiscoveredPartitionEntityIds;
-	TArray<Worker_EntityId> NewCreatedPartitionEntityIds;
-};
-
-class FAuthCreateAndAssignPartitions::FDiscoverExistingPartitionsStep : public FStartupStep
-{
-public:
-	FDiscoverExistingPartitionsStep(TSharedRef<FPartitionCreationSharedState> InSharedState, ISpatialOSWorker& InConnection)
-		: SharedState(InSharedState)
-		, Connection(&InConnection)
-	{
-		StepName = TEXT("Discovering existing worker partitions");
-	}
-
-	virtual void Start() override;
-
-	void OnPartitionQueryComplete(const Worker_EntityQueryResponseOp& QueryResponse);
-
-	virtual bool TryFinish() override;
-
-private:
-	TSharedRef<FPartitionCreationSharedState> SharedState;
-
-	ISpatialOSWorker* Connection;
-
-	FEntityQueryHandler PartitionQueryHandler;
-	bool bQueryComplete = false;
-};
-
 class FAuthCreateAndAssignPartitions::FCreateNecessaryPartitionsStep : public FStartupStep
 {
 public:
@@ -129,7 +98,8 @@ TArray<TUniquePtr<FStartupStep>> FAuthCreateAndAssignPartitions::CreateSteps()
 {
 	TArray<TUniquePtr<FStartupStep>> Steps;
 
-	Steps.Emplace(MakeUnique<FDiscoverExistingPartitionsStep>(SharedState, *Connection));
+	Steps.Emplace(MakeUnique<FDiscoverExistingPartitionsStep>(SharedState, *Connection, SpatialConstants::WORKER_PARTITION_TAG_COMPONENT_ID,
+															  TArray<Worker_ComponentId>()));
 	Steps.Emplace(MakeUnique<FCreateNecessaryPartitionsStep>(SharedState, Setup, *NetDriver, *Connection));
 	Steps.Emplace(MakeUnique<FWaitForPartitionVisibilityStep>(SharedState, *Connection));
 	Steps.Emplace(MakeUnique<FAssignPartitionsToWorkersStep>(State, SharedState, Setup, *Connection));
@@ -146,22 +116,18 @@ bool FAuthCreateAndAssignPartitions::TryFinish()
 	return Executor.TryFinish();
 }
 
-void FAuthCreateAndAssignPartitions::FDiscoverExistingPartitionsStep::Start()
+void FDiscoverExistingPartitionsStep::Start()
 {
 	Worker_Constraint WorkerPartitionConstraint;
-	WorkerPartitionConstraint.constraint.component_constraint.component_id = SpatialConstants::WORKER_PARTITION_TAG_COMPONENT_ID;
+	WorkerPartitionConstraint.constraint.component_constraint.component_id = PartitionComponentTag;
 	WorkerPartitionConstraint.constraint_type = Worker_ConstraintType::WORKER_CONSTRAINT_TYPE_COMPONENT;
 
 	Worker_EntityQuery PartitionsQuery{};
 
 	PartitionsQuery.constraint = WorkerPartitionConstraint;
 
-	static TArray<Worker_ComponentId> ComponentsToQuery{
-		SpatialConstants::WORKER_PARTITION_TAG_COMPONENT_ID,
-	};
-
-	PartitionsQuery.snapshot_result_type_component_ids = ComponentsToQuery.GetData();
-	PartitionsQuery.snapshot_result_type_component_id_count = ComponentsToQuery.Num();
+	PartitionsQuery.snapshot_result_type_component_ids = PartitionComponents.GetData();
+	PartitionsQuery.snapshot_result_type_component_id_count = PartitionComponents.Num();
 
 	const Worker_RequestId QueryId = Connection->SendEntityQueryRequest(EntityQuery(PartitionsQuery), RETRY_UNTIL_COMPLETE);
 
@@ -170,19 +136,26 @@ void FAuthCreateAndAssignPartitions::FDiscoverExistingPartitionsStep::Start()
 	});
 }
 
-void FAuthCreateAndAssignPartitions::FDiscoverExistingPartitionsStep::OnPartitionQueryComplete(
-	const Worker_EntityQueryResponseOp& QueryResponse)
+void FDiscoverExistingPartitionsStep::OnPartitionQueryComplete(const Worker_EntityQueryResponseOp& QueryResponse)
 {
 	if (ensure(QueryResponse.status_code == WORKER_STATUS_CODE_SUCCESS))
 	{
 		const int32 WorkerPartitionsCount = QueryResponse.result_count;
 
-		TArray<Worker_EntityId> DiscoveredPartitionEntityIds;
+		TMap<Worker_EntityId_Key, EntityViewElement> DiscoveredPartitionEntityIds;
 		DiscoveredPartitionEntityIds.Reserve(WorkerPartitionsCount);
 
 		for (int32 WorkerPartitionIndex = 0; WorkerPartitionIndex < WorkerPartitionsCount; ++WorkerPartitionIndex)
 		{
-			DiscoveredPartitionEntityIds.Emplace(QueryResponse.results[WorkerPartitionIndex].entity_id);
+			EntityViewElement Components;
+			const Worker_Entity& PartitionEntity = QueryResponse.results[WorkerPartitionIndex];
+			for (uint32 ComponentIdx = 0; ComponentIdx < PartitionEntity.component_count; ++ComponentIdx)
+			{
+				const Worker_ComponentData& WorkerData = PartitionEntity.components[ComponentIdx];
+				ComponentData Data = ComponentData::CreateCopy(WorkerData.schema_type, WorkerData.component_id);
+				Components.Components.Add(MoveTemp(Data));
+			}
+			DiscoveredPartitionEntityIds.Emplace(PartitionEntity.entity_id, MoveTemp(Components));
 		}
 
 		SharedState->DiscoveredPartitionEntityIds = MoveTemp(DiscoveredPartitionEntityIds);
@@ -191,7 +164,7 @@ void FAuthCreateAndAssignPartitions::FDiscoverExistingPartitionsStep::OnPartitio
 	}
 }
 
-bool FAuthCreateAndAssignPartitions::FDiscoverExistingPartitionsStep::TryFinish()
+bool FDiscoverExistingPartitionsStep::TryFinish()
 {
 	PartitionQueryHandler.ProcessOps(Connection->GetWorkerMessages());
 	return bQueryComplete;
@@ -255,7 +228,9 @@ bool FAuthCreateAndAssignPartitions::FWaitForPartitionVisibilityStep::TryFinish(
 	const auto IsPartitionEntityVisible = [View = &Connection->GetView()](const Worker_EntityId& PartitionEntityId) {
 		return View->Contains(PartitionEntityId);
 	};
-	const bool bAreAllDiscoveredPartitionsInView = Algo::AllOf(SharedState->DiscoveredPartitionEntityIds, IsPartitionEntityVisible);
+	TArray<Worker_EntityId_Key> PartitionEntities;
+	SharedState->DiscoveredPartitionEntityIds.GetKeys(PartitionEntities);
+	const bool bAreAllDiscoveredPartitionsInView = Algo::AllOf(PartitionEntities, IsPartitionEntityVisible);
 	const bool bAreAllCreatedPartitionsInView = Algo::AllOf(SharedState->NewCreatedPartitionEntityIds, IsPartitionEntityVisible);
 
 	return bAreAllDiscoveredPartitionsInView && bAreAllCreatedPartitionsInView;
@@ -285,7 +260,7 @@ bool FAuthCreateAndAssignPartitions::FAssignPartitionsToWorkersStep::TryFinish()
 	});
 
 	TArray<Worker_PartitionId> WorkerPartitions;
-	WorkerPartitions.Append(SharedState->DiscoveredPartitionEntityIds);
+	SharedState->DiscoveredPartitionEntityIds.GetKeys(WorkerPartitions);
 	WorkerPartitions.Append(SharedState->NewCreatedPartitionEntityIds);
 
 	ComponentUpdate Update(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);

@@ -247,7 +247,8 @@ bool ASpatialFunctionalTest::IsReady_Implementation()
 
 	for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
 	{
-		if (FlowController->IsReadyToRunTest()) // Check if the owner already finished initialization
+		const bool bFlowControllerReadyToRun = FlowController->IsReadyToRunTest();
+		if (bFlowControllerReadyToRun) // Check if the owner already finished initialization
 		{
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 			{

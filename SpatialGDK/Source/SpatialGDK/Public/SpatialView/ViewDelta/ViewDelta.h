@@ -5,7 +5,7 @@
 #include "SpatialView/ComponentSetData.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/EntityView.h"
-#include "SpatialView/OpList/OpList.h"
+#include "SpatialView/ViewDelta/IntermediateReceivedViewChange.h"
 
 namespace SpatialGDK
 {
@@ -50,109 +50,47 @@ public:
 	FString GetConnectionStatusChangeMessage() const;
 
 private:
-	struct ReceivedComponentChange
-	{
-		explicit ReceivedComponentChange(const Worker_AddComponentOp& Op);
-		explicit ReceivedComponentChange(const Worker_ComponentUpdateOp& Op);
-		explicit ReceivedComponentChange(const Worker_RemoveComponentOp& Op);
-		Worker_EntityId EntityId;
-		Worker_ComponentId ComponentId;
-		enum
-		{
-			ADD,
-			UPDATE,
-			REMOVE
-		} Type;
-		union
-		{
-			Schema_ComponentData* ComponentAdded;
-			Schema_ComponentUpdate* ComponentUpdate;
-		};
-	};
-	struct ReceivedEntityChange
-	{
-		Worker_EntityId EntityId;
-		bool bAdded;
-	};
-	// Comparator that will return true when the entity change in question is not for the same entity ID as stored.
-	struct DifferentEntity
-	{
-		Worker_EntityId EntityId;
-		bool operator()(const ReceivedEntityChange& E) const;
-		bool operator()(const ReceivedComponentChange& Op) const;
-		bool operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const;
-	};
-	// Comparator that will return true when the entity change in question is not for the same entity-component as stored.
-	struct DifferentEntityComponent
-	{
-		Worker_EntityId EntityId;
-		Worker_ComponentId ComponentId;
-		bool operator()(const ReceivedComponentChange& Op) const;
-		bool operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const;
-	};
-	// Comparator that will return true when the entity ID of Lhs is less than that of Rhs.
-	// If the entity IDs are the same it will return true when the component ID of Lhs is less than that of Rhs.
-	struct EntityComponentComparison
-	{
-		bool operator()(const ReceivedComponentChange& Lhs, const ReceivedComponentChange& Rhs) const;
-		bool operator()(const Worker_ComponentSetAuthorityChangeOp& Lhs, const Worker_ComponentSetAuthorityChangeOp& Rhs) const;
-	};
-	// Comparator that will return true when the entity ID of Lhs is less than that of Rhs.
-	struct EntityComparison
-	{
-		bool operator()(const ReceivedEntityChange& Lhs, const ReceivedEntityChange& Rhs) const;
-	};
 	// Calculate and return the net component added in [`Start`, `End`).
 	// Also add the resulting component to `Components`.
 	// The accumulated component change in this range must be a component add.
-	static ComponentChange CalculateAdd(ReceivedComponentChange* Start, ReceivedComponentChange* End, TArray<ComponentData>& Components);
+	static ComponentChange CalculateAdd(FReceivedComponentChange* Start, FReceivedComponentChange* End, TArray<ComponentData>& Components);
 	// Calculate and return the net complete update in [`Start`, `End`).
 	// Also set `Component` to match.
 	// The accumulated component change in this range must be a complete-update or
 	// `Data` and `Events` should be non null.
-	static ComponentChange CalculateCompleteUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End, Schema_ComponentData* Data,
-												   Schema_ComponentUpdate* Events, ComponentData& Component);
+	static ComponentChange CalculateCompleteUpdate(FReceivedComponentChange* Start, FReceivedComponentChange* End,
+												   Schema_ComponentData* Data, Schema_ComponentUpdate* Events, ComponentData& Component);
 	// Calculate and return the net update in [`Start`, `End`).
 	// Also apply the update to `Component`.
 	// The accumulated component change in this range must be an update or a complete-update.
-	static ComponentChange CalculateUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End, ComponentData& Component);
+	static ComponentChange CalculateUpdate(FReceivedComponentChange* Start, FReceivedComponentChange* End, ComponentData& Component);
 
-	void ProcessOpList(const OpList& Ops, const EntityView& View, const FComponentSetData& ComponentSetData);
-	void GenerateComponentChangesFromSetData(const Worker_ComponentSetAuthorityChangeOp& Op, const EntityView& View,
-											 const FComponentSetData& ComponentSetData);
+	// The sentinel entity ID has the property that when converted to a uint64 it will be greater than INT64_MAX.
+	// If we convert all entity IDs to uint64s before comparing them we can then be assured that the sentinel value
+	// will be greater than all valid IDs.
+	static const Worker_EntityId SENTINEL_ENTITY_ID = -1;
+
 	void PopulateEntityDeltas(EntityView& View);
 
 	// Adds component changes to `Delta` and updates `Components` accordingly.
 	// `It` must point to the first element with a given entity ID.
 	// Returns a pointer to the next entity in the component changes list.
-	ReceivedComponentChange* ProcessEntityComponentChanges(ReceivedComponentChange* It, ReceivedComponentChange* End,
-														   TArray<ComponentData>& Components, EntityDelta& Delta);
+	FReceivedComponentChange* ProcessEntityComponentChanges(FReceivedComponentChange* It, FReceivedComponentChange* End,
+															TArray<ComponentData>& Components, EntityDelta& Delta);
 	// Adds authority changes to `Delta` and updates `EntityAuthority` accordingly.
 	// `It` must point to the first element with a given entity ID.
 	// Returns a pointer to the next entity in the authority changes list.
-	Worker_ComponentSetAuthorityChangeOp* ProcessEntityAuthorityChanges(Worker_ComponentSetAuthorityChangeOp* It,
-																		Worker_ComponentSetAuthorityChangeOp* End,
-																		TArray<Worker_ComponentSetId>& EntityAuthority, EntityDelta& Delta);
+	FReceivedAuthorityChange* ProcessEntityAuthorityChanges(FReceivedAuthorityChange* It, FReceivedAuthorityChange* End,
+															TArray<Worker_ComponentSetId>& EntityAuthority, EntityDelta& Delta);
 	// Sets `bAdded` and `bRemoved` fields in the `Delta`.
 	// `It` must point to the first element with a given entity ID.
 	// `ViewElement` must point to the same entity in the view or end if it doesn't exist.
 	// Returns a pointer to the next entity in the authority changes list.
 	// After returning `*ViewElement` will point to that entity in the view or nullptr if it doesn't exist.
-	ReceivedEntityChange* ProcessEntityExistenceChange(ReceivedEntityChange* It, ReceivedEntityChange* End, EntityDelta& Delta,
-													   bool bAlreadyInView, EntityView& View);
+	FReceivedEntityChange* ProcessEntityExistenceChange(FReceivedEntityChange* It, FReceivedEntityChange* End, EntityDelta& Delta,
+														bool bAlreadyInView, EntityView& View);
 
-	// The sentinel entity ID has the property that when converted to a uint64 it will be greater than INT64_MAX.
-	// If we convert all entity IDs to uint64s before comparing them we can then be assured that the sentinel values
-	// will be greater than all valid IDs.
-	static const Worker_EntityId SENTINEL_ENTITY_ID = -1;
-
-	TArray<ReceivedEntityChange> EntityChanges;
-	TArray<ReceivedComponentChange> ComponentChanges;
-	TArray<Worker_ComponentSetAuthorityChangeOp> AuthorityChanges;
-	uint8 ConnectionStatusCode = 0;
-	FString ConnectionStatusMessage;
 	TArray<EntityDelta> EntityDeltas;
-	TArray<Worker_Op> WorkerMessages;
 	TArray<AuthorityChange> AuthorityGainedForDelta;
 	TArray<AuthorityChange> AuthorityLostForDelta;
 	TArray<AuthorityChange> AuthorityLostTempForDelta;
@@ -160,6 +98,7 @@ private:
 	TArray<ComponentChange> ComponentsRemovedForDelta;
 	TArray<ComponentChange> ComponentUpdatesForDelta;
 	TArray<ComponentChange> ComponentsRefreshedForDelta;
-	TArray<OpList> OpListStorage;
+
+	FIntermediateReceivedViewChange ViewChange;
 };
 } // namespace SpatialGDK

@@ -1,7 +1,14 @@
-﻿#include "Schema/SkeletonEntityManifest.h"
+#include "Schema/SkeletonEntityManifest.h"
 
 namespace SpatialGDK
 {
+namespace
+{
+constexpr Schema_FieldId SKELETON_ENTITY_MANIFEST_ENTITIES_TO_POPULATE_ID = 1;
+constexpr Schema_FieldId SKELETON_ENTITY_MANIFEST_POPULATED_SKELETON_ENTITIES_ID = 2;
+constexpr Schema_FieldId SKELETON_ENTITY_MANIFEST_ACK_ID = 3;
+} // namespace
+
 static void ApplyCollection(TSet<Worker_EntityId_Key>& Set, const Schema_Object& ComponentObject, Schema_FieldId FieldId)
 {
 	const uint32 EntitiesToPopulateCount = Schema_GetEntityIdCount(&ComponentObject, FieldId);
@@ -14,8 +21,9 @@ static void ApplyCollection(TSet<Worker_EntityId_Key>& Set, const Schema_Object&
 
 void FSkeletonEntityManifest::ApplySchema(const Schema_Object& ComponentObject)
 {
-	ApplyCollection(EntitiesToPopulate, ComponentObject, SpatialConstants::SKELETON_ENTITY_MANIFEST_ENTITIES_TO_POPULATE_ID);
-	ApplyCollection(PopulatedEntities, ComponentObject, SpatialConstants::SKELETON_ENTITY_MANIFEST_POPULATED_SKELETON_ENTITIES_ID);
+	ApplyCollection(EntitiesToPopulate, ComponentObject, SKELETON_ENTITY_MANIFEST_ENTITIES_TO_POPULATE_ID);
+	ApplyCollection(PopulatedEntities, ComponentObject, SKELETON_ENTITY_MANIFEST_POPULATED_SKELETON_ENTITIES_ID);
+	bAckedManifest = Schema_GetBool(&ComponentObject, SKELETON_ENTITY_MANIFEST_ACK_ID) != 0;
 }
 
 static void WriteCollection(const TSet<Worker_EntityId_Key>& EntityIds, Schema_Object& ComponentObject, Schema_FieldId FieldId)
@@ -29,7 +37,9 @@ static void WriteCollection(const TSet<Worker_EntityId_Key>& EntityIds, Schema_O
 
 void FSkeletonEntityManifest::WriteSchema(Schema_Object& ComponentObject) const
 {
-	WriteCollection(EntitiesToPopulate, ComponentObject, SpatialConstants::SKELETON_ENTITY_MANIFEST_ENTITIES_TO_POPULATE_ID);
-	WriteCollection(PopulatedEntities, ComponentObject, SpatialConstants::SKELETON_ENTITY_MANIFEST_POPULATED_SKELETON_ENTITIES_ID);
+	WriteCollection(EntitiesToPopulate, ComponentObject, SKELETON_ENTITY_MANIFEST_ENTITIES_TO_POPULATE_ID);
+	WriteCollection(PopulatedEntities, ComponentObject, SKELETON_ENTITY_MANIFEST_POPULATED_SKELETON_ENTITIES_ID);
+	uint8_t AckedManifest = bAckedManifest ? 1 : 0;
+	Schema_AddBool(&ComponentObject, SKELETON_ENTITY_MANIFEST_ACK_ID, AckedManifest);
 }
 } // namespace SpatialGDK
