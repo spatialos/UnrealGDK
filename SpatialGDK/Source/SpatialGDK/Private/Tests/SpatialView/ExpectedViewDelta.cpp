@@ -3,7 +3,7 @@
 #include "Tests/SpatialView/ExpectedViewDelta.h"
 
 #include "Algo/Compare.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 #include "Tests/SpatialView/ComponentTestUtils.h"
 #include "Tests/SpatialView/ExpectedEntityDelta.h"
 

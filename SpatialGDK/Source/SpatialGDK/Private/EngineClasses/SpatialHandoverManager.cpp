@@ -8,7 +8,7 @@
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SpatialOSWorker.h"
 #include "SpatialView/SubView.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 
 namespace SpatialGDK
 {

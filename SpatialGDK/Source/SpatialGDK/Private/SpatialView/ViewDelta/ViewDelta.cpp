@@ -1,10 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 
 #include "SpatialView/EntityComponentTypes.h"
+#include "SpatialView/ViewDelta/IntermediateReceivedViewChange.h"
 
-#include "Algo/StableSort.h"
 #include <algorithm>
 
 namespace SpatialGDK
@@ -12,12 +12,7 @@ namespace SpatialGDK
 void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View, const FComponentSetData& ComponentSetData)
 {
 	Clear();
-	for (OpList& Ops : OpLists)
-	{
-		ProcessOpList(Ops, View, ComponentSetData);
-	}
-	OpListStorage = MoveTemp(OpLists);
-
+	ViewChange.SetFromOpList(MoveTemp(OpLists), View, ComponentSetData);
 	PopulateEntityDeltas(View);
 }
 
@@ -28,7 +23,7 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 	SubDelta.EntityDeltas.Empty();
 
 	// No projection is applied to worker messages, as they are not entity specific.
-	SubDelta.WorkerMessages = &WorkerMessages;
+	SubDelta.WorkerMessages = &ViewChange.WorkerMessages;
 
 	// All arrays here are sorted by entity ID.
 	auto DeltaIt = EntityDeltas.CreateConstIterator();
@@ -111,22 +106,14 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 
 void ViewDelta::Clear()
 {
-	EntityChanges.Empty();
-	ComponentChanges.Empty();
-	AuthorityChanges.Empty();
-
-	ConnectionStatusCode = 0;
-
-	EntityDeltas.Empty();
-	WorkerMessages.Empty();
-	AuthorityGainedForDelta.Empty();
-	AuthorityLostForDelta.Empty();
-	AuthorityLostTempForDelta.Empty();
-	ComponentsAddedForDelta.Empty();
-	ComponentsRemovedForDelta.Empty();
-	ComponentUpdatesForDelta.Empty();
-	ComponentsRefreshedForDelta.Empty();
-	OpListStorage.Empty();
+	EntityDeltas.Reset();
+	AuthorityGainedForDelta.Reset();
+	AuthorityLostForDelta.Reset();
+	AuthorityLostTempForDelta.Reset();
+	ComponentsAddedForDelta.Reset();
+	ComponentsRemovedForDelta.Reset();
+	ComponentUpdatesForDelta.Reset();
+	ComponentsRefreshedForDelta.Reset();
 }
 
 const TArray<EntityDelta>& ViewDelta::GetEntityDeltas() const
@@ -136,103 +123,31 @@ const TArray<EntityDelta>& ViewDelta::GetEntityDeltas() const
 
 const TArray<Worker_Op>& ViewDelta::GetWorkerMessages() const
 {
-	return WorkerMessages;
+	return ViewChange.WorkerMessages;
 }
 
 bool ViewDelta::HasConnectionStatusChanged() const
 {
-	return ConnectionStatusCode != 0;
+	return ViewChange.ConnectionStatusCode != 0;
 }
 
 Worker_ConnectionStatusCode ViewDelta::GetConnectionStatusChange() const
 {
 	check(HasConnectionStatusChanged());
-	return static_cast<Worker_ConnectionStatusCode>(ConnectionStatusCode);
+	return static_cast<enum Worker_ConnectionStatusCode>(ViewChange.ConnectionStatusCode);
 }
 
 FString ViewDelta::GetConnectionStatusChangeMessage() const
 {
 	check(HasConnectionStatusChanged());
-	return ConnectionStatusMessage;
+	return ViewChange.ConnectionStatusMessage;
 }
 
-ViewDelta::ReceivedComponentChange::ReceivedComponentChange(const Worker_AddComponentOp& Op)
-	: EntityId(Op.entity_id)
-	, ComponentId(Op.data.component_id)
-	, Type(ADD)
-	, ComponentAdded(Op.data.schema_type)
-{
-}
-
-ViewDelta::ReceivedComponentChange::ReceivedComponentChange(const Worker_ComponentUpdateOp& Op)
-	: EntityId(Op.entity_id)
-	, ComponentId(Op.update.component_id)
-	, Type(UPDATE)
-	, ComponentUpdate(Op.update.schema_type)
-{
-}
-
-ViewDelta::ReceivedComponentChange::ReceivedComponentChange(const Worker_RemoveComponentOp& Op)
-	: EntityId(Op.entity_id)
-	, ComponentId(Op.component_id)
-	, Type(REMOVE)
-{
-}
-
-bool ViewDelta::DifferentEntity::operator()(const ReceivedEntityChange& E) const
-{
-	return E.EntityId != EntityId;
-}
-
-bool ViewDelta::DifferentEntity::operator()(const ReceivedComponentChange& Op) const
-{
-	return Op.EntityId != EntityId;
-}
-
-bool ViewDelta::DifferentEntity::operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const
-{
-	return Op.entity_id != EntityId;
-}
-
-bool ViewDelta::DifferentEntityComponent::operator()(const ReceivedComponentChange& Op) const
-{
-	return Op.ComponentId != ComponentId || Op.EntityId != EntityId;
-}
-
-bool ViewDelta::DifferentEntityComponent::operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const
-{
-	return Op.component_set_id != ComponentId || Op.entity_id != EntityId;
-}
-
-bool ViewDelta::EntityComponentComparison::operator()(const ReceivedComponentChange& Lhs, const ReceivedComponentChange& Rhs) const
-{
-	if (Lhs.EntityId != Rhs.EntityId)
-	{
-		return Lhs.EntityId < Rhs.EntityId;
-	}
-	return Lhs.ComponentId < Rhs.ComponentId;
-}
-
-bool ViewDelta::EntityComponentComparison::operator()(const Worker_ComponentSetAuthorityChangeOp& Lhs,
-													  const Worker_ComponentSetAuthorityChangeOp& Rhs) const
-{
-	if (Lhs.entity_id != Rhs.entity_id)
-	{
-		return Lhs.entity_id < Rhs.entity_id;
-	}
-	return Lhs.component_set_id < Rhs.component_set_id;
-}
-
-bool ViewDelta::EntityComparison::operator()(const ReceivedEntityChange& Lhs, const ReceivedEntityChange& Rhs) const
-{
-	return Lhs.EntityId < Rhs.EntityId;
-}
-
-ComponentChange ViewDelta::CalculateAdd(ReceivedComponentChange* Start, ReceivedComponentChange* End, TArray<ComponentData>& Components)
+ComponentChange ViewDelta::CalculateAdd(FReceivedComponentChange* Start, FReceivedComponentChange* End, TArray<ComponentData>& Components)
 {
 	// There must be at least one component add; anything before it can be ignored.
-	ReceivedComponentChange* It = std::find_if(Start, End, [](const ReceivedComponentChange& Op) {
-		return Op.Type == ReceivedComponentChange::ADD;
+	const FReceivedComponentChange* It = std::find_if(Start, End, [](const FReceivedComponentChange& Op) {
+		return Op.Type == FReceivedComponentChange::ADD;
 	});
 
 	Schema_ComponentData* Data = It->ComponentAdded;
@@ -242,13 +157,13 @@ ComponentChange ViewDelta::CalculateAdd(ReceivedComponentChange* Start, Received
 	{
 		switch (It->Type)
 		{
-		case ReceivedComponentChange::ADD:
+		case FReceivedComponentChange::ADD:
 			Data = It->ComponentAdded;
 			break;
-		case ReceivedComponentChange::UPDATE:
+		case FReceivedComponentChange::UPDATE:
 			Schema_ApplyComponentUpdateToData(It->ComponentUpdate, Data);
 			break;
-		case ReceivedComponentChange::REMOVE:
+		case FReceivedComponentChange::REMOVE:
 			break;
 		}
 		++It;
@@ -258,17 +173,17 @@ ComponentChange ViewDelta::CalculateAdd(ReceivedComponentChange* Start, Received
 	return ComponentChange(Start->ComponentId, Data);
 }
 
-ComponentChange ViewDelta::CalculateCompleteUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End, Schema_ComponentData* Data,
-												   Schema_ComponentUpdate* Events, ComponentData& Component)
+ComponentChange ViewDelta::CalculateCompleteUpdate(FReceivedComponentChange* Start, FReceivedComponentChange* End,
+												   Schema_ComponentData* Data, Schema_ComponentUpdate* Events, ComponentData& Component)
 {
 	for (auto It = Start; It != End; ++It)
 	{
 		switch (It->Type)
 		{
-		case ReceivedComponentChange::ADD:
+		case FReceivedComponentChange::ADD:
 			Data = It->ComponentAdded;
 			break;
-		case ReceivedComponentChange::UPDATE:
+		case FReceivedComponentChange::UPDATE:
 			if (Data)
 			{
 				Schema_ApplyComponentUpdateToData(It->ComponentUpdate, Data);
@@ -282,7 +197,7 @@ ComponentChange ViewDelta::CalculateCompleteUpdate(ReceivedComponentChange* Star
 				Events = It->ComponentUpdate;
 			}
 			break;
-		case ReceivedComponentChange::REMOVE:
+		case FReceivedComponentChange::REMOVE:
 			break;
 		}
 	}
@@ -293,16 +208,16 @@ ComponentChange ViewDelta::CalculateCompleteUpdate(ReceivedComponentChange* Star
 	return ComponentChange(Start->ComponentId, Data, EventsObj);
 }
 
-ComponentChange ViewDelta::CalculateUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End, ComponentData& Component)
+ComponentChange ViewDelta::CalculateUpdate(FReceivedComponentChange* Start, FReceivedComponentChange* End, ComponentData& Component)
 {
 	// For an update we don't know if we are calculating a complete-update or a regular update.
 	// So the first message processed might be an add or an update.
-	auto It = std::find_if(Start, End, [](const ReceivedComponentChange& Op) {
-		return Op.Type != ReceivedComponentChange::REMOVE;
+	auto It = std::find_if(Start, End, [](const FReceivedComponentChange& Op) {
+		return Op.Type != FReceivedComponentChange::REMOVE;
 	});
 
 	// If the first message is an add then calculate a complete-update.
-	if (It->Type == ReceivedComponentChange::ADD)
+	if (It->Type == FReceivedComponentChange::ADD)
 	{
 		return CalculateCompleteUpdate(It + 1, End, It->ComponentAdded, nullptr, Component);
 	}
@@ -313,12 +228,12 @@ ComponentChange ViewDelta::CalculateUpdate(ReceivedComponentChange* Start, Recei
 	{
 		switch (It->Type)
 		{
-		case ReceivedComponentChange::ADD:
+		case FReceivedComponentChange::ADD:
 			return CalculateCompleteUpdate(It + 1, End, It->ComponentAdded, Update, Component);
-		case ReceivedComponentChange::UPDATE:
+		case FReceivedComponentChange::UPDATE:
 			Schema_MergeComponentUpdateIntoUpdate(It->ComponentUpdate, Update);
 			break;
-		case ReceivedComponentChange::REMOVE:
+		case FReceivedComponentChange::REMOVE:
 			return CalculateCompleteUpdate(It + 1, End, nullptr, nullptr, Component);
 		}
 		++It;
@@ -329,90 +244,12 @@ ComponentChange ViewDelta::CalculateUpdate(ReceivedComponentChange* Start, Recei
 	return ComponentChange(Start->ComponentId, Update);
 }
 
-void ViewDelta::ProcessOpList(const OpList& Ops, const EntityView& View, const FComponentSetData& ComponentSetData)
-{
-	for (uint32 i = 0; i < Ops.Count; ++i)
-	{
-		const Worker_Op& Op = Ops.Ops[i];
-		switch (static_cast<Worker_OpType>(Op.op_type))
-		{
-		case WORKER_OP_TYPE_DISCONNECT:
-			ConnectionStatusCode = Op.op.disconnect.connection_status_code;
-			ConnectionStatusMessage = Op.op.disconnect.reason;
-			break;
-		case WORKER_OP_TYPE_CRITICAL_SECTION:
-			// Ignore critical sections.
-			break;
-		case WORKER_OP_TYPE_ADD_ENTITY:
-			EntityChanges.Push(ReceivedEntityChange{ Op.op.add_entity.entity_id, true });
-			break;
-		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			EntityChanges.Push(ReceivedEntityChange{ Op.op.remove_entity.entity_id, false });
-			break;
-		case WORKER_OP_TYPE_METRICS:
-		case WORKER_OP_TYPE_FLAG_UPDATE:
-		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
-		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
-		case WORKER_OP_TYPE_COMMAND_REQUEST:
-		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			WorkerMessages.Push(Op);
-			break;
-		case WORKER_OP_TYPE_ADD_COMPONENT:
-			ComponentChanges.Emplace(Op.op.add_component);
-			break;
-		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			ComponentChanges.Emplace(Op.op.remove_component);
-			break;
-		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
-			GenerateComponentChangesFromSetData(Op.op.component_set_authority_change, View, ComponentSetData);
-			AuthorityChanges.Emplace(Op.op.component_set_authority_change);
-			break;
-		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			ComponentChanges.Emplace(Op.op.component_update);
-			break;
-		default:
-			break;
-		}
-	}
-}
-
-void ViewDelta::GenerateComponentChangesFromSetData(const Worker_ComponentSetAuthorityChangeOp& Op, const EntityView& View,
-													const FComponentSetData& ComponentSetData)
-{
-	// Generate component changes to:
-	// * Remove all components on the entity, that are in the component set.
-	// * Add all components the with data in the op.
-	// If one component is both removed and added then this is interpreted as component refresh in the view delta.
-	// Otherwise the component will be added or removed as appropriate.
-
-	const TSet<Worker_ComponentId>& Set = ComponentSetData.ComponentSets[Op.component_set_id];
-
-	// If a component on the entity is in the set then generate a remove operation.
-	if (const EntityViewElement* Entity = View.Find(Op.entity_id))
-	{
-		for (const ComponentData& Component : Entity->Components)
-		{
-			const Worker_ComponentId ComponentId = Component.GetComponentId();
-			if (Set.Contains(ComponentId))
-			{
-				Worker_RemoveComponentOp RemoveOp = { Op.entity_id, ComponentId };
-				ComponentChanges.Emplace(RemoveOp);
-			}
-		}
-	}
-
-	// If the component has data in the authority op then generate an add operation.
-	for (uint32 i = 0; i < Op.canonical_component_set_data_count; ++i)
-	{
-		Worker_AddComponentOp AddOp = { Op.entity_id, Op.canonical_component_set_data[i] };
-		ComponentChanges.Emplace(AddOp);
-	}
-}
-
 void ViewDelta::PopulateEntityDeltas(EntityView& View)
 {
+	TArray<FReceivedComponentChange>& ComponentChanges = ViewChange.ComponentChanges;
+	TArray<FReceivedAuthorityChange>& AuthorityChanges = ViewChange.AuthorityChanges;
+	TArray<FReceivedEntityChange>& EntityChanges = ViewChange.EntityChanges;
+
 	// Make sure there is enough space in the view delta storage.
 	// This allows us to rely on stable pointers as we add new elements.
 	ComponentsAddedForDelta.Reserve(ComponentChanges.Num());
@@ -423,23 +260,19 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 	AuthorityLostForDelta.Reserve(AuthorityChanges.Num());
 	AuthorityLostTempForDelta.Reserve(AuthorityChanges.Num());
 
-	Algo::StableSort(ComponentChanges, EntityComponentComparison{});
-	Algo::StableSort(AuthorityChanges, EntityComponentComparison{});
-	Algo::StableSort(EntityChanges, EntityComparison{});
-
 	// Add sentinel elements to the ends of the arrays.
-	// Prevents the need for bounds checks on the iterators.
-	ComponentChanges.Emplace(Worker_RemoveComponentOp{ SENTINEL_ENTITY_ID, 0 });
-	AuthorityChanges.Emplace(Worker_ComponentSetAuthorityChangeOp{ SENTINEL_ENTITY_ID, 0, 0 });
-	EntityChanges.Emplace(ReceivedEntityChange{ SENTINEL_ENTITY_ID, false });
+	// Prevents the need for bounds checks on iterators over the change lists.
+	ViewChange.ComponentChanges.Emplace(Worker_RemoveComponentOp{ SENTINEL_ENTITY_ID, 0 });
+	AuthorityChanges.Push(FReceivedAuthorityChange{ SENTINEL_ENTITY_ID, 0, false });
+	EntityChanges.Push(FReceivedEntityChange{ SENTINEL_ENTITY_ID, false });
 
 	auto ComponentIt = ComponentChanges.GetData();
 	auto AuthorityIt = AuthorityChanges.GetData();
 	auto EntityIt = EntityChanges.GetData();
 
-	ReceivedComponentChange* ComponentChangesEnd = ComponentIt + ComponentChanges.Num();
-	Worker_ComponentSetAuthorityChangeOp* AuthorityChangesEnd = AuthorityIt + AuthorityChanges.Num();
-	ReceivedEntityChange* EntityChangesEnd = EntityIt + EntityChanges.Num();
+	FReceivedComponentChange* ComponentChangesEnd = ComponentIt + ComponentChanges.Num();
+	FReceivedAuthorityChange* AuthorityChangesEnd = AuthorityIt + AuthorityChanges.Num();
+	FReceivedEntityChange* EntityChangesEnd = EntityIt + EntityChanges.Num();
 
 	// At the beginning of each loop each iterator should point to the first element for an entity.
 	// Each loop we want to work with a single entity ID.
@@ -449,7 +282,7 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 	{
 		// Get the next entity ID. We want to pick the smallest entity referenced by the iterators.
 		// Convert to uint64 to ensure the sentinel value is larger than all valid IDs.
-		const uint64 MinEntityId = FMath::Min3(static_cast<uint64>(ComponentIt->EntityId), static_cast<uint64>(AuthorityIt->entity_id),
+		const uint64 MinEntityId = FMath::Min3(static_cast<uint64>(ComponentIt->EntityId), static_cast<uint64>(AuthorityIt->EntityId),
 											   static_cast<uint64>(EntityIt->EntityId));
 
 		// If no list has elements left to read then stop.
@@ -476,7 +309,7 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 			ComponentIt = ProcessEntityComponentChanges(ComponentIt, ComponentChangesEnd, ViewElement->Components, Delta);
 		}
 
-		if (AuthorityIt->entity_id == CurrentEntityId)
+		if (AuthorityIt->EntityId == CurrentEntityId)
 		{
 			AuthorityIt = ProcessEntityAuthorityChanges(AuthorityIt, AuthorityChangesEnd, ViewElement->Authority, Delta);
 		}
@@ -496,8 +329,8 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 	}
 }
 
-ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(ReceivedComponentChange* It, ReceivedComponentChange* End,
-																			 TArray<ComponentData>& Components, EntityDelta& Delta)
+FReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(FReceivedComponentChange* It, FReceivedComponentChange* End,
+																   TArray<ComponentData>& Components, EntityDelta& Delta)
 {
 	int32 AddCount = 0;
 	int32 UpdateCount = 0;
@@ -510,7 +343,7 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 	// There will always be at least one iteration of the loop.
 	for (;;)
 	{
-		ReceivedComponentChange* NextComponentIt = std::find_if(It, End, DifferentEntityComponent{ EntityId, It->ComponentId });
+		FReceivedComponentChange* NextComponentIt = std::find_if(It, End, FDifferentEntityComponent{ EntityId, It->ComponentId });
 
 		ComponentData* Component = Components.FindByPredicate(ComponentIdEquality{ It->ComponentId });
 		const bool bComponentExists = Component != nullptr;
@@ -518,7 +351,7 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 		// The element one before NextComponentIt must be the last element for this component.
 		switch ((NextComponentIt - 1)->Type)
 		{
-		case ReceivedComponentChange::ADD:
+		case FReceivedComponentChange::ADD:
 			if (bComponentExists)
 			{
 				ComponentsRefreshedForDelta.Emplace(CalculateCompleteUpdate(It, NextComponentIt, nullptr, nullptr, *Component));
@@ -530,7 +363,7 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 				++AddCount;
 			}
 			break;
-		case ReceivedComponentChange::UPDATE:
+		case FReceivedComponentChange::UPDATE:
 			if (bComponentExists)
 			{
 				ComponentChange Update = CalculateUpdate(It, NextComponentIt, *Component);
@@ -551,7 +384,7 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 				++AddCount;
 			}
 			break;
-		case ReceivedComponentChange::REMOVE:
+		case FReceivedComponentChange::REMOVE:
 			if (bComponentExists)
 			{
 				ComponentsRemovedForDelta.Emplace(It->ComponentId);
@@ -575,28 +408,26 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 	}
 }
 
-Worker_ComponentSetAuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(Worker_ComponentSetAuthorityChangeOp* It,
-																			   Worker_ComponentSetAuthorityChangeOp* End,
-																			   TArray<Worker_ComponentSetId>& EntityAuthority,
-																			   EntityDelta& Delta)
+FReceivedAuthorityChange* ViewDelta::ProcessEntityAuthorityChanges(FReceivedAuthorityChange* It, FReceivedAuthorityChange* End,
+																   TArray<Worker_ComponentSetId>& EntityAuthority, EntityDelta& Delta)
 {
 	int32 GainCount = 0;
 	int32 LossCount = 0;
 	int32 LossTempCount = 0;
 
-	const Worker_EntityId EntityId = It->entity_id;
+	const Worker_EntityId EntityId = It->EntityId;
 	// After each loop the iterator points to the first op relating to the next entity-component.
 	// Stop and return when that component is for a different entity.
 	// There will always be at least one iteration of the loop.
 	for (;;)
 	{
 		// Find the last element for this entity-component.
-		const Worker_ComponentSetId ComponentSetId = It->component_set_id;
-		It = std::find_if(It, End, DifferentEntityComponent{ EntityId, ComponentSetId }) - 1;
+		const Worker_ComponentSetId ComponentSetId = It->ComponentSetId;
+		It = std::find_if(It, End, FDifferentEntityComponentSet{ EntityId, ComponentSetId }) - 1;
 		const int32 AuthorityIndex = EntityAuthority.Find(ComponentSetId);
 		const bool bHasAuthority = AuthorityIndex != INDEX_NONE;
 
-		if (It->authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		if (It->bNewAuth)
 		{
 			if (bHasAuthority)
 			{
@@ -620,7 +451,7 @@ Worker_ComponentSetAuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(W
 		// Move to the next entity-component.
 		++It;
 
-		if (It->entity_id != EntityId)
+		if (It->EntityId != EntityId)
 		{
 			Delta.AuthorityGained = { AuthorityGainedForDelta.GetData() + AuthorityGainedForDelta.Num() - GainCount, GainCount };
 			Delta.AuthorityLost = { AuthorityLostForDelta.GetData() + AuthorityLostForDelta.Num() - LossCount, LossCount };
@@ -631,12 +462,12 @@ Worker_ComponentSetAuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(W
 	}
 }
 
-ViewDelta::ReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(ReceivedEntityChange* It, ReceivedEntityChange* End,
-																		 EntityDelta& Delta, bool bAlreadyInView, EntityView& View)
+FReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(FReceivedEntityChange* It, FReceivedEntityChange* End, EntityDelta& Delta,
+															   bool bAlreadyInView, EntityView& View)
 {
 	// Find the last element relating to the same entity.
 	const Worker_EntityId EntityId = It->EntityId;
-	It = std::find_if(It, End, DifferentEntity{ EntityId }) - 1;
+	It = std::find_if(It, End, FDifferentEntity{ EntityId }) - 1;
 
 	const bool bEntityAdded = It->bAdded;
 

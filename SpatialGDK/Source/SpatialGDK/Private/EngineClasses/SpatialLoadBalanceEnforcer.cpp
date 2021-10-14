@@ -11,7 +11,7 @@
 #include "SpatialConstants.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SubView.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 

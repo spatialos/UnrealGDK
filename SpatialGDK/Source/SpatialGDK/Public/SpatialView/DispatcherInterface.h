@@ -3,7 +3,7 @@
 #pragma once
 
 #include "SpatialView/Callbacks.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 
 namespace SpatialGDK
 {
