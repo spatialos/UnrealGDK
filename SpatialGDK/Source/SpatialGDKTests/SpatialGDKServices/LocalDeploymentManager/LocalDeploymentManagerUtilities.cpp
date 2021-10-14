@@ -6,7 +6,7 @@
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
 #include "SpatialGDKEditorSettings.h"
-#include "SpatialGDKServicesConstants.h"
+#include "SpatialGDKServicesConstants.h"																	
 
 #include "CoreMinimal.h"
 
@@ -201,4 +201,94 @@ bool FCheckDeploymentState::Update()
 	}
 
 	return true;
+}
+
+void ExecuteLatentCommandSynchronous(IAutomationLatentCommand* Command) {
+	while (true) {
+		bool bResult = Command->Update();
+		if (bResult) {
+			break;
+		}
+		else {
+			continue;
+		}
+	}
+}
+
+
+void ExecuteStopDeployment()
+{
+	while (true) {
+		FLocalDeploymentManager* LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
+
+		if (LocalDeploymentManager->IsDeploymentStarting())
+		{
+			// Wait for deployment to finish starting before stopping it
+			continue;
+		}
+
+		if (!LocalDeploymentManager->IsLocalDeploymentRunning() && !LocalDeploymentManager->IsDeploymentStopping())
+		{
+			DeleteWorkerJson();
+			break;
+		}
+
+		if (!LocalDeploymentManager->IsDeploymentStopping())
+		{
+			AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager] {
+				DeleteWorkerJson();
+				LocalDeploymentManager->TryStopLocalDeployment();
+				});
+		}
+
+		break;
+	}
+}
+
+
+void ExecuteWaitForDeployment(FAutomationTestBase* Test, EDeploymentState ExpectedDeploymentState)
+{
+	double StartTime = FPlatformTime::Seconds();
+
+	while (true) {
+		FLocalDeploymentManager* const LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
+
+		if (LocalDeploymentManager->IsDeploymentStarting())
+		{
+			// Wait for deployment to finish starting before stopping it
+			continue;
+		}
+
+		const double NewTime = FPlatformTime::Seconds();
+
+		if (NewTime - StartTime >= MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION)
+		{
+			// The given time for the deployment to start/stop has expired - test its current state.
+			if (ExpectedDeploymentState == EDeploymentState::IsRunning)
+			{
+				Test->TestTrue(TEXT("Deployment is running"),
+					LocalDeploymentManager->IsLocalDeploymentRunning() && !LocalDeploymentManager->IsDeploymentStopping());
+			}
+			else
+			{
+				Test->TestFalse(TEXT("Deployment is not running"),
+					LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStopping());
+			}
+			break;
+		}
+
+		if (LocalDeploymentManager->IsDeploymentStopping())
+		{
+			continue;
+		}
+		else
+		{
+			if ((ExpectedDeploymentState == EDeploymentState::IsRunning) == LocalDeploymentManager->IsLocalDeploymentRunning()) {
+				break;
+			}
+			else {
+				continue;
+			}
+		}
+	}
 }
