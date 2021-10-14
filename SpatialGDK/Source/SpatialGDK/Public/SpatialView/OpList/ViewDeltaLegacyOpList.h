@@ -4,7 +4,7 @@
 
 #include "Containers/Array.h"
 #include "SpatialView/OpList/OpList.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 
 namespace SpatialGDK
 {

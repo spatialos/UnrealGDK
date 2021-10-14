@@ -4,7 +4,7 @@
 
 #include "ComponentTestUtils.h"
 #include "SpatialView/OpList/EntityComponentOpList.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 #include "SpatialView/WorkerView.h"
 
 namespace SpatialGDK
