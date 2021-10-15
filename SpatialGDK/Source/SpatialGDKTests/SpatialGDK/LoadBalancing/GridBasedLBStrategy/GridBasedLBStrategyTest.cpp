@@ -15,7 +15,8 @@
 #include "Tests/AutomationEditorCommon.h"
 #include "Tests/TestDefinitions.h"
 
-#define GRIDBASEDLBSTRATEGY_TEST(TestName) GDK_AUTOMATION_MAP_TEST(Core, UGridBasedLBStrategy, TestName)
+#define GRIDBASEDLBSTRATEGY_TEST(TestName) GDK_AUTOMATION_TEST(Core, UGridBasedLBStrategy, TestName)
+#define GRIDBASEDLBSTRATEGY_MAP_TEST(TestName) GDK_AUTOMATION_MAP_TEST(Core, UGridBasedLBStrategy, TestName)
 
 // Test Globals
 namespace
@@ -308,7 +309,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_more_than_one_column_WHEN_requires_handover_data_
 
 } // anonymous namespace
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false)
+GRIDBASEDLBSTRATEGY_MAP_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false)
 {
 	LoadTestMap();
 
@@ -323,7 +324,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_reli
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_return_different_virtual_workers)
+GRIDBASEDLBSTRATEGY_MAP_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_return_different_virtual_workers)
 {
 	LoadTestMap();
 
@@ -344,7 +345,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_r
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_should_relinquish_authority)
+GRIDBASEDLBSTRATEGY_MAP_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_should_relinquish_authority)
 {
 	LoadTestMap();
 
@@ -363,7 +364,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_sho
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_should_belong_to_same_worker_id)
+GRIDBASEDLBSTRATEGY_MAP_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_should_belong_to_same_worker_id)
 {
 	LoadTestMap();
 
@@ -380,7 +381,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_shou
 	return true;
 }
 
-GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_relinquishes_based_on_local_id)
+GRIDBASEDLBSTRATEGY_MAP_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_relinquishes_based_on_local_id)
 {
 	LoadTestMap();
 

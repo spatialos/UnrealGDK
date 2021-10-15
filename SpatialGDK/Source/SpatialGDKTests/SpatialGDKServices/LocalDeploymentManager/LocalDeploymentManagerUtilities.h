@@ -26,7 +26,4 @@ DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FWaitForDeployment, FAutomationTe
 DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FCheckDeploymentState, FAutomationTestBase*, Test, EDeploymentState,
 											   ExpectedDeploymentState);
 
-
-void ExecuteLatentCommandSynchronous(IAutomationLatentCommand* Command);
-void ExecuteStopDeployment();
-void ExecuteWaitForDeployment(FAutomationTestBase* Test, EDeploymentState ExpectedDeploymentState);
+void ExecuteLatentCommandImmediately(IAutomationLatentCommand* Command);

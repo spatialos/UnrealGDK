@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 #include "Misc/AutomationTest.h"
@@ -109,13 +109,28 @@ private:
 	bool TestName::RunGDKTest(const FString& Parameters)
 
 
-
+/**
+ * This class us an alternative to FGDKAutomationTestBase for tests which needs to open its own map.
+ * It ensures that any existing map is closed fully before the next call to AutomationOpenMap.
+ * This class is also offered through a macro, in a similar way to `IMPLEMENT_SIMPLE_AUTOMATION_TEST`.
+ *
+ * To use this test base, the GDK_AUTOMATION_MAP_TEST macro should be used, followed by the test body:
+ * ```
+ *	   GDK_AUTOMATION_MAP_TEST(MyModule, MyComponent, MyTestName)
+ *	   {
+ *			// do some testing here...
+ *
+ *			return true;
+ *	   }
+ * ```
+ *
+ * Returning `true` indicates a test pass and returning `false` indicates test failure.
+ */
 class FGDKAutomationMapTestBase : public FGDKAutomationTestBase
 {
-
 public:
 	FGDKAutomationMapTestBase(const FString& Name, bool bInComplexTask, FString TestSrcFileName, uint32 TestSrcFileLine)
-		: FGDKAutomationTestBase(Name,bInComplexTask,TestSrcFileName,TestSrcFileLine)
+		: FGDKAutomationTestBase(Name, bInComplexTask, TestSrcFileName, TestSrcFileLine)
 	{
 	}
 
@@ -132,20 +147,9 @@ protected:
 			UE_LOG(LogGDKTestBase, Log, TEXT("Deployment found! (Was this left over from another test?)"));
 			UE_LOG(LogGDKTestBase, Log, TEXT("Ending PIE session"));
 			GEditor->RequestEndPlayMap();
-			ExecuteStopDeployment();
-			ExecuteWaitForDeployment(this, EDeploymentState::IsNotRunning);
+			ExecuteLatentCommandImmediately(new FStopDeployment());
+			ExecuteLatentCommandImmediately(new FWaitForDeployment(this, EDeploymentState::IsNotRunning));
 		}
-	}
-
-	/**
-	 * Implement this method with the test body
-	 */
-	virtual bool RunGDKTest(const FString& Parameters) = 0;
-
-	virtual bool RunTest(const FString& Parameters) override
-	{
-		SetUp();
-		return RunGDKTest(Parameters);
 	}
 
 private:
@@ -154,15 +158,15 @@ private:
 	uint32 TestSourceFileLine;
 };
 
-#define GDK_AUTOMATION_MAP_TEST(ModuleName, ComponentName, TestName)                                                                           \
+#define GDK_AUTOMATION_MAP_TEST(ModuleName, ComponentName, TestName)                                                                       \
 	IMPLEMENT_GDK_AUTOMATION_MAP_TEST(TestName, "SpatialGDK." #ModuleName "." #ComponentName "." #TestName)
 
-#define IMPLEMENT_GDK_AUTOMATION_MAP_TEST(TestName, PrettyName)                                                                                \
-	class TestName : public FGDKAutomationMapTestBase                                                                                         \
+#define IMPLEMENT_GDK_AUTOMATION_MAP_TEST(TestName, PrettyName)                                                                            \
+	class TestName : public FGDKAutomationMapTestBase                                                                                      \
 	{                                                                                                                                      \
 	public:                                                                                                                                \
 		TestName(const FString& InName, bool bInComplexTask, FString TestSourceFileName, uint32 TestSourceFileLine)                        \
-			: FGDKAutomationMapTestBase(InName, bInComplexTask, TestSourceFileName, TestSourceFileLine)                                       \
+			: FGDKAutomationMapTestBase(InName, bInComplexTask, TestSourceFileName, TestSourceFileLine)                                    \
 		{                                                                                                                                  \
 		}                                                                                                                                  \
 		virtual bool RunGDKTest(const FString& Parameters) override;                                                                       \
