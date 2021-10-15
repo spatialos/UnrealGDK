@@ -108,7 +108,6 @@ private:
 	}                                                                                                                                      \
 	bool TestName::RunGDKTest(const FString& Parameters)
 
-
 /**
  * This class us an alternative to FGDKAutomationTestBase for tests which needs to open its own map.
  * It ensures that any existing map is closed fully before the next call to AutomationOpenMap.

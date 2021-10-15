@@ -226,4 +226,3 @@ void ExecuteLatentCommandImmediately(IAutomationLatentCommand* Command)
 		}
 	}
 }
-
