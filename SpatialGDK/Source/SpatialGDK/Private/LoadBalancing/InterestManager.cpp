@@ -3,19 +3,27 @@
 #include "SpatialView/SpatialOSWorker.h"
 #include "Utils/InterestFactory.h"
 
-#ifdef HAS_BULLET_PHYSICS
-// This is needed to suppress some warnings that UE4 escalates that Bullet doesn't
-THIRD_PARTY_INCLUDES_START
-// This is needed to fix memory alignment issues
-PRAGMA_PUSH_PLATFORM_DEFAULT_PACKING
-#include <BulletCollision/BroadphaseCollision/btDbvt.h>
-PRAGMA_POP_PLATFORM_DEFAULT_PACKING
-THIRD_PARTY_INCLUDES_END
-#else
+#define USE_BTDBVT_BROADPHASE 0
 
-// Try to grab improbable's phTree thingy
-
+#if USE_BTDBVT_BROADPHASE
+#include "LoadBalancing/InterestManager_btdbvt.h"
 #endif
+
+#define USE_BTWORLD_BROADPHASE 0
+
+#if USE_BTWORLD_BROADPHASE
+#include "LoadBalancing/InterestManager_btworld.h"
+#endif
+
+#define USE_PHTREE_BROADPHASE 1
+
+#if USE_PHTREE_BROADPHASE
+#include "LoadBalancing/InterestManager_phtree.h"
+#endif
+
+#define USE_VISIBILITYSCRATCHPAD 1
+
+#define NO_BROADPHASE !(USE_BTDBVT_BROADPHASE || USE_BTWORLD_BROADPHASE || USE_PHTREE_BROADPHASE)
 
 #include <algorithm>
 #include <cmath>
@@ -32,6 +40,7 @@ DECLARE_CYCLE_STAT(TEXT("InterestManagerComputePlayer"), STAT_InterestManagerCom
 DECLARE_CYCLE_STAT(TEXT("InterestManagerComputePlayerSort"), STAT_InterestManagerComputePlayerSort, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("InterestManagerComputePlayerNaive"), STAT_InterestManagerComputePlayerNaive, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("InterestManagerComputePlayerBroadphase"), STAT_InterestManagerComputePlayerBroadphase, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("InterestManagerComputePlayerGatherMasks"), STAT_InterestManagerComputePlayerGatherMasks, STATGROUP_SpatialNet);
 
 namespace SpatialGDK
 {
@@ -64,256 +73,6 @@ void FTagComponentStorage::OnUpdate(Worker_EntityId EntityId, Worker_ComponentId
 	}
 	Modified.Add(EntityId);
 }
-
-struct FInterestManager::FBroadphaseImpl
-{
-	FBroadphaseImpl() {}
-
-	void Alloc()
-	{
-#ifdef HAS_BULLET_PHYSICS
-		uint32 Slot = Nodes.Num();
-		btVector3 pos(0.0, 0.0, 0.0);
-		auto box = btDbvtVolume::FromCE(pos, btVector3(0.1, 0.1, 0.1));
-
-		btDbvtNode* node = Tree.insert(box, (void*)Slot);
-		node->data = (void*)Slot;
-
-		int32 TreeId = Nodes.Num();
-
-		Nodes.Push(node);
-		Positions.push_back(pos);
-		Volumes.expand(node->volume);
-#endif
-	}
-
-	void Update(uint32 Slot, FVector Position)
-	{
-#ifdef HAS_BULLET_PHYSICS
-		btVector3 pos(Position.X / 100, Position.Y / 100, Position.Z / 100);
-		Positions[Slot] = pos;
-		Volumes[Slot] = btDbvtVolume::FromCE(pos, btVector3(0.1, 0.1, 0.1));
-		Tree.update(Nodes[Slot], Volumes[Slot], 1.0);
-#endif
-	}
-
-	void SwapEntries(int32 Slot1, int32 Slot2)
-	{
-#ifdef HAS_BULLET_PHYSICS
-		Swap(Positions[Slot1], Positions[Slot2]);
-		Swap(Volumes[Slot1], Volumes[Slot2]);
-		Swap(Nodes[Slot1], Nodes[Slot2]);
-#endif
-	}
-
-	void MoveEntry(int32 SlotSrc, int32 SlotDest)
-	{
-#ifdef HAS_BULLET_PHYSICS
-		Positions[SlotSrc], Positions[SlotDest];
-		Volumes[SlotSrc], Volumes[SlotDest];
-		Nodes[SlotSrc], Nodes[SlotDest];
-#endif
-	}
-
-	void Remove()
-	{
-#ifdef HAS_BULLET_PHYSICS
-		Tree.remove(Nodes.Last());
-		Positions.pop_back();
-		Volumes.pop_back();
-		Nodes.Pop();
-#endif
-	}
-
-	void ComputeBoxVisibility(const TArray<FBox2D>& Regions, uint64* OutVisibility) {}
-
-#ifdef HAS_BULLET_PHYSICS
-	struct VisitStackElem
-	{
-		VisitStackElem(btDbvtNode* iNode, uint32 iListEnd)
-			: node(iNode)
-			, objListEnd(iListEnd)
-		{
-		}
-
-		btDbvtNode* node;
-		uint32 objListEnd;
-		int32 curChild = -1;
-	};
-#endif
-
-	void ComputeVisibility_Mask(TArray<int32> Viewers, uint64* Out, float SearchRadius)
-	{
-#ifdef HAS_BULLET_PHYSICS
-		SearchRadius *= 0.01;
-
-		const uint32 NumViewers = Viewers.Num();
-
-		TArray<uint32> ViewerMaskSlot;
-		ViewerMaskSlot.Reserve(NumViewers);
-		for (uint32 i = 0; i < NumViewers; ++i)
-		{
-			ViewerMaskSlot.Add(i);
-		}
-		int32* ViewersPtr = Viewers.GetData();
-		uint32* ViewerMaskSlotPtr = ViewerMaskSlot.GetData();
-
-		TArray<VisitStackElem> nodes;
-		nodes.Reserve(64);
-
-		nodes.Add(VisitStackElem(Tree.m_root, NumViewers));
-
-		btVector3* posArray = &Positions[0];
-		btDbvtVolume* volumesArray = &Volumes[0];
-
-		// btVector3 searchOffset = TO_BTVECT(iForwardOffset);
-		// float inflateRadius = iRadiusSearch + searchOffset.length();
-		float const sqRadius = SearchRadius * SearchRadius;
-		;
-
-		while (nodes.Num() > 0)
-		{
-			auto& curNode = nodes.Last();
-			if (curNode.curChild == 1 || curNode.objListEnd <= 0)
-			{
-				nodes.Pop();
-			}
-			else
-			{
-				curNode.curChild++;
-
-				btDbvtNode* child = curNode.node->childs[curNode.curChild];
-
-				btDbvtVolume nodeExpandedVolume = child->volume;
-				nodeExpandedVolume.Expand(btVector3(SearchRadius, SearchRadius, SearchRadius));
-
-				if (!child->isleaf())
-				{
-					// Cull object list by children expanded volume
-					nodes.Add(VisitStackElem(child, curNode.objListEnd));
-
-					auto& stackElem = nodes.Last();
-
-					for (int i = 0; i < (int)stackElem.objListEnd; ++i)
-					{
-						btDbvtVolume const& objVolume = *(volumesArray + ViewersPtr[i]);
-						if (!Intersect(nodeExpandedVolume, objVolume))
-						{
-							Swap(ViewersPtr[i], ViewersPtr[stackElem.objListEnd - 1]);
-							Swap(ViewerMaskSlot[i], ViewerMaskSlot[stackElem.objListEnd - 1]);
-							--stackElem.objListEnd;
-							--i;
-						}
-					}
-				}
-				else
-				{
-					union CastStruct
-					{
-						uint32 u32;
-						void* ptr;
-					} Slot;
-					Slot.ptr = child->data;
-					uint32 otherObj = Slot.u32;
-					for (uint32 i = 0; i < curNode.objListEnd; ++i)
-					{
-						uint32 curObject = ViewersPtr[i];
-						if (curObject != otherObj && posArray[curObject].distance2(posArray[otherObj]) < sqRadius)
-						{
-							Out[otherObj] |= 1ull << ViewerMaskSlotPtr[i];
-						}
-					}
-				}
-			}
-		}
-#endif
-	}
-
-	void ComputeVisibility(TArray<int32> Viewers, TArray<TArray<uint32>>& Out, float SearchRadius)
-	{
-#ifdef HAS_BULLET_PHYSICS
-
-		SearchRadius *= 0.01;
-
-		const uint32 NumViewers = Viewers.Num();
-		int32* ViewersPtr = Viewers.GetData();
-
-		TArray<VisitStackElem> nodes;
-		nodes.Reserve(64);
-
-		nodes.Add(VisitStackElem(Tree.m_root, NumViewers));
-
-		btVector3* posArray = &Positions[0];
-		btDbvtVolume* volumesArray = &Volumes[0];
-
-		// btVector3 searchOffset = TO_BTVECT(iForwardOffset);
-		// float inflateRadius = iRadiusSearch + searchOffset.length();
-		float const sqRadius = SearchRadius * SearchRadius;
-		;
-
-		while (nodes.Num() > 0)
-		{
-			auto& curNode = nodes.Last();
-			if (curNode.curChild == 1 || curNode.objListEnd <= 0)
-			{
-				nodes.Pop();
-			}
-			else
-			{
-				curNode.curChild++;
-				btDbvtNode* child = curNode.node->childs[curNode.curChild];
-
-				btDbvtVolume nodeExpandedVolume = child->volume;
-				nodeExpandedVolume.Expand(btVector3(SearchRadius, SearchRadius, SearchRadius));
-
-				if (!child->isleaf() && curNode.objListEnd > 0)
-				{
-					// Cull object list by children expanded volume
-					nodes.Add(VisitStackElem(child, curNode.objListEnd));
-
-					auto& stackElem = nodes.Last();
-
-					for (int i = 0; i < (int)stackElem.objListEnd; ++i)
-					{
-						btDbvtVolume const& objVolume = *(volumesArray + ViewersPtr[i]);
-						if (!Intersect(nodeExpandedVolume, objVolume))
-						{
-							Swap(ViewersPtr[i], ViewersPtr[stackElem.objListEnd - 1]);
-							--stackElem.objListEnd;
-							--i;
-						}
-					}
-				}
-				else
-				{
-					union CastStruct
-					{
-						uint32 u32;
-						void* ptr;
-					} Slot;
-					Slot.ptr = child->data;
-					uint32 otherObj = Slot.u32;
-					for (uint32 i = 0; i < curNode.objListEnd; ++i)
-					{
-						uint32 curObject = ViewersPtr[i];
-						if (curObject != otherObj && posArray[curObject].distance2(posArray[otherObj]) < sqRadius)
-						{
-							Out[curObject].Add(otherObj);
-						}
-					}
-				}
-			}
-		}
-#endif
-	}
-
-#ifdef HAS_BULLET_PHYSICS
-	btDbvt Tree;
-	TArray<btDbvtNode*> Nodes;
-	btAlignedObjectArray<btVector3> Positions;
-	btAlignedObjectArray<btDbvtVolume> Volumes;
-#endif
-};
 
 void SendPartitionRequest(FCommandsHandler& CommandsHandler, Worker_EntityId Entity, ISpatialOSWorker& Connection,
 						  TFunction<void(const Worker_EntityQueryResponseOp&)> QueryResponse)
@@ -379,8 +138,7 @@ FInterestManager::FInterestManager(InterestFactory& InInterestF, FSpatialPositio
 	EntityFlags.Reserve(1 << 16);
 	CachedServerVisibility.Reserve(1 << 16);
 	ActiveTimestamp.Reserve(1 << 16);
-
-#ifdef HAS_BULLET_PHYSICS
+#if !NO_BROADPHASE
 	Broadphase = MakeUnique<FBroadphaseImpl>();
 #endif
 }
@@ -420,6 +178,8 @@ void FInterestManager::Advance(ISpatialOSWorker& Connection, const TSet<Worker_E
 			{
 				Flags |= ServerAlwaysRelevantFlag;
 			}
+			Slot = Allocate();
+
 			if (PlayerController.GetObjects().Contains(Entity))
 			{
 #ifndef BENCH_INTEREST_PERF
@@ -430,8 +190,12 @@ void FInterestManager::Advance(ISpatialOSWorker& Connection, const TSet<Worker_E
 				NewPlayer.PlayerWorkerSystemEntityId = 0;
 				Players.Add(Entity, NewPlayer);
 #endif
+				if(Broadphase)
+				{
+					Broadphase->SetViewer(Slot, PlayerInterestRadius);
+				}
 			}
-			Slot = Allocate();
+			
 			SlotMap.Add(Entity, Slot);
 			Entities[Slot] = Entity;
 			EntityFlags[Slot] = Flags;
@@ -656,7 +420,9 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			++Flags;
 		}
 
+#ifdef USE_BTDBVT_BROADPHASE
 		Broadphase->ComputeBoxVisibility(Regions, CachedServerVisibility.GetData());
+#endif
 	}
 
 	constexpr bool bVectorizeRegions = true;
@@ -981,18 +747,58 @@ void FInterestManager::ComputePlayersInterest(ISpatialOSWorker& Connection, floa
 		PlayerSlots.Add(SlotMap.FindChecked(Player.PlayerControllerId));
 	}
 
-	if (Broadphase)
+	//if (Broadphase)
 	{
-		SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputePlayerBroadphase);
-		if (false)
+		if ((USE_PHTREE_BROADPHASE || USE_BTDBVT_BROADPHASE) && !USE_VISIBILITYSCRATCHPAD)
 		{
+			SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputePlayerBroadphase);
+			// 110 ms 210k entities, 1k players, 2.10e5 area square, 4.10e3 interest radius
+			// That's approx 256 entities per player.
+			const uint32 NumPlayers64 = (NumPlayers + 63) / 64;
+			const int32* PlayerSlotsPtr = PlayerSlots.GetData();
+
+			TArray<int32> PlayersToProcess;
+			TArray<TArray<uint32>> PVisibility;
+			PVisibility.SetNum(NumPlayers);
+			TArray<Worker_EntityId_Key>** PlayerArraysPtr = PlayerArrays.GetData();
+			for (uint32_t j = 0; j < NumPlayers64; ++j)
+			{
+				uint32 CurrentBegin = j * 64;
+				uint32 CurrentEnd = FMath::Min(((j + 1) * 64), NumPlayers);
+				const uint32 NumPlayersToProcess = CurrentEnd - CurrentBegin;
+				PlayersToProcess.Empty(64);
+				PlayersToProcess.Append(PlayerSlots.GetData() + CurrentBegin, NumPlayersToProcess);
+				//PVisibility.Empty(64);
+				//PVisibility.SetNum(NumPlayersToProcess);
+
+				Broadphase->ComputeVisibility(PlayersToProcess, PVisibility, InterestRadius);
+
+				TArray<uint32> const* SeenSlots = PVisibility.GetData() + CurrentBegin;
+				for (uint32 k = 0; k<NumPlayersToProcess; ++k)
+				{
+					for (auto Slot : *SeenSlots)
+					{
+						(*PlayerArraysPtr)->Add(Entities[Slot]);
+					}
+					++SeenSlots;
+					++PlayerArraysPtr;
+				}
+			}
+		}
+		// That's the most efficient so far with btdbvt, but we can't have the interest manager process an unbounded amount of players, we need to slice that
+		// in order to maintain some FPS guarantee.
+#if 0
+		if((USE_PHTREE_BROADPHASE || USE_BTDBVT_BROADPHASE) && !USE_VISIBILITYSCRATCHPAD)
+		{
+			SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputePlayerBroadphase);
 			TArray<TArray<uint32>> PVisibility;
 			PVisibility.SetNum(NumPlayers);
 
-			// 50 ms, 210k entities, 1k players, 2.10e5 area square, 2.10e3 interest radius
-			// That's approx 64 entities per player.
-			Broadphase->ComputeVisibility(PlayerSlots, PVisibility, InterestRadius);
+			// 60 ms btDbvt, 210k entities, 1k players, 2.10e5 area square, 4.10e3 interest radius
+			// That's approx 256 entities per player.
 
+			// 90 ms phTree, but there is no batch processing, so there could be optimization opportunities
+			Broadphase->ComputeVisibility(PlayerSlots, PVisibility, InterestRadius);
 			// The always relevant entities are missing though
 
 			uint32 PlayerIndex = 0;
@@ -1007,7 +813,43 @@ void FInterestManager::ComputePlayersInterest(ISpatialOSWorker& Connection, floa
 				++SeenSlots;
 			}
 		}
+#endif
 
+#if USE_BTWORLD_BROADPHASE
+		{
+			SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputePlayerBroadphase);
+			Broadphase->World.updateAabbs();
+			Broadphase->World.computeOverlappingPairs();
+
+			for (auto& PlayerEntry : Players)
+			{
+				PlayerInfo& Info = PlayerEntry.Value;
+				uint32 Slot = SlotMap.FindChecked(Info.PlayerControllerId);
+				ViewerObject** Obj = Broadphase->Viewers.Find(Slot);
+				Info.CachedInterest[0].Append(Info.CachedInterest[2]);
+				if (ensure(Obj))
+				{
+					for (auto RemovedEntity : (*Obj)->Removed)
+					{
+						auto Index = Algo::BinarySearch(Info.CachedInterest[0], Entities[RemovedEntity]);
+						if (ensure(Index >= 0))
+						{
+							Info.CachedInterest[0].RemoveAt(Index);
+						}
+					}
+					for (auto AddedEntity : (*Obj)->Added)
+					{
+						Info.CachedInterest[0].Add(Entities[AddedEntity]);
+					}
+					Info.CachedInterest[0].Sort();
+					(*Obj)->Added.Empty();
+					(*Obj)->Removed.Empty();
+				}
+			}
+		}
+#endif
+
+#if (USE_VISIBILITYSCRATCHPAD && (USE_BTDBVT_BROADPHASE || USE_PHTREE_BROADPHASE)) || NO_BROADPHASE
 		const float RadiusSq = InterestRadius * InterestRadius;
 		const uint32 NumEntities = Entities.Num();
 
@@ -1015,30 +857,46 @@ void FInterestManager::ComputePlayersInterest(ISpatialOSWorker& Connection, floa
 		const int32* PlayerSlotsPtr = PlayerSlots.GetData();
 		TArray<Worker_EntityId_Key>** PlayerArraysPtr = PlayerArrays.GetData();
 
+		TArray<int32> PlayersToProcess;
+
 		for (uint32_t j = 0; j < NumPlayers64; ++j)
 		{
 			uint32 CurrentBegin = j * 64;
 			uint32 CurrentEnd = FMath::Min(((j + 1) * 64), NumPlayers);
 			const uint32 NumPlayersToProcess = CurrentEnd - CurrentBegin;
-
-			if (true)
+			PlayersToProcess.Empty(64);
+			PlayersToProcess.Append(PlayerSlotsPtr, CurrentEnd - CurrentBegin);
+#if !NO_BROADPHASE
 			{
-				uint64* VisibilityPtr = VisibilityScratchpad.GetData();
-				const uint32* Flags = EntityFlags.GetData();
-				for (uint32 i = 0; i < NumEntities; ++i)
 				{
-					const uint64 Mask = GetRegionMask(NumPlayersToProcess);
-					*VisibilityPtr = ((uint64)(*Flags & AlwaysRelevantFlag)) * Mask;
-					++VisibilityPtr;
-					++Flags;
+					SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputePlayerGatherMasks)
+					uint64* VisibilityPtr = VisibilityScratchpad.GetData();
+					const uint32* Flags = EntityFlags.GetData();
+					for (uint32 i = 0; i < NumEntities; ++i)
+					{
+						const uint64 Mask = GetRegionMask(NumPlayersToProcess);
+						*VisibilityPtr = ((uint64)(*Flags & AlwaysRelevantFlag)) * Mask;
+						++VisibilityPtr;
+						++Flags;
+					}
 				}
+				{
+					SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputePlayerBroadphase);
+					uint64* VisibilityPtr = VisibilityScratchpad.GetData();
 
-				VisibilityPtr = VisibilityScratchpad.GetData();
+					// 90 ms (btdbvt, with SSE, caveat, bugs, actual results might be !=)
+					// (130 without SSE) (btdbvt) 210k entities, 1k players, 2.10e5 area square, 4.10e3 interest radius
+					// That's approx 256 entities per player.
+					// Not much faster than directly filling the arrays, but using masks instead of filling arrays
+					// allows to take into account manual entity interest from player (prefilling the visibility mask)
+					// or doing boolean logic over various constraints much more easily (instead of relying on set intersection)
+					// Also, stream processing + SIMD + multithreading opportunities.
 
-				TArray<int32> Viewers(PlayerSlotsPtr, CurrentEnd - CurrentBegin);
-				Broadphase->ComputeVisibility_Mask(Viewers, VisibilityPtr, InterestRadius);
+					// Does not explain why why using the scratch pad seems to be so much slower than directly pushing to the array...
+					Broadphase->ComputeVisibility_Mask(PlayersToProcess, VisibilityPtr, InterestRadius, EntityPositionX.GetData(), EntityPositionY.GetData());
+				}
 			}
-			else
+#else
 			{
 				// 200 ms, 210k entities, 1k players, 2.10e5 area square, 2.10e3 interest radius
 				const uint32 Num4Entities = NumEntities / 4;
@@ -1098,32 +956,37 @@ void FInterestManager::ComputePlayersInterest(ISpatialOSWorker& Connection, floa
 					VisibilityPtr += 4;
 				}
 			}
-
-			for (uint32 k = 0; k < NumPlayersToProcess; ++k)
+#endif
 			{
-				// Prevent players from checking themselves.
-				VisibilityScratchpad[PlayerSlots[k]] &= ~(1ull << k);
-			}
+				SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputePlayerGatherMasks)
 
-			const uint64* VisibilityPtr = VisibilityScratchpad.GetData();
-			for (uint32 i = 0; i < NumEntities; ++i)
-			{
-				uint64 VisMask = *VisibilityPtr;
-				while (VisMask != 0)
+				for (uint32 k = 0; k < NumPlayersToProcess; ++k)
 				{
-					// _tzcnt_u64 -> Count trailing zeros, <==> position of the first set bit
-					// equivalent of peeling one set region at a time
-					const uint32 PlayerSlot = _tzcnt_u64(VisMask);
-					PlayerArraysPtr[PlayerSlot]->Add(Entities[i]);
-					VisMask &= ~(1ull << PlayerSlot);
+					// Prevent players from checking themselves.
+					VisibilityScratchpad[PlayerSlots[k]] &= ~(1ull << k);
 				}
 
-				++VisibilityPtr;
-			}
+				const uint64* VisibilityPtr = VisibilityScratchpad.GetData();
+				for (uint32 i = 0; i < NumEntities; ++i)
+				{
+					uint64 VisMask = *VisibilityPtr;
+					while (VisMask != 0)
+					{
+						// _tzcnt_u64 -> Count trailing zeros, <==> position of the first set bit
+						// equivalent of peeling one set region at a time
+						const uint32 PlayerSlot = _tzcnt_u64(VisMask);
+						PlayerArraysPtr[PlayerSlot]->Add(Entities[i]);
+						VisMask &= ~(1ull << PlayerSlot);
+					}
 
-			PlayerSlotsPtr += 64;
-			PlayerArraysPtr += 64;
+					++VisibilityPtr;
+				}
+
+				PlayerSlotsPtr += 64;
+				PlayerArraysPtr += 64;
+			}
 		}
+#endif
 	}
 
 	if (false)
@@ -1169,6 +1032,9 @@ void FInterestManager::ComputePlayersInterest(ISpatialOSWorker& Connection, floa
 	for (auto& PlayerEntry : Players)
 	{
 		// 2.3 ms, 1k players, 64 entities per player.
+		// 4-10 ms, 1k players, 256 entities per player
+		// Caution, sorting might give different results depending of the algo used.
+		// The current benchmark might have an already sorted list of entities when using the VisibilityScratchpad
 		SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputePlayerSort);
 		PlayerInfo& Player = PlayerEntry.Value;
 		auto& CurVisible = Player.CachedInterest[0];
@@ -1178,6 +1044,7 @@ void FInterestManager::ComputePlayersInterest(ISpatialOSWorker& Connection, floa
 		CurVisible.Sort();
 		BuildDiffArrays(CurVisible, PrevVisible, Added);
 	}
+
 #ifndef BENCH_INTEREST_PERF
 	for (auto& PlayerEntry : Players)
 	{
@@ -1211,7 +1078,6 @@ void FInterestManager::ComputePlayersInterest(ISpatialOSWorker& Connection, floa
 				QueryRemove.Entities = MoveTemp(Removed);
 				Request.QueriesToRemove.Add(MoveTemp(QueryRemove));
 			}
-
 			Request.SendRequest(Connection);
 		}
 	}

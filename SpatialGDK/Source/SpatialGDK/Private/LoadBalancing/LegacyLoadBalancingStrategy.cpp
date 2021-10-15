@@ -229,16 +229,11 @@ void FLegacyLoadBalancing::Flush(ISpatialOSWorker& Connection)
 			InterestManager->ComputeInterest(Connection, Workers, Regions);
 		}
 
-#ifdef BENCH_INTEREST_PERF
-		const float PlayerInterestRadius = TestBox.GetSize().X / 50;
-#else
-
-		const float PlayerInterestRadius = FMath::Sqrt(Cast<AActor>(AActor::StaticClass()->GetDefaultObject())->NetCullDistanceSquared);
+#ifndef BENCH_INTEREST_PERF
 		if (Settings->bUseClientEntityInterestQueries && Settings->bComputeClientInterestOnStrategyWorker)
-
 #endif
 		{
-			InterestManager->ComputePlayersInterest(Connection, PlayerInterestRadius, 0.0);
+			InterestManager->ComputePlayersInterest(Connection, InterestManager->PlayerInterestRadius, 0.0);
 		}
 	}
 }
@@ -289,6 +284,17 @@ void FLegacyLoadBalancing::Init(FLoadBalancingSharedData InSharedData, TArray<FL
 		MakeUnique<FInterestManager>(SharedData->InterestF, *new DbgPositionStorage(TestBox, 210000), *new FAlwaysRelevantStorage,
 									 *new FServerAlwaysRelevantStorage, *new DbgPlayerStorage(1000));
 #endif
+
+#ifdef BENCH_INTEREST_PERF
+	const float PlayerInterestRadius = TestBox.GetSize().X / 50;
+#else
+
+	const float PlayerInterestRadius = FMath::Sqrt(Cast<AActor>(AActor::StaticClass()->GetDefaultObject())->NetCullDistanceSquared);
+#endif
+	if (InterestManager)
+	{
+		InterestManager->PlayerInterestRadius = PlayerInterestRadius;
+	}
 }
 
 void FLegacyLoadBalancing::OnWorkersConnected(TArrayView<FLBWorkerHandle> InConnectedWorkers)

@@ -3,7 +3,7 @@
 #include "Interop/SpatialCommandsHandler.h"
 #include "LoadBalancing/LBDataStorage.h"
 
-#define BENCH_INTEREST_PERF
+//#define BENCH_INTEREST_PERF
 
 namespace SpatialGDK
 {
@@ -71,6 +71,8 @@ public:
 	void ComputePlayersInterest(ISpatialOSWorker& Connection, float InterestRadius, float NNInterestRadius);
 
 	FSpatialPositionStorage& GetPositions() { return Positions; }
+
+	float PlayerInterestRadius;
 
 protected:
 	int32 Allocate();

@@ -187,6 +187,9 @@ public class SpatialGDK : ModuleRules
             PrivateIncludePaths.Add("F:/Dev/bullet3-3.17/src");
             PublicAdditionalLibraries.Add("F:/Dev/Bullet_Build/lib/RelWithDebInfo/BulletCollision_RelWithDebugInfo.lib");
             PublicAdditionalLibraries.Add("F:/Dev/Bullet_Build/lib/RelWithDebInfo/LinearMath_RelWithDebugInfo.lib");
+
+            PrivateIncludePaths.Add("F:/Dev/phtree-cpp-internal-master");
+            PublicAdditionalLibraries.Add("F:/Dev/phtree_build/Debug/phtreelib.lib");
         }
     }
 }
