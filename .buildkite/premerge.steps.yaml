@@ -1,5 +1,5 @@
 ---
-ci_version: &ci_version "${CI_VERSION:-main}"
+ci_version: &ci_version "${CI_VERSION:-feature/UNR-5795-buildkite-custon-engine-branch}"
 common_env_vars: &common_env_vars
   BUILD_TYPE: "GDK"
   GDK_BRANCH: "main_branch::${BUILDKITE_BRANCH}"
