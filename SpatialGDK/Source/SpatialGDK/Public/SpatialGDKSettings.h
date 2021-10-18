@@ -322,7 +322,7 @@ private:
 	 * Default port value used for Worker connections, starting a deployment and the Inspector process,
 	 * has to coincide with the ULevelEditorPlaySettings default ServerPort value
 	 */
-	const uint16 DEFAULT_PORT = 7777;
+	const uint16 DEFAULT_RECEPTIONIST_PORT = 7777;
 
 	friend class AEventTracingSettingsOverride;
 
@@ -332,9 +332,9 @@ public:
 	/**
 	 * Gets the correct port needed to create Worker connections
 	 * When compiled WITH_EDITOR, the port is given by the value of ServerPort in ULevelEditorPlaySettings
-	 * When not using editor, the class member DEFAULT_PORT is the correct value
+	 * When not using editor, the class member DEFAULT_RECEPTIONIST_PORT is the correct value
 	*/
-	uint16 GetDefaultPort() const;
+	uint16 GetDefaultReceptionistPort() const;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings",
 			  meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))

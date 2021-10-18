@@ -249,7 +249,7 @@ public:
 	{
 		UseExternalIp = false;
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-		ReceptionistPort = SpatialGDKSettings->GetDefaultPort();
+		ReceptionistPort = SpatialGDKSettings->GetDefaultReceptionistPort();
 		SetReceptionistHost(SpatialGDKSettings->DefaultReceptionistHost);
 	}
 

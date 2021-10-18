@@ -683,7 +683,7 @@ public:
 
 	/**
 	 * Gets the correct port needed to start a deployment and the Inspector process
-	 * Implemented by calling USpatialGDKSettings::GetDefaultPort()
+	 * Implemented by calling USpatialGDKSettings::GetDefaultReceptionistPort()
 	 */
-	uint16 GetDefaultPort() const;
+	uint16 GetDefaultReceptionistPort() const;
 };

@@ -187,11 +187,11 @@ bool USpatialGDKEditorSettings::IsDeploymentNameValid(const FString& Name)
 	return RegMatcher.FindNext();
 }
 
-uint16 USpatialGDKEditorSettings::GetDefaultPort() const
+uint16 USpatialGDKEditorSettings::GetDefaultReceptionistPort() const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-	return SpatialGDKSettings->GetDefaultPort();
+	return SpatialGDKSettings->GetDefaultReceptionistPort();
 }
 
 bool USpatialGDKEditorSettings::IsRegionCodeValid(const ERegionCode::Type RegionCode)
