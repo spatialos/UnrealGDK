@@ -33,6 +33,8 @@ class SPATIALGDK_API USpatialConnectionManager : public UObject
 
 public:
 	USpatialConnectionManager(const FObjectInitializer& ObjectInitializer);
+	~USpatialConnectionManager();
+
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
 
@@ -74,7 +76,7 @@ public:
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
-	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture, TSharedPtr<SpatialGDK::SpatialEventTracer> InEventTracer);
+	void FinishConnecting(Worker_Connection* ConnectionFuture);
 
 	void OnConnectionSuccess();
 	void OnConnectionFailure(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
@@ -90,10 +92,16 @@ private:
 
 	void DestroyWorkerLocator();
 
+	// Gives the capability to poll the Worker_API for a Worker_Connection each tick
+	void OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaTime);
+	void StartPollingForConnection();
+	void StopPollingForConnection();
+
 private:
 	UPROPERTY()
 	USpatialWorkerConnection* WorkerConnection;
 	Worker_Locator* WorkerLocator;
+	FDelegateHandle OnWorldTickStartHandle;
 
 	bool bIsConnected;
 	bool bConnectAsClient;
@@ -102,4 +110,7 @@ private:
 	LoginTokenResponseCallback LoginTokenResCallback;
 	LogCallback SpatialLogCallback;
 	SpatialGDK::FComponentSetData ComponentSetData;
+
+	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer;
+	Worker_ConnectionFuture* ConnectionFuture;
 };
