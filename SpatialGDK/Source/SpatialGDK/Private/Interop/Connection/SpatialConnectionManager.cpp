@@ -194,13 +194,9 @@ void USpatialConnectionManager::FinishDestroy()
 
 void USpatialConnectionManager::DestroyConnection()
 {
-	if (WorkerLocator)
+	if (WorkerLocator != nullptr)
 	{
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerLocator = WorkerLocator] {
-			Worker_Locator_Destroy(WorkerLocator);
-		});
-
-		WorkerLocator = nullptr;
+		DestroyWorkerLocator();
 	}
 
 	if (WorkerConnection != nullptr)
@@ -212,11 +208,19 @@ void USpatialConnectionManager::DestroyConnection()
 	bIsConnected = false;
 }
 
+void USpatialConnectionManager::DestroyWorkerLocator()
+{
+	Worker_Locator_Destroy(WorkerLocator);
+}
+
 void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorID)
 {
 	if (bIsConnected)
 	{
 		check(bInitAsClient == bConnectAsClient);
+		/*
+		* This AsyncTask is needed to ensure the proper ordering of object initialization and map loading when using Server Travel, linked to UNR-2287
+		*/
 		AsyncUtil::AsyncTaskGameThreadOutsideGC([WeakThis = TWeakObjectPtr<USpatialConnectionManager>(this)] {
 			if (WeakThis.IsValid())
 			{
@@ -452,6 +456,9 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionConfig.Params);
 
+	// Destroy the locator after obtaining the future, as it is no longer needed
+	DestroyWorkerLocator();
+
 	FinishConnecting(ConnectionFuture, MoveTemp(EventTracer));
 }
 
@@ -460,11 +467,18 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 {
 	TWeakObjectPtr<USpatialConnectionManager> WeakSpatialConnectionManager(this);
 
+	/*
+	* There is no specific need for polling the Worker_API on a separate thread, one could bind to FWorldDelegates::OnWorldTickStart
+	* And poll the Worker_API every tick for the connection on the game thread itself
+	*/
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager,
 															 EventTracing = MoveTemp(NewEventTracer)]() mutable {
 		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
+		/*
+		* This AsyncTask is needed to ensure the proper ordering of object initialization and map loading when using Server Travel, linked to UNR-2287
+		*/
 		AsyncUtil::AsyncTaskGameThreadOutsideGC(
 			[WeakSpatialConnectionManager, NewCAPIWorkerConnection, EventTracing = MoveTemp(EventTracing)]() mutable {
 				if (!WeakSpatialConnectionManager.IsValid())

@@ -87,6 +87,8 @@ private:
 
 	TSharedPtr<SpatialGDK::SpatialEventTracer> CreateEventTracer(const FString& WorkerId);
 
+	void DestroyWorkerLocator();
+
 private:
 	UPROPERTY()
 	USpatialWorkerConnection* WorkerConnection;
