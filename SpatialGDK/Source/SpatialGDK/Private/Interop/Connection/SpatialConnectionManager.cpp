@@ -183,18 +183,6 @@ struct ConfigureConnection
 	Worker_HeartbeatParameters HeartbeatParams{};
 };
 
-USpatialConnectionManager::USpatialConnectionManager(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
-	, WorkerConnection(nullptr)
-	, WorkerLocator(nullptr)
-	, bIsConnected(false)
-	, bConnectAsClient(false)
-	, EventTracer(nullptr)
-	, ConnectionFuture(nullptr)
-{
-
-}
-
 void USpatialConnectionManager::FinishDestroy()
 {
 	UE_LOG(LogSpatialConnectionManager, Log, TEXT("Destroying SpatialConnectionManager."));
@@ -433,8 +421,9 @@ void USpatialConnectionManager::ConnectToReceptionist(uint32 PlayInEditorID)
 	EventTracer = CreateEventTracer(ReceptionistConfig.WorkerId);
 	ConnectionConfig.Params.event_tracer = EventTracer != nullptr ? EventTracer->GetWorkerEventTracer() : nullptr;
 
-	ConnectionFuture = Worker_ConnectAsync(TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.GetReceptionistPort(),
-					   TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionConfig.Params);
+	ConnectionFuture =
+		Worker_ConnectAsync(TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.GetReceptionistPort(),
+							TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionConfig.Params);
 
 	StartPollingForConnection();
 }
@@ -479,7 +468,7 @@ void USpatialConnectionManager::FinishConnecting(Worker_Connection* NewCAPIWorke
 	/*
 	 * This AsyncTask is needed to ensure that the call to OnConnectionSuccess happens at least one frame after object initialization
 	 * was completed when using Server Travel, linked to UNR-2287.
-	*/
+	 */
 	TWeakObjectPtr<USpatialConnectionManager> WeakSpatialConnectionManager(this);
 	AsyncUtil::AsyncTaskGameThreadOutsideGC(
 		[WeakSpatialConnectionManager, NewCAPIWorkerConnection, EventTracing = MoveTemp(EventTracer)]() mutable {
@@ -500,7 +489,7 @@ void USpatialConnectionManager::FinishConnecting(Worker_Connection* NewCAPIWorke
 				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>(WeakSpatialConnectionManager.Get());
 
 				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
-																			SpatialConnectionManager->ComponentSetData);
+																		  SpatialConnectionManager->ComponentSetData);
 				SpatialConnectionManager->OnConnectionSuccess();
 			}
 			else

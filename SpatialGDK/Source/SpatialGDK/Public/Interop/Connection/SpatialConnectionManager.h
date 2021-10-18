@@ -32,7 +32,6 @@ class SPATIALGDK_API USpatialConnectionManager : public UObject
 	GENERATED_BODY()
 
 public:
-	USpatialConnectionManager(const FObjectInitializer& ObjectInitializer);
 	~USpatialConnectionManager();
 
 	virtual void FinishDestroy() override;
@@ -99,18 +98,17 @@ private:
 
 private:
 	UPROPERTY()
-	USpatialWorkerConnection* WorkerConnection;
-	Worker_Locator* WorkerLocator;
-	FDelegateHandle OnWorldTickStartHandle;
+	USpatialWorkerConnection* WorkerConnection = nullptr;
+	Worker_Locator* WorkerLocator = nullptr;
+	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer = nullptr;
+	Worker_ConnectionFuture* ConnectionFuture = nullptr;
+	bool bIsConnected = false;
+	bool bConnectAsClient = false;
 
-	bool bIsConnected;
-	bool bConnectAsClient;
+	FDelegateHandle OnWorldTickStartHandle;
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
 	LoginTokenResponseCallback LoginTokenResCallback;
 	LogCallback SpatialLogCallback;
 	SpatialGDK::FComponentSetData ComponentSetData;
-
-	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer;
-	Worker_ConnectionFuture* ConnectionFuture;
 };
