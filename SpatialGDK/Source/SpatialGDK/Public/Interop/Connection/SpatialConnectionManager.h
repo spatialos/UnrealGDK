@@ -32,6 +32,7 @@ class SPATIALGDK_API USpatialConnectionManager : public UObject
 	GENERATED_BODY()
 
 public:
+	USpatialConnectionManager(const FObjectInitializer& ObjectInitializer);
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
 
@@ -92,11 +93,10 @@ private:
 private:
 	UPROPERTY()
 	USpatialWorkerConnection* WorkerConnection;
-
 	Worker_Locator* WorkerLocator;
 
 	bool bIsConnected;
-	bool bConnectAsClient = false;
+	bool bConnectAsClient;
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
 	LoginTokenResponseCallback LoginTokenResCallback;

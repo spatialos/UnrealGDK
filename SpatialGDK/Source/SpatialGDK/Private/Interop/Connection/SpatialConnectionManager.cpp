@@ -183,6 +183,16 @@ struct ConfigureConnection
 	Worker_HeartbeatParameters HeartbeatParams{};
 };
 
+USpatialConnectionManager::USpatialConnectionManager(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+	, WorkerConnection(nullptr)
+	, WorkerLocator(nullptr)
+	, bIsConnected(false)
+	, bConnectAsClient(false)
+{
+
+}
+
 void USpatialConnectionManager::FinishDestroy()
 {
 	UE_LOG(LogSpatialConnectionManager, Log, TEXT("Destroying SpatialConnectionManager."));
@@ -211,6 +221,7 @@ void USpatialConnectionManager::DestroyConnection()
 void USpatialConnectionManager::DestroyWorkerLocator()
 {
 	Worker_Locator_Destroy(WorkerLocator);
+	WorkerLocator = nullptr;
 }
 
 void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorID)
@@ -219,8 +230,8 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 	{
 		check(bInitAsClient == bConnectAsClient);
 		/*
-		 * This AsyncTask is needed to ensure that the call to OnConnectionSuccess happens at least one frame after object initialization was completed
-		 * when using Server Travel, linked to UNR-2287.
+		 * This AsyncTask is needed to ensure that the call to OnConnectionSuccess happens at least one frame after object initialization
+		 * was completed when using Server Travel, linked to UNR-2287.
 		 */
 		AsyncUtil::AsyncTaskGameThreadOutsideGC([WeakThis = TWeakObjectPtr<USpatialConnectionManager>(this)] {
 			if (WeakThis.IsValid())
@@ -470,7 +481,7 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 
 	/*
 	 * There is no specific need for polling the Worker_API on a separate thread, one could bind to FWorldDelegates::OnWorldTickStart
-	 * And poll the Worker_API for a Worker_Connection every tick from the game thread 
+	 * And poll the Worker_API for a Worker_Connection every tick from the game thread
 	 */
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager,
 															 EventTracing = MoveTemp(NewEventTracer)]() mutable {
@@ -478,8 +489,8 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
 		/*
-		 * This AsyncTask is needed to ensure that the call to OnConnectionSuccess happens at least one frame after object initialization was completed
-		 * when using Server Travel, linked to UNR-2287.
+		 * This AsyncTask is needed to ensure that the call to OnConnectionSuccess happens at least one frame after object initialization
+		 * was completed when using Server Travel, linked to UNR-2287.
 		 */
 		AsyncUtil::AsyncTaskGameThreadOutsideGC(
 			[WeakSpatialConnectionManager, NewCAPIWorkerConnection, EventTracing = MoveTemp(EventTracing)]() mutable {
