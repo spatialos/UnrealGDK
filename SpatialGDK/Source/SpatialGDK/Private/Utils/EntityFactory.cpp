@@ -267,11 +267,7 @@ void EntityFactory::CheckStablyNamedActorPath(const TArray<FWorkerComponentData>
 			   TEXT("Entity being constructed from an actor did not have the UnrealMetadata component. This is forbidden."));
 		UnrealMetadata Metadata(*UnrealMetadataPtr);
 		FString TempPath = Actor->GetFName().ToString();
-#if ENGINE_MINOR_VERSION >= 26
 		GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), TempPath, false /*bIsReading*/);
-#else
-		GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
-#endif // !UE_BUILD_SHIPPING
 		FUnrealObjectRef Remapped = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
 		if (!Metadata.StablyNamedRef.IsSet() || *Metadata.StablyNamedRef != Remapped)
 		{
@@ -288,7 +284,7 @@ void EntityFactory::CheckStablyNamedActorPath(const TArray<FWorkerComponentData>
 						"unexpected and could lead to bugs further down the line. Actor: %s, EntityId: %lld"),
 				   *Actor->GetPathName(), EntityId);
 		}
-#endif
+#endif // !UE_BUILD_SHIPPING
 	}
 }
 
@@ -475,11 +471,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 
 	// No path in SpatialOS should contain a PIE prefix.
 	FString TempPath = Actor->GetFName().ToString();
-#if ENGINE_MINOR_VERSION >= 26
 	GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), TempPath, false /*bIsReading*/);
-#else
-	GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
-#endif
 	const TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
 
 	TArray<FWorkerComponentData> Components;

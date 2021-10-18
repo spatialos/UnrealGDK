@@ -516,11 +516,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Group actors by exact class, one level below parent native class.
 	SCOPE_CYCLE_UOBJECT(ReplicateActor, Actor);
 
-#if ENGINE_MINOR_VERSION >= 26
 	const bool bReplay = ActorWorld && ActorWorld->GetDemoNetDriver() == Connection->GetDriver();
-#else
-	const bool bReplay = ActorWorld && ActorWorld->DemoNetDriver == Connection->GetDriver();
-#endif
 
 	//////////////////////////////////////////////////////////////////////////
 	// Begin - error and stat duplication from DataChannel::ReplicateActor()
@@ -590,11 +586,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	RepFlags.bNetSimulated = (Actor->GetRemoteRole() == ROLE_SimulatedProxy);
-#if ENGINE_MINOR_VERSION <= 23
-	RepFlags.bRepPhysics = Actor->ReplicatedMovement.bRepPhysics;
-#else
 	RepFlags.bRepPhysics = Actor->GetReplicatedMovement().bRepPhysics;
-#endif
 	RepFlags.bReplay = bReplay;
 
 	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial,
@@ -638,7 +630,6 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 
-#if ENGINE_MINOR_VERSION >= 26
 	const ERepLayoutResult UpdateResult =
 		ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr,
 														Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
@@ -653,10 +644,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		// Connection->SetPendingCloseDueToReplicationFailure();
 		return 0;
 	}
-#else
-	ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr, Actor,
-													Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
-#endif
+
 	FSendingRepState* SendingRepState = ActorReplicator->RepState->GetSendingRepState();
 
 	const int32 PossibleNewHistoryIndex = SendingRepState->HistoryEnd % MaxSendingChangeHistory;
@@ -874,7 +862,6 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
 
-#if ENGINE_MINOR_VERSION >= 26
 	const ERepLayoutResult UpdateResult =
 		Replicator.RepLayout->UpdateChangelistMgr(Replicator.RepState->GetSendingRepState(), *Replicator.ChangelistMgr, Object,
 												  Replicator.Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
@@ -889,10 +876,6 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		// Connection->SetPendingCloseDueToReplicationFailure();
 		return false;
 	}
-#else
-	Replicator.RepLayout->UpdateChangelistMgr(Replicator.RepState->GetSendingRepState(), *Replicator.ChangelistMgr, Object,
-											  Replicator.Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
-#endif
 
 	FSendingRepState* SendingRepState = Replicator.RepState->GetSendingRepState();
 

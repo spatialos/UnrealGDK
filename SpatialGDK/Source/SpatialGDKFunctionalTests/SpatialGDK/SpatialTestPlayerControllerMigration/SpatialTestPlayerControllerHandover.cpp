@@ -229,13 +229,8 @@ void ASpatialTestPlayerControllerHandover::PrepareTest()
 		if (PlayerController && PlayerController->HasAuthority())
 		{
 			AssertTrue(PlayerController->GetStateName() == NAME_Spectating, TEXT("State was handed over on player controller"));
-#if ENGINE_MINOR_VERSION <= 24
-			AssertTrue(PlayerController->PlayerState->bOnlySpectator, TEXT("State was handed over on player state"));
-			PlayerController->PlayerState->bOnlySpectator = false;
-#else
 			AssertTrue(PlayerController->PlayerState->IsOnlyASpectator(), TEXT("State was handed over on player state"));
 			PlayerController->PlayerState->SetIsOnlyASpectator(false);
-#endif
 		}
 
 		FinishStep();

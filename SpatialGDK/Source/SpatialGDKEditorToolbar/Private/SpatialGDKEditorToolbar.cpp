@@ -110,18 +110,6 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	OnAutoStartLocalDeploymentChanged();
 
-	// This code block starts a local deployment when loading maps for automation testing
-	// However, it is no longer required in 4.25 and beyond, due to the editor flow refactors.
-#if ENGINE_MINOR_VERSION < 25
-	FEditorDelegates::PreBeginPIE.AddLambda([this](bool bIsSimulatingInEditor) {
-		if (GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment && GIsAutomationTesting
-			&& GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
-		{
-			VerifyAndStartDeployment(GetDefault<ULevelEditorPlaySettings>()->GetSnapshotOverride());
-		}
-	});
-#endif
-
 	// We try to stop a local deployment either when the appropriate setting is selected, or when running with automation tests
 	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor) {
 		if ((GIsAutomationTesting || AutoStopLocalDeployment == EAutoStopLocalDeploymentMode::OnEndPIE)
@@ -1516,11 +1504,7 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 			}
 		}
 
-#if ENGINE_MINOR_VERSION >= 26
 		FGlobalTabmanager::Get()->TryInvokeTab(FName(TEXT("OutputLog")));
-#else
-		FGlobalTabmanager::Get()->InvokeTab(FName(TEXT("OutputLog")));
-#endif
 		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
 		PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
 		PackageAssembly->BuildAndUploadAssembly(CloudDeploymentConfiguration);
