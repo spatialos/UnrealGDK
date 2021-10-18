@@ -219,8 +219,9 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 	{
 		check(bInitAsClient == bConnectAsClient);
 		/*
-		* This AsyncTask is needed to ensure the proper ordering of object initialization and map loading when using Server Travel, linked to UNR-2287
-		*/
+		 * This AsyncTask is needed to ensure that the call to OnConnectionSuccess happens at least one frame after object initialization was completed
+		 * when using Server Travel, linked to UNR-2287.
+		 */
 		AsyncUtil::AsyncTaskGameThreadOutsideGC([WeakThis = TWeakObjectPtr<USpatialConnectionManager>(this)] {
 			if (WeakThis.IsValid())
 			{
@@ -468,17 +469,18 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 	TWeakObjectPtr<USpatialConnectionManager> WeakSpatialConnectionManager(this);
 
 	/*
-	* There is no specific need for polling the Worker_API on a separate thread, one could bind to FWorldDelegates::OnWorldTickStart
-	* And poll the Worker_API every tick for the connection on the game thread itself
-	*/
+	 * There is no specific need for polling the Worker_API on a separate thread, one could bind to FWorldDelegates::OnWorldTickStart
+	 * And poll the Worker_API for a Worker_Connection every tick from the game thread 
+	 */
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager,
 															 EventTracing = MoveTemp(NewEventTracer)]() mutable {
 		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
 		/*
-		* This AsyncTask is needed to ensure the proper ordering of object initialization and map loading when using Server Travel, linked to UNR-2287
-		*/
+		 * This AsyncTask is needed to ensure that the call to OnConnectionSuccess happens at least one frame after object initialization was completed
+		 * when using Server Travel, linked to UNR-2287.
+		 */
 		AsyncUtil::AsyncTaskGameThreadOutsideGC(
 			[WeakSpatialConnectionManager, NewCAPIWorkerConnection, EventTracing = MoveTemp(EventTracing)]() mutable {
 				if (!WeakSpatialConnectionManager.IsValid())
