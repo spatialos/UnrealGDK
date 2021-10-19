@@ -200,6 +200,9 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 		{
 			const Worker_EntityId EntityId = Delta.EntityId;
 
+			UE_LOG(LogActorSystem, Log, TEXT("Processing add %s for %lld"), Delta.Type == EntityDelta::ADD ? TEXT("ADD") : TEXT("REFRESH"),
+				   EntityId);
+
 			// Check if this entity is EntitiesToRetireOnAuthorityGain first,
 			// to avoid creating an actor that might've been deleted before.
 			if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority && HasEntityBeenRequestedForDelete(EntityId))
@@ -260,6 +263,10 @@ void ActorSystem::ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate)
 		if (Delta.Type == EntityDelta::REMOVE || Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
 		{
 			const Worker_EntityId EntityId = Delta.EntityId;
+
+			UE_LOG(LogActorSystem, Log, TEXT("Processing remove %s for %lld"),
+				   Delta.Type == EntityDelta::REMOVE ? TEXT("REMOVE") : TEXT("REFRESH"), EntityId);
+
 			if (PresentEntities.Contains(EntityId))
 			{
 				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
@@ -304,6 +311,8 @@ void ActorSystem::Advance()
 	{
 		if (Delta.Type == EntityDelta::REMOVE)
 		{
+			UE_LOG(LogActorSystem, Log, TEXT("Removing incomplete %lld"), Delta.EntityId);
+
 			EntityRemoved(Delta.EntityId);
 
 			const int32 EntitiesRemoved = PresentEntities.Remove(Delta.EntityId);
@@ -383,7 +392,7 @@ void ActorSystem::Advance()
 			{
 				continue;
 			}
-			UE_LOG(LogActorSystem, Verbose, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
+			UE_LOG(LogActorSystem, Log, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
 				   Delta.EntityId);
 			// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
 			NetDriver->PackageMap->ResolveEntityActorAndSubobjects(Delta.EntityId, EntityActor);

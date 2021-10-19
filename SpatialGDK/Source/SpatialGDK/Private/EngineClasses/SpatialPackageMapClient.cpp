@@ -204,6 +204,8 @@ void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealOb
 
 void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
 {
+	UE_LOG(LogTemp, Log, TEXT("Removing PackageMap entity actor %lld"), EntityId);
+
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 
 	if (SpatialGuidCache->GetNetGUIDFromEntityId(EntityId).IsValid())

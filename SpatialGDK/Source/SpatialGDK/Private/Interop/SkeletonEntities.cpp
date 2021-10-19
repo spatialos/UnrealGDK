@@ -39,7 +39,12 @@ bool SkeletonEntityFunctions::IsCompleteSkeleton(const EntityViewElement& Entity
 	if (bHasSkeletonTag)
 	{
 		// Skeletons must have a populated tag for us to consider them complete.
-		return bHasPopulatedTag;
+		if (bHasPopulatedTag)
+		{
+			return true;
+		}
+		UE_LOG(LogTemp, Log, TEXT("Entity missing populated tag"));
+		return false;
 	}
 	// Non-skeleton entities are assumed to be complete actors by default.
 	return true;
