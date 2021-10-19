@@ -64,6 +64,7 @@
 #include "Interop/Startup/SpatialClientWorkerStartupHandler.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/CustomLoadBalancingStrategy.h"
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
@@ -3276,6 +3277,8 @@ void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Dela
 		Delay, false);
 }
 
+TAutoConsoleVariable<FString> LbStrategyCVar(TEXT("Hack.LbStrategy"), TEXT("0"), TEXT(""));
+
 void USpatialNetDriver::TryFinishStartup()
 {
 	// Limit Log frequency.
@@ -3335,8 +3338,15 @@ void USpatialNetDriver::TryFinishStartup()
 
 			PartitionMgr->Init(Connection->GetCoordinator());
 
-			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy =
-				MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy, *VirtualWorkerTranslator);
+			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy;
+			if (LbStrategyCVar.GetValueOnAnyThread() == TEXT("0"))
+			{
+				Strategy = MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy, *VirtualWorkerTranslator);
+			}
+			else
+			{
+				Strategy = MakeUnique<SpatialGDK::FCustomLoadBalancingStrategy>((FTicker::GetCoreTicker()));
+			}
 
 			SpatialGDK::FStrategySystemViews Views(
 				{ LBView, ServerWorkerView, LocallyAuthSkeletonEntityManifestsSubview, FilledManifestSubView });
