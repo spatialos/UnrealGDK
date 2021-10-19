@@ -47,13 +47,13 @@ FName GetTestTag()
 }
 } // namespace
 
-#define CHECK_DEFAULT_LAYER_RET(ReturnValue)                                                                                               \
+#define CHECK_DEFAULT_LAYER_RET(...)                                                                                                       \
 	do                                                                                                                                     \
 	{                                                                                                                                      \
 		if (!bIsOnDefaultLayer)                                                                                                            \
 		{                                                                                                                                  \
 			FinishStep();                                                                                                                  \
-			return ReturnValue;                                                                                                            \
+			return __VA_ARGS__;                                                                                                            \
 		}                                                                                                                                  \
 	} while (false)
 
