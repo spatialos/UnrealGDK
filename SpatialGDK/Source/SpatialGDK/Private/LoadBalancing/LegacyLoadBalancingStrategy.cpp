@@ -66,6 +66,97 @@ class FCustomWorkerAssignmentStorage : public TLBDataStorage<LegacyLB_CustomWork
 {
 };
 
+void FSkeletonEntityLoadBalancing::OnSkeletonManifestReceived(Worker_EntityId EntityId, FSkeletonEntityManifest ManifestData,
+															  const TMap<Worker_EntityId_Key, int32>& EntityToWorkerMapping)
+{
+	if (ReceivedManifests.Contains(EntityId))
+	{
+		return;
+	}
+	ManifestProcessing NewManifestToProcess;
+	NewManifestToProcess.ManifestData = MoveTemp(ManifestData);
+	NewManifestToProcess.ManifestData.bAckedManifest = true;
+	for (Worker_EntityId Entity : NewManifestToProcess.ManifestData.EntitiesToPopulate)
+	{
+		const int32* VirtualWorkerId = EntityToWorkerMapping.Find(Entity);
+		if (ensure(VirtualWorkerId != nullptr))
+		{
+			if (*VirtualWorkerId == -1)
+			{
+				continue;
+			}
+			TSet<Worker_EntityId_Key>& Entities = NewManifestToProcess.InProgressManifests.FindOrAdd(*VirtualWorkerId);
+			if (ensure(!Entities.Contains(Entity)))
+			{
+				Entities.Add(Entity);
+				++NewManifestToProcess.ProcessedEntities;
+			}
+		}
+	}
+	ReceivedManifests.Add(EntityId, MoveTemp(NewManifestToProcess));
+}
+
+void FSkeletonEntityLoadBalancing::Flush(ISpatialOSWorker& Connection, const TMap<int32, Worker_PartitionId>& PartitionIds)
+{
+	for (auto Iter = ReceivedManifests.CreateIterator(); Iter; ++Iter)
+	{
+		ManifestProcessing& Processing = Iter->Value;
+		if (Processing.PublishedManifests.Num() == 0)
+		{
+			if (Processing.ProcessedEntities != Processing.ManifestData.EntitiesToPopulate.Num())
+			{
+				continue;
+			}
+
+			for (const auto& Kvp : PartitionIds)
+			{
+				const TSet<Worker_EntityId_Key>& EntitiesSet = Processing.InProgressManifests.FindChecked(Kvp.Key);
+				FManifestCreationHandle Handle =
+					SharedData.ManifestPublisher.CreateManifestForPartition(Connection, EntitiesSet.Array(), Kvp.Value);
+				Processing.PublishedManifests.Add(Handle);
+			}
+		}
+		else
+		{
+			bool bAllManfestProcessed = true;
+			for (auto& Handle : Processing.PublishedManifests)
+			{
+				if (Handle && !SharedData.ManifestPublisher.HasManifestBeenProcessed(Handle))
+				{
+					bAllManfestProcessed = false;
+					break;
+				}
+			}
+			if (bAllManfestProcessed)
+			{
+				Processing.ManifestData.PopulatedEntities = Processing.ManifestData.EntitiesToPopulate;
+				Connection.SendComponentUpdate(Iter->Key, Processing.ManifestData.CreateComponentUpdate());
+				Iter.RemoveCurrent();
+			}
+		}
+	}
+}
+
+void FSkeletonEntityLoadBalancing::ApplySkeletonsToMigrate(FMigrationContext& Ctx)
+{
+	for (TPair<Worker_EntityId_Key, ManifestProcessing>& Processing : ReceivedManifests)
+	{
+		for (TPair<Worker_EntityId_Key, FPartitionHandle>& AssignmentMade : Ctx.EntitiesToMigrate)
+		{
+			if (Processing.Value.ManifestData.EntitiesToPopulate.Contains(AssignmentMade.Key))
+			{
+				const int32 VirtualWorkerIdx = PartitionToId(AssignmentMade.Value);
+				TSet<Worker_EntityId_Key>& Entities = Processing.Value.InProgressManifests.FindOrAdd(VirtualWorkerIdx);
+				if (!Entities.Contains(AssignmentMade.Key))
+				{
+					Entities.Add(AssignmentMade.Key);
+					++Processing.Value.ProcessedEntities;
+				}
+			}
+		}
+	}
+}
+
 FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, SpatialVirtualWorkerTranslator& InTranslator)
 {
 	ExpectedWorkers = LegacyLBStrat.GetMinimumRequiredWorkers();
@@ -107,68 +198,32 @@ void FLegacyLoadBalancing::Advance(ISpatialOSWorker& Connection)
 
 void FLegacyLoadBalancing::Flush(ISpatialOSWorker& Connection)
 {
-	for (auto Iter = ReceivedManifests.CreateIterator(); Iter; ++Iter)
+	TMap<int32, Worker_PartitionId> PartitionIds;
+	for (uint32 VirtualWorker = 0; VirtualWorker < ExpectedWorkers; ++VirtualWorker)
 	{
-		ManifestProcessing& Processing = Iter->Value;
-		if (Processing.PublishedManifests.Num() == 0)
+		if (auto PartitionId = SharedData->PartitionManager.GetPartitionId(Partitions[VirtualWorker]))
 		{
-			if (Processing.ProcessedEntities != Processing.ManifestData.EntitiesToPopulate.Num())
-			{
-				continue;
-			}
-			bool bAllPartitionsAssigned = true;
-			TArray<Worker_PartitionId> PartitionIds;
-			PartitionIds.SetNum(ExpectedWorkers);
-			for (uint32 VirtualWorker = 0; VirtualWorker < ExpectedWorkers; ++VirtualWorker)
-			{
-				if (auto PartitionId = SharedData->PartitionManager.GetPartitionId(Partitions[VirtualWorker]))
-				{
-					PartitionIds[VirtualWorker] = PartitionId.GetValue();
-				}
-				else
-				{
-					bAllPartitionsAssigned = false;
-					break;
-				}
-			}
-
-			if (!bAllPartitionsAssigned)
-			{
-				continue;
-			}
-			for (uint32 VirtualWorker = 0; VirtualWorker < ExpectedWorkers; ++VirtualWorker)
-			{
-				const TSet<Worker_EntityId_Key>& EntitiesSet = Processing.InProgressManifests.FindOrAdd(VirtualWorker);
-				FManifestCreationHandle Handle =
-					SharedData->ManifestPublisher.CreateManifestForPartition(Connection, EntitiesSet.Array(), PartitionIds[VirtualWorker]);
-				Processing.PublishedManifests.Add(Handle);
-			}
+			PartitionIds.Emplace(VirtualWorker, PartitionId.GetValue());
 		}
 		else
 		{
-			bool bAllManfestProcessed = true;
-			for (auto& Handle : Processing.PublishedManifests)
-			{
-				if (Handle && !SharedData->ManifestPublisher.HasManifestBeenProcessed(Handle))
-				{
-					bAllManfestProcessed = false;
-					break;
-				}
-			}
-			if (bAllManfestProcessed)
-			{
-				Processing.ManifestData.PopulatedEntities = Processing.ManifestData.EntitiesToPopulate;
-				Connection.SendComponentUpdate(Iter->Key, Processing.ManifestData.CreateComponentUpdate());
-				Iter.RemoveCurrent();
-			}
+			return;
 		}
 	}
+	SkeletonLoadBalancing->Flush(Connection, PartitionIds);
 }
 
 void FLegacyLoadBalancing::Init(ISpatialOSWorker& Connection, FLoadBalancingSharedData InSharedData,
 								TArray<FLBDataStorage*>& OutLoadBalancingData, TArray<FLBDataStorage*>& OutServerWorkerData)
 {
 	SharedData.Emplace(InSharedData);
+
+	SkeletonLoadBalancing.Emplace(InSharedData, [this](FPartitionHandle Partition) {
+		int32 VirtualWorkerIdx;
+		Partitions.Find(Partition, VirtualWorkerIdx);
+		++VirtualWorkerIdx;
+		return VirtualWorkerIdx;
+	});
 
 	TArray<TUniquePtr<FStartupStep>> StartupSteps;
 	StartupSteps.Emplace(MakeUnique<FGenericStartupStep>("Wait For Partition Manager", FGenericStartupStep::StartFn(), [this] {
@@ -244,30 +299,7 @@ void FLegacyLoadBalancing::OnWorkersDisconnected(TArrayView<FLBWorkerHandle> Dis
 
 void FLegacyLoadBalancing::OnSkeletonManifestReceived(Worker_EntityId EntityId, FSkeletonEntityManifest ManifestData)
 {
-	if (ReceivedManifests.Contains(EntityId))
-	{
-		return;
-	}
-	ManifestProcessing NewManifestToProcess;
-	NewManifestToProcess.ManifestData = MoveTemp(ManifestData);
-	NewManifestToProcess.ManifestData.bAckedManifest = true;
-	for (Worker_EntityId Entity : NewManifestToProcess.ManifestData.EntitiesToPopulate)
-	{
-		if (int32* VirtualWorkerId = Assignment.Find(Entity))
-		{
-			if (*VirtualWorkerId == -1)
-			{
-				continue;
-			}
-			TSet<Worker_EntityId_Key>& Entities = NewManifestToProcess.InProgressManifests.FindOrAdd(*VirtualWorkerId);
-			if (ensure(!Entities.Contains(Entity)))
-			{
-				Entities.Add(Entity);
-				++NewManifestToProcess.ProcessedEntities;
-			}
-		}
-	}
-	ReceivedManifests.Add(EntityId, MoveTemp(NewManifestToProcess));
+	SkeletonLoadBalancing->OnSkeletonManifestReceived(EntityId, ManifestData, Assignment);
 }
 
 void FLegacyLoadBalancing::CreateAndAssignPartitions()
@@ -608,24 +640,7 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 				Ctx.EntitiesToMigrate.Add(EntityId, Partitions[CurAssignment]);
 			}
 		}
-		for (auto& Processing : ReceivedManifests)
-		{
-			for (auto& AssignmentMade : Ctx.EntitiesToMigrate)
-			{
-				if (Processing.Value.ManifestData.EntitiesToPopulate.Contains(AssignmentMade.Key))
-				{
-					int32 VirtualWorkerIdx;
-					Partitions.Find(AssignmentMade.Value, VirtualWorkerIdx);
-					++VirtualWorkerIdx;
-					TSet<Worker_EntityId_Key>& Entities = Processing.Value.InProgressManifests.FindOrAdd(VirtualWorkerIdx);
-					if (!Entities.Contains(AssignmentMade.Key))
-					{
-						Entities.Add(AssignmentMade.Key);
-						++Processing.Value.ProcessedEntities;
-					}
-				}
-			}
-		}
+		SkeletonLoadBalancing->ApplySkeletonsToMigrate(Ctx);
 		ToRefresh = MoveTemp(NotChecked);
 	}
 	else

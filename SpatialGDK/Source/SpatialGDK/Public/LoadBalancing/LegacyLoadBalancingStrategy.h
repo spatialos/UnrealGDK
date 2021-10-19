@@ -19,6 +19,33 @@ class FDebugComponentStorage;
 class FCustomWorkerAssignmentStorage;
 class FActorSetSystem;
 
+class FSkeletonEntityLoadBalancing
+{
+public:
+	explicit FSkeletonEntityLoadBalancing(FLoadBalancingSharedData InSharedData, TFunction<int32(FPartitionHandle)> InPartitionToId)
+		: SharedData(InSharedData)
+		, PartitionToId(InPartitionToId)
+	{
+	}
+	void OnSkeletonManifestReceived(Worker_EntityId EntityId, FSkeletonEntityManifest ManifestData,
+									const TMap<Worker_EntityId_Key, int32>& EntityToWorkerMapping);
+	void Flush(ISpatialOSWorker& Connection, const TMap<int32, Worker_PartitionId>& PartitionIds);
+	void ApplySkeletonsToMigrate(FMigrationContext& Ctx);
+
+private:
+	struct ManifestProcessing
+	{
+		FSkeletonEntityManifest ManifestData;
+		TMap<int32, TSet<Worker_EntityId_Key>> InProgressManifests;
+		TArray<FManifestCreationHandle> PublishedManifests;
+		uint32 ProcessedEntities = 0;
+	};
+
+	TMap<Worker_EntityId_Key, ManifestProcessing> ReceivedManifests;
+	FLoadBalancingSharedData SharedData;
+	TFunction<int32(FPartitionHandle)> PartitionToId;
+};
+
 class FLegacyLoadBalancing : public FLoadBalancingStrategy
 {
 public:
@@ -75,14 +102,7 @@ protected:
 	// --- Load Balancing ---
 
 	// +++ Skeleton entity processing +++
-	struct ManifestProcessing
-	{
-		FSkeletonEntityManifest ManifestData;
-		TMap<int32, TSet<Worker_EntityId_Key>> InProgressManifests;
-		TArray<FManifestCreationHandle> PublishedManifests;
-		uint32 ProcessedEntities = 0;
-	};
-	TMap<Worker_EntityId_Key, ManifestProcessing> ReceivedManifests;
+	TOptional<FSkeletonEntityLoadBalancing> SkeletonLoadBalancing;
 	// --- Skeleton entity processing ---
 };
 
