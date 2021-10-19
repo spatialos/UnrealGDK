@@ -15,7 +15,6 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
-#include "CoreMinimal.h"
 #include "Interop/AsyncPackageLoadFilter.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
@@ -29,7 +28,6 @@ class FSpatialNetDriverRPC;
 class FSpatialNetDriverClientRPC;
 class FSpatialNetDriverServerRPC;
 class FSpatialOutputDevice;
-class SpatialDispatcher;
 class SpatialSnapshotManager;
 class SpatialVirtualWorkerTranslator;
 class SpatialVirtualWorkerTranslationManager;
@@ -306,7 +304,6 @@ public:
 	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
 
 private:
-	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
