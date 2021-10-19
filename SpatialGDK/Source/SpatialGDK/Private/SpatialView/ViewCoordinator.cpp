@@ -3,7 +3,6 @@
 #include "SpatialView/ViewCoordinator.h"
 
 #include "SpatialView/EntityComponentTypes.h"
-#include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 
 namespace SpatialGDK
 {
