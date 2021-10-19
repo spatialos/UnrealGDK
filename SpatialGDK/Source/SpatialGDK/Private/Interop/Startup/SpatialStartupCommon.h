@@ -70,6 +70,8 @@ struct FStartupExecutor
 		return true;
 	}
 
+	bool HasFinished() const { return Steps.Num() == 0; }
+
 	FString Describe() const
 	{
 		if (Steps.Num() > 0)

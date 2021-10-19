@@ -14,6 +14,7 @@ FHandleBeginPlayStep::FHandleBeginPlayStep(TSharedRef<const FServerWorkerStartup
 	, NetDriver(&InNetDriver)
 	, Connection(&InConnection)
 {
+	StepName = TEXT("Issuing BeginPlay");
 }
 
 bool FHandleBeginPlayStep::TryFinish()
