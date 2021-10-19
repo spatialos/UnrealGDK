@@ -210,8 +210,8 @@ bool FCheckDeploymentState::Update()
 	return true;
 }
 
-// Wrapper function for automation latent commands to execute them commands immediately
-void ExecuteLatentCommandImmediately(IAutomationLatentCommand* Command)
+// Wrapper function for automation latent commands to execute them commands synchronously
+void ExecuteLatentCommandSynchronously(IAutomationLatentCommand* Command)
 {
 	while (true)
 	{

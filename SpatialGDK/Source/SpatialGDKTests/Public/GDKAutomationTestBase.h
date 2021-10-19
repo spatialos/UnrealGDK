@@ -146,15 +146,10 @@ protected:
 			UE_LOG(LogGDKTestBase, Log, TEXT("Deployment found! (Was this left over from another test?)"));
 			UE_LOG(LogGDKTestBase, Log, TEXT("Ending PIE session"));
 			GEditor->RequestEndPlayMap();
-			ExecuteLatentCommandImmediately(new FStopDeployment());
-			ExecuteLatentCommandImmediately(new FWaitForDeployment(this, EDeploymentState::IsNotRunning));
+			ExecuteLatentCommandSynchronously(new FStopDeployment());
+			ExecuteLatentCommandSynchronously(new FWaitForDeployment(this, EDeploymentState::IsNotRunning));
 		}
 	}
-
-private:
-	FString TestName;
-	FString TestSourceFileName;
-	uint32 TestSourceFileLine;
 };
 
 #define GDK_AUTOMATION_MAP_TEST(ModuleName, ComponentName, TestName)                                                                       \
