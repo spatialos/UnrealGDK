@@ -921,7 +921,6 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 
 	SendingRepState->LastCompareIndex = ChangelistState->CompareIndex;
 
-	if (RepChanged.Num() > 0)
 	{
 		FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Object) };
 
@@ -940,11 +939,14 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		SendingRepState->HistoryEnd++;
 	}
 
-	UpdateChangelistHistory(Replicator.RepState);
+	if (RepChanged.Num() > 0)
+	{
+		UpdateChangelistHistory(Replicator.RepState);
 
-	SendingRepState->LastChangelistIndex = ChangelistState->HistoryEnd;
-	SendingRepState->bOpenAckedCalled = true;
-	Replicator.bLastUpdateEmpty = 1;
+		SendingRepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+		SendingRepState->bOpenAckedCalled = true;
+		Replicator.bLastUpdateEmpty = 1;
+	}
 
 	return RepChanged.Num() > 0;
 }
