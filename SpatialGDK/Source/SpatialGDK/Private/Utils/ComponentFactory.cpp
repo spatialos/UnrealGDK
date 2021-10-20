@@ -69,23 +69,16 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 				{
 					GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Cmd.Property);
 
-					// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
-					if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
+					// Check if this is a FastArraySerializer array and if so, skip the property to call our custom delta serialization
+					// later
+					if (IsValid(GetFastArraySerializerProperty(ArrayProperty)))
 					{
-						SCOPE_CYCLE_COUNTER(STAT_FactoryProcessFastArrayUpdate);
-
-						FSpatialNetBitWriter ValueDataWriter(PackageMap);
-
-						if (FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(NetDriver, ValueDataWriter, Object, Parent.ArrayIndex,
-																			   Parent.Property, NetDeltaStruct)
-							|| bIsInitialData)
-						{
-							AddBytesToSchema(ComponentObject, HandleIterator.Handle, ValueDataWriter);
-						}
-
 						bProcessedFastArrayProperty = true;
 					}
 				}
+
+				checkf(HandleIterator.Handle == Cmd.RelativeHandle, TEXT("Handles not equal: Iterator %d Cmd %d"), HandleIterator.Handle,
+					   Cmd.RelativeHandle);
 
 				if (!bProcessedFastArrayProperty)
 				{
@@ -117,6 +110,36 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 				{
 					break;
 				}
+			}
+		}
+	}
+
+	// Same as in Native, we're always replicating all FastArrays on every tick. Note that users can create NetDeltaSerialized structs, only
+	// FastArrays are See usages of FObjectReplicator::ReplicateCustomDeltaProperties.
+	for (int32 CmdIndex = 0; CmdIndex < Changes.RepLayout.Cmds.Num(); ++CmdIndex)
+	{
+		const FRepLayoutCmd& Cmd = Changes.RepLayout.Cmds[CmdIndex];
+		const FRepParentCmd& Parent = Changes.RepLayout.Parents[Cmd.ParentIndex];
+
+		if (Cmd.Type != ERepLayoutCmdType::DynamicArray)
+		{
+			continue;
+		}
+
+		GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Cmd.Property);
+
+		// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
+		if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
+		{
+			SCOPE_CYCLE_COUNTER(STAT_FactoryProcessFastArrayUpdate);
+
+			FSpatialNetBitWriter ValueDataWriter(PackageMap);
+
+			if (FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(NetDriver, ValueDataWriter, Object, Parent.ArrayIndex, Parent.Property,
+																   NetDeltaStruct)
+				|| bIsInitialData)
+			{
+				AddBytesToSchema(ComponentObject, Cmd.RelativeHandle, ValueDataWriter);
 			}
 		}
 	}

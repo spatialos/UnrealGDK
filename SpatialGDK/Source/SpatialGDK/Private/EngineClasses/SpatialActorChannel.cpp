@@ -921,7 +921,6 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 
 	SendingRepState->LastCompareIndex = ChangelistState->CompareIndex;
 
-	if (RepChanged.Num() > 0)
 	{
 		FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Object) };
 
@@ -937,7 +936,10 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
 		NetDriver->ActorSystem->SendComponentUpdates(Object, Info, this, &RepChangeState, ReplicationBytesWritten);
 
-		SendingRepState->HistoryEnd++;
+		if (RepChangeState.RepChanged.Num() > 0)
+		{
+			SendingRepState->HistoryEnd++;
+		}
 	}
 
 	UpdateChangelistHistory(Replicator.RepState);
