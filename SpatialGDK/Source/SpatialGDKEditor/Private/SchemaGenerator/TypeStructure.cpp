@@ -77,8 +77,27 @@ void VisitAllProperties(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TShared
 uint32 GenerateChecksum(FProperty* Property, uint32 ParentChecksum, int32 StaticArrayIndex)
 {
 	uint32 Checksum = 0;
-	Checksum = FCrc::StrCrc32(*Property->GetName().ToLower(), ParentChecksum);		  // Evolve checksum on name
+	Checksum = FCrc::StrCrc32(*Property->GetName().ToLower(), ParentChecksum); // Evolve checksum on name
+#if UE_VERSION_NEWER_THAN(5, 0, -1)
+	// Evolve by property type
+	const FObjectPtrProperty* const ObjectPtrProperty = CastField<const FObjectPtrProperty>(Property);
+
+	FString CPPType;
+	if (ObjectPtrProperty)
+	{
+		// To remain compatible with TObjectPtr, use the underlying pointer type in the checksum since the net-serialized data is
+		// compatible.
+		CPPType = ObjectPtrProperty->FObjectProperty::GetCPPType(nullptr, 0).ToLower();
+	}
+	else
+	{
+		CPPType = Property->GetCPPType(nullptr, 0).ToLower();
+	}
+
+	Checksum = FCrc::StrCrc32(*CPPType, Checksum);
+#else
 	Checksum = FCrc::StrCrc32(*Property->GetCPPType(nullptr, 0).ToLower(), Checksum); // Evolve by property type
+#endif
 	Checksum = FCrc::MemCrc32(&StaticArrayIndex, sizeof(StaticArrayIndex),
 							  Checksum); // Evolve by StaticArrayIndex (to make all unrolled static array elements unique)
 #if UE_VERSION_NEWER_THAN(4, 27, -1)
