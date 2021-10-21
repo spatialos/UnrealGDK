@@ -17,7 +17,6 @@
 #include "Runtime/Launch/Resources/Version.h"
 #include "Templates/SharedPointer.h"
 #include "Textures/SlateIcon.h"
-#include "UnrealEd/Classes/Settings/ProjectPackagingSettings.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SComboButton.h"
