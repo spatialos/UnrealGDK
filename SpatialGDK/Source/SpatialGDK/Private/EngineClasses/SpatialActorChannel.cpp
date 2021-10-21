@@ -936,17 +936,17 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
 		NetDriver->ActorSystem->SendComponentUpdates(Object, Info, this, &RepChangeState, ReplicationBytesWritten);
 
-		SendingRepState->HistoryEnd++;
+		if (RepChangeState.RepChanged.Num() > 0)
+		{
+			SendingRepState->HistoryEnd++;
+		}
 	}
 
-	if (RepChanged.Num() > 0)
-	{
-		UpdateChangelistHistory(Replicator.RepState);
+	UpdateChangelistHistory(Replicator.RepState);
 
-		SendingRepState->LastChangelistIndex = ChangelistState->HistoryEnd;
-		SendingRepState->bOpenAckedCalled = true;
-		Replicator.bLastUpdateEmpty = 1;
-	}
+	SendingRepState->LastChangelistIndex = ChangelistState->HistoryEnd;
+	SendingRepState->bOpenAckedCalled = true;
+	Replicator.bLastUpdateEmpty = 1;
 
 	return RepChanged.Num() > 0;
 }

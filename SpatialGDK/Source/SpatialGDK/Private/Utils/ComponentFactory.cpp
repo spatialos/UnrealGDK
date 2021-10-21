@@ -36,6 +36,8 @@ ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNet
 {
 }
 
+#define ALWAYS_PROCESS_FAST_ARRAYS 1
+
 uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes,
 										  ESchemaComponentType PropertyGroup, bool bIsInitialData,
 										  TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
@@ -73,6 +75,19 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 					// later
 					if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
 					{
+#if !ALWAYS_PROCESS_FAST_ARRAYS
+						SCOPE_CYCLE_COUNTER(STAT_FactoryProcessFastArrayUpdate);
+
+						FSpatialNetBitWriter ValueDataWriter(PackageMap);
+
+						if (FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(NetDriver, ValueDataWriter, Object, Parent.ArrayIndex,
+																			   Parent.Property, NetDeltaStruct)
+							|| bIsInitialData)
+						{
+							// const_cast<TArray<uint16>&>(Changes.RepChanged).Emplace(Cmd.RelativeHandle);
+							AddBytesToSchema(ComponentObject, Cmd.RelativeHandle, ValueDataWriter);
+						}
+#endif
 						bProcessedFastArrayProperty = true;
 					}
 				}
@@ -114,6 +129,7 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 		}
 	}
 
+#if ALWAYS_PROCESS_FAST_ARRAYS
 	for (int32 CmdIndex = 0; CmdIndex < Changes.RepLayout.Cmds.Num(); ++CmdIndex)
 	{
 		const FRepLayoutCmd& Cmd = Changes.RepLayout.Cmds[CmdIndex];
@@ -124,36 +140,25 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 			continue;
 		}
 
-		if (FStructProperty* StructProperty = Cast<FStructProperty>(Parent.Property))
+		GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Cmd.Property);
+
+		// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
+		if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
 		{
-			if (!EnumHasAnyFlags(StructProperty->Struct->StructFlags, STRUCT_NetDeltaSerializeNative))
+			SCOPE_CYCLE_COUNTER(STAT_FactoryProcessFastArrayUpdate);
+
+			FSpatialNetBitWriter ValueDataWriter(PackageMap);
+
+			if (FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(NetDriver, ValueDataWriter, Object, Parent.ArrayIndex, Parent.Property,
+																   NetDeltaStruct)
+				|| bIsInitialData)
 			{
-				continue;
-			}
-
-			if (!ensure(StructProperty->Struct->IsChildOf(FFastArraySerializer::StaticStruct())))
-			{
-				continue;
-			}
-
-			GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Cmd.Property);
-
-			// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
-			if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
-			{
-				SCOPE_CYCLE_COUNTER(STAT_FactoryProcessFastArrayUpdate);
-
-				FSpatialNetBitWriter ValueDataWriter(PackageMap);
-
-				if (FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(NetDriver, ValueDataWriter, Object, Parent.ArrayIndex,
-																	   Parent.Property, NetDeltaStruct)
-					|| bIsInitialData)
-				{
-					AddBytesToSchema(ComponentObject, Cmd.RelativeHandle, ValueDataWriter);
-				}
+				// const_cast<TArray<uint16>&>(Changes.RepChanged).Emplace(Cmd.RelativeHandle);
+				AddBytesToSchema(ComponentObject, Cmd.RelativeHandle, ValueDataWriter);
 			}
 		}
 	}
+#endif
 
 	const uint32 BytesEnd = Schema_GetWriteBufferLength(ComponentObject);
 
