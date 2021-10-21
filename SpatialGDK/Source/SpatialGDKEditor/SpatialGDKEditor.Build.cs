@@ -31,6 +31,7 @@ public class SpatialGDKEditor : ModuleRules
 				"UnrealEd",
 				"DesktopPlatform",
 				"MessageLog",
+				"DeveloperToolSettings",
 			});
 
 		PrivateIncludePaths.AddRange(
