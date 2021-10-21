@@ -34,7 +34,7 @@ public:
 	void RemovePendingCreationEntityId(Worker_EntityId EntityId);
 
 	bool ResolveEntityActorAndSubobjects(Worker_EntityId EntityId, AActor* Actor);
-	void ResolveSubobject(UObject* Object, const FUnrealObjectRef& ObjectRef);
+	void ResolveSubobjectReference(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
 	void RemoveEntityActor(Worker_EntityId EntityId);
 	void RemoveSubobject(const FUnrealObjectRef& ObjectRef);

@@ -979,7 +979,7 @@ void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId
 	Actor->OnSubobjectCreatedFromReplication(Subobject);
 
 	FUnrealObjectRef SubobjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]);
-	NetDriver->PackageMap->ResolveSubobject(Subobject, SubobjectRef);
+	NetDriver->PackageMap->ResolveSubobjectReference(Subobject, SubobjectRef);
 
 	Channel->CreateSubObjects.Add(Subobject);
 
@@ -1757,7 +1757,7 @@ void ActorSystem::ApplyComponentDataOnActorCreation(const Worker_EntityId Entity
 
 		Actor->OnSubobjectCreatedFromReplication(TargetObject.Get());
 
-		NetDriver->PackageMap->ResolveSubobject(TargetObject.Get(), TargetObjectRef);
+		NetDriver->PackageMap->ResolveSubobjectReference(TargetObject.Get(), TargetObjectRef);
 
 		Channel.CreateSubObjects.Add(TargetObject.Get());
 	}

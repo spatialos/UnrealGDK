@@ -172,7 +172,7 @@ bool USpatialPackageMapClient::ResolveEntityActorAndSubobjects(const Worker_Enti
 	return NetGUID.IsValid();
 }
 
-void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealObjectRef& ObjectRef)
+void USpatialPackageMapClient::ResolveSubobjectReference(UObject* Object, const FUnrealObjectRef& ObjectRef)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	FNetworkGUID NetGUID = SpatialGuidCache->GetNetGUIDFromUnrealObjectRef(ObjectRef);
@@ -388,7 +388,7 @@ const FClassInfo* USpatialPackageMapClient::TryResolveNewDynamicSubobjectAndGetC
 		// subobjects on the entity
 		if (Info != nullptr)
 		{
-			ResolveSubobject(Object, FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]));
+			ResolveSubobjectReference(Object, FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]));
 		}
 
 		return Info;
