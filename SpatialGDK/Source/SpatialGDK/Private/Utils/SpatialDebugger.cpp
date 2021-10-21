@@ -599,7 +599,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 
 FColor ASpatialDebugger::GetTextColorForBackgroundColor(const FColor& BackgroundColor) const
 {
-	return BackgroundColor.ReinterpretAsLinear().ComputeLuminance() > 0.5 ? FColor::Black : FColor::White;
+	return BackgroundColor.ReinterpretAsLinear().GetLuminance() > 0.5 ? FColor::Black : FColor::White;
 }
 
 // This will break once we have more than 10,000 workers, happily kicking that can down the road.

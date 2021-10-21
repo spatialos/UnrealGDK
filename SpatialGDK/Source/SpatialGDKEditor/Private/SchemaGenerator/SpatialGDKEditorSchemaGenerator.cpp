@@ -988,14 +988,6 @@ bool IsSupportedClass(const UClass* SupportedClass)
 		return false;
 	}
 
-	if (SupportedClass->HasAnyClassFlags(CLASS_LayoutChanging))
-	{
-		// clang-format off
-		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Layout changing, not supported"), *GetPathNameSafe(SupportedClass));
-		// clang-format on
-		return false;
-	}
-
 	// Ensure we don't process transient generated classes for BP
 	if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
 		|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive)
