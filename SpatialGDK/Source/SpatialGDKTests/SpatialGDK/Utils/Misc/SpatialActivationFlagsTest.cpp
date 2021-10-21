@@ -45,7 +45,7 @@ ReportedFlags RunSubProcessAndExtractFlags(FAutomationTestBase& Test, const FStr
 	FString StdOut;
 	FString StdErr;
 
-	FPlatformProcess::ExecProcess(TEXT("UE4Editor"), *CommandLineArgs, &ReturnCode, &StdOut, &StdErr);
+	FPlatformProcess::ExecProcess(TEXT("UnrealEditor"), *CommandLineArgs, &ReturnCode, &StdOut, &StdErr);
 
 	Test.TestTrue("Successful run", ReturnCode == 0);
 
