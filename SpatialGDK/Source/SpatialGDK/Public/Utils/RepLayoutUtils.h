@@ -4,6 +4,7 @@
 
 #include "HAL/Platform.h"
 #include "Net/RepLayout.h"
+#include "Net/Serialization/FastArraySerializer.h"
 
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "EngineClasses/SpatialNetBitWriter.h"

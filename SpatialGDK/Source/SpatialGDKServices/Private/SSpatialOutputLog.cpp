@@ -23,7 +23,7 @@ const FString DefaultLogCategory = TEXT("Runtime");
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SSpatialOutputLog::Construct(const FArguments& InArgs)
 {
-	SOutputLog::Construct(SOutputLog::FArguments());
+	SOutputLog::Construct(SOutputLog::FArguments(), true);
 
 	// Remove ourselves as the constructor of our parent (SOutputLog) added 'this' as a remote output device.
 	GLog->RemoveOutputDevice(this);
