@@ -26,7 +26,7 @@ UObject* FClientNetLoadActorHelper::GetReusableDynamicSubObject(const FUnrealObj
 	{
 		if (UObject* DynamicSubObject = NetDriver->PackageMap->GetObjectFromNetGUID(*SubObjectNetGUID, /* bIgnoreMustBeMapped */ false))
 		{
-			NetDriver->PackageMap->ResolveSubobject(DynamicSubObject, ObjectRef);
+			NetDriver->PackageMap->ResolveSubobjectReference(DynamicSubObject, ObjectRef);
 			UE_LOG(LogClientNetLoadActorHelper, Verbose,
 				   TEXT("Found reusable dynamic SubObject (ObjectRef offset: %u) for ClientNetLoad actor with entityId %d"),
 				   ObjectRef.Offset, ObjectRef.Entity);
