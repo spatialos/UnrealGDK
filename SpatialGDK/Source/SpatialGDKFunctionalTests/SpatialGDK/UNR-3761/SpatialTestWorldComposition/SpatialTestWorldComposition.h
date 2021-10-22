@@ -15,7 +15,7 @@ struct FExpectedActor
 	GENERATED_BODY()
 
 	UPROPERTY()
-	FVector ExpectedActorLocation;
+	FVector ExpectedActorLocation = FVector(EForceInit::ForceInit);
 
 	UPROPERTY()
 	UClass* ExpectedActorClass = nullptr;
