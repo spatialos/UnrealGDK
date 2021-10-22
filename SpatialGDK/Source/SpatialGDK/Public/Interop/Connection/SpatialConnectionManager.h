@@ -26,14 +26,18 @@ enum class ESpatialConnectionType
 	DevAuthFlow
 };
 
+enum class EWorkerConnectionStatus : uint8
+{
+	WaitingForWorkerConnection,
+	ReceivedWorkerConnection
+};
+
 UCLASS()
 class SPATIALGDK_API USpatialConnectionManager : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	~USpatialConnectionManager();
-
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
 
@@ -75,7 +79,7 @@ public:
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
-	void FinishConnecting(Worker_Connection* ConnectionFuture);
+	void FinishConnecting();
 
 	void OnConnectionSuccess();
 	void OnConnectionFailure(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
@@ -96,19 +100,20 @@ private:
 	void StartPollingForConnection();
 	void StopPollingForConnection();
 
-private:
 	UPROPERTY()
 	USpatialWorkerConnection* WorkerConnection = nullptr;
+
 	Worker_Locator* WorkerLocator = nullptr;
-	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer = nullptr;
+	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer;
 	Worker_ConnectionFuture* ConnectionFuture = nullptr;
-	bool bIsConnected = false;
-	bool bConnectAsClient = false;
-
+	Worker_Connection* NewCAPIWorkerConnection = nullptr;
 	FDelegateHandle OnWorldTickStartHandle;
-
-	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
 	LoginTokenResponseCallback LoginTokenResCallback;
 	LogCallback SpatialLogCallback;
 	SpatialGDK::FComponentSetData ComponentSetData;
+
+	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
+	EWorkerConnectionStatus WorkerConnectionStatus = EWorkerConnectionStatus::WaitingForWorkerConnection;
+	bool bIsConnected = false;
+	bool bConnectAsClient = false;
 };

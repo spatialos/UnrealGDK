@@ -194,10 +194,7 @@ void USpatialConnectionManager::FinishDestroy()
 
 void USpatialConnectionManager::DestroyConnection()
 {
-	if (WorkerLocator != nullptr)
-	{
-		DestroyWorkerLocator();
-	}
+	DestroyWorkerLocator();
 
 	if (WorkerConnection != nullptr)
 	{
@@ -205,13 +202,17 @@ void USpatialConnectionManager::DestroyConnection()
 		WorkerConnection = nullptr;
 	}
 
+	StopPollingForConnection();
 	bIsConnected = false;
 }
 
 void USpatialConnectionManager::DestroyWorkerLocator()
 {
-	Worker_Locator_Destroy(WorkerLocator);
-	WorkerLocator = nullptr;
+	if (WorkerLocator != nullptr)
+	{
+		Worker_Locator_Destroy(WorkerLocator);
+		WorkerLocator = nullptr;
+	}
 }
 
 void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorID)
@@ -463,42 +464,26 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 	StartPollingForConnection();
 }
 
-void USpatialConnectionManager::FinishConnecting(Worker_Connection* NewCAPIWorkerConnection)
+void USpatialConnectionManager::FinishConnecting()
 {
 	/*
-	 * This AsyncTask is needed to ensure that the call to OnConnectionSuccess happens at least one frame after object initialization
-	 * was completed when using Server Travel, linked to UNR-2287.
+	 * This function is now guaranteed to be called one frame after the object initialization linked to Server Travel happens (related to UNR-2287)
+	 * therefore an AsyncTask is no longer needed.
 	 */
-	TWeakObjectPtr<USpatialConnectionManager> WeakSpatialConnectionManager(this);
-	AsyncUtil::AsyncTaskGameThreadOutsideGC(
-		[WeakSpatialConnectionManager, NewCAPIWorkerConnection, EventTracing = MoveTemp(EventTracer)]() mutable {
-			if (!WeakSpatialConnectionManager.IsValid())
-			{
-				// The game instance was destroyed before the connection finished, so just clean up the connection.
-				Worker_Connection_Destroy(NewCAPIWorkerConnection);
-				return;
-			}
 
-			USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
-
-			const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
-
-			if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
-			{
-				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>(WeakSpatialConnectionManager.Get());
-
-				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
-																		  SpatialConnectionManager->ComponentSetData);
-				SpatialConnectionManager->OnConnectionSuccess();
-			}
-			else
-			{
-				const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
-				Worker_Connection_Destroy(NewCAPIWorkerConnection);
-				SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
-			}
-		});
+	const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
+	if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
+	{
+		WorkerConnection = NewObject<USpatialWorkerConnection>(this);
+		WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracer), ComponentSetData);
+		OnConnectionSuccess();
+	}
+	else
+	{
+		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
+		Worker_Connection_Destroy(NewCAPIWorkerConnection);
+		OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
+	}
 }
 
 ESpatialConnectionType USpatialConnectionManager::GetConnectionType() const
@@ -635,18 +620,25 @@ TSharedPtr<SpatialGDK::SpatialEventTracer> USpatialConnectionManager::CreateEven
 
 void USpatialConnectionManager::OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaTime)
 {
-	// Poll the Worker API to check if the Worker_Connection is ready
-	const uint32_t TimeoutMiliseconds = 0;
-	Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, &TimeoutMiliseconds);
-
-	if (NewCAPIWorkerConnection != nullptr)
+	if (WorkerConnectionStatus == EWorkerConnectionStatus::WaitingForWorkerConnection)
 	{
-		FinishConnecting(NewCAPIWorkerConnection);
+		// Poll the Worker API to check if the Worker_Connection is ready
+		const uint32_t TimeoutMiliseconds = 0;
+		NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, &TimeoutMiliseconds);
 
-		// We received the Worker_Connection, destroy the future and stop polling the C API
-		Worker_ConnectionFuture_Destroy(ConnectionFuture);
+		if (NewCAPIWorkerConnection != nullptr)
+		{
+			WorkerConnectionStatus = EWorkerConnectionStatus::ReceivedWorkerConnection;
 
+			// We received the Worker_Connection, destroy the future as it is not needed anymore
+			Worker_ConnectionFuture_Destroy(ConnectionFuture);
+		}
+	}
+	else if (WorkerConnectionStatus == EWorkerConnectionStatus::ReceivedWorkerConnection)
+	{
+		FinishConnecting();
 		StopPollingForConnection();
+		WorkerConnectionStatus = EWorkerConnectionStatus::ReceivedWorkerConnection;
 	}
 }
 
@@ -654,16 +646,21 @@ void USpatialConnectionManager::StopPollingForConnection()
 {
 	if (OnWorldTickStartHandle.IsValid())
 	{
-		FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
+		if (FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle) == true)
+		{
+			OnWorldTickStartHandle.Reset();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to remove handle from delegate, the worker API will still be polled for a connection!"));
+		}
 	}
 }
 
 void USpatialConnectionManager::StartPollingForConnection()
 {
-	OnWorldTickStartHandle = FWorldDelegates::OnWorldTickStart.AddUObject(this, &USpatialConnectionManager::OnWorldTickStart);
-}
-
-USpatialConnectionManager::~USpatialConnectionManager()
-{
-	StopPollingForConnection();
+	if (OnWorldTickStartHandle.IsValid() == false)
+	{
+		OnWorldTickStartHandle = FWorldDelegates::OnWorldTickStart.AddUObject(this, &USpatialConnectionManager::OnWorldTickStart);
+	}
 }
