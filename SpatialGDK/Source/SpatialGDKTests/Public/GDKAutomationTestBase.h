@@ -135,8 +135,8 @@ public:
 
 protected:
 	/**
-	 * Checks for an existing deployment and stops it if one exists (also killing the associated workers).
-	 * Ran before each test.
+	 * This SetUp method override is reserved for test classes which needs to open a new map. 
+	 * To avoid errors we make sure that we stop the previous deployment synchronously instead of relying on latent commands. 
 	 */
 	virtual void SetUp() override
 	{
