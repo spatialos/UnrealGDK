@@ -25,7 +25,7 @@ struct FLockingToken
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(BlueprintReadOnly, Category = "SpatialGDK|Locking")
-	int64 Token;
+	int64 Token = 0;
 };
 
 UENUM(BlueprintType)

@@ -26,10 +26,10 @@ struct FHandoverReplicationTestStructInner
 	GENERATED_BODY()
 
 	UPROPERTY()
-	int FirstProperty;
+	int FirstProperty = 0;
 
 	UPROPERTY()
-	int SecondProperty;
+	int SecondProperty = 0;
 };
 
 USTRUCT()
@@ -38,10 +38,10 @@ struct FHandoverReplicationTestStruct
 	GENERATED_BODY()
 
 	UPROPERTY()
-	int FirstProperty;
+	int FirstProperty = 0;
 
 	UPROPERTY()
-	int SecondProperty;
+	int SecondProperty = 0;
 
 	UPROPERTY()
 	FHandoverReplicationTestStructInner InnerStruct;
