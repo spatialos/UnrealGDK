@@ -454,11 +454,6 @@ public:
 			  meta = (DisplayName = "Connect local server worker to the cloud deployment"))
 	bool bConnectServerToCloud;
 
-	/** Port on which the receptionist proxy will be available. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection",
-			  meta = (EditCondition = "bConnectServerToCloud", DisplayName = "Local Receptionist Port"))
-	int32 LocalReceptionistPort;
-
 	/** Network address to bind the receptionist proxy to. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection",
 			  meta = (EditCondition = "bConnectServerToCloud", DisplayName = "Listening Address"))
@@ -685,4 +680,10 @@ public:
 	static bool IsAssemblyNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
 	static void TrimTMap(TMap<FString, FString>& Map);
+
+	/**
+	 * Gets the correct port needed to start a deployment and the Inspector process
+	 * Implemented by calling USpatialGDKSettings::GetDefaultReceptionistPort()
+	 */
+	uint16 GetDefaultReceptionistPort() const;
 };

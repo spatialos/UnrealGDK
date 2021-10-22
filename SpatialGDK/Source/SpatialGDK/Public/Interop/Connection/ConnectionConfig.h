@@ -194,7 +194,7 @@ public:
 	}
 
 	FString LocatorHost;
-	int32 LocatorPort;
+	uint16 LocatorPort;
 	FString PlayerIdentityToken;
 	FString LoginToken;
 };
@@ -248,8 +248,9 @@ public:
 	void LoadDefaults()
 	{
 		UseExternalIp = false;
-		ReceptionistPort = SpatialConstants::DEFAULT_PORT;
-		SetReceptionistHost(GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost);
+		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+		ReceptionistPort = SpatialGDKSettings->GetDefaultReceptionistPort();
+		SetReceptionistHost(SpatialGDKSettings->DefaultReceptionistHost);
 	}
 
 	bool TryLoadCommandLineArgs()
