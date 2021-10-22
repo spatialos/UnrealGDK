@@ -118,7 +118,7 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 	});
 }
 
-bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
+bool FLocalDeploymentManager::CheckIfPortIsBound(uint16 Port) const
 {
 	ISocketSubsystem* SocketSubsystem = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
 	bool bCanBindToPort = false;
@@ -163,7 +163,7 @@ bool FLocalDeploymentManager::CheckIfPortIsBound(int32 Port)
 	return !bCanBindToPort;
 }
 
-bool FLocalDeploymentManager::KillProcessBlockingPort(int32 Port)
+bool FLocalDeploymentManager::KillProcessBlockingPort(uint16 Port)
 {
 	FString PID;
 	FString State;
@@ -178,16 +178,17 @@ bool FLocalDeploymentManager::KillProcessBlockingPort(int32 Port)
 	return bSuccess;
 }
 
-bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
+bool FLocalDeploymentManager::LocalDeploymentPreRunChecks(const uint16 RuntimeGRPCPort)
 {
 	bool bSuccess = true;
 
 	// Check for the known runtime ports which could be blocked by other processes.
-	TArray<int32> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, SpatialGDKServicesConstants::RuntimeGRPCPort };
 
-	for (int32 RuntimePort : RequiredRuntimePorts)
+	const TArray<uint16> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, RuntimeGRPCPort};
+	
+	for (const uint16 RequiredPort : RequiredRuntimePorts)
 	{
-		if (CheckIfPortIsBound(RuntimePort))
+		if (CheckIfPortIsBound(RequiredPort))
 		{
 			// If it exists offer the user the ability to kill it.
 			FText DialogMessage = LOCTEXT("KillPortBlockingProcess",
@@ -195,7 +196,7 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 										  "deployment). Would you like to kill this process?");
 			if (FMessageDialog::Open(EAppMsgType::YesNo, DialogMessage) == EAppReturnType::Yes)
 			{
-				bSuccess &= KillProcessBlockingPort(RuntimePort);
+				bSuccess &= KillProcessBlockingPort(RequiredPort);
 			}
 			else
 			{
@@ -209,14 +210,14 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 
 void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
 													  const FString& SnapshotName, const FString& RuntimeIPToExpose,
-													  const LocalDeploymentCallback& CallBack)
+													  const uint16 RuntimeGRPCPort, const LocalDeploymentCallback& CallBack)
 {
 	int NumRetries = RuntimeStartRetries;
 	while (NumRetries > 0)
 	{
 		NumRetries--;
 		ERuntimeStartResponse Response =
-			StartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose, CallBack);
+			StartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose, RuntimeGRPCPort, CallBack);
 		if (Response != ERuntimeStartResponse::Timeout)
 		{
 			break;
@@ -236,7 +237,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfi
 
 FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLocalDeployment(
 	const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs, const FString& SnapshotName,
-	const FString& RuntimeIPToExpose, const LocalDeploymentCallback& CallBack)
+	const FString& RuntimeIPToExpose, const uint16 RuntimeGRPCPort, const LocalDeploymentCallback& CallBack)
 {
 	RuntimeStartTime = FDateTime::Now();
 	bRedeployRequired = false;
@@ -251,7 +252,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 		return ERuntimeStartResponse::AlreadyRunning;
 	}
 
-	if (!LocalDeploymentPreRunChecks())
+	if (!LocalDeploymentPreRunChecks(RuntimeGRPCPort))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error,
 			   TEXT("Tried to start a local deployment but a required port is already bound by another process."));
@@ -290,11 +291,11 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots/<timestamp>
 	// --schema-bundle=spatial/build/assembly/schema/schema.sb
 	// --event - tracing - logs - directory = `<Project > / spatial / localdeployment / <timestamp> / `
-	FString RuntimeArgs = FString::Printf(
-		TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
-			 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
-		*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-		*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *CurrentSnapshotPath, *SchemaBundle, *EventTracingPath, *LaunchArgs);
+	FString RuntimeArgs =
+		FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %hu --http-port=%hu --grpc-port=%s "
+							 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
+						*LaunchConfig, *SnapshotName,  WorkerPort,  HTTPPort, *FString::FromInt(RuntimeGRPCPort), *CurrentSnapshotPath, *SchemaBundle,
+						*EventTracingPath, *LaunchArgs);
 
 	if (!RuntimeIPToExpose.IsEmpty())
 	{
