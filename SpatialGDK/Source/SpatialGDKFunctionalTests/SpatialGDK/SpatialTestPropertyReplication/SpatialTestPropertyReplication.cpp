@@ -27,6 +27,7 @@ ASpatialTestPropertyReplication::ASpatialTestPropertyReplication()
 	Description = TEXT(
 		"This tests that an Actor can replicate a property across the network during play. It is an example test intended to teach the "
 		"basics of the UnrealGDK Functional Test Framework. It's accompanied by this document: https://brevi.link/how-to-test-unrealgdk");
+	UE_LOG(LogTemp, Warning, TEXT("I have been fucking constructed!"));
 }
 
 void ASpatialTestPropertyReplication::PrepareTest()
@@ -51,7 +52,7 @@ void ASpatialTestPropertyReplication::PrepareTest()
 		TEXT("The Server spawns one ReplicatedTestActor"), FWorkerDefinition::Server(1), nullptr,
 		[this]() {
 			TestActor = SpawnActor<AReplicatedTestActor>(FVector(0.0f, 0.0f, 50.0f));
-
+			UE_LOG(LogTemp, Warning, TEXT("I am a fucking server!"));
 			FinishStep();
 		},
 		nullptr, 5.0f);
@@ -59,6 +60,8 @@ void ASpatialTestPropertyReplication::PrepareTest()
 	AddStep(
 		TEXT("All Clients check that they can see exactly 1 ReplicatedTestActor"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
+			UE_LOG(LogTemp, Warning, TEXT("I am a fucking client!"));
+
 			TArray<AActor*> FoundReplicatedTestActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActor::StaticClass(), FoundReplicatedTestActors);
 

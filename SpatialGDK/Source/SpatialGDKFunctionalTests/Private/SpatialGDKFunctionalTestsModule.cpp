@@ -11,8 +11,10 @@
 
 #include "LogSpatialFunctionalTest.h"
 #include "SpatialFunctionalTest.h"
+#if WITH_EDITOR
 #include "SpatialGDKEditor/Public/SpatialGDKEditorModule.h"
 #include "SpatialGDKEditor/Public/SpatialGDKEditorSettings.h"
+#endif
 #include "SpatialGDKFunctionalTestsPrivate.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKFunctionalTestsModule"
@@ -31,11 +33,12 @@ void FSpatialGDKFunctionalTestsModule::StartupModule()
 	AutomationController->OnTestsComplete().AddLambda([]() {
 		// Make sure to clear the snapshot in case something happened with Tests (or they weren't ran properly).
 		ASpatialFunctionalTest::ClearAllTakenSnapshots();
-
+		#if WITH_EDITOR
 		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->IsPlayingSessionInEditor())
 		{
 			GEditor->EndPlayMap();
 		}
+		#endif
 	});
 
 	FSpatialGDKEditorModule& GDKEditorModule = FModuleManager::LoadModuleChecked<FSpatialGDKEditorModule>(TEXT("SpatialGDKEditor"));

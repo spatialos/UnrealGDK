@@ -52,6 +52,7 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	bIsStandaloneTest = false;
 	GeneratedTestMap = nullptr;
 	bIsGeneratingMap = false;
+
 }
 
 ASpatialFunctionalTest::ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients /*=1*/,

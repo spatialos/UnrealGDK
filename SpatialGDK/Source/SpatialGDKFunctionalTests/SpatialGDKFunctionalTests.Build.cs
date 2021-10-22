@@ -15,17 +15,23 @@ public class SpatialGDKFunctionalTests : ModuleRules
         PrivateDependencyModuleNames.AddRange(
             new string[] {
                 "SpatialGDK",
-                "SpatialGDKEditor",
-                "SpatialGDKServices",
                 "Core",
                 "CoreUObject",
                 "Engine",
                 "FunctionalTesting",
                 "HTTP",
-                "UnrealEd",
                 "EngineSettings",
                 "InputCore",
                 "Slate"
             });
+
+
+        if (Target.bBuildEditor)
+        {
+            PrivateDependencyModuleNames.Add("UnrealEd");
+            PrivateDependencyModuleNames.Add("SpatialGDKEditor");
+            PrivateDependencyModuleNames.Add("SpatialGDKServices");
+        }
+
     }
 }
