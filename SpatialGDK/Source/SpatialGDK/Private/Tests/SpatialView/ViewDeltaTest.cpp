@@ -5,7 +5,7 @@
 #include "Tests/TestDefinitions.h"
 
 #include "SpatialView/OpList/EntityComponentOpList.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 #include "Tests/SpatialView/ExpectedViewDelta.h"
 
 #define VIEWDELTA_TEST(TestName) GDK_TEST(Core, ViewDelta, TestName)

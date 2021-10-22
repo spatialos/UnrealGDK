@@ -311,7 +311,8 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 	AActor* PlayerStartActor = NetDriver->GetWorld()->GetAuthGameMode()->FindPlayerStart(nullptr, Url.Portal);
 
 	// If the PlayerStart is authoritative locally, spawn the player locally.
-	if (PlayerStartActor != nullptr && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*PlayerStartActor))
+	if (USpatialStatics::IsStrategyWorkerEnabled()
+		|| (PlayerStartActor != nullptr && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*PlayerStartActor)))
 	{
 		UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Handling SpawnPlayerRequest request locally. Client worker ID: %lld."),
 			   ClientWorkerId);

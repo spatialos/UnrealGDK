@@ -278,6 +278,11 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 		return;
 	}
 
+	if (USpatialStatics::IsStrategyWorkerEnabled())
+	{
+		return;
+	}
+
 	// Replicated level Actors should only be initially authority if:
 	//  - these are workers starting as part of a fresh deployment (tracked by the bCanSpawnWithAuthority bool),
 	//  - these actors are marked as NotPersistent and we're loading from a saved snapshot (which means bCanSpawnWithAuthority is false)
@@ -328,6 +333,11 @@ void UGlobalStateManager::TriggerBeginPlay()
 		if (SpatialSettings->SpatialDebugger != nullptr)
 		{
 			NetDriver->SpatialDebugger = NetDriver->World->SpawnActor<ASpatialDebugger>(SpatialSettings->SpatialDebugger);
+			if (!HasAuthority())
+			{
+				NetDriver->SpatialDebugger->Role = ROLE_SimulatedProxy;
+				NetDriver->SpatialDebugger->RemoteRole = ROLE_Authority;
+			}
 		}
 	}
 #endif

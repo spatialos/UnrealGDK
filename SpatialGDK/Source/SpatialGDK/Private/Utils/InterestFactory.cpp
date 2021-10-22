@@ -160,8 +160,8 @@ Interest InterestFactory::CreateServerWorkerInterest(TArray<Worker_ComponentId> 
 	// Interest in load balancing partitions
 	ServerQuery = Query();
 	ServerQuery.ResultComponentIds = MoveTemp(PartitionsComponents);
-	ServerQuery.ResultComponentIds.Add(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
-	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::PARTITION_ACK_COMPONENT_ID;
+	ServerQuery.ResultComponentIds.Add(SpatialConstants::LOADBALANCER_PARTITION_TAG_COMPONENT_ID);
+	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::LOADBALANCER_PARTITION_TAG_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
 
 	return ServerInterest;

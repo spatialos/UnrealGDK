@@ -10,6 +10,7 @@
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/LegacyLoadbalancingComponents.h"
 #include "Utils/SpatialActorUtils.h"
+#include "Utils/SpatialStatics.h"
 
 namespace
 {
@@ -61,8 +62,10 @@ void USpatialNetDriverDebugContext::Init(const SpatialGDK::FSubView& InSubView, 
 	DebugStrategy = NewObject<UDebugLBStrategy>();
 	DebugStrategy->InitDebugStrategy(this, NetDriver->LoadBalanceStrategy);
 	NetDriver->LoadBalanceStrategy = DebugStrategy;
-
-	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
+	if (!USpatialStatics::IsStrategyWorkerEnabled())
+	{
+		NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
+	}
 }
 
 void USpatialNetDriverDebugContext::Cleanup()
@@ -70,7 +73,10 @@ void USpatialNetDriverDebugContext::Cleanup()
 	Reset();
 	NetDriver->LoadBalanceStrategy = Cast<UDebugLBStrategy>(DebugStrategy)->GetWrappedStrategy();
 	NetDriver->DebugCtx = nullptr;
-	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
+	if (!USpatialStatics::IsStrategyWorkerEnabled())
+	{
+		NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
+	}
 }
 
 void USpatialNetDriverDebugContext::AdvanceView()
@@ -156,7 +162,10 @@ void USpatialNetDriverDebugContext::Reset()
 	CachedInterestSet.Empty();
 	ActorDebugInfo.Empty();
 	UpdateServerWorkerData();
-	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
+	if (!USpatialStatics::IsStrategyWorkerEnabled())
+	{
+		NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
+	}
 }
 
 USpatialNetDriverDebugContext::DebugComponentAuthData& USpatialNetDriverDebugContext::GetAuthDebugComponent(AActor* Actor)
@@ -512,7 +521,7 @@ void USpatialNetDriverDebugContext::TickServer()
 		}
 	}
 
-	if (NeedEntityInterestUpdate())
+	if (!USpatialStatics::IsStrategyWorkerEnabled() && NeedEntityInterestUpdate())
 	{
 		NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
 	}

@@ -19,7 +19,7 @@ ActorSetMember GetActorSetData(const USpatialPackageMapClient& PackageMap, const
 
 	const Worker_EntityId LeaderEntityId = PackageMap.GetEntityIdFromObject(LeaderActor);
 
-	if (!ensureAlwaysMsgf(LeaderEntityId != SpatialConstants::INVALID_ENTITY_ID,
+	if (!ensureAlwaysMsgf(LeaderEntityId != SpatialConstants::INVALID_ENTITY_ID || LeaderActor == &Actor,
 						  TEXT("Failed to get entity Id from package map for Actor: %s"), *GetNameSafe(LeaderActor)))
 	{
 		return ActorSetMember();
