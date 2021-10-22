@@ -14,15 +14,15 @@ struct FWorkerStats
 	GENERATED_BODY()
 
 	UPROPERTY()
-	FString WorkerName;
+	FString WorkerName = FString();
 	UPROPERTY()
-	float AverageFPS;
+	float AverageFPS = 0.0f;
 	UPROPERTY()
-	float ServerMovementCorrections; // per second
+	float ServerMovementCorrections = 0.0f; // per second
 	UPROPERTY()
-	int32 ServerConsiderListSize;
+	int32 ServerConsiderListSize = 0;
 	UPROPERTY()
-	uint32 ServerReplicationLimit;
+	uint32 ServerReplicationLimit = 0;
 
 	bool operator==(const FWorkerStats& other) const { return (WorkerName.Equals(other.WorkerName)); }
 };
