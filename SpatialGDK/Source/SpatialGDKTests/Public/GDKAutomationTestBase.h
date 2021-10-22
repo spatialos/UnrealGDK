@@ -146,8 +146,12 @@ protected:
 			UE_LOG(LogGDKTestBase, Log, TEXT("Deployment found! (Was this left over from another test?)"));
 			UE_LOG(LogGDKTestBase, Log, TEXT("Ending PIE session"));
 			GEditor->RequestEndPlayMap();
-			ExecuteLatentCommandSynchronously(new FStopDeployment());
-			ExecuteLatentCommandSynchronously(new FWaitForDeployment(this, EDeploymentState::IsNotRunning));
+
+			FStopDeployment StopDeployment = FStopDeployment();
+			ExecuteLatentCommandSynchronously(&StopDeployment);
+
+			FWaitForDeployment WaitForStopDeployment = FWaitForDeployment(this, EDeploymentState::IsNotRunning);
+			ExecuteLatentCommandSynchronously(&WaitForStopDeployment);
 		}
 	}
 };
