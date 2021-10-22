@@ -221,9 +221,5 @@ void ExecuteLatentCommandSynchronously(IAutomationLatentCommand* Command)
 		{
 			break;
 		}
-		else
-		{
-			continue;
-		}
 	}
 }
