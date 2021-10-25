@@ -74,17 +74,18 @@ bool DeleteWorkerJson()
 
 bool FStartDeployment::Update()
 {
-	if (const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>())
+	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
 		FLocalDeploymentManager* LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
 		const FString LaunchConfig =
 			FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
-		const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
-		const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoadPath();
-		const FString RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
+		const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
+		const FString SnapshotName = SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoadPath();
+		const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
+		const uint16 RuntimeGRPCPort = SpatialGDKEditorSettings->GetDefaultReceptionistPort();
 
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName,
-																 RuntimeVersion] {
+																 RuntimeVersion, RuntimeGRPCPort] {
 			if (!GenerateWorkerJson())
 			{
 				return;
@@ -112,7 +113,7 @@ bool FStartDeployment::Update()
 				return;
 			}
 
-			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotName, TEXT(""), nullptr);
+			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotName, TEXT(""), RuntimeGRPCPort, nullptr);
 		});
 	}
 

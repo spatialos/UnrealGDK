@@ -3,7 +3,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 
 #include "Engine/ActorChannel.h"
-#include "Engine/Engine.h"
 #include "Engine/LevelScriptActor.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/NetworkObjectList.h"
@@ -16,7 +15,6 @@
 #include "UObject/UObjectIterator.h"
 #include "UObject/WeakObjectPtrTemplates.h"
 
-#include "Algo/AnyOf.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialHandoverManager.h"
@@ -48,7 +46,6 @@
 #include "Interop/SkeletonEntityManifestPublisher.h"
 #include "Interop/SkeletonEntityPopulator.h"
 #include "Interop/SpatialClassInfoManager.h"
-#include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialNetDriverLoadBalancingHandler.h"
 #include "Interop/SpatialOutputDevice.h"
 #include "Interop/SpatialPartitionSystemImpl.h"
@@ -76,7 +73,6 @@
 #include "SpatialGDKSettings.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/EntityComponentTypes.h"
-#include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 #include "SpatialView/SubView.h"
 #include "Templates/SharedPointer.h"
 #include "Utils/ComponentFactory.h"
@@ -455,7 +451,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	FName WorkerType = GameInstance->GetSpatialWorkerType();
 	if (WorkerType == SpatialConstants::DefaultServerWorkerType || WorkerType == SpatialConstants::DefaultClientWorkerType)
 	{
-		Dispatcher = MakeUnique<SpatialDispatcher>();
 		Sender = NewObject<USpatialSender>();
 		Receiver = NewObject<USpatialReceiver>();
 
@@ -471,7 +466,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		CreateAndInitializeLoadBalancingClasses();
 
-		Dispatcher->Init(SpatialWorkerFlags);
 		Sender->Init(this, &TimerManager, Connection->GetEventTracer());
 		Receiver->Init(this, Connection->GetEventTracer());
 		GlobalStateManager->Init(this);
@@ -2287,6 +2281,8 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (bIsDefaultServerOrClientWorker)
 		{
+			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
+
 			if (ManifestPublisher.IsValid())
 			{
 				ManifestPublisher->Advance(Connection->GetCoordinator());
@@ -2363,14 +2359,14 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				OwnershipCompletenessHandler->Advance();
 			}
 
+			if (SpatialWorkerFlags)
 			{
-				SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
-				Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
-				Dispatcher->ProcessOps(Connection->GetWorkerMessages());
-				if (CrossServerRPCHandler)
-				{
-					CrossServerRPCHandler->ProcessMessages(Connection->GetWorkerMessages(), DeltaTime);
-				}
+				SpatialWorkerFlags->ProcessFlagChanges(Connection->GetWorkerMessages());
+			}
+
+			if (CrossServerRPCHandler)
+			{
+				CrossServerRPCHandler->ProcessMessages(Connection->GetWorkerMessages(), DeltaTime);
 			}
 
 			if (RPCService.IsValid())
