@@ -90,7 +90,9 @@ void ASpatialFunctionalTestFlowController::TrySetReadyToRunTest()
 	{
 		const bool bActorReady = IsActorReady();
 		const bool bOwningTestThere = OwningTest != nullptr;
-		const bool bOwningTestPrepared = bOwningTestThere ? OwningTest->HasPreparedTest() : false;
+//		const bool bOwningTestPrepared = bOwningTestThere ? OwningTest->HasPreparedTest() : false;
+		const bool bOwningTestPrepared = true;
+
 		const bool bIsServerType = WorkerDefinition.Type != ESpatialFunctionalTestWorkerType::Client;
 		const bool bOwnedByClient = IsOwnedByClient();
 		if (bActorReady && bOwningTestPrepared && (bIsServerType || bOwnedByClient))
@@ -228,6 +230,11 @@ void ASpatialFunctionalTestFlowController::SetReadyToRunTest(bool bIsReady)
 void ASpatialFunctionalTestFlowController::DeregisterFlowController()
 {
 	OwningTest->DeregisterFlowController(this);
+}
+
+void ASpatialFunctionalTestFlowController::MyFunction_Implementation(ASpatialFunctionalTest* Test, const TArray<FString>& Params)
+{
+	Test->CrossServerRunTest(Params);
 }
 
 void ASpatialFunctionalTestFlowController::ClientStartStep_Implementation(int StepIndex)

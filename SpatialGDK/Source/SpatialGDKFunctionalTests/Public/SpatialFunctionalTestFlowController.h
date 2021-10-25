@@ -82,6 +82,9 @@ public:
 	UFUNCTION()
 	void DeregisterFlowController();
 
+	UFUNCTION(Server, Reliable)
+	void MyFunction(ASpatialFunctionalTest* Test, const TArray<FString>& Params = TArray<FString>());
+
 private:
 	// Current Step being executed
 	SpatialFunctionalTestStep CurrentStep;

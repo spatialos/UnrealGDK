@@ -102,8 +102,16 @@ public:
 	// Called once after IsReady is true. This is only called on Authority.
 	virtual void StartTest() override;
 
+	virtual void CallRunTest(const TArray<FString>& Params = TArray<FString>()) override;
+
 	// Ends the Test, can be called from any place.
 	virtual void FinishTest(EFunctionalTestResult TestResult, const FString& Message) override;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiCastFinishTest(EFunctionalTestResult TestResult, const FString& Message);
+
+
+
 
 	// Add expected log errors in C++. This can only be called when setting up the steps in PrepareTest() or in
 	// the steps themselves. Keep in mind that if the expected number of occurrences aren't met, the test fails.
@@ -480,6 +488,11 @@ protected:
 	void NotifyTestFinishedObserver() override;
 
 private:
+	UPROPERTY(Replicated)
+	bool bFailedTest = false;
+
+
+
 	bool bNotifyObserversCalled = false;
 
 	// Number of servers that should be running in the world.

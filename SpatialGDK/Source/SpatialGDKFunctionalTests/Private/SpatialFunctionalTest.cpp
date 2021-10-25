@@ -74,7 +74,7 @@ void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ASpatialFunctionalTest, FlowControllers);
 	DOREPLIFETIME(ASpatialFunctionalTest, CurrentStepIndex);
 	DOREPLIFETIME(ASpatialFunctionalTest, bPreparedTest);
-	DOREPLIFETIME(ASpatialFunctionalTest, bFinishedTest);
+	DOREPLIFETIME(ASpatialFunctionalTest, bFailedTest);
 }
 
 void ASpatialFunctionalTest::BeginPlay()
@@ -127,6 +127,13 @@ void ASpatialFunctionalTest::BeginPlay()
 	}
 }
 
+
+void ASpatialFunctionalTest::MultiCastFinishTest_Implementation(EFunctionalTestResult TestResult, const FString& OutMessage)
+{
+	Super::FinishTest(TestResult, OutMessage);
+
+}
+
 void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -155,6 +162,9 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 			if (CurrentStepTimeLimit > 0.0f && TimeRunningStep >= CurrentStepTimeLimit)
 			{
 				FinishTest(EFunctionalTestResult::Failed, TEXT("Step time limit reached"));
+
+				MultiCastFinishTest(EFunctionalTestResult::Failed, TEXT("Step time limit reached"));
+				//FinishTest(EFunctionalTestResult::Failed, TEXT("Step time limit reached"));
 			}
 		}
 	}
@@ -272,6 +282,35 @@ void ASpatialFunctionalTest::StartTest()
 	Super::StartTest();
 
 	StartStep(0);
+}
+
+void ASpatialFunctionalTest::CallRunTest(const TArray<FString>& Params)
+{
+
+	if (HasAuthority() == false)
+	{
+		if (LocalFlowController != nullptr)
+		{
+			LocalFlowController->MyFunction(this, Params);
+		}
+		else
+		{
+			FTimerHandle RetriggerTestRunHandle;
+			GetWorldTimerManager().SetTimer(
+				RetriggerTestRunHandle,
+				[Params, WeakThis = TWeakObjectPtr<ASpatialFunctionalTest>(this)] {
+					if (WeakThis.IsValid())
+					{
+						WeakThis->CallRunTest(Params);
+					}
+				},
+				0.1f, false);
+		}
+
+		return;
+	}
+
+	Super::CallRunTest(Params);
 }
 
 void ASpatialFunctionalTest::FinishStep()
