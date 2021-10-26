@@ -42,7 +42,5 @@ public:
 
 	static constexpr int32 InitialNumComponents = 3;
 
-	static constexpr float TimeLimit = 100.0f;
-
 	float StepTimer;
 };
