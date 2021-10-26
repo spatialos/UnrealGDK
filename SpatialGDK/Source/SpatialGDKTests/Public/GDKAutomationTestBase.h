@@ -147,11 +147,16 @@ protected:
 			UE_LOG(LogGDKTestBase, Log, TEXT("Ending PIE session"));
 			GEditor->RequestEndPlayMap();
 
-			FStopDeployment StopDeployment = FStopDeployment();
-			ExecuteLatentCommandSynchronously(&StopDeployment);
+			{
+				FStopDeployment StopDeployment;
+				ExecuteLatentCommandSynchronously(StopDeployment);
+			}
 
-			FWaitForDeployment WaitForStopDeployment = FWaitForDeployment(this, EDeploymentState::IsNotRunning);
-			ExecuteLatentCommandSynchronously(&WaitForStopDeployment);
+			{
+				FWaitForDeployment WaitForStopDeployment(this, EDeploymentState::IsNotRunning);
+				ExecuteLatentCommandSynchronously(WaitForStopDeployment);
+
+			}
 		}
 	}
 };

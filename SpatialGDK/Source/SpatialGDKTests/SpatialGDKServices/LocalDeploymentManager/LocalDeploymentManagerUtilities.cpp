@@ -219,11 +219,11 @@ bool FCheckDeploymentState::Update()
 * `InternalUpdate()` calls to initialize the private `StartTime` variable, hence any latent command used with this function
 * should initialise `StartTime` at the start of their `Update()` function (e.g. see `FWaitForDeployment` for reference).
 */
-void ExecuteLatentCommandSynchronously(IAutomationLatentCommand* Command)
+void ExecuteLatentCommandSynchronously(IAutomationLatentCommand& Command)
 {
 	while (true)
 	{
-		bool bResult = Command->Update();
+		bool bResult = Command.Update();
 		if (bResult)
 		{
 			break;
