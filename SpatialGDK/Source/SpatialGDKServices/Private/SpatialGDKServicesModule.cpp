@@ -7,6 +7,7 @@
 #include "EditorStyleSet.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/Docking/TabManager.h"
+#include "Misc/EngineVersionComparison.h"
 #include "Misc/FileHelper.h"
 #include "SSpatialOutputLog.h"
 #include "Serialization/JsonReader.h"
@@ -32,7 +33,9 @@ TSharedRef<SDockTab> SpawnSpatialOutputLog(const FSpawnTabArgs& Args)
 	SpatialOutputLog = TWeakPtr<SSpatialOutputLog>(SpatialOutputLogRef);
 
 	return SNew(SDockTab)
+#if UE_VERSION_OLDER_THAN(5, 0, -1)
 		.Icon(FEditorStyle::GetBrush("Log.TabIcon"))
+#endif
 		.TabRole(ETabRole::NomadTab)
 		.Label(NSLOCTEXT("SpatialOutputLog", "TabTitle", "Spatial Output"))[SpatialOutputLogRef];
 }

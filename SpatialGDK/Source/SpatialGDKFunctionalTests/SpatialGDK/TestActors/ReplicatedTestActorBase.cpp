@@ -14,6 +14,7 @@ AReplicatedTestActorBase::AReplicatedTestActorBase()
 	CubeComponent->SetMaterial(0,
 							   LoadObject<UMaterial>(nullptr, TEXT("Material'/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial'")));
 	CubeComponent->SetVisibility(true);
+	CubeComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	RootComponent = CubeComponent;
 }
