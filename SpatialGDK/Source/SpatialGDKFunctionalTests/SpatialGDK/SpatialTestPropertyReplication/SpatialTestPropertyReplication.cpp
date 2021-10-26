@@ -64,6 +64,7 @@ void ASpatialTestPropertyReplication::PrepareTest()
 	AddStep(
 		TEXT("All Clients check that they can see exactly 1 ReplicatedTestActor"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
+			this->AddError("Hello World");
 			UE_LOG(LogTemp, Warning, TEXT("I am a bloody client!"));
 
 			TArray<AActor*> FoundReplicatedTestActors;
@@ -104,7 +105,7 @@ void ASpatialTestPropertyReplication::PrepareTest()
 				FinishTest(EFunctionalTestResult::Error, TEXT("Error!"));
 			}
 			*/
-			RequireEqual_Int(TestActor->TestReplicatedProperty, 19, TEXT("The ReplicatedProperty should equal 99."));
+			RequireEqual_Int(TestActor->TestReplicatedProperty, 99, TEXT("The ReplicatedProperty should equal 99."));
 			FinishStep();
 		},
 		5.0f);

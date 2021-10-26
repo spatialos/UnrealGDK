@@ -75,6 +75,7 @@ void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ASpatialFunctionalTest, CurrentStepIndex);
 	DOREPLIFETIME(ASpatialFunctionalTest, bPreparedTest);
 	DOREPLIFETIME(ASpatialFunctionalTest, bFailedTest);
+	DOREPLIFETIME(ASpatialFunctionalTest, bFinishedTest);
 }
 
 void ASpatialFunctionalTest::BeginPlay()
@@ -162,9 +163,6 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 			if (CurrentStepTimeLimit > 0.0f && TimeRunningStep >= CurrentStepTimeLimit)
 			{
 				FinishTest(EFunctionalTestResult::Failed, TEXT("Step time limit reached"));
-
-				MultiCastFinishTest(EFunctionalTestResult::Failed, TEXT("Step time limit reached"));
-				//FinishTest(EFunctionalTestResult::Failed, TEXT("Step time limit reached"));
 			}
 		}
 	}
