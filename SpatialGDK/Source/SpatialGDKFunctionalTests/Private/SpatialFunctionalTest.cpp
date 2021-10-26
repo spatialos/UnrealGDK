@@ -163,6 +163,7 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 			if (CurrentStepTimeLimit > 0.0f && TimeRunningStep >= CurrentStepTimeLimit)
 			{
 				FinishTest(EFunctionalTestResult::Failed, TEXT("Step time limit reached"));
+				// From here -> Server -> Multicast a bloody log, and GG!.
 			}
 		}
 	}
@@ -371,6 +372,10 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 {
 	if (HasAuthority())
 	{
+		if (TestResult == EFunctionalTestResult::Failed)
+		{
+			PropagateFailureMessage();
+		}
 		// Make sure we don't FinishTest multiple times.
 		if (CurrentStepIndex != SPATIAL_FUNCTIONAL_TEST_FINISHED)
 		{
@@ -863,6 +868,11 @@ void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 	}
 
 	FlowControllerSpawner.SpawnServerFlowController();
+}
+
+void ASpatialFunctionalTest::PropagateFailureMessage_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("I have failed!"));
 }
 
 void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()

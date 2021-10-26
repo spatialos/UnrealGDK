@@ -546,6 +546,9 @@ private:
 	UFUNCTION()
 	void StartServerFlowControllerSpawn();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void PropagateFailureMessage();
+
 	void SetupClientPlayerRegistrationFlow();
 	void EndPlay(const EEndPlayReason::Type Reason) override;
 
