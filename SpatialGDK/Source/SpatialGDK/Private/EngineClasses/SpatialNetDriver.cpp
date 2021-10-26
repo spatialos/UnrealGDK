@@ -1362,8 +1362,8 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 	{
 		USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(ClientConnections[ConnIdx]);
 		check(SpatialConnection);
-		check(SpatialConnection->State == USOCK_Pending || SpatialConnection->State == USOCK_Open
-			  || SpatialConnection->State == USOCK_Closed);
+		check(SpatialConnection->GetConnectionState() == USOCK_Pending || SpatialConnection->GetConnectionState() == USOCK_Open
+			  || SpatialConnection->GetConnectionState() == USOCK_Closed);
 		checkSlow(SpatialConnection->GetUChildConnection() == NULL);
 
 		// Handle not ready channels.
@@ -1373,7 +1373,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 		AActor* OwningActor = SpatialConnection->OwningActor;
 
 		// SpatialGDK: We allow a connection without an owner to process if it's meant to be the connection to the fake SpatialOS client.
-		if ((SpatialConnection->bReliableSpatialConnection || OwningActor != NULL) && SpatialConnection->State == USOCK_Open
+		if ((SpatialConnection->bReliableSpatialConnection || OwningActor != NULL) && SpatialConnection->GetConnectionState() == USOCK_Open
 			&& (GetElapsedTime() - SpatialConnection->LastReceiveTime < 1.5f))
 		{
 			check(SpatialConnection->bReliableSpatialConnection || World == OwningActor->GetWorld());

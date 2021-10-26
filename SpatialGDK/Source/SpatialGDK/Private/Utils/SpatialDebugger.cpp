@@ -682,7 +682,7 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 												NewMousePosition.Y - (CrosshairTexture->GetSurfaceHeight() * 0.5f));
 
 				// Draw the crosshair at the mouse position.
-				FCanvasTileItem TileItem(CrossHairDrawPosition, CrosshairTexture->Resource, FLinearColor::White);
+				FCanvasTileItem TileItem(CrossHairDrawPosition, CrosshairTexture->GetResource(), FLinearColor::White);
 				TileItem.BlendMode = SE_BLEND_Translucent;
 				Canvas->DrawItem(TileItem);
 			}
