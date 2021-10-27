@@ -304,13 +304,9 @@ const TSet<UClass*>& AllTestClassesSet()
 	return TestClassesSet;
 };
 
-#if ENGINE_MINOR_VERSION < 25
 FString ExpectedContentsDirectory =
 	TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema");
-#else
-FString ExpectedContentsDirectory =
-	TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema_425");
-#endif
+
 TMap<FString, FString> ExpectedContentsFilenames = {
 	{ "SpatialTypeActor", "SpatialTypeActor.schema" },
 	{ "NonSpatialTypeActor", "NonSpatialTypeActor.schema" },

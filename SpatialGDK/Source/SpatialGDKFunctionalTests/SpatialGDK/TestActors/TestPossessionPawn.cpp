@@ -21,16 +21,8 @@ ATestPossessionPawn::ATestPossessionPawn()
 
 	FVector CameraLocation = FVector(300.0f, 0.0f, 75.0f);
 	FRotator CameraRotation = FRotator::MakeFromEuler(FVector(0.0f, -10.0f, 180.0f));
-
-#if ENGINE_MINOR_VERSION < 24
-	CameraComponent->bAbsoluteLocation = false;
-	CameraComponent->bAbsoluteRotation = false;
-	CameraComponent->RelativeLocation = CameraLocation;
-	CameraComponent->RelativeRotation = CameraRotation;
-#else
 	CameraComponent->SetUsingAbsoluteLocation(false);
 	CameraComponent->SetUsingAbsoluteRotation(false);
 	CameraComponent->SetRelativeLocation(CameraLocation);
 	CameraComponent->SetRelativeRotation(CameraRotation);
-#endif
 }

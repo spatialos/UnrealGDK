@@ -41,12 +41,6 @@
 #include "Utils/SchemaBundleParser.h"
 #include "Utils/SchemaDatabase.h"
 
-#if ENGINE_MINOR_VERSION >= 26
-#define GDK_CREATE_PACKAGE(PackagePath) CreatePackage((PackagePath));
-#else
-#define GDK_CREATE_PACKAGE(PackagePath) CreatePackage(nullptr, (PackagePath));
-#endif
-
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKSchemaGenerator"
 
@@ -843,7 +837,7 @@ void WriteComponentSetFiles(const USchemaDatabase* SchemaDatabase, FString Schem
 
 USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
 {
-	UPackage* Package = GDK_CREATE_PACKAGE(*PackagePath);
+	UPackage* Package = CreatePackage(*PackagePath);
 
 	ActorClassPathToSchema.KeySort([](const FString& LHS, const FString& RHS) {
 		return LHS < RHS;

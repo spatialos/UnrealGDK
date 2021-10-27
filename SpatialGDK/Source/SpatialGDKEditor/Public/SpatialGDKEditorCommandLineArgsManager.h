@@ -10,10 +10,6 @@ using ILauncherRef = TSharedRef<class ILauncher>;
 using ILauncherWorkerPtr = TSharedPtr<class ILauncherWorker>;
 using ILauncherProfileRef = TSharedRef<class ILauncherProfile>;
 
-#if ENGINE_MINOR_VERSION >= 24
-#define ENABLE_LAUNCHER_DELEGATE
-#endif
-
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorCommandLineArgsManager, Log, All);
 
 class FSpatialGDKEditorCommandLineArgsManager
@@ -29,20 +25,16 @@ public:
 	static FReply RemoveCommandLineFromAndroidDevice();
 
 private:
-#ifdef ENABLE_LAUNCHER_DELEGATE
 	void OnCreateLauncher(ILauncherRef LauncherRef);
 	void OnLaunch(ILauncherWorkerPtr LauncherWorkerPtr, ILauncherProfileRef LauncherProfileRef);
 	void OnLauncherCanceled(double ExecutionTime);
 	void OnLauncherFinished(bool bSuccess, double ExecutionTime, int32 ReturnCode);
 
 	void RemoveCommandLineFromDevice();
-#endif // ENABLE_LAUNCHER_DELEGATE
 
 	static bool TryConstructMobileCommandLineArgumentsFile(FString& OutCommandLineArgsFile);
 	static bool TryPushCommandLineArgsToDevice(const FString& Executable, const FString& ExeArguments, const FString& CommandLineArgsFile);
 
 private:
-#ifdef ENABLE_LAUNCHER_DELEGATE
 	bool bAndroidDevice;
-#endif // ENABLE_LAUNCHER_DELEGATE
 };

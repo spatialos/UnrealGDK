@@ -134,15 +134,13 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	// TODO: UNR-2375
 	bMaySendProperties = true;
 
-#if ENGINE_MINOR_VERSION >= 26
 	// Due to changes in 4.26, which remove almost all usages of InternalAck, we now need this
 	// flag to tell NetDriver to not replicate actors when we call our super UNetDriver::TickFlush.
 	bSkipServerReplicateActors = true;
-#endif
 
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
 
-#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST) && ENGINE_MINOR_VERSION >= 26
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	if (GetDefault<USpatialGDKSettings>()->bSpatialAuthorityDebugger)
 	{
 		AuthorityDebugger = NewObject<USpatialNetDriverAuthorityDebugger>();

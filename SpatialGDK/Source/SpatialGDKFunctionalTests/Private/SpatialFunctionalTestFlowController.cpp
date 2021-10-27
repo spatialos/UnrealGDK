@@ -23,11 +23,7 @@ ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	PrimaryActorTick.bTickEvenWhenPaused = true;
 
-#if ENGINE_MINOR_VERSION < 24
-	bReplicateMovement = false;
-#else
 	SetReplicatingMovement(false);
-#endif
 	OwningTest = nullptr;
 	bHasAckFinishedTest = true;
 	bIsReadyToRunTest = false;
