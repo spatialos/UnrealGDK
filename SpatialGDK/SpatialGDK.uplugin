@@ -76,7 +76,7 @@
     },
     {
       "Name": "SpatialGDKFunctionalTests",
-      "Type": "Editor",
+      "Type": "Runtime",
       "LoadingPhase": "Default",
       "WhitelistPlatforms": [
         "Win64",
