@@ -620,7 +620,7 @@ TSharedPtr<SpatialGDK::SpatialEventTracer> USpatialConnectionManager::CreateEven
 
 void USpatialConnectionManager::OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaTime)
 {
-	if (WorkerConnectionStatus == EWorkerConnectionStatus::WaitingForWorkerConnection)
+	if (bHasReceivedWorkerConnection == false)
 	{
 		// Poll the Worker API to check if the Worker_Connection is ready
 		const uint32_t TimeoutMiliseconds = 0;
@@ -628,17 +628,20 @@ void USpatialConnectionManager::OnWorldTickStart(UWorld* World, ELevelTick TickT
 
 		if (NewCAPIWorkerConnection != nullptr)
 		{
-			WorkerConnectionStatus = EWorkerConnectionStatus::ReceivedWorkerConnection;
-
 			// We received the Worker_Connection, destroy the future as it is not needed anymore
 			Worker_ConnectionFuture_Destroy(ConnectionFuture);
+
+			bHasReceivedWorkerConnection = true;
 		}
 	}
-	else if (WorkerConnectionStatus == EWorkerConnectionStatus::ReceivedWorkerConnection)
+	else
 	{
+		/* Note that the if-else statement purposely adds a one frame delay between obtaining the worker connection
+		 * and the call to FinishConnecting(). See the function definition for details on why this is needed. 
+		*/
+
 		FinishConnecting();
 		StopPollingForConnection();
-		WorkerConnectionStatus = EWorkerConnectionStatus::ReceivedWorkerConnection;
 	}
 }
 
@@ -649,10 +652,6 @@ void USpatialConnectionManager::StopPollingForConnection()
 		if (FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle) == true)
 		{
 			OnWorldTickStartHandle.Reset();
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed to remove handle from delegate, the worker API will still be polled for a connection!"));
 		}
 	}
 }

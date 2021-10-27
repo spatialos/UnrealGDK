@@ -26,12 +26,6 @@ enum class ESpatialConnectionType
 	DevAuthFlow
 };
 
-enum class EWorkerConnectionStatus : uint8
-{
-	WaitingForWorkerConnection,
-	ReceivedWorkerConnection
-};
-
 UCLASS()
 class SPATIALGDK_API USpatialConnectionManager : public UObject
 {
@@ -113,7 +107,7 @@ private:
 	SpatialGDK::FComponentSetData ComponentSetData;
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
-	EWorkerConnectionStatus WorkerConnectionStatus = EWorkerConnectionStatus::WaitingForWorkerConnection;
+	bool bHasReceivedWorkerConnection = false;
 	bool bIsConnected = false;
 	bool bConnectAsClient = false;
 };
