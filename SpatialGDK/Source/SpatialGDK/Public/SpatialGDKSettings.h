@@ -487,13 +487,13 @@ public:
 	/**
 	 * How many times per second will a client's entity ID list query be updated (set to 0 to ignore).
 	 */
-	UPROPERTY(EditAnywhere, config, Category = "Client Entity Interest", meta = (EditCondition = "bUseEntityIdListClientQueries"))
+	UPROPERTY(EditAnywhere, config, Category = "Client Entity Interest", meta = (EditCondition = "bUseClientEntityInterestQueries"))
 	float ClientEntityIdListQueryUpdateFrequency;
 
 	/**
 	 * Do we use explicit NCD to affect client entity interest or just grid cell broadphase
 	 */
-	UPROPERTY(EditAnywhere, config, Category = "Client Entity Interest", meta = (EditCondition = "bUseEntityIdListClientQueries"))
+	UPROPERTY(EditAnywhere, config, Category = "Client Entity Interest", meta = (EditCondition = "bUseClientEntityInterestQueries"))
 	bool bUseNarrowPhaseNCDInterestCulling;
 
 	/**

@@ -33,6 +33,11 @@ void ChangeInterestQuery::DebugOutput(const FString& DiffType) const
 	//	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: client non auth interest"));
 	//}
 
+	const FString EntitiesString = FString::JoinBy(Entities, TEXT(" "), [](const Worker_EntityId_Key EntityId) {
+		return FString::Printf(TEXT("%lld"), EntityId);
+	});
+	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: %s %s"), *DiffType, *EntitiesString);
+
 	const FString ComponentsString = FString::JoinBy(Components, TEXT(" "), [](const Worker_ComponentId ComponentId) {
 		return FString::Printf(TEXT("%d"), ComponentId);
 	});
@@ -42,12 +47,6 @@ void ChangeInterestQuery::DebugOutput(const FString& DiffType) const
 		return FString::Printf(TEXT("%d"), ComponentSetId);
 	});
 	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: component sets %s"), *ComponentSetsString);
-
-	const FString EntitiesString = FString::JoinBy(Entities, TEXT(" "), [](const Worker_EntityId_Key EntityId) {
-		return FString::Printf(TEXT("%lld"), EntityId);
-	});
-
-	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: %s %s"), *DiffType, *EntitiesString);
 }
 
 void ChangeInterestRequest::Clear()
@@ -98,13 +97,11 @@ Worker_CommandRequest ChangeInterestRequest::CreateRequest() const
 
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
 
-	Schema_AddEntityId(RequestObject, 1, SystemEntityId);
-
 	if (QueriesToAdd.Num() > 0)
 	{
 		for (const ChangeInterestQuery& Query : QueriesToAdd)
 		{
-			Schema_Object* QueriesToAddObject = Schema_AddObject(RequestObject, 2);
+			Schema_Object* QueriesToAddObject = Schema_AddObject(RequestObject, 1);
 
 			Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToAddObject, 1);
 
@@ -118,7 +115,7 @@ Worker_CommandRequest ChangeInterestRequest::CreateRequest() const
 	{
 		for (const ChangeInterestQuery& Query : QueriesToRemove)
 		{
-			Schema_Object* QueriesToRemoveObject = Schema_AddObject(RequestObject, 3);
+			Schema_Object* QueriesToRemoveObject = Schema_AddObject(RequestObject, 2);
 
 			Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToRemoveObject, 1);
 
@@ -128,7 +125,7 @@ Worker_CommandRequest ChangeInterestRequest::CreateRequest() const
 		}
 	}
 
-	Schema_AddBool(RequestObject, 4, bOverwrite);
+	Schema_AddBool(RequestObject, 3, bOverwrite);
 	return Request;
 }
 

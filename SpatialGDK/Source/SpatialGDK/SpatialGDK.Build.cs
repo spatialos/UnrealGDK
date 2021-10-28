@@ -14,7 +14,6 @@ public class SpatialGDK : ModuleRules
     public SpatialGDK(ReadOnlyTargetRules Target) : base(Target)
     {
         bLegacyPublicIncludePaths = false;
-        bUseAVX = true;
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
         bUseUnity = false;
 

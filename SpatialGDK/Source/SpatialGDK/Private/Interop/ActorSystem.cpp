@@ -2380,8 +2380,7 @@ void ActorSystem::UpdateClientInterest(AActor* Actor, const Worker_EntityId Cont
 			Worker_CommandRequest CommandRequest = Request.CreateRequest();
 			// Request.DebugOutput();
 
-			const Worker_EntityId SystemEntityId =
-				Cast<USpatialNetConnection>(PlayerController->GetNetConnection())->ConnectionClientWorkerSystemEntityId;
+			const Worker_EntityId SystemEntityId = Request.SystemEntityId;
 
 			const FRetryData RetryData = { 0, 0, 0.f, 0.f, 60000 };
 			Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(SystemEntityId, &CommandRequest, RetryData, {});
