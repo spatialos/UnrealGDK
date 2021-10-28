@@ -208,11 +208,9 @@ void USpatialConnectionManager::DestroyConnection()
 
 void USpatialConnectionManager::DestroyWorkerLocator()
 {
-	if (WorkerLocator != nullptr)
-	{
-		Worker_Locator_Destroy(WorkerLocator);
-		WorkerLocator = nullptr;
-	}
+	// Worker_Locator_Destroy checks for nullptr internally no need to do it again.
+	Worker_Locator_Destroy(WorkerLocator);
+	WorkerLocator = nullptr;
 }
 
 void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorID)
