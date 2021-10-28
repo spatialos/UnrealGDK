@@ -73,7 +73,7 @@ public:
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
-	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture, TSharedPtr<SpatialGDK::SpatialEventTracer> InEventTracer);
+	void FinishConnecting();
 
 	void OnConnectionSuccess();
 	void OnConnectionFailure(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
@@ -87,17 +87,27 @@ private:
 
 	TSharedPtr<SpatialGDK::SpatialEventTracer> CreateEventTracer(const FString& WorkerId);
 
-private:
+	void DestroyWorkerLocator();
+
+	// Gives the capability to poll the Worker_API for a Worker_Connection each tick
+	void OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaTime);
+	void StartPollingForConnection();
+	void StopPollingForConnection();
+
 	UPROPERTY()
-	USpatialWorkerConnection* WorkerConnection;
+	USpatialWorkerConnection* WorkerConnection = nullptr;
 
-	Worker_Locator* WorkerLocator;
-
-	bool bIsConnected;
-	bool bConnectAsClient = false;
-
-	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
+	Worker_Locator* WorkerLocator = nullptr;
+	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer;
+	Worker_ConnectionFuture* ConnectionFuture = nullptr;
+	Worker_Connection* NewCAPIWorkerConnection = nullptr;
+	FDelegateHandle OnWorldTickStartHandle;
 	LoginTokenResponseCallback LoginTokenResCallback;
 	LogCallback SpatialLogCallback;
 	SpatialGDK::FComponentSetData ComponentSetData;
+
+	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
+	bool bHasReceivedWorkerConnection = false;
+	bool bIsConnected = false;
+	bool bConnectAsClient = false;
 };
