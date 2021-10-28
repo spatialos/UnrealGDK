@@ -548,7 +548,7 @@ void USpatialConnectionManager::SetupConnectionConfigFromURL(const FURL& URL, co
 			FParse::Value(FCommandLine::Get(), TEXT("locatorHost"), LocatorHostOverride);
 		}
 
-		int32 LocatorPortOverride = SpatialConstants::LOCATOR_PORT;
+		uint16 LocatorPortOverride = SpatialConstants::LOCATOR_PORT;
 		if (const TCHAR* LocatorPortOption = URL.GetOption(TEXT("locatorPort="), nullptr))
 		{
 			LocatorPortOverride = FCString::Atoi(LocatorPortOption);

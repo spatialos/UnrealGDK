@@ -19,7 +19,6 @@ USpatialDataDebugMap::USpatialDataDebugMap()
 
 void USpatialDataDebugMap::CreateCustomContentForMap()
 {
-#if ENGINE_MINOR_VERSION >= 26
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 
 	FTransform Server1Pos(FVector(250, -250, 0));
@@ -29,5 +28,4 @@ void USpatialDataDebugMap::CreateCustomContentForMap()
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2FullInterestWorkerSettings::StaticClass());
-#endif
 }

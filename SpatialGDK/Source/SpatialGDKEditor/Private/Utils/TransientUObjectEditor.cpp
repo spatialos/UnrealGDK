@@ -25,11 +25,7 @@ bool ShouldShowProperty(const FPropertyAndParent& PropertyAndParent, bool bHaveT
 
 	if (bHaveTemplate)
 	{
-#if ENGINE_MINOR_VERSION <= 24
-		const UClass* PropertyOwnerClass = Cast<const UClass>(Property.GetOuter());
-#else
 		const UClass* PropertyOwnerClass = Property.GetOwner<const UClass>();
-#endif
 		const bool bDisableEditOnTemplate =
 			PropertyOwnerClass && PropertyOwnerClass->IsNative() && Property.HasAnyPropertyFlags(CPF_DisableEditOnTemplate);
 		if (bDisableEditOnTemplate)

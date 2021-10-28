@@ -17,11 +17,7 @@ URemotePossessionComponent::URemotePossessionComponent(const FObjectInitializer&
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bStartWithTickEnabled = true;
 
-#if ENGINE_MINOR_VERSION <= 23
-	bReplicates = true;
-#else
 	SetIsReplicatedByDefault(true);
-#endif
 }
 
 void URemotePossessionComponent::BeginPlay()

@@ -11,11 +11,7 @@
 ATestMovementCharacter::ATestMovementCharacter()
 {
 	bReplicates = true;
-#if ENGINE_MINOR_VERSION < 24
-	bReplicateMovement = true;
-#else
 	SetReplicatingMovement(true);
-#endif
 
 	GetCapsuleComponent()->InitCapsuleSize(38.0f, 38.0f);
 
@@ -30,17 +26,10 @@ ATestMovementCharacter::ATestMovementCharacter()
 	FRotator CameraRotation = FRotator::MakeFromEuler(FVector(0.0f, -10.0f, 225.0f));
 
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
-#if ENGINE_MINOR_VERSION < 24
-	CameraComponent->bAbsoluteLocation = false;
-	CameraComponent->bAbsoluteRotation = false;
-	CameraComponent->RelativeLocation = CameraLocation;
-	CameraComponent->RelativeRotation = CameraRotation;
-#else
 	CameraComponent->SetUsingAbsoluteLocation(false);
 	CameraComponent->SetUsingAbsoluteRotation(false);
 	CameraComponent->SetRelativeLocation(CameraLocation);
 	CameraComponent->SetRelativeRotation(CameraRotation);
-#endif
 	CameraComponent->SetupAttachment(GetCapsuleComponent());
 
 	// Increase MaxSimulationIterations to 14 so that we do not get warnings inside UCharacterMovementComponent::GetSimulationTimeStep

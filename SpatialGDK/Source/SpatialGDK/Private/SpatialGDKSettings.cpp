@@ -389,7 +389,24 @@ void USpatialGDKSettings::SetServicesRegion(EServicesRegion::Type NewRegion)
 bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 {
 	return (IsRunningGame() || IsRunningClientOnly()) && bPreventClientCloudDeploymentAutoConnect;
-};
+}
+
+uint16 USpatialGDKSettings::GetDefaultReceptionistPort() const
+{
+#if WITH_EDITOR
+	uint16 LevelSettingsServerPort = 0;
+	GetDefault<ULevelEditorPlaySettings>()->GetServerPort(LevelSettingsServerPort);
+	if (LevelSettingsServerPort == 0)
+	{
+		UE_LOG(LogSpatialGDKSettings, Error, TEXT("Could not retrieve ServerPort from LevelEditorPlaySettings"));
+		return DEFAULT_RECEPTIONIST_PORT;
+	}
+
+	return LevelSettingsServerPort;
+#else
+	return DEFAULT_RECEPTIONIST_PORT;
+#endif // WITH_EDITOR
+}
 
 UEventTracingSamplingSettings* USpatialGDKSettings::GetEventTracingSamplingSettings() const
 {

@@ -10,11 +10,7 @@
 AMultipleOwnershipPawn::AMultipleOwnershipPawn()
 {
 	bReplicates = true;
-#if ENGINE_MINOR_VERSION < 24
-	bReplicateMovement = true;
-#else
 	SetReplicatingMovement(true);
-#endif
 	SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComponent"));
 	RootComponent = SceneComponent;
 
