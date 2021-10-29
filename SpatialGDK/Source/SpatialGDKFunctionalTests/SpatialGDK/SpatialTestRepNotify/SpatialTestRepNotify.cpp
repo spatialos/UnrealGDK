@@ -219,33 +219,7 @@ void ASpatialTestRepNotify::PrepareTest()
 			// Since we have modified this value from the Clients, we expect its value to be the same as set in
 			// SpatialTestRepNotifyAllClientsModifyReplicatedVariables.
 			RequireEqual_Int(TestActor->OldAlwaysRepNotifyInt2, 50, TEXT("OnRepAlwaysRepNotifyInt2 should be called with the old value."));
-
-		// We consciously differ from native UE here
-		// Also, the native behaviour changed when going from 4.25 to 4.26.
-		// On older versions, we expect the old array to have 3 elements, but on Spatial and on native starting from 4.26, we expect 2
-		// elements.
-#if ENGINE_MINOR_VERSION >= 26
-			bool bOldArrayShouldHaveTwoElements = true;
-#else
-			bool bOldArrayShouldHaveTwoElements = false;
-#endif
-			bOldArrayShouldHaveTwoElements = bOldArrayShouldHaveTwoElements || GetNetDriver()->IsA(USpatialNetDriver::StaticClass());
-			if (bOldArrayShouldHaveTwoElements)
-			{
-				RequireEqual_Int(TestActor->OldTestArray.Num(), 2,
-								 TEXT("OnRepTestArray should been called with 2 entries in the old Array "
-									  "on Spatial or in Native on 4.26 and above"));
-			}
-			else
-			{
-				if (RequireEqual_Int(TestActor->OldTestArray.Num(), 3,
-									 TEXT("OnRepTestArray should be called with 3 entries in the old Array on Native in 4.25 and below")))
-				{
-					RequireEqual_Int(TestActor->OldTestArray[2], 0,
-									 TEXT("OnRepTestArray should be called with the right value as its third entry in "
-										  "the old Array on Native in 4.25 and below"));
-				}
-			}
+			RequireEqual_Int(TestActor->OldTestArray.Num(), 2, TEXT("OnRepTestArray should been called with 2 entries in the old Array"));
 
 			if (TestActor->OldTestArray.Num() >= 2)
 			{
@@ -271,33 +245,13 @@ void ASpatialTestRepNotify::PrepareTest()
 			// First make sure that we have correctly received the replicated variables
 			RequireEqual_Int(TestActor->TestArray.Num(), 2, TEXT("TestArray should contain 2 elements."));
 
-		// At this point, we have received the update for the TestArray, so it makes sense to check RepNotify beahviour.
-
-		// We consciously differ from native UE here
-		// Also, the native behaviour changed when going from 4.25 to 4.26.
-		// On older versions, we expect the old array to have 2 elements, but on Spatial and on native starting from 4.26, we expect 3
-		// elements.
-#if ENGINE_MINOR_VERSION >= 26
-			bool bOldArrayShouldHaveThreeElements = true;
-#else
-			bool bOldArrayShouldHaveThreeElements = false;
-#endif
-			bOldArrayShouldHaveThreeElements = bOldArrayShouldHaveThreeElements || GetNetDriver()->IsA(USpatialNetDriver::StaticClass());
-			if (bOldArrayShouldHaveThreeElements)
+			// At this point, we have received the update for the TestArray, so it makes sense to check RepNotify beahviour.
+			if (RequireEqual_Int(TestActor->OldTestArray.Num(), 3,
+								 TEXT("OnRepTestArray should be called with 3 elements after shrinking.")))
 			{
-				if (RequireEqual_Int(TestActor->OldTestArray.Num(), 3,
-									 TEXT("OnRepTestArray should be called with 3 elements after shrinking "
-										  "on Spatial or in Native on 4.26 and above")))
-				{
-					RequireEqual_Int(TestActor->OldTestArray[2], 30,
-									 TEXT("OnRepTestArray should be called with the right value as its third entry "
-										  "after shrinking on Spatial or in Native on 4.26 and above"));
-				}
-			}
-			else
-			{
-				RequireEqual_Int(TestActor->OldTestArray.Num(), 2,
-								 TEXT("OnRepTestArray should be called with 2 elements after shrinking on Native on 4.25 and below"));
+				RequireEqual_Int(TestActor->OldTestArray[2], 30,
+								 TEXT("OnRepTestArray should be called with the right value as its third entry "
+									  "after shrinking."));
 			}
 
 			FinishStep();

@@ -9,11 +9,9 @@
 #include "Misc/MessageDialog.h"
 #include "Serialization/JsonSerializer.h"
 
-#ifdef ENABLE_LAUNCHER_DELEGATE
 #include "ILauncher.h"
 #include "ILauncherServicesModule.h"
 #include "ILauncherWorker.h"
-#endif // ENABLE_LAUNCHER_DELEGATE
 
 #include "SpatialCommandUtils.h"
 #include "SpatialGDKEditorSettings.h"
@@ -24,21 +22,16 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorCommandLineArgsManager);
 #define LOCTEXT_NAMESPACE "SpatialGDKEditorCommandLineArgsManager"
 
 FSpatialGDKEditorCommandLineArgsManager::FSpatialGDKEditorCommandLineArgsManager()
-#ifdef ENABLE_LAUNCHER_DELEGATE
 	: bAndroidDevice(false)
-#endif // ENABLE_LAUNCHER_DELEGATE
 {
 }
 
 void FSpatialGDKEditorCommandLineArgsManager::Init()
 {
-#ifdef ENABLE_LAUNCHER_DELEGATE
 	ILauncherServicesModule& LauncherServicesModule = FModuleManager::LoadModuleChecked<ILauncherServicesModule>(TEXT("LauncherServices"));
 	LauncherServicesModule.OnCreateLauncherDelegate.AddRaw(this, &FSpatialGDKEditorCommandLineArgsManager::OnCreateLauncher);
-#endif // ENABLE_LAUNCHER_DELEGATE
 }
 
-#ifdef ENABLE_LAUNCHER_DELEGATE
 void FSpatialGDKEditorCommandLineArgsManager::OnLauncherCanceled(double ExecutionTime)
 {
 	RemoveCommandLineFromDevice();
@@ -80,7 +73,6 @@ void FSpatialGDKEditorCommandLineArgsManager::OnCreateLauncher(ILauncherRef Laun
 {
 	LauncherRef->FLauncherWorkerStartedDelegate.AddRaw(this, &FSpatialGDKEditorCommandLineArgsManager::OnLaunch);
 }
-#endif // ENABLE_LAUNCHER_DELEGATE
 
 namespace
 {
