@@ -149,6 +149,13 @@ bool FStopDeployment::Update()
 
 bool FWaitForDeployment::Update()
 {
+	// Workaround code to initialize StartTime outside of latent command execution
+	// Allows for this function to be executed immediately
+	if (StartTime == 0.0)
+	{
+		StartTime = FPlatformTime::Seconds();
+	}
+
 	FLocalDeploymentManager* const LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
 
 	if (LocalDeploymentManager->IsDeploymentStarting())
@@ -202,4 +209,24 @@ bool FCheckDeploymentState::Update()
 	}
 
 	return true;
+}
+
+/** 
+* Wrapper function for automation latent commands to execute the commands synchronously
+*
+* This function was written as a workaround whenever waiting for latent commands cause issues (e.g. when maps are not 
+* properly closed prior to some tests, see `GDKAutomationTestBase.h` for reference). This function cannot access
+* `InternalUpdate()` calls to initialize the private `StartTime` variable, hence any latent command used with this function
+* should initialise `StartTime` at the start of their `Update()` function (e.g. see `FWaitForDeployment` for reference).
+*/
+void ExecuteLatentCommandSynchronously(IAutomationLatentCommand& Command)
+{
+	while (true)
+	{
+		bool bResult = Command.Update();
+		if (bResult)
+		{
+			break;
+		}
+	}
 }
