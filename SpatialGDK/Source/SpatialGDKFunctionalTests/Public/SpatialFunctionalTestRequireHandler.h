@@ -64,6 +64,8 @@ public:
 
 	void LogAndClearStepRequires();
 
+	TArray<FSpatialFunctionalTestRequire> GetAndClearStepRequires();
+
 	bool HasFails();
 
 private:

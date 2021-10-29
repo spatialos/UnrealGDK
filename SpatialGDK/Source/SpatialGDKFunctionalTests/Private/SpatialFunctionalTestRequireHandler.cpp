@@ -398,6 +398,26 @@ void SpatialFunctionalTestRequireHandler::LogAndClearStepRequires()
 	}
 }
 
+TArray<FSpatialFunctionalTestRequire> SpatialFunctionalTestRequireHandler::GetAndClearStepRequires()
+{
+	// Since it's a TMap, we need to order them for better readability.
+	TArray<FSpatialFunctionalTestRequire> RequiresOrdered;
+	RequiresOrdered.Reserve(Requires.Num());
+
+	for (const auto& RequireEntry : Requires)
+	{
+		RequiresOrdered.Add(RequireEntry.Value);
+	}
+
+	RequiresOrdered.Sort([](const FSpatialFunctionalTestRequire& A, const FSpatialFunctionalTestRequire& B) -> bool {
+		return A.Order < B.Order;
+		});
+
+	NextOrder = 0;
+	Requires.Empty();
+	return RequiresOrdered;
+}
+
 bool SpatialFunctionalTestRequireHandler::HasFails()
 {
 	for (const auto& RequireEntry : Requires)
