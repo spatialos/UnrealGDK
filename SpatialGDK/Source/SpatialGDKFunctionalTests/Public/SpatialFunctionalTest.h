@@ -438,6 +438,14 @@ public:
 
 	FString GetMapName() override;
 
+	void LogRequireMessages(const FString& Message, bool bPassed);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastLogRequireMessages(const FString& Message, bool bPassed);
+
+	UFUNCTION(CrossServer, Reliable)
+	void CrossServerLogRequireMessages(const FString& Message, bool bPassed);
+
 protected:
 	// Derived tests can call this to set the string that will be printed into the .ini file to be used with this map to override
 	// settings specifically for this test map. Should be called during constructor.
@@ -543,11 +551,16 @@ private:
 	// Holds all the Requires calls / results for printing at the end of the step.
 	SpatialFunctionalTestRequireHandler RequireHandler;
 
+	void LogAndClearRequireHandler();
+
+	//UFUNCTION(Server, Reliable)
+	//void ServerPropagateRequireLogs(const FString& WorkerName, SpatialFunctionalTestRequireHandler WorkerRequireHandler);
+
 	UFUNCTION()
 	void StartServerFlowControllerSpawn();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void PropagateFailureMessage();
+	void MulticastLogFailureMessage(const FString& Message);
 
 	void SetupClientPlayerRegistrationFlow();
 	void EndPlay(const EEndPlayReason::Type Reason) override;

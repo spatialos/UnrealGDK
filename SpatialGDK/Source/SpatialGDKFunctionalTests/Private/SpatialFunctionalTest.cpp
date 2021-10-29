@@ -320,7 +320,8 @@ void ASpatialFunctionalTest::FinishStep()
 		return;
 	}
 
-	RequireHandler.LogAndClearStepRequires();
+	//RequireHandler.LogAndClearStepRequires();
+	LogAndClearRequireHandler();
 
 	auto* AuxLocalFlowController = GetLocalFlowController();
 	ensureMsgf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
@@ -372,10 +373,11 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 {
 	if (HasAuthority())
 	{
-		if (TestResult == EFunctionalTestResult::Failed)
+		if (TestResult == EFunctionalTestResult::Failed && !GIsEditor)
 		{
-			PropagateFailureMessage();
+			MulticastLogFailureMessage(Message);
 		}
+
 		// Make sure we don't FinishTest multiple times.
 		if (CurrentStepIndex != SPATIAL_FUNCTIONAL_TEST_FINISHED)
 		{
@@ -636,7 +638,8 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 	if (HasAuthority())
 	{
 		// Log Requires from previous step.
-		RequireHandler.LogAndClearStepRequires();
+		//RequireHandler.LogAndClearStepRequires();
+		LogAndClearRequireHandler();
 
 		CurrentStepIndex = StepIndex;
 
@@ -802,7 +805,8 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 {
 	if (CurrentStepIndex == SPATIAL_FUNCTIONAL_TEST_FINISHED)
 	{
-		RequireHandler.LogAndClearStepRequires();
+		//RequireHandler.LogAndClearStepRequires();
+		LogAndClearRequireHandler();
 		// if we ever started in first place
 		ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
 		if (AuxLocalFlowController != nullptr)
@@ -860,6 +864,65 @@ void ASpatialFunctionalTest::OnReplicated_bFinishedTest()
 	}
 }
 
+void ASpatialFunctionalTest::LogAndClearRequireHandler()
+{
+	// Since it's a TMap, we need to order them for better readability.
+	TArray<FSpatialFunctionalTestRequire> RequiresOrdered = RequireHandler.GetAndClearStepRequires();
+
+	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
+	if (FlowController)
+	{
+		const FString& WorkerName = FlowController->GetDisplayName();
+		
+		for (const auto& Require : RequiresOrdered)
+		{
+			FString Msg;
+			if (Require.bPassed)
+			{
+				Msg = FString::Printf(TEXT("%s [Passed] %s : \"%s\" %d"), *WorkerName, *Require.Msg, *Require.StatusMsg,GIsEditor);
+			}
+			else
+			{
+				Msg = FString::Printf(TEXT("%s [Failed] %s : %s"), *WorkerName, *Require.Msg, *Require.StatusMsg, GIsEditor);
+			}
+
+			FlowController->ServerNotifyLogRequireMessages(*Msg, Require.bPassed);
+		}
+	}
+}
+
+void ASpatialFunctionalTest::LogRequireMessages(const FString& Message, bool bPassed)
+{
+	if (bPassed)
+	{
+		UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Message);
+		UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Message);
+	}
+	else
+	{
+		UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Message);
+		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Message);
+	}
+}
+
+
+void ASpatialFunctionalTest::MulticastLogRequireMessages_Implementation(const FString& Message, bool bPassed)
+{
+	LogRequireMessages(Message, bPassed);
+}
+
+void ASpatialFunctionalTest::CrossServerLogRequireMessages_Implementation(const FString& Message, bool bPassed)
+{
+	if (HasAuthority() && GIsEditor)
+	{
+		LogRequireMessages(Message, bPassed);
+	}
+	else
+	{
+		MulticastLogRequireMessages(Message, bPassed);
+	}
+}
+
 void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 {
 	if (!bReadyToSpawnServerControllers)
@@ -870,9 +933,9 @@ void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 	FlowControllerSpawner.SpawnServerFlowController();
 }
 
-void ASpatialFunctionalTest::PropagateFailureMessage_Implementation()
+void ASpatialFunctionalTest::MulticastLogFailureMessage_Implementation(const FString& Message)
 {
-	UE_LOG(LogTemp, Warning, TEXT("I have failed!"));
+	UE_LOG(LogTemp, Warning, TEXT("Spatial Functional Test failed! Error: %s"), *Message);
 }
 
 void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()

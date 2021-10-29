@@ -237,6 +237,11 @@ void ASpatialFunctionalTestFlowController::MyFunction_Implementation(ASpatialFun
 	Test->CrossServerRunTest(Params);
 }
 
+void ASpatialFunctionalTestFlowController::ServerNotifyLogRequireMessages_Implementation( const FString& Message, bool bPassed)
+{
+	OwningTest->CrossServerLogRequireMessages(Message, bPassed);
+}
+
 void ASpatialFunctionalTestFlowController::ClientStartStep_Implementation(int StepIndex)
 {
 	OwningTest->SetCurrentStepIndex(StepIndex); // Just in case we do not get the replication fast enough

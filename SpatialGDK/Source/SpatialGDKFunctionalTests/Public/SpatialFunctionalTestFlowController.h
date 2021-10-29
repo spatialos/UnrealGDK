@@ -85,6 +85,9 @@ public:
 	UFUNCTION(Server, Reliable)
 	void MyFunction(ASpatialFunctionalTest* Test, const TArray<FString>& Params = TArray<FString>());
 
+	UFUNCTION(Server, Reliable)
+	void ServerNotifyLogRequireMessages(const FString& Message, bool bPassed);
+
 private:
 	// Current Step being executed
 	SpatialFunctionalTestStep CurrentStep;
