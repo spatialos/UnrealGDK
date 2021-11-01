@@ -36,7 +36,6 @@ void ASpatialTestPropertyReplication::PrepareTest()
 	AddStep(
 		TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr,
 		[this]() {
-			/*
 			int32 ExpectedNumberOfClients = 3;
 			int32 RequiredNumberOfClients = GetNumRequiredClients();
 			RequireEqual_Int(RequiredNumberOfClients, ExpectedNumberOfClients,
@@ -44,9 +43,6 @@ void ASpatialTestPropertyReplication::PrepareTest()
 			int32 ActualNumberOfClients = GetNumberOfClientWorkers();
 			RequireEqual_Int(ActualNumberOfClients, ExpectedNumberOfClients,
 							 TEXT("Expected a certain number of clients to actually connect."));
-						 */
-			UE_LOG(LogTemp, Warning, TEXT("I am a bloody server!"));
-
 			FinishStep();
 		},
 		nullptr, 5.0f);
@@ -55,7 +51,7 @@ void ASpatialTestPropertyReplication::PrepareTest()
 		TEXT("The Server spawns one ReplicatedTestActor"), FWorkerDefinition::Server(1), nullptr,
 		[this]() {
 			TestActor = SpawnActor<AReplicatedTestActor>(FVector(0.0f, 0.0f, 50.0f));
-			UE_LOG(LogTemp, Warning, TEXT("I am a bloody server!"));
+
 			FinishStep();
 		},
 		nullptr, 5.0f);
@@ -63,7 +59,6 @@ void ASpatialTestPropertyReplication::PrepareTest()
 	AddStep(
 		TEXT("All Clients check that they can see exactly 1 ReplicatedTestActor"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-
 			TArray<AActor*> FoundReplicatedTestActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActor::StaticClass(), FoundReplicatedTestActors);
 
@@ -97,11 +92,6 @@ void ASpatialTestPropertyReplication::PrepareTest()
 		},
 		nullptr,
 		[this](float DeltaTime) {
-			/*
-			if (TestActor->TestReplicatedProperty != 99) {
-				FinishTest(EFunctionalTestResult::Error, TEXT("Error!"));
-			}
-			*/
 			RequireEqual_Int(TestActor->TestReplicatedProperty, 99, TEXT("The ReplicatedProperty should equal 99."));
 			FinishStep();
 		},

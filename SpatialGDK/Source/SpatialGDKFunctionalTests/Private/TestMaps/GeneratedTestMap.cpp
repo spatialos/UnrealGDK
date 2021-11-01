@@ -10,7 +10,7 @@
 #include "GameFramework/PlayerStart.h"
 #if WITH_EDITOR
 #include "SpatialGDKEditor/Public/SpatialTestSettings.h"
-#endif
+#endif // WITH_EDITOR
 #include "Tests/AutomationEditorCommon.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -50,7 +50,7 @@ AActor* UGeneratedTestMap::AddActorToLevel(ULevel* Level, UClass* Class, const F
 {
 #if WITH_EDITOR
 	return GEditor->AddActor(Level, Class, Transform);
-#endif
+#endif // WITH_EDITOR
 	return nullptr;
 }
 

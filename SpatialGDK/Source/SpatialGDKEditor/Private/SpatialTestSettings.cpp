@@ -27,6 +27,13 @@ const FString FSpatialTestSettings::GeneratedOverrideSettingsDirectory =
 	FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir() / TEXT("Config/") / OverrideSettingsFileDirectoryName);
 const FString FSpatialTestSettings::GeneratedOverrideSettingsBaseFilename = GeneratedOverrideSettingsDirectory / OverrideSettingsFilePrefix;
 
+bool FSpatialTestSettings::GenerateMapConfigurationFilename(const FString& MapName, FString& GeneratedConfigurationFilename)
+{
+	GeneratedConfigurationFilename = GeneratedOverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
+
+	return FPaths::FileExists(GeneratedConfigurationFilename);
+}
+
 void FSpatialTestSettings::Override(const FString& MapName)
 {
 	// Back up the existing settings so they can be reverted later
@@ -43,7 +50,6 @@ void FSpatialTestSettings::Override(const FString& MapName)
 		Load(BaseOverridesFilename);
 	}
 
-	// Specific config, applies to maps with the setting override config set in the Spatial World Settings
 	const UWorld* World = GEditor->GetEditorWorldContext().World();
 	check(World != nullptr);
 
@@ -62,12 +68,11 @@ void FSpatialTestSettings::Override(const FString& MapName)
 	}
 
 	// Generated config, applied to generated maps
-	FString GeneratedMapOverridesFilename =
-		GeneratedOverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
-	if (FPaths::FileExists(GeneratedMapOverridesFilename))
+	FString GeneratedMapConfigurationFilename;
+	if (GenerateMapConfigurationFilename(MapName, GeneratedMapConfigurationFilename))
 	{
 		// Override the settings from the generated map specific config file
-		Load(GeneratedMapOverridesFilename);
+		Load(GeneratedMapConfigurationFilename);
 	}
 }
 

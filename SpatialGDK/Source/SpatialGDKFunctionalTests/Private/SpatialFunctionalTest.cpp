@@ -25,6 +25,7 @@
 #include "SpatialFunctionalTestAutoDestroyComponent.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
+#include "SpatialGDKEditor/Public/SpatialTestSettings.h"
 
 namespace
 {
@@ -52,7 +53,6 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	bIsStandaloneTest = false;
 	GeneratedTestMap = nullptr;
 	bIsGeneratingMap = false;
-
 }
 
 ASpatialFunctionalTest::ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients /*=1*/,
@@ -241,6 +241,20 @@ void ASpatialFunctionalTest::PrepareTest()
 	bFinishedTest = false; // Reset the test state
 
 	StepDefinitions.Empty();
+
+	/*
+	* If running with multiple-processes, ensure that potential custom configuration files are correctly applied
+	* to all newly-spawned processes before the test starts running.
+	*/
+	if (GIsEditor == false)
+	{
+		FString GeneratedMapConfigurationFilename;
+		if (FSpatialTestSettings::GenerateMapConfigurationFilename(GetWorld()->GetMapName(), GeneratedMapConfigurationFilename))
+		{
+			FSpatialTestSettings::Load(GeneratedMapConfigurationFilename);
+		}
+	}
+	
 	Super::PrepareTest();
 
 	if (HasAuthority())
