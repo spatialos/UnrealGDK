@@ -1857,6 +1857,13 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		Payload.PayloadData = RPCs->CreateRPCPayloadData(Function, Parameters);
 		FSpatialGDKSpanId SpanId = RPCs->CreatePushRPCEvent(CallingObject, Function);
 
+#if !UE_BUILD_SHIPPING
+		if (SpatialMetrics != nullptr)
+		{
+			SpatialMetrics->TrackSentRPC(Function, Info.Type, Payload.PayloadData.Num());
+		}
+#endif // !UE_BUILD_SHIPPING
+
 		SpatialGDK::TRPCQueue<FRPCPayload, FSpatialGDKSpanId>* Queue = nullptr;
 		switch (Info.Type)
 		{
