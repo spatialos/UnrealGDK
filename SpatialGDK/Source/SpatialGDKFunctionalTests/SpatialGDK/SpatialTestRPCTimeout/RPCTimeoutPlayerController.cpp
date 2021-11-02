@@ -24,13 +24,18 @@ ARPCTimeoutPlayerController::ARPCTimeoutPlayerController()
 	SoftMaterialPtr = TSoftObjectPtr<UMaterial>(SoftMaterialPath);
 }
 
+bool ARPCTimeoutPlayerController::IsSuccessfullyResolved()
+{
+	return bSuccessfullyResolved;
+}
+
 void ARPCTimeoutPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	CheckMaterialLoaded();
 
 	//Delay set material, let CheckMaterialLoaded() check if it's already loaded in memory
-	GetWorld()->GetTimerManager().SetTimer(MaterialSetDelay, this, &ARPCTimeoutPlayerController::SetMaterialAfterDelay, 3.f, false);
+	GetWorld()->GetTimerManager().SetTimer(MaterialSetDelay, this, &ARPCTimeoutPlayerController::SetMaterialAfterDelay, 2.f, false);
 }
 
 void ARPCTimeoutPlayerController::CheckMaterialLoaded_Implementation()
@@ -76,10 +81,12 @@ void ARPCTimeoutPlayerController::OnSetMaterial_Implementation(UMaterial* Player
 		if (PlayerMaterial)
 		{
 			TestCharacter->GetMesh()->SetMaterial(0, PlayerMaterial);
+			bSuccessfullyResolved = true;
 		}
 		else
 		{
 			TestCharacter->GetMesh()->SetMaterial(0, FailedMaterialAsset);
+			bSuccessfullyResolved = false;
 		}
 	}
 }
