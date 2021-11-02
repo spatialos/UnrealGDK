@@ -2,8 +2,8 @@
 
 #include "TestMaps/SpatialRPCTimeoutMap.h"
 #include "GameFramework/PlayerStart.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestRPCTimeout/SpatialTestRPCTimeoutGameMode.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestRPCTimeout/SpatialTestRPCTimeout.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestRPCTimeout/SpatialTestRPCTimeoutGameMode.h"
 
 USpatialRPCTimeoutMap::USpatialRPCTimeoutMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialRPCTimeoutMap"))
@@ -21,7 +21,7 @@ void USpatialRPCTimeoutMap::CreateCustomContentForMap()
 {
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
-	WorldSettings->DefaultGameMode = ARPCTimeoutGameMode::StaticClass();
+	WorldSettings->DefaultGameMode = ASpatialTestRPCTimeoutGameMode::StaticClass();
 
 	// Add the test
 	FTransform Transform1 = FTransform::Identity;
