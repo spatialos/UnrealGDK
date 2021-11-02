@@ -36,12 +36,14 @@ void ASpatialTestRPCTimeoutPlayerController::OnPossess(APawn* InPawn)
 	CheckMaterialLoaded();
 
 	// Delay set material, let CheckMaterialLoaded() check if it's already loaded in memory
-	GetWorld()->GetTimerManager().SetTimer(MaterialSetDelay, this, &ASpatialTestRPCTimeoutPlayerController::SetMaterialAfterDelay, 2.f, false);
+	GetWorld()->GetTimerManager().SetTimer(MaterialSetDelay, this, &ASpatialTestRPCTimeoutPlayerController::SetMaterialAfterDelay, 2.f,
+										   false);
 }
 
 void ASpatialTestRPCTimeoutPlayerController::CheckMaterialLoaded_Implementation()
 {
-	GetWorld()->GetTimerManager().SetTimer(HasValidCharacterTimer, this, &ASpatialTestRPCTimeoutPlayerController::CheckValidCharacter, 0.001, false);
+	GetWorld()->GetTimerManager().SetTimer(HasValidCharacterTimer, this, &ASpatialTestRPCTimeoutPlayerController::CheckValidCharacter,
+										   0.001, false);
 }
 
 void ASpatialTestRPCTimeoutPlayerController::SetMaterialAfterDelay()
@@ -71,8 +73,8 @@ void ASpatialTestRPCTimeoutPlayerController::CheckValidCharacter()
 	}
 	else
 	{
-		GetWorld()->GetTimerManager().SetTimer(HasValidCharacterTimer, this, &ASpatialTestRPCTimeoutPlayerController::CheckValidCharacter, 0.001,
-											   false);
+		GetWorld()->GetTimerManager().SetTimer(HasValidCharacterTimer, this, &ASpatialTestRPCTimeoutPlayerController::CheckValidCharacter,
+											   0.001, false);
 	}
 }
 
