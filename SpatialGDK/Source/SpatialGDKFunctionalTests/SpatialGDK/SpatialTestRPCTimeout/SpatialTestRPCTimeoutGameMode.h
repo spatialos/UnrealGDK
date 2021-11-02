@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "RPCTimeoutGameMode.generated.h"
+#include "SpatialTestRPCTimeoutGameMode.generated.h"
 
 /**
  * 

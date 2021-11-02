@@ -2,7 +2,7 @@
 
 #include "TestMaps/SpatialRPCTimeoutMap.h"
 #include "GameFramework/PlayerStart.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestRPCTimeout/RPCTimeoutGameMode.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestRPCTimeout/SpatialTestRPCTimeoutGameMode.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestRPCTimeout/SpatialTestRPCTimeout.h"
 
 USpatialRPCTimeoutMap::USpatialRPCTimeoutMap()
