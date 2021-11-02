@@ -18,6 +18,8 @@ class ARPCTimeoutPlayerController: public APlayerController
 	ARPCTimeoutPlayerController();
 
 	TSoftObjectPtr<UMaterial> SoftMaterialPtr;
+
+	bool IsSuccessfullyResolved();
 	
 	private:
 	UFUNCTION(Client, Reliable)
@@ -31,6 +33,8 @@ class ARPCTimeoutPlayerController: public APlayerController
 	void CheckValidCharacter();
 
 	void SetMaterialAfterDelay();
+
+	bool bSuccessfullyResolved = false;
 
 	UPROPERTY()
 	UMaterial* FailedMaterialAsset;
