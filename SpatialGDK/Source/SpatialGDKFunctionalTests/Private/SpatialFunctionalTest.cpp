@@ -133,11 +133,6 @@ void ASpatialFunctionalTest::BeginPlay()
 	}
 }
 
-void ASpatialFunctionalTest::MultiCastFinishTest_Implementation(EFunctionalTestResult TestResult, const FString& OutMessage)
-{
-	Super::FinishTest(TestResult, OutMessage);
-}
-
 void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);

@@ -54,9 +54,6 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialFunctionalTest : public AFunctionalT
 protected:
 	TSubclassOf<ASpatialFunctionalTestFlowController> FlowControllerActorClass;
 
-private:
-	
-
 public:
 	ASpatialFunctionalTest();
 
@@ -101,10 +98,6 @@ public:
 
 	// Ends the Test, can be called from any place.
 	virtual void FinishTest(EFunctionalTestResult TestResult, const FString& Message) override;
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MultiCastFinishTest(EFunctionalTestResult TestResult, const FString& Message);
-
 
 	// Add expected log errors in C++. This can only be called when setting up the steps in PrepareTest() or in
 	// the steps themselves. Keep in mind that if the expected number of occurrences aren't met, the test fails.
