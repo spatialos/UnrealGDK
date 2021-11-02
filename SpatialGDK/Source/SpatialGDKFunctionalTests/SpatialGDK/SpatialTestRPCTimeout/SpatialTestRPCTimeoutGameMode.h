@@ -7,14 +7,13 @@
 #include "SpatialTestRPCTimeoutGameMode.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
-class ARPCTimeoutGameMode : public AGameModeBase
+class ASpatialTestRPCTimeoutGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
-	public:
-	ARPCTimeoutGameMode();
+public:
+	ASpatialTestRPCTimeoutGameMode();
 };
-

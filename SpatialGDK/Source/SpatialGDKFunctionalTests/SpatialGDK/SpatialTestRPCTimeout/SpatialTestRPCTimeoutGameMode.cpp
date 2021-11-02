@@ -1,14 +1,13 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "SpatialTestRPCTimeoutGameMode.h"
 
 #include "SpatialTestRPCTimeoutCharacter.h"
 #include "SpatialTestRPCTimeoutPlayerController.h"
 
-ARPCTimeoutGameMode::ARPCTimeoutGameMode()
+ASpatialTestRPCTimeoutGameMode::ASpatialTestRPCTimeoutGameMode()
 	: Super()
 {
-	PlayerControllerClass = ARPCTimeoutPlayerController::StaticClass();
-	DefaultPawnClass = ARPCTimeoutCharacter::StaticClass();
+	PlayerControllerClass = ASpatialTestRPCTimeoutPlayerController::StaticClass();
+	DefaultPawnClass = ASpatialTestRPCTimeoutCharacter::StaticClass();
 }
