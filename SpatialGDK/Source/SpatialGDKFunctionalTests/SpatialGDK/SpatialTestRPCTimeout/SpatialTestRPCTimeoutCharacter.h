@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "RPCTimeoutCharacter.generated.h"
+#include "SpatialTestRPCTimeoutCharacter.generated.h"
 
 UCLASS()
 class ARPCTimeoutCharacter : public ACharacter

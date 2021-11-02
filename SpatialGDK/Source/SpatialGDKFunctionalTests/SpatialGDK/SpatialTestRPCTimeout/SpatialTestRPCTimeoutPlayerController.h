@@ -4,32 +4,32 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "RPCTimeoutPlayerController.generated.h"
+#include "SpatialTestRPCTimeoutPlayerController.generated.h"
 
 /**
-* 
-*/
+ *
+ */
 UCLASS()
-class ARPCTimeoutPlayerController: public APlayerController
+class ARPCTimeoutPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
-	public:
+public:
 	ARPCTimeoutPlayerController();
 
 	TSoftObjectPtr<UMaterial> SoftMaterialPtr;
 
 	bool IsSuccessfullyResolved();
-	
-	private:
+
+private:
 	UFUNCTION(Client, Reliable)
 	void OnSetMaterial(UMaterial* PlayerMaterial);
-	
+
 	UFUNCTION(Client, Reliable)
 	void CheckMaterialLoaded();
 
 	virtual void OnPossess(APawn* InPawn) override;
-	
+
 	void CheckValidCharacter();
 
 	void SetMaterialAfterDelay();
@@ -38,9 +38,8 @@ class ARPCTimeoutPlayerController: public APlayerController
 
 	UPROPERTY()
 	UMaterial* FailedMaterialAsset;
-	
+
 	FTimerHandle HasValidCharacterTimer;
-	
+
 	FTimerHandle MaterialSetDelay;
 };
-
