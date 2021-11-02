@@ -1,10 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 
-#include "RPCTimeoutGameMode.h"
+#include "SpatialTestRPCTimeoutGameMode.h"
 
-#include "RPCTimeoutCharacter.h"
-#include "RPCTimeoutPlayerController.h"
+#include "SpatialTestRPCTimeoutCharacter.h"
+#include "SpatialTestRPCTimeoutPlayerController.h"
 
 ARPCTimeoutGameMode::ARPCTimeoutGameMode()
 	: Super()
