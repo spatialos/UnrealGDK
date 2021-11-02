@@ -22,8 +22,6 @@ class ACharacterMovementTestGameMode : public AGameModeBase
 private:
 	int32 SpawnRequests = 0;
 
-	#if WITH_EDITOR
 	UPROPERTY()
 	TArray<APlayerStart*> PlayerStarts;
-	#endif
 };

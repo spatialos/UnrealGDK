@@ -8,9 +8,7 @@
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "FileHelpers.h"
 #include "GameFramework/PlayerStart.h"
-#if WITH_EDITOR
 #include "SpatialGDKEditor/Public/SpatialTestSettings.h"
-#endif // WITH_EDITOR
 #include "Tests/AutomationEditorCommon.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -48,10 +46,7 @@ void UGeneratedTestMap::Init(const EMapCategory InMapCategory, const FString& In
 
 AActor* UGeneratedTestMap::AddActorToLevel(ULevel* Level, UClass* Class, const FTransform& Transform)
 {
-#if WITH_EDITOR
 	return GEditor->AddActor(Level, Class, Transform);
-#endif // WITH_EDITOR
-	return nullptr;
 }
 
 void UGeneratedTestMap::GenerateMap()
