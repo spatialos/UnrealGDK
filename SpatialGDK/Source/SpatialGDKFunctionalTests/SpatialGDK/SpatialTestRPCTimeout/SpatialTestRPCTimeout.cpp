@@ -2,11 +2,11 @@
 
 #include "SpatialTestRPCTimeout.h"
 #include "Components/BoxComponent.h"
-#include "GameFramework/PlayerController.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/PlayerController.h"
+#include "SpatialTestRPCTimeoutGameMode.h"
+#include "SpatialTestRPCTimeoutPlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "RPCTimeoutPlayerController.h"
-#include "RPCTimeoutGameMode.h"
 
 /**
  * This test ensures that RPC calls with unresolved parameters are queued until their parameters are correctly resolved.
@@ -16,8 +16,10 @@
  * - Setup:
  *  - Launch at least one client in a separate process
  * - Test:
- *  - All clients launched outside of the editor process must ensure that the referenced material asset is not in memory at the start of the test.
- *  - All clients launched outside of the editor process must successfully resolve the material asset before passing it into a client RPC function.
+ *  - All clients launched outside of the editor process must ensure that the referenced material asset is not in memory at the start of the
+ * test.
+ *  - All clients launched outside of the editor process must successfully resolve the material asset before passing it into a client RPC
+ * function.
  */
 
 ASpatialTestRPCTimeout::ASpatialTestRPCTimeout()
@@ -25,7 +27,8 @@ ASpatialTestRPCTimeout::ASpatialTestRPCTimeout()
 {
 	Author = "Iwan";
 	Description = TEXT(
-		"This test calls an RPC with an asset that was softly referenced and check that it will be asynchronously loaded with a timeout of 0.");
+		"This test calls an RPC with an asset that was softly referenced and check that it will be asynchronously loaded with a timeout of "
+		"0.");
 }
 
 void ASpatialTestRPCTimeout::CreateCustomContentForMap()
@@ -59,23 +62,26 @@ void ASpatialTestRPCTimeout::PrepareTest()
 			{
 				FinishStep();
 			}
-		}, 2.0f);
-
+		},
+		2.0f);
 
 	AddStep(
-		TEXT("Check that the material is correctly loaded after about 2 seconds delay. We should wait "), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("Check that the material is correctly loaded after about 2 seconds delay. We should wait "), FWorkerDefinition::AllClients,
+		nullptr, nullptr,
 		[this](float DeltaTime) {
 			if (!GIsEditor)
 			{
 				ACharacter* TestCharacter = Cast<ACharacter>(GetLocalFlowPawn());
 				ARPCTimeoutPlayerController* TestController = Cast<ARPCTimeoutPlayerController>(TestCharacter->GetController());
 
-				RequireTrue(TestController->IsSuccessfullyResolved(), TEXT("The soft-pointed material is synchronously loaded into the non-editor process."));
+				RequireTrue(TestController->IsSuccessfullyResolved(),
+							TEXT("The soft-pointed material is synchronously loaded into the non-editor process."));
 				FinishStep();
 			}
 			else
 			{
 				FinishStep();
 			}
-		}, 5.0f);
+		},
+		5.0f);
 }
