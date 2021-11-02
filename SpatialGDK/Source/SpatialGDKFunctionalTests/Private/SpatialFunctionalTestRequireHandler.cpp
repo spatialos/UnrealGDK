@@ -356,48 +356,6 @@ bool SpatialFunctionalTestRequireHandler::GenericRequire(const FString& Msg, boo
 	return bPassed;
 }
 
-void SpatialFunctionalTestRequireHandler::LogAndClearStepRequires()
-{
-	// Since it's a TMap, we need to order them for better readability.
-	TArray<FSpatialFunctionalTestRequire> RequiresOrdered;
-	RequiresOrdered.Reserve(Requires.Num());
-
-	for (const auto& RequireEntry : Requires)
-	{
-		RequiresOrdered.Add(RequireEntry.Value);
-	}
-
-	RequiresOrdered.Sort([](const FSpatialFunctionalTestRequire& A, const FSpatialFunctionalTestRequire& B) -> bool {
-		return A.Order < B.Order;
-	});
-
-	ASpatialFunctionalTestFlowController* FlowController = OwnerTest->GetLocalFlowController();
-	if (FlowController)
-	{
-		const FString& WorkerName = FlowController->GetDisplayName();
-
-		for (const auto& Require : RequiresOrdered)
-		{
-			FString Msg;
-			if (Require.bPassed)
-			{
-				Msg = FString::Printf(TEXT("%s [Passed] %s : \"%s\""), *WorkerName, *Require.Msg, *Require.StatusMsg);
-				UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
-				UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Msg);
-			}
-			else
-			{
-				Msg = FString::Printf(TEXT("%s [Failed] %s : %s"), *WorkerName, *Require.Msg, *Require.StatusMsg);
-				UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Msg);
-				UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Msg);
-			}
-		}
-
-		NextOrder = 0;
-		Requires.Empty();
-	}
-}
-
 TArray<FSpatialFunctionalTestRequire> SpatialFunctionalTestRequireHandler::GetAndClearStepRequires()
 {
 	// Since it's a TMap, we need to order them for better readability.

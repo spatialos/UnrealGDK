@@ -48,8 +48,8 @@ public:
 
 	/*
 	 * Creates the configuration file pathname for the given MapName, and returns it as an out parameter.
-	 * Returns true if the newly-created configuration file pathname exists, false otherwise.
-	*/
+	 * Returns true if the newly-created configuration file pathname exists on disk, false otherwise.
+	 */
 	static bool GenerateMapConfigurationFilename(const FString& MapName, FString& GeneratedConfigurationFilename);
 
 	// Load settings from config file which will override current settings

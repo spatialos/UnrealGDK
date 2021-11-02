@@ -122,7 +122,7 @@ void ASpatialTestCharacterMovement::PrepareTest()
 
 				if (FlowController->WorkerDefinition.Id == 1)
 				{
-					RequireTrue(false,
+					RequireTrue(HasCharacterReachedDestination(PlayerCharacter, DestinationPlane),
 								TEXT("Player character has reached the destination on the server."));
 					FinishStep();
 				}

@@ -24,8 +24,8 @@
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestAutoDestroyComponent.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "SpatialGDKFunctionalTestsPrivate.h"
 #include "SpatialGDKEditor/Public/SpatialTestSettings.h"
+#include "SpatialGDKFunctionalTestsPrivate.h"
 
 namespace
 {
@@ -41,18 +41,23 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	bReplicates = true;
 	NetPriority = 3.0f;
 	NetUpdateFrequency = 100.0f;
-
 	bAlwaysRelevant = true;
-
 	PrimaryActorTick.TickInterval = 0.0f;
-
 	PreparationTimeLimit = 30.0f;
+
+	GeneratedTestMap = nullptr;
+	LocalFlowController = nullptr;
+	TimeRunningStep = 0.0f;
+	NumExpectedServers = 0;
+	CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_NOT_STARTED;
+	bFailedTest = false;
+	bNotifyObserversCalled = false;
+	bPreparedTest = false;
+	bFinishedTest = false;
+	bIsStandaloneTest = false;
+	bIsGeneratingMap = false;
 	bReadyToSpawnServerControllers = false;
 	CachedTestResult = EFunctionalTestResult::Default;
-
-	bIsStandaloneTest = false;
-	GeneratedTestMap = nullptr;
-	bIsGeneratingMap = false;
 }
 
 ASpatialFunctionalTest::ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients /*=1*/,
@@ -128,11 +133,9 @@ void ASpatialFunctionalTest::BeginPlay()
 	}
 }
 
-
 void ASpatialFunctionalTest::MultiCastFinishTest_Implementation(EFunctionalTestResult TestResult, const FString& OutMessage)
 {
 	Super::FinishTest(TestResult, OutMessage);
-
 }
 
 void ASpatialFunctionalTest::Tick(float DeltaSeconds)
@@ -163,7 +166,6 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 			if (CurrentStepTimeLimit > 0.0f && TimeRunningStep >= CurrentStepTimeLimit)
 			{
 				FinishTest(EFunctionalTestResult::Failed, TEXT("Step time limit reached"));
-				// From here -> Server -> Multicast a bloody log, and GG!.
 			}
 		}
 	}
@@ -243,9 +245,9 @@ void ASpatialFunctionalTest::PrepareTest()
 	StepDefinitions.Empty();
 
 	/*
-	* If running with multiple-processes, ensure that potential custom configuration files are correctly applied
-	* to all newly-spawned processes before the test starts running.
-	*/
+	 * If running with multiple-processes, ensure that potential custom configuration files are correctly applied
+	 * to all newly-spawned processes before the test starts running.
+	 */
 	if (GIsEditor == false)
 	{
 		FString GeneratedMapConfigurationFilename;
@@ -254,7 +256,7 @@ void ASpatialFunctionalTest::PrepareTest()
 			FSpatialTestSettings::Load(GeneratedMapConfigurationFilename);
 		}
 	}
-	
+
 	Super::PrepareTest();
 
 	if (HasAuthority())
@@ -299,12 +301,11 @@ void ASpatialFunctionalTest::StartTest()
 
 void ASpatialFunctionalTest::CallRunTest(const TArray<FString>& Params)
 {
-
 	if (HasAuthority() == false)
 	{
 		if (LocalFlowController != nullptr)
 		{
-			LocalFlowController->MyFunction(this, Params);
+			LocalFlowController->ServerNotifyRunTest(this, Params);
 		}
 		else
 		{
@@ -334,7 +335,6 @@ void ASpatialFunctionalTest::FinishStep()
 		return;
 	}
 
-	//RequireHandler.LogAndClearStepRequires();
 	LogAndClearRequireHandler();
 
 	auto* AuxLocalFlowController = GetLocalFlowController();
@@ -387,7 +387,11 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 {
 	if (HasAuthority())
 	{
-		if (TestResult == EFunctionalTestResult::Failed && !GIsEditor)
+		/*
+		 * Currently the Editor process will always be a Client, therefore only multi-cast
+		 * the failure message if running with multiple processes.
+		*/
+		if (TestResult == EFunctionalTestResult::Failed && GIsEditor == false)
 		{
 			MulticastLogFailureMessage(Message);
 		}
@@ -652,7 +656,6 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 	if (HasAuthority())
 	{
 		// Log Requires from previous step.
-		//RequireHandler.LogAndClearStepRequires();
 		LogAndClearRequireHandler();
 
 		CurrentStepIndex = StepIndex;
@@ -819,7 +822,6 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 {
 	if (CurrentStepIndex == SPATIAL_FUNCTIONAL_TEST_FINISHED)
 	{
-		//RequireHandler.LogAndClearStepRequires();
 		LogAndClearRequireHandler();
 		// if we ever started in first place
 		ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
@@ -880,24 +882,23 @@ void ASpatialFunctionalTest::OnReplicated_bFinishedTest()
 
 void ASpatialFunctionalTest::LogAndClearRequireHandler()
 {
-	// Since it's a TMap, we need to order them for better readability.
 	TArray<FSpatialFunctionalTestRequire> RequiresOrdered = RequireHandler.GetAndClearStepRequires();
 
 	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
 	if (FlowController)
 	{
 		const FString& WorkerName = FlowController->GetDisplayName();
-		
+
 		for (const auto& Require : RequiresOrdered)
 		{
 			FString Msg;
 			if (Require.bPassed)
 			{
-				Msg = FString::Printf(TEXT("%s [Passed] %s : \"%s\" %d"), *WorkerName, *Require.Msg, *Require.StatusMsg,GIsEditor);
+				Msg = FString::Printf(TEXT("%s [Passed] %s : %s"), *WorkerName, *Require.Msg, *Require.StatusMsg);
 			}
 			else
 			{
-				Msg = FString::Printf(TEXT("%s [Failed] %s : %s"), *WorkerName, *Require.Msg, *Require.StatusMsg, GIsEditor);
+				Msg = FString::Printf(TEXT("%s [Failed] %s : %s"), *WorkerName, *Require.Msg, *Require.StatusMsg);
 			}
 
 			FlowController->ServerNotifyLogRequireMessages(*Msg, Require.bPassed);
@@ -919,7 +920,6 @@ void ASpatialFunctionalTest::LogRequireMessages(const FString& Message, bool bPa
 	}
 }
 
-
 void ASpatialFunctionalTest::MulticastLogRequireMessages_Implementation(const FString& Message, bool bPassed)
 {
 	LogRequireMessages(Message, bPassed);
@@ -927,6 +927,10 @@ void ASpatialFunctionalTest::MulticastLogRequireMessages_Implementation(const FS
 
 void ASpatialFunctionalTest::CrossServerLogRequireMessages_Implementation(const FString& Message, bool bPassed)
 {
+	/*
+	 * When running under one process, simply log the message,
+	 * if using multiple-processes, multicast the message so that the Editor process can correctly report a test pass/failure.
+	*/
 	if (HasAuthority() && GIsEditor)
 	{
 		LogRequireMessages(Message, bPassed);

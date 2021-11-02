@@ -50,6 +50,7 @@ void FSpatialTestSettings::Override(const FString& MapName)
 		Load(BaseOverridesFilename);
 	}
 
+	// Specific config, applies to maps with the setting override config set in the Spatial World Settings
 	const UWorld* World = GEditor->GetEditorWorldContext().World();
 	check(World != nullptr);
 

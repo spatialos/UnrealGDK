@@ -62,8 +62,6 @@ public:
 
 	bool GenericRequire(const FString& Key, bool bPassed, const FString& StatusMsg);
 
-	void LogAndClearStepRequires();
-
 	TArray<FSpatialFunctionalTestRequire> GetAndClearStepRequires();
 
 	bool HasFails();
