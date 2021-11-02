@@ -46,7 +46,8 @@ void ASpatialTestRPCTimeout::PrepareTest()
 			if (!GIsEditor)
 			{
 				ACharacter* TestCharacter = Cast<ACharacter>(GetLocalFlowPawn());
-				ASpatialTestRPCTimeoutPlayerController* TestController = Cast<ASpatialTestRPCTimeoutPlayerController>(TestCharacter->GetController());
+				ASpatialTestRPCTimeoutPlayerController* TestController =
+					Cast<ASpatialTestRPCTimeoutPlayerController>(TestCharacter->GetController());
 
 				if (TestController && TestCharacter)
 				{
@@ -72,7 +73,8 @@ void ASpatialTestRPCTimeout::PrepareTest()
 			if (!GIsEditor)
 			{
 				ACharacter* TestCharacter = Cast<ACharacter>(GetLocalFlowPawn());
-				ASpatialTestRPCTimeoutPlayerController* TestController = Cast<ASpatialTestRPCTimeoutPlayerController>(TestCharacter->GetController());
+				ASpatialTestRPCTimeoutPlayerController* TestController =
+					Cast<ASpatialTestRPCTimeoutPlayerController>(TestCharacter->GetController());
 
 				RequireTrue(TestController->IsSuccessfullyResolved(),
 							TEXT("The soft-pointed material is synchronously loaded into the non-editor process."));
