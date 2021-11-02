@@ -8,7 +8,7 @@
 #include "GameFramework/Character.h"
 #include "UObject/ConstructorHelpers.h"
 
-ARPCTimeoutPlayerController::ARPCTimeoutPlayerController()
+ASpatialTestRPCTimeoutPlayerController::ASpatialTestRPCTimeoutPlayerController()
 {
 	// Choose materials which belong to the Engine. This is in anticipation of the possibility of moving this test to the UnrealGDK plugin
 	// in the future.
@@ -25,32 +25,32 @@ ARPCTimeoutPlayerController::ARPCTimeoutPlayerController()
 	SoftMaterialPtr = TSoftObjectPtr<UMaterial>(SoftMaterialPath);
 }
 
-bool ARPCTimeoutPlayerController::IsSuccessfullyResolved()
+bool ASpatialTestRPCTimeoutPlayerController::IsSuccessfullyResolved()
 {
 	return bSuccessfullyResolved;
 }
 
-void ARPCTimeoutPlayerController::OnPossess(APawn* InPawn)
+void ASpatialTestRPCTimeoutPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	CheckMaterialLoaded();
 
 	// Delay set material, let CheckMaterialLoaded() check if it's already loaded in memory
-	GetWorld()->GetTimerManager().SetTimer(MaterialSetDelay, this, &ARPCTimeoutPlayerController::SetMaterialAfterDelay, 2.f, false);
+	GetWorld()->GetTimerManager().SetTimer(MaterialSetDelay, this, &ASpatialTestRPCTimeoutPlayerController::SetMaterialAfterDelay, 2.f, false);
 }
 
-void ARPCTimeoutPlayerController::CheckMaterialLoaded_Implementation()
+void ASpatialTestRPCTimeoutPlayerController::CheckMaterialLoaded_Implementation()
 {
-	GetWorld()->GetTimerManager().SetTimer(HasValidCharacterTimer, this, &ARPCTimeoutPlayerController::CheckValidCharacter, 0.001, false);
+	GetWorld()->GetTimerManager().SetTimer(HasValidCharacterTimer, this, &ASpatialTestRPCTimeoutPlayerController::CheckValidCharacter, 0.001, false);
 }
 
-void ARPCTimeoutPlayerController::SetMaterialAfterDelay()
+void ASpatialTestRPCTimeoutPlayerController::SetMaterialAfterDelay()
 {
 	UMaterial* PlayerMaterial = SoftMaterialPtr.LoadSynchronous();
 	OnSetMaterial(PlayerMaterial);
 }
 
-void ARPCTimeoutPlayerController::CheckValidCharacter()
+void ASpatialTestRPCTimeoutPlayerController::CheckValidCharacter()
 {
 	if (ACharacter* TestCharacter = Cast<ACharacter>(GetPawn()))
 	{
@@ -71,12 +71,12 @@ void ARPCTimeoutPlayerController::CheckValidCharacter()
 	}
 	else
 	{
-		GetWorld()->GetTimerManager().SetTimer(HasValidCharacterTimer, this, &ARPCTimeoutPlayerController::CheckValidCharacter, 0.001,
+		GetWorld()->GetTimerManager().SetTimer(HasValidCharacterTimer, this, &ASpatialTestRPCTimeoutPlayerController::CheckValidCharacter, 0.001,
 											   false);
 	}
 }
 
-void ARPCTimeoutPlayerController::OnSetMaterial_Implementation(UMaterial* PlayerMaterial)
+void ASpatialTestRPCTimeoutPlayerController::OnSetMaterial_Implementation(UMaterial* PlayerMaterial)
 {
 	if (ACharacter* TestCharacter = Cast<ACharacter>(GetPawn()))
 	{

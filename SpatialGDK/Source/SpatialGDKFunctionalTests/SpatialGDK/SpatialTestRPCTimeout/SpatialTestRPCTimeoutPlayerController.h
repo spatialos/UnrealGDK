@@ -10,12 +10,12 @@
  *
  */
 UCLASS()
-class ARPCTimeoutPlayerController : public APlayerController
+class ASpatialTestRPCTimeoutPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
 public:
-	ARPCTimeoutPlayerController();
+	ASpatialTestRPCTimeoutPlayerController();
 
 	TSoftObjectPtr<UMaterial> SoftMaterialPtr;
 

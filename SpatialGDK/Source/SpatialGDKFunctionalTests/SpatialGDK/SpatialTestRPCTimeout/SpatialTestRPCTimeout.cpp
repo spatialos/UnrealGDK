@@ -4,9 +4,9 @@
 #include "Components/BoxComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerController.h"
+#include "SpatialFunctionalTestFlowController.h"
 #include "SpatialTestRPCTimeoutGameMode.h"
 #include "SpatialTestRPCTimeoutPlayerController.h"
-#include "SpatialFunctionalTestFlowController.h"
 
 /**
  * This test ensures that RPC calls with unresolved parameters are queued until their parameters are correctly resolved.
@@ -33,7 +33,7 @@ ASpatialTestRPCTimeout::ASpatialTestRPCTimeout()
 
 void ASpatialTestRPCTimeout::CreateCustomContentForMap()
 {
-	GetWorldSettingsForMap()->DefaultGameMode = ARPCTimeoutGameMode::StaticClass();
+	GetWorldSettingsForMap()->DefaultGameMode = ASpatialTestRPCTimeoutGameMode::StaticClass();
 }
 
 void ASpatialTestRPCTimeout::PrepareTest()
@@ -46,7 +46,7 @@ void ASpatialTestRPCTimeout::PrepareTest()
 			if (!GIsEditor)
 			{
 				ACharacter* TestCharacter = Cast<ACharacter>(GetLocalFlowPawn());
-				ARPCTimeoutPlayerController* TestController = Cast<ARPCTimeoutPlayerController>(TestCharacter->GetController());
+				ASpatialTestRPCTimeoutPlayerController* TestController = Cast<ASpatialTestRPCTimeoutPlayerController>(TestCharacter->GetController());
 
 				if (TestController && TestCharacter)
 				{
@@ -72,7 +72,7 @@ void ASpatialTestRPCTimeout::PrepareTest()
 			if (!GIsEditor)
 			{
 				ACharacter* TestCharacter = Cast<ACharacter>(GetLocalFlowPawn());
-				ARPCTimeoutPlayerController* TestController = Cast<ARPCTimeoutPlayerController>(TestCharacter->GetController());
+				ASpatialTestRPCTimeoutPlayerController* TestController = Cast<ASpatialTestRPCTimeoutPlayerController>(TestCharacter->GetController());
 
 				RequireTrue(TestController->IsSuccessfullyResolved(),
 							TEXT("The soft-pointed material is synchronously loaded into the non-editor process."));
