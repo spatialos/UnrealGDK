@@ -13,7 +13,7 @@ USpatialRPCTimeoutMap::USpatialRPCTimeoutMap()
 		TEXT("QueuedIncomingRPCWaitTime=0") LINE_TERMINATOR
 		TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
 		TEXT("PlayNumberOfClients=2") LINE_TERMINATOR
-		TEXT("RunUnderOneProcess=true"));
+		TEXT("RunUnderOneProcess=false"));
 	// clang-format on
 }
 
