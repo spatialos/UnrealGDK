@@ -78,7 +78,6 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityPool.h"
 #include "Utils/ErrorCodeRemapping.h"
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialDebuggerSystem.h"
@@ -2522,7 +2521,7 @@ void USpatialNetDriver::ProcessRemoteFunction(AActor* Actor, UFunction* Function
 	{
 		// Look for CPF_OutParm's, we'll need to copy these into the local parameter memory manually
 		// The receiving side will pull these back out when needed
-		for (TFieldIterator<GDK_PROPERTY(Property)> It(Function); It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
+		for (TFieldIterator<FProperty> It(Function); It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
 		{
 			if (It->HasAnyPropertyFlags(CPF_OutParm))
 			{
@@ -2912,10 +2911,9 @@ bool USpatialNetDriver::HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOu
 
 				const FFieldNetCache* FieldCache = ClassCache->GetFromField(Function);
 
-				TArray<GDK_PROPERTY(Property)*> Parms;
+				TArray<FProperty*> Parms;
 
-				for (TFieldIterator<GDK_PROPERTY(Property)> It(Function);
-					 It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
+				for (TFieldIterator<FProperty> It(Function); It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
 				{
 					Parms.Add(*It);
 				}
@@ -2930,9 +2928,9 @@ bool USpatialNetDriver::HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOu
 
 				for (int32 j = 0; j < Parms.Num(); j++)
 				{
-					if (GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Parms[j]))
+					if (CastField<FStructProperty>(Parms[j]))
 					{
-						ParmString += GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Parms[j])->Struct->GetName();
+						ParmString += CastField<FStructProperty>(Parms[j])->Struct->GetName();
 					}
 					else
 					{

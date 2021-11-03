@@ -38,8 +38,8 @@ struct ActorData
 
 struct FObjectRepNotifies
 {
-	TArray<GDK_PROPERTY(Property)*> RepNotifies;
-	TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
+	TArray<FProperty*> RepNotifies;
+	TMap<FProperty*, FSpatialGDKSpanId> PropertySpanIds;
 };
 using FObjectToRepNotifies = TMap<FWeakObjectPtr, FObjectRepNotifies>;
 
@@ -141,8 +141,7 @@ private:
 	// Invokes RepNotifies queued inside ActorRepNotifiesToSend/SubobjectRepNotifiesToSend.
 	void InvokeRepNotifies();
 	void TryInvokeRepNotifiesForObject(FWeakObjectPtr& Object, FObjectRepNotifies& ObjectRepNotifies) const;
-	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
-													TArray<GDK_PROPERTY(Property) *>& RepNotifies);
+	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel, TArray<FProperty*>& RepNotifies);
 	void CleanUpTornOffChannels();
 
 	// Authority

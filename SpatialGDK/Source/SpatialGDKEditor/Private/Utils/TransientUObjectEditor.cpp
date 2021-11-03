@@ -9,8 +9,6 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Layout/SBorder.h"
 
-#include "Utils/GDKPropertyMacros.h"
-
 namespace
 {
 void OnTransientUObjectEditorWindowClosed(const TSharedRef<SWindow>& Window, UTransientUObjectEditor* Instance)
@@ -21,7 +19,7 @@ void OnTransientUObjectEditorWindowClosed(const TSharedRef<SWindow>& Window, UTr
 // Copied from FPropertyEditorModule::CreateFloatingDetailsView.
 bool ShouldShowProperty(const FPropertyAndParent& PropertyAndParent, bool bHaveTemplate)
 {
-	const GDK_PROPERTY(Property)& Property = PropertyAndParent.Property;
+	const FProperty& Property = PropertyAndParent.Property;
 
 	if (bHaveTemplate)
 	{

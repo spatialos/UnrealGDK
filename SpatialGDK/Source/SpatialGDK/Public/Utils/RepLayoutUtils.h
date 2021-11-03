@@ -9,7 +9,6 @@
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Utils/GDKPropertyMacros.h"
 
 namespace SpatialGDK
 {
@@ -33,7 +32,7 @@ inline void RepLayout_SerializeProperties_DynamicArray(FRepLayout& RepLayout, FA
 	// When loading, we may need to resize the array to properly fit the number of elements.
 	if (Ar.IsLoading() && OutArrayNum != Array->Num())
 	{
-		FScriptArrayHelper ArrayHelper((GDK_PROPERTY(ArrayProperty)*)Cmd.Property, Data);
+		FScriptArrayHelper ArrayHelper((FArrayProperty*)Cmd.Property, Data);
 		ArrayHelper.Resize(OutArrayNum);
 	}
 
@@ -87,7 +86,7 @@ inline void RepLayout_SendPropertiesForRPC(FRepLayout& RepLayout, FNetBitWriter&
 	{
 		bool bSend = true;
 
-		if (!GDK_CASTFIELD<GDK_PROPERTY(BoolProperty)>(Parent.Property))
+		if (!CastField<FBoolProperty>(Parent.Property))
 		{
 			// check for a complete match, including arrays
 			// (we're comparing against zero data here, since
@@ -118,7 +117,7 @@ inline void RepLayout_ReceivePropertiesForRPC(FRepLayout& RepLayout, FNetBitRead
 
 	for (auto& Parent : RepLayout.Parents)
 	{
-		if (GDK_CASTFIELD<GDK_PROPERTY(BoolProperty)>(Parent.Property) || Reader.ReadBit())
+		if (CastField<FBoolProperty>(Parent.Property) || Reader.ReadBit())
 		{
 			bool bHasUnmapped = false;
 
@@ -132,8 +131,8 @@ inline void RepLayout_ReceivePropertiesForRPC(FRepLayout& RepLayout, FNetBitRead
 	}
 }
 
-inline void ReadStructProperty(FSpatialNetBitReader& Reader, GDK_PROPERTY(StructProperty) * Property, USpatialNetDriver* NetDriver,
-							   uint8* Data, bool& bOutHasUnmapped)
+inline void ReadStructProperty(FSpatialNetBitReader& Reader, FStructProperty* Property, USpatialNetDriver* NetDriver, uint8* Data,
+							   bool& bOutHasUnmapped)
 {
 	UScriptStruct* Struct = Property->Struct;
 
@@ -203,7 +202,7 @@ inline TArray<UFunction*> GetClassRPCFunctions(const UClass* Class)
 	return RelevantClassFunctions;
 }
 
-inline UScriptStruct* GetFastArraySerializerProperty(GDK_PROPERTY(ArrayProperty) * Property)
+inline UScriptStruct* GetFastArraySerializerProperty(FArrayProperty* Property)
 {
 	// Check if this array property conforms to the pattern of what we expect for a FFastArraySerializer. We do
 	// this be ensuring that the owner struct has the NetDeltaSerialize flag, and that the array's internal item
@@ -212,7 +211,7 @@ inline UScriptStruct* GetFastArraySerializerProperty(GDK_PROPERTY(ArrayProperty)
 	{
 		if (OwnerProperty->StructFlags & STRUCT_NetDeltaSerializeNative)
 		{
-			if (GDK_PROPERTY(StructProperty)* ArrayInnerProperty = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Property->Inner))
+			if (FStructProperty* ArrayInnerProperty = CastField<FStructProperty>(Property->Inner))
 			{
 				if (ArrayInnerProperty->Struct->IsChildOf(FFastArraySerializerItem::StaticStruct()))
 				{

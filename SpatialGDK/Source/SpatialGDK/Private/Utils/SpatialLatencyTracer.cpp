@@ -7,7 +7,6 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "GeneralProjectSettings.h"
 #include "Interop/Connection/OutgoingMessages.h"
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/SchemaUtils.h"
 
 #include <sstream>
@@ -392,7 +391,7 @@ bool USpatialLatencyTracer::AddTrackingInfo(const AActor* Actor, const FString& 
 			}
 			break;
 		case ETraceType::Property:
-			if (const GDK_PROPERTY(Property)* Property = ActorClass->FindPropertyByName(*Target))
+			if (const FProperty* Property = ActorClass->FindPropertyByName(*Target))
 			{
 				ActorPropertyKey APKey{ Actor, Property };
 				if (TrackingProperties.Find(APKey) == nullptr)

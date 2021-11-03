@@ -53,7 +53,6 @@
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
 #include "TestMapGeneration.h"
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialStatics.h"
@@ -758,7 +757,7 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 	{
 		USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 		SpatialGDKEditorSettings->SetSpatialDebuggerEditorEnabled(!SpatialGDKEditorSettings->IsSpatialDebuggerEditorEnabled());
-		GDK_PROPERTY(Property)* SpatialDebuggerEditorEnabledProperty =
+		FProperty* SpatialDebuggerEditorEnabledProperty =
 			USpatialGDKEditorSettings::StaticClass()->FindPropertyByName(FName("bSpatialDebuggerEditorEnabled"));
 		SpatialGDKEditorSettings->UpdateSinglePropertyInConfigFile(SpatialDebuggerEditorEnabledProperty,
 																   SpatialGDKEditorSettings->GetDefaultConfigFilename());
@@ -775,7 +774,7 @@ void FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor()
 {
 	USpatialGDKSettings* SpatialGDKRuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
 	SpatialGDKRuntimeSettings->SetMultiWorkerEditorEnabled(!SpatialGDKRuntimeSettings->IsMultiWorkerEditorEnabled());
-	GDK_PROPERTY(Property)* EnableMultiWorkerProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("bEnableMultiWorker"));
+	FProperty* EnableMultiWorkerProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("bEnableMultiWorker"));
 	SpatialGDKRuntimeSettings->UpdateSinglePropertyInConfigFile(EnableMultiWorkerProperty,
 																SpatialGDKRuntimeSettings->GetDefaultConfigFilename());
 
@@ -1141,8 +1140,7 @@ bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentCanExecute() const
 void FSpatialGDKEditorToolbarModule::OnToggleSpatialNetworking()
 {
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-	GDK_PROPERTY(Property)* SpatialNetworkingProperty =
-		UGeneralProjectSettings::StaticClass()->FindPropertyByName(FName("bSpatialNetworking"));
+	FProperty* SpatialNetworkingProperty = UGeneralProjectSettings::StaticClass()->FindPropertyByName(FName("bSpatialNetworking"));
 
 	GeneralProjectSettings->SetUsesSpatialNetworking(!GeneralProjectSettings->UsesSpatialNetworking());
 	GeneralProjectSettings->UpdateSinglePropertyInConfigFile(SpatialNetworkingProperty, GeneralProjectSettings->GetDefaultConfigFilename());
