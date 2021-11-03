@@ -29,7 +29,8 @@ const FString FSpatialTestSettings::GeneratedOverrideSettingsBaseFilename = Gene
 
 bool FSpatialTestSettings::GenerateMapConfigurationFilename(const FString& MapName, FString& GeneratedConfigurationFilename)
 {
-	GeneratedConfigurationFilename = GeneratedOverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
+	GeneratedConfigurationFilename =
+		GeneratedOverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
 
 	return FPaths::FileExists(GeneratedConfigurationFilename);
 }
@@ -47,7 +48,6 @@ void FSpatialTestSettings::Override(const FString& MapName)
 	if (FPaths::FileExists(BaseOverridesFilename))
 	{
 		// Override the settings from the base config file
-		GetMutableDefault<ULevelEditorPlaySettings>()->AdditionalLaunchParameters += "-SpatialTest";
 		Load(BaseOverridesFilename);
 	}
 
@@ -76,6 +76,9 @@ void FSpatialTestSettings::Override(const FString& MapName)
 		// Override the settings from the generated map specific config file
 		Load(GeneratedMapConfigurationFilename);
 	}
+
+	// Add special flag for Spatial functional tests to force load the SpatialGDKFunctionalTests module in new processes
+	GetMutableDefault<ULevelEditorPlaySettings>()->AdditionalLaunchParameters += "-SpatialTest";
 }
 
 template <typename T>
