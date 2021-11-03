@@ -47,6 +47,7 @@ void FSpatialTestSettings::Override(const FString& MapName)
 	if (FPaths::FileExists(BaseOverridesFilename))
 	{
 		// Override the settings from the base config file
+		GetMutableDefault<ULevelEditorPlaySettings>()->AdditionalLaunchParameters += "-SpatialTest";
 		Load(BaseOverridesFilename);
 	}
 
