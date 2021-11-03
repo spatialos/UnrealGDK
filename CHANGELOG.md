@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`x.y.z`] - Unreleased
 
 ### Breaking changes:
+- Added multiprocess support for the Spatial functional test framework.
+- Modified the functional test startup flow in engine and GDK to accomodate both single and multiprocess tests.
+- Modified module loading process in the engine for GDKTestGymsFunctionalTest to ensure module are correctly loaded in newly spawned processes.
+
+### Breaking changes:
 - SpatialSwitchHasAuthority now respects World's version of IsServer which assumes server status when NetDriver is null.
 - We no longer support Unreal Engine version 4.25. We recommend that you upgrade to the newest version 4.27 to continue receiving updates.
 
