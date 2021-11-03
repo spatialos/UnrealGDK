@@ -369,7 +369,7 @@ TArray<FSpatialFunctionalTestRequire> SpatialFunctionalTestRequireHandler::GetAn
 
 	RequiresOrdered.Sort([](const FSpatialFunctionalTestRequire& A, const FSpatialFunctionalTestRequire& B) -> bool {
 		return A.Order < B.Order;
-		});
+	});
 
 	NextOrder = 0;
 	Requires.Empty();
