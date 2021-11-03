@@ -591,4 +591,9 @@ public:
 	*/
 	UPROPERTY(EditAnywhere, Config, Category = "Startup")
 	bool bEnableSkeletonEntityCreation;
+
+	/**	-- EXPERIMENTAL --
+	*/
+	UPROPERTY( Config)
+	bool bEnableMetricsExport;
 };

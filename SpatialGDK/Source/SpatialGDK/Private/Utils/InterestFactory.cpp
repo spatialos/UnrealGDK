@@ -467,9 +467,7 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const APlayerControll
 		return false;
 	}
 
-	UMetricsExport* MetricsExport =
-		Cast<UMetricsExport>(PlayerController->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
-	if (MetricsExport != nullptr)
+	if (UMetricsExport* MetricsExport = PlayerController->GetWorld()->GetGameInstance()->GetSubsystem<UMetricsExport>())
 	{
 		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
 		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("total_interested_entities"), ClientInterestedEntities.Num());
@@ -499,9 +497,7 @@ void UnrealServerInterestFactory::AddClientInterestEntityIdQuery(Interest& OutIn
 	ClientInterestedEntities.Sort();
 #endif
 
-	UMetricsExport* MetricsExport =
-		Cast<UMetricsExport>(InActor->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
-	if (MetricsExport != nullptr)
+	if (UMetricsExport* MetricsExport = InActor->GetWorld()->GetGameInstance()->GetSubsystem<UMetricsExport>())
 	{
 		USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PlayerController->NetConnection);
 		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
@@ -545,9 +541,7 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 
 	UNetReplicationGraphConnection* ConnectionDriver =
 		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
-	UMetricsExport* MetricsExport =
-		Cast<UMetricsExport>(InPlayerController->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
-	if (MetricsExport != nullptr)
+	if (UMetricsExport* MetricsExport = InPlayerController->GetWorld()->GetGameInstance()->GetSubsystem<UMetricsExport>())
 	{
 		USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(InPlayerController->NetConnection);
 		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), SpatialNetConnection->GetPlayerControllerEntityId());

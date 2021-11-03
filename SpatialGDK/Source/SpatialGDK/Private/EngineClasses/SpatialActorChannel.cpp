@@ -1378,9 +1378,7 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 		return;
 	}
 
-	UMetricsExport* MetricsExport =
-		Cast<UMetricsExport>(Actor->GetWorld()->GetGameState()->GetComponentByClass(UMetricsExport::StaticClass()));
-	if (MetricsExport != nullptr)
+	if (UMetricsExport* MetricsExport = Actor->GetWorld()->GetGameInstance()->GetSubsystem<UMetricsExport>())
 	{
 		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
 		MetricsExport->WriteMetricsToProtocolBuffer(*ClientIdentifier, TEXT("interest_update_frequency"),

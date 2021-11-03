@@ -1,30 +1,40 @@
 #pragma once
-#include "Components/ActorComponent.h"
+
 #include "CoreMinimal.h"
 #include "HttpModule.h"
+#include "Subsystems/GameInstanceSubsystem.h"
 #include "MetricsExport.generated.h"
 
-UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class UMetricsExport : public UActorComponent
+UCLASS(ClassGroup = (Custom))
+class UMetricsExport : public UGameInstanceSubsystem
 {
-	GENERATED_UCLASS_BODY()
+	GENERATED_BODY()
 public:
-	virtual void BeginPlay() override;
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	UPROPERTY(EditAnywhere, config, Category = "Influx Metrics")
+	UMetricsExport();
+
+	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
+
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+
+	bool Tick(float DeltaSeconds);
+
+	UFUNCTION()
+	void SpatialConnected();
+
+	UPROPERTY(EditAnywhere, Category = "Influx Metrics")
 	FString InfluxDbName = "mydb";
 
-	UPROPERTY(EditAnywhere, config, Category = "Influx Metrics")
+	UPROPERTY(EditAnywhere, Category = "Influx Metrics")
 	FString InfluxHost = "localhost";
 
-	UPROPERTY(EditAnywhere, config, Category = "Influx Metrics")
+	UPROPERTY(EditAnywhere, Category = "Influx Metrics")
 	FString InfluxPort = "8086";
 
-	UPROPERTY(EditAnywhere, config, Category = "Influx Metrics")
+	UPROPERTY(EditAnywhere, Category = "Influx Metrics")
 	int64 InfluxMetricsSendGapSecs = 2;
 
-	UPROPERTY(EditAnywhere, config, Category = "Influx Metrics", BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, Category = "Influx Metrics", BlueprintReadWrite)
 	bool bPrintInfluxMetricsToLog = false;
 
 	void WriteMetricsToProtocolBuffer(const FString& Worker, FString Field, float Value);
@@ -47,4 +57,6 @@ private:
 	FString DeploymentName;
 	FString WorkerType;
 	FString WorkerId;
+
+	FDelegateHandle TickerHandle;
 };

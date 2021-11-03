@@ -1,16 +1,15 @@
 #include "Utils/MetricsExport.h"
 
+#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "HttpModule.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Runtime/Online/HTTP/Public/Http.h"
+#include "SpatialGDKSettings.h"
 
-UMetricsExport::UMetricsExport(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+UMetricsExport::UMetricsExport()
 {
-	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.bStartWithTickEnabled = true;
 	LastUpdateSendTime = FDateTime::Now().ToUnixTimestamp();
 	FString InfluxUrlOverride;
 	if (FParse::Value(FCommandLine::Get(), TEXT("influxUrl"), InfluxUrlOverride))
@@ -46,24 +45,27 @@ UMetricsExport::UMetricsExport(const FObjectInitializer& ObjectInitializer)
 	}
 }
 
-void UMetricsExport::BeginPlay()
-{
-	Super::BeginPlay();
 
-	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
-	if (NetDriver == nullptr)
+bool UMetricsExport::ShouldCreateSubsystem(UObject* Outer) const
+{
+	return GetDefault<USpatialGDKSettings>()->bEnableMetricsExport;
+}
+
+void UMetricsExport::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+
+	USpatialGameInstance* SpatialGameInstance = Cast<USpatialGameInstance>(GetGameInstance());
+	if (SpatialGameInstance == nullptr)
 	{
 		return;
 	}
 
-	WorkerType = NetDriver->IsServer() ? TEXT("Server") : TEXT("Client");
-	WorkerId = NetDriver->Connection->GetWorkerId();
+	SpatialGameInstance->OnSpatialConnected.AddUniqueDynamic(this, &UMetricsExport::SpatialConnected);
 }
 
-void UMetricsExport::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+bool UMetricsExport::Tick(float DeltaSeconds)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
 	FramesSinceLastFpsWrite++;
 	const int64 Now = FDateTime::Now().ToUnixTimestamp();
 	const int64 TimeSinceLastUpdate = Now - LastUpdateSendTime;
@@ -75,6 +77,30 @@ void UMetricsExport::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 		LastUpdateSendTime = Now;
 		FramesSinceLastFpsWrite = 0;
 	}
+
+	return true;
+}
+
+void UMetricsExport::SpatialConnected()
+{
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
+	if (NetDriver == nullptr)
+	{
+		if (UPendingNetGame* PendingNetGame = GetGameInstance()->GetWorldContext()->PendingNetGame)
+		{
+			NetDriver = Cast<USpatialNetDriver>(PendingNetGame->GetNetDriver());
+		}
+	}
+
+	if (NetDriver == nullptr)
+	{
+		return;
+	}
+
+	WorkerType = NetDriver->IsServer() ? TEXT("Server") : TEXT("Client");
+	WorkerId = NetDriver->Connection->GetWorkerId();
+
+	TickerHandle = FTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateUObject(this, &UMetricsExport::Tick));
 }
 
 void UMetricsExport::WriteMetricsToProtocolBuffer(const FString& Worker, FString Field, float Value)
