@@ -376,7 +376,7 @@ void SpatialFunctionalTestRequireHandler::LogAndClearStepRequires()
 
 		for (const auto& Require : RequiresOrdered)
 		{
-			const FString Msg = FString::Printf(TEXT("%s [%s] %s : %s"), *WorkerName, (Require.bPassed ? *FString("Passed") : *FString("Failed")), *Require.Msg, *Require.StatusMsg);
+			const FString Msg = FString::Printf(TEXT("%s [%s] %s : %s"), *WorkerName, (Require.bPassed ? TEXT("Passed") : TEXT("Failed")), *Require.Msg, *Require.StatusMsg);
 
 			FlowController->ServerNotifyLogRequireMessages(*Msg, Require.bPassed);
 		}
