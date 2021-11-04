@@ -501,7 +501,6 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 			}
 			if (!bUnresolved)
 			{
-				// IMP-CHANGE
 				UObject* OldObject = ObjectProperty->GetObjectPropertyValue(Data);
 				if (AActor* OldActor = Cast<AActor>(OldObject))
 				{
@@ -515,7 +514,6 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 							ObjectValue ? *ObjectValue->GetName() : TEXT("null"));
 					}
 				}
-				// IMP-END
 
 				ObjectProperty->SetObjectPropertyValue(Data, ObjectValue);
 				if (ObjectValue != nullptr)
