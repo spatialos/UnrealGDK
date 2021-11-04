@@ -46,11 +46,8 @@ public:
 	// Generated map override config base filename for generated maps applied to specific map, if exists
 	static const FString GeneratedOverrideSettingsBaseFilename;
 
-	/*
-	 * Creates the configuration file pathname for the given MapName, and returns it as an out parameter.
-	 * Returns true if the newly-created configuration file pathname exists on disk, false otherwise.
-	 */
-	static bool GenerateMapConfigurationFilename(const FString& MapName, FString& GeneratedConfigurationFilename);
+	// Creates the configuration file pathname for the given MapName.
+	static FString GenerateMapConfigurationFilename(const FString& MapName);
 
 	// Load settings from config file which will override current settings
 	static void Load(const FString& TestSettingOverridesFilename);

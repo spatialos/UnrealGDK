@@ -27,12 +27,9 @@ const FString FSpatialTestSettings::GeneratedOverrideSettingsDirectory =
 	FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir() / TEXT("Config/") / OverrideSettingsFileDirectoryName);
 const FString FSpatialTestSettings::GeneratedOverrideSettingsBaseFilename = GeneratedOverrideSettingsDirectory / OverrideSettingsFilePrefix;
 
-bool FSpatialTestSettings::GenerateMapConfigurationFilename(const FString& MapName, FString& GeneratedConfigurationFilename)
+FString FSpatialTestSettings::GenerateMapConfigurationFilename(const FString& MapName)
 {
-	GeneratedConfigurationFilename =
-		GeneratedOverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
-
-	return FPaths::FileExists(GeneratedConfigurationFilename);
+	return GeneratedOverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
 }
 
 void FSpatialTestSettings::Override(const FString& MapName)
@@ -70,15 +67,15 @@ void FSpatialTestSettings::Override(const FString& MapName)
 	}
 
 	// Generated config, applied to generated maps
-	FString GeneratedMapConfigurationFilename;
-	if (GenerateMapConfigurationFilename(MapName, GeneratedMapConfigurationFilename))
+	FString GeneratedMapConfigurationFilename = GenerateMapConfigurationFilename(MapName);
+	if (FPaths::FileExists(GeneratedMapConfigurationFilename) == true)
 	{
 		// Override the settings from the generated map specific config file
 		Load(GeneratedMapConfigurationFilename);
 	}
 
 	// Add special flag for Spatial functional tests to force load the SpatialGDKFunctionalTests module in new processes
-	GetMutableDefault<ULevelEditorPlaySettings>()->AdditionalLaunchParameters += "-SpatialTest";
+	GetMutableDefault<ULevelEditorPlaySettings>()->AdditionalLaunchParameters += " -SpatialTest ";
 }
 
 template <typename T>
