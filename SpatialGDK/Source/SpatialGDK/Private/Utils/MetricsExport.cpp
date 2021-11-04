@@ -45,7 +45,6 @@ UMetricsExport::UMetricsExport()
 	}
 }
 
-
 bool UMetricsExport::ShouldCreateSubsystem(UObject* Outer) const
 {
 	return GetDefault<USpatialGDKSettings>()->bEnableMetricsExport;
@@ -100,7 +99,10 @@ void UMetricsExport::SpatialConnected()
 	WorkerType = NetDriver->IsServer() ? TEXT("Server") : TEXT("Client");
 	WorkerId = NetDriver->Connection->GetWorkerId();
 
-	TickerHandle = FTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateUObject(this, &UMetricsExport::Tick));
+	if (!TickerHandle.IsValid())
+	{
+		TickerHandle = FTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateUObject(this, &UMetricsExport::Tick));
+	}
 }
 
 void UMetricsExport::WriteMetricsToProtocolBuffer(const FString& Worker, FString Field, float Value)

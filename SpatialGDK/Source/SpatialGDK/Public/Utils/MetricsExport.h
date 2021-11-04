@@ -10,7 +10,6 @@ class UMetricsExport : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 public:
-
 	UMetricsExport();
 
 	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;

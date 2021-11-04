@@ -593,7 +593,7 @@ public:
 	bool bEnableSkeletonEntityCreation;
 
 	/**	-- EXPERIMENTAL --
-	*/
-	UPROPERTY( Config)
+	 */
+	UPROPERTY(Config)
 	bool bEnableMetricsExport;
 };
