@@ -59,7 +59,7 @@ public:
 	void SetCustomConfig(const FString& String) { CustomConfigString = String; }
 
 	// Use this to override default editor settings and run tests in multiple processes.
-	void EnableMultiProcess() {bEnableMultiProcess = true; }
+	void EnableMultiProcess() { bEnableMultiProcess = true; }
 
 	UWorld* GetWorld() const override;
 
