@@ -562,8 +562,6 @@ private:
 	UFUNCTION()
 	void OnReplicated_bFinishedTest();
 
-	void LogAndClearRequireHandler();
-
 	UFUNCTION()
 	void StartServerFlowControllerSpawn();
 

@@ -356,24 +356,34 @@ bool SpatialFunctionalTestRequireHandler::GenericRequire(const FString& Msg, boo
 	return bPassed;
 }
 
-TArray<FSpatialFunctionalTestRequire> SpatialFunctionalTestRequireHandler::GetAndClearStepRequires()
+void SpatialFunctionalTestRequireHandler::LogAndClearStepRequires()
 {
 	// Since it's a TMap, we need to order them for better readability.
 	TArray<FSpatialFunctionalTestRequire> RequiresOrdered;
 	RequiresOrdered.Reserve(Requires.Num());
-
 	for (const auto& RequireEntry : Requires)
 	{
 		RequiresOrdered.Add(RequireEntry.Value);
 	}
-
 	RequiresOrdered.Sort([](const FSpatialFunctionalTestRequire& A, const FSpatialFunctionalTestRequire& B) -> bool {
 		return A.Order < B.Order;
-	});
+		});
 
-	NextOrder = 0;
-	Requires.Empty();
-	return RequiresOrdered;
+	ASpatialFunctionalTestFlowController* FlowController = OwnerTest->GetLocalFlowController();
+	if (FlowController)
+	{
+		const FString& WorkerName = FlowController->GetDisplayName();
+
+		for (const auto& Require : RequiresOrdered)
+		{
+			const FString Msg = FString::Printf(TEXT("%s [%s] %s : %s"), *WorkerName, (Require.bPassed ? *FString("Passed") : *FString("Failed")), *Require.Msg, *Require.StatusMsg);
+
+			FlowController->ServerNotifyLogRequireMessages(*Msg, Require.bPassed);
+		}
+
+		NextOrder = 0;
+		Requires.Empty();
+	}
 }
 
 bool SpatialFunctionalTestRequireHandler::HasFails()

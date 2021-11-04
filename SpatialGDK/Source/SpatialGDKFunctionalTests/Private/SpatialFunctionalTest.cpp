@@ -330,7 +330,7 @@ void ASpatialFunctionalTest::FinishStep()
 		return;
 	}
 
-	LogAndClearRequireHandler();
+	RequireHandler.LogAndClearStepRequires();
 
 	auto* AuxLocalFlowController = GetLocalFlowController();
 	ensureMsgf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
@@ -651,7 +651,7 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 	if (HasAuthority())
 	{
 		// Log Requires from previous step.
-		LogAndClearRequireHandler();
+		RequireHandler.LogAndClearStepRequires();
 
 		CurrentStepIndex = StepIndex;
 
@@ -817,7 +817,7 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 {
 	if (CurrentStepIndex == SPATIAL_FUNCTIONAL_TEST_FINISHED)
 	{
-		LogAndClearRequireHandler();
+		RequireHandler.LogAndClearStepRequires();
 		// if we ever started in first place
 		ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
 		if (AuxLocalFlowController != nullptr)
@@ -872,32 +872,6 @@ void ASpatialFunctionalTest::OnReplicated_bFinishedTest()
 	{
 		// The server that started this test has to call this in order for the test to properly finish.
 		NotifyTestFinishedObserver();
-	}
-}
-
-void ASpatialFunctionalTest::LogAndClearRequireHandler()
-{
-	TArray<FSpatialFunctionalTestRequire> RequiresOrdered = RequireHandler.GetAndClearStepRequires();
-
-	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
-	if (FlowController)
-	{
-		const FString& WorkerName = FlowController->GetDisplayName();
-
-		for (const auto& Require : RequiresOrdered)
-		{
-			FString Msg;
-			if (Require.bPassed)
-			{
-				Msg = FString::Printf(TEXT("%s [Passed] %s : %s"), *WorkerName, *Require.Msg, *Require.StatusMsg);
-			}
-			else
-			{
-				Msg = FString::Printf(TEXT("%s [Failed] %s : %s"), *WorkerName, *Require.Msg, *Require.StatusMsg);
-			}
-
-			FlowController->ServerNotifyLogRequireMessages(*Msg, Require.bPassed);
-		}
 	}
 }
 
