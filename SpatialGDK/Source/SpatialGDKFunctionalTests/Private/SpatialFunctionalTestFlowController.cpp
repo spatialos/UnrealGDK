@@ -239,7 +239,7 @@ void ASpatialFunctionalTestFlowController::ServerNotifyRunTest_Implementation(AS
 	Test->CrossServerRunTest(Params);
 }
 
-void ASpatialFunctionalTestFlowController::ServerNotifyLogRequireMessages_Implementation( const FString& Message, bool bPassed)
+void ASpatialFunctionalTestFlowController::ServerNotifyLogRequireMessages_Implementation(const FString& Message, bool bPassed)
 {
 	OwningTest->CrossServerLogRequireMessages(Message, bPassed);
 }

@@ -27,9 +27,9 @@ const FString FSpatialTestSettings::GeneratedOverrideSettingsDirectory =
 	FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir() / TEXT("Config/") / OverrideSettingsFileDirectoryName);
 const FString FSpatialTestSettings::GeneratedOverrideSettingsBaseFilename = GeneratedOverrideSettingsDirectory / OverrideSettingsFilePrefix;
 
-FString FSpatialTestSettings::GenerateMapConfigurationFilename(const FString& MapName)
+/*static*/ FString FSpatialTestSettings::GenerateMapConfigurationFilename(const FString& MapName)
 {
-	return GeneratedOverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
+	return GeneratedOverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + OverrideSettingsFileExtension;
 }
 
 void FSpatialTestSettings::Override(const FString& MapName)
@@ -67,7 +67,7 @@ void FSpatialTestSettings::Override(const FString& MapName)
 	}
 
 	// Generated config, applied to generated maps
-	FString GeneratedMapConfigurationFilename = GenerateMapConfigurationFilename(MapName);
+	const FString GeneratedMapConfigurationFilename = GenerateMapConfigurationFilename(MapName);
 	if (FPaths::FileExists(GeneratedMapConfigurationFilename) == true)
 	{
 		// Override the settings from the generated map specific config file
@@ -113,7 +113,7 @@ void FSpatialTestSettings::Restore(T*& OriginalSettings)
 	}
 }
 
-void FSpatialTestSettings::Load(const FString& TestSettingOverridesFilename)
+/*static*/ void FSpatialTestSettings::Load(const FString& TestSettingOverridesFilename)
 {
 	UE_LOG(LogSpatialTestSettings, Log, TEXT("Overriding settings from file %s."), *TestSettingOverridesFilename);
 	GetMutableDefault<ULevelEditorPlaySettings>()->LoadConfig(ULevelEditorPlaySettings::StaticClass(), *TestSettingOverridesFilename);
