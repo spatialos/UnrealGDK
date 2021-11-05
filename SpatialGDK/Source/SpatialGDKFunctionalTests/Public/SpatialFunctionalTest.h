@@ -564,9 +564,29 @@ private:
 
 	UFUNCTION()
 	void StartServerFlowControllerSpawn();
+	
+	/*
+	 * Adds support for multiple processes testing by ensuring the static variables bIsFunctionalTestRunning and ActiveTestName
+	 * from FFunctionalTestBase have the correct values across multiple processes.
+	 */
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiCastSetFunctionalTestRunning();
+
+	void CrossServerRunTest_Implementation(const TArray<FString>& Params = TArray<FString>()) override;
+
+	bool IsRunningUnderOneProcess();
+
+	/*
+	 * Adds support for multiple processes testing by ensuring the static variables bIsFunctionalTestRunning and ActiveTestName
+	 * from FFunctionalTestBase have the correct values across multiple processes.
+	*/
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiCastSetFunctionalTestComplete();
 
 	void SetupClientPlayerRegistrationFlow();
 	void EndPlay(const EEndPlayReason::Type Reason) override;
+
+	void FinishFunctionalTest(EFunctionalTestResult TestResult, const FString& Message);
 
 	// Sets the snapshot for the map loaded by this world. When launching the test maps, the AutomationManager will
 	// check if there's a snapshot for that map and if so use it instead of the default snapshot. If PathToSnapshot

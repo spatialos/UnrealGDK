@@ -26,6 +26,7 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKEditor/Public/SpatialTestSettings.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
+#include "FunctionalTestBase.h"
 
 namespace
 {
@@ -178,7 +179,7 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 		if (bAllAcknowledgedFinishedTest)
 		{
 			GetWorld()->GetTimerManager().ClearTimer(FinishTestTimerHandle);
-			Super::FinishTest(CachedTestResult, CachedTestMessage);
+			FinishFunctionalTest(CachedTestResult, CachedTestMessage);
 
 			// This will call NotifyTestFinishedObserver on other workers.
 			bFinishedTest = true;
@@ -245,6 +246,13 @@ void ASpatialFunctionalTest::PrepareTest()
 	 */
 	if (GIsEditor == false)
 	{
+		// Base config, applies to all maps if present
+		if (FPaths::FileExists(FSpatialTestSettings::BaseOverridesFilename))
+		{
+			// Override the settings from the base config file
+			FSpatialTestSettings::Load(FSpatialTestSettings::BaseOverridesFilename);
+		}
+
 		FString GeneratedMapConfigurationFilename = FSpatialTestSettings::GenerateMapConfigurationFilename(GetWorld()->GetMapName());
 		if (FPaths::FileExists(GeneratedMapConfigurationFilename) == true)
 		{
@@ -293,6 +301,38 @@ void ASpatialFunctionalTest::StartTest()
 
 	StartStep(0);
 }
+
+void ASpatialFunctionalTest::MultiCastSetFunctionalTestRunning_Implementation()
+{
+	if (HasAuthority())
+	{
+		return;
+	}
+
+	// Duplicate code from AFunctionalTest::RunTest();
+	FFunctionalTestBase* FunctionalTest = static_cast<FFunctionalTestBase*>(FAutomationTestFramework::Get().GetCurrentTest());
+
+	TOptional<bool> bSuppressErrors, bSuppressWarnings, bWarningsAreErrors;
+
+	if (LogErrorHandling != EFunctionalTestLogHandling::ProjectDefault)
+	{
+		bSuppressErrors = LogErrorHandling == EFunctionalTestLogHandling::OutputIgnored ? true : false;
+	}
+
+	if (LogWarningHandling != EFunctionalTestLogHandling::ProjectDefault)
+	{
+		// warnings can be set to be suppressed, or elevated to errors
+		bSuppressWarnings = LogWarningHandling == EFunctionalTestLogHandling::OutputIgnored ? true : false;
+		bWarningsAreErrors = LogWarningHandling == EFunctionalTestLogHandling::OutputIsError;
+	}
+
+	if (FunctionalTest)
+	{
+		FunctionalTest->SetLogErrorAndWarningHandling(bSuppressErrors, bSuppressWarnings, bWarningsAreErrors);
+		FunctionalTest->SetFunctionalTestRunning(GetName());
+	}
+}
+
 
 /*
  * Adds support for multiple processes testing, see SpatialFunctionalTest.h for more context.
@@ -489,7 +529,7 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 							   TEXT("The following Workers failed to acknowledge FinishTest in time: %s"), *WorkersDidntAck);
 					}
 
-					Super::FinishTest(CachedTestResult, CachedTestMessage);
+					FinishFunctionalTest(CachedTestResult, CachedTestMessage);
 
 					FinishTestTimerHandle.Invalidate();
 
@@ -923,6 +963,23 @@ void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 	FlowControllerSpawner.SpawnServerFlowController();
 }
 
+bool ASpatialFunctionalTest::IsRunningUnderOneProcess()
+{
+	bool bIsRunningUnderOneProcess;
+	GetDefault<ULevelEditorPlaySettings>()->GetRunUnderOneProcess(bIsRunningUnderOneProcess);
+	return bIsRunningUnderOneProcess;
+}
+
+void ASpatialFunctionalTest::CrossServerRunTest_Implementation(const TArray<FString>& Params)
+{
+	if (IsRunningUnderOneProcess() == false)
+	{
+		MultiCastSetFunctionalTestRunning();
+	}
+
+	Super::CrossServerRunTest_Implementation(Params);
+}
+
 void ASpatialFunctionalTest::MulticastLogFailureMessage_Implementation(const FString& Message)
 {
 	UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("Spatial Functional Test failed! Error: %s"), *Message);
@@ -947,6 +1004,31 @@ void ASpatialFunctionalTest::EndPlay(const EEndPlayReason::Type Reason)
 		PostLoginDelegate.Reset();
 	}
 }
+
+void ASpatialFunctionalTest::FinishFunctionalTest(EFunctionalTestResult TestResult, const FString& Message)
+{
+	Super::FinishTest(TestResult, Message);
+
+	if (IsRunningUnderOneProcess() == false)
+	{
+		MultiCastSetFunctionalTestComplete();
+	}
+}
+
+void ASpatialFunctionalTest::MultiCastSetFunctionalTestComplete_Implementation()
+{
+	if (HasAuthority())
+	{
+		return;
+	}
+
+	FFunctionalTestBase* FunctionalTest = static_cast<FFunctionalTestBase*>(FAutomationTestFramework::Get().GetCurrentTest());
+	if (FunctionalTest)
+	{
+		FunctionalTest->SetFunctionalTestComplete(GetName());
+	}
+}
+
 
 void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 {
