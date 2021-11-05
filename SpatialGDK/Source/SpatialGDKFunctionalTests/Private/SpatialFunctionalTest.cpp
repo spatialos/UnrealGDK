@@ -9,6 +9,7 @@
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialNetDriverGameplayDebuggerContext.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "FunctionalTestBase.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerController.h"
@@ -26,7 +27,6 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKEditor/Public/SpatialTestSettings.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
-#include "FunctionalTestBase.h"
 
 namespace
 {
@@ -309,34 +309,17 @@ void ASpatialFunctionalTest::MultiCastSetFunctionalTestRunning_Implementation()
 		return;
 	}
 
-	// Duplicate code from AFunctionalTest::RunTest();
 	FFunctionalTestBase* FunctionalTest = static_cast<FFunctionalTestBase*>(FAutomationTestFramework::Get().GetCurrentTest());
-
-	TOptional<bool> bSuppressErrors, bSuppressWarnings, bWarningsAreErrors;
-
-	if (LogErrorHandling != EFunctionalTestLogHandling::ProjectDefault)
-	{
-		bSuppressErrors = LogErrorHandling == EFunctionalTestLogHandling::OutputIgnored ? true : false;
-	}
-
-	if (LogWarningHandling != EFunctionalTestLogHandling::ProjectDefault)
-	{
-		// warnings can be set to be suppressed, or elevated to errors
-		bSuppressWarnings = LogWarningHandling == EFunctionalTestLogHandling::OutputIgnored ? true : false;
-		bWarningsAreErrors = LogWarningHandling == EFunctionalTestLogHandling::OutputIsError;
-	}
 
 	if (FunctionalTest)
 	{
-		FunctionalTest->SetLogErrorAndWarningHandling(bSuppressErrors, bSuppressWarnings, bWarningsAreErrors);
 		FunctionalTest->SetFunctionalTestRunning(GetName());
 	}
 }
 
-
 /*
  * Adds support for multiple processes testing, see SpatialFunctionalTest.h for more context.
-*/
+ */
 void ASpatialFunctionalTest::CallRunTest(const TArray<FString>& Params)
 {
 	if (HasAuthority() == false)
@@ -428,7 +411,7 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 		/*
 		 * Currently the Editor process will always be a Client, therefore only multi-cast
 		 * the failure message if running with multiple processes.
-		*/
+		 */
 		if (TestResult == EFunctionalTestResult::Failed && GIsEditor == false)
 		{
 			MulticastLogFailureMessage(Message);
@@ -942,7 +925,7 @@ void ASpatialFunctionalTest::CrossServerLogRequireMessages_Implementation(const 
 	/*
 	 * When running under one process, simply log the message,
 	 * if using multiple-processes, multicast the message so that the Editor process can correctly report a test pass/failure.
-	*/
+	 */
 	if (HasAuthority() && GIsEditor)
 	{
 		LogRequireMessages(Message, bPassed);
@@ -1028,7 +1011,6 @@ void ASpatialFunctionalTest::MultiCastSetFunctionalTestComplete_Implementation()
 		FunctionalTest->SetFunctionalTestComplete(GetName());
 	}
 }
-
 
 void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 {

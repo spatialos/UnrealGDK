@@ -564,13 +564,6 @@ private:
 
 	UFUNCTION()
 	void StartServerFlowControllerSpawn();
-	
-	/*
-	 * Adds support for multiple processes testing by ensuring the static variables bIsFunctionalTestRunning and ActiveTestName
-	 * from FFunctionalTestBase have the correct values across multiple processes.
-	 */
-	UFUNCTION(NetMulticast, Reliable)
-	void MultiCastSetFunctionalTestRunning();
 
 	void CrossServerRunTest_Implementation(const TArray<FString>& Params = TArray<FString>()) override;
 
@@ -582,6 +575,13 @@ private:
 	*/
 	UFUNCTION(NetMulticast, Reliable)
 	void MultiCastSetFunctionalTestComplete();
+
+	/*
+	 * Adds support for multiple processes testing by ensuring the static variables bIsFunctionalTestRunning and ActiveTestName
+	 * from FFunctionalTestBase have the correct values across multiple processes.
+	 */
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiCastSetFunctionalTestRunning();
 
 	void SetupClientPlayerRegistrationFlow();
 	void EndPlay(const EEndPlayReason::Type Reason) override;
