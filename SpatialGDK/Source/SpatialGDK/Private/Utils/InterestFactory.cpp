@@ -545,8 +545,7 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 	{
 		USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(InPlayerController->NetConnection);
 		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), SpatialNetConnection->GetPlayerControllerEntityId());
-		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("interested_spatialized_actors"),
-													ClientInterestedActors.Num());
+		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("interested_spatialized_actors"), ClientInterestedActors.Num());
 	}
 
 	InterestedEntityIdList.Reserve(ClientInterestedActors.Num());
