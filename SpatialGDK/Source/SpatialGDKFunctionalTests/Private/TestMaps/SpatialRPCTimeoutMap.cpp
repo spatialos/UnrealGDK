@@ -12,9 +12,10 @@ USpatialRPCTimeoutMap::USpatialRPCTimeoutMap()
 	SetCustomConfig(TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR
 		TEXT("QueuedIncomingRPCWaitTime=0") LINE_TERMINATOR
 		TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
-		TEXT("PlayNumberOfClients=2") LINE_TERMINATOR
-		TEXT("RunUnderOneProcess=true"));
+		TEXT("PlayNumberOfClients=2"));
 	// clang-format on
+
+	EnableMultiProcess();
 }
 
 void USpatialRPCTimeoutMap::CreateCustomContentForMap()
