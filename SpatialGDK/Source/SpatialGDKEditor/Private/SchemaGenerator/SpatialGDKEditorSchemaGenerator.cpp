@@ -19,6 +19,10 @@
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
+#include "Runtime/Engine/Private/WorldPartition/RuntimeSpatialHash/RuntimeSpatialHashGridHelper.h"
+#include "Runtime/Engine/Public/WorldPartition/WorldPartition.h"
+#include "Runtime/Engine/Public/WorldPartition/WorldPartitionActorCluster.h"
+#include "Runtime/Engine/Public/WorldPartition/WorldPartitionRuntimeSpatialHash.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "Templates/SharedPointer.h"
 #include "UObject/UObjectIterator.h"
@@ -342,6 +346,160 @@ void GenerateSchemaForSublevels()
 	GenerateSchemaForSublevels(SchemaOutputPath, LevelNamesToPaths);
 }
 
+void GenerateWorldPartitionDummyLevels(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, const FName& LevelPath,
+									   const FString& LevelName)
+{
+	// FBox LevelBounds;
+	// ULevel::GetLevelBoundsFromPackage(LevelPath, LevelBounds);
+
+	FSoftObjectPath LevelSoftPath(LevelPath);
+	UWorldPartition* WorldPartition = nullptr;
+
+	if (UWorld* World = Cast<UWorld>(LevelSoftPath.TryLoad()))
+	{
+		if (AWorldSettings* WorldSettings = World->GetWorldSettings())
+		{
+			WorldPartition = WorldSettings->GetWorldPartition();
+			if (WorldPartition == nullptr)
+			{
+				return;
+			}
+			bool bOldFlag = PRIVATE_GIsRunningCookCommandlet;
+			PRIVATE_GIsRunningCookCommandlet = true;
+			WorldPartition->Initialize(World, FTransform::Identity);
+			PRIVATE_GIsRunningCookCommandlet = bOldFlag;
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Found a world with no world settings."));
+			return;
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Found a level with no world."));
+		return;
+	}
+
+	// WorldPartition->GenerateStreaming(EWorldPartitionStreamingMode::EditorStandalone);
+
+	TObjectPtr<UWorldPartitionRuntimeHash> GenericHash = WorldPartition->RuntimeHash;
+	UWorldPartitionRuntimeSpatialHash* Hash = Cast<UWorldPartitionRuntimeSpatialHash>(GenericHash.Get());
+	if (Hash == nullptr)
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("The GDK for Unreal currently only supports (known) SpatialPartitions."));
+		return;
+	}
+	checkf(Hash->Grids.Num(), TEXT("Invalid partition grids setup"));
+
+	// Create actor clusters
+	FActorClusterContext Context(WorldPartition, Hash);
+
+	// Append grids from ASpatialHashRuntimeGridInfo actors to runtime spatial hash grids
+	TArray<FSpatialHashRuntimeGrid> AllGrids;
+	AllGrids.Append(Hash->Grids);
+
+	FActorContainerInstance* ContainerInstance = Context.GetClusterInstance(WorldPartition);
+	check(ContainerInstance);
+	for (auto& ActorDescViewPair : ContainerInstance->ActorDescViewMap)
+	{
+		FWorldPartitionActorDescView& ActorDescView = ActorDescViewPair.Value;
+		if (ActorDescView.GetActorClass()->IsChildOf<ASpatialHashRuntimeGridInfo>())
+		{
+			FWorldPartitionReference Ref(WorldPartition, ActorDescView.GetGuid());
+			if (ASpatialHashRuntimeGridInfo* RuntimeGridActor = Cast<ASpatialHashRuntimeGridInfo>(Ref->GetActor()))
+			{
+				AllGrids.Add(RuntimeGridActor->GridSettings);
+			}
+		}
+	}
+
+	TMap<FName, int32> GridsMapping;
+	GridsMapping.Add(NAME_None, 0);
+	for (int32 i = 0; i < AllGrids.Num(); i++)
+	{
+		const FSpatialHashRuntimeGrid& Grid = AllGrids[i];
+		check(!GridsMapping.Contains(Grid.GridName));
+		GridsMapping.Add(Grid.GridName, i);
+	}
+
+	TArray<TArray<const FActorClusterInstance*>> GridActors;
+	GridActors.InsertDefaulted(0, AllGrids.Num());
+
+	for (const FActorClusterInstance& ClusterInstance : Context.GetClusterInstances())
+	{
+		check(ClusterInstance.Cluster);
+		int32* FoundIndex = GridsMapping.Find(ClusterInstance.Cluster->RuntimeGrid);
+		if (!FoundIndex)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Invalid partition grid '%s' referenced by actor cluster"),
+				   *ClusterInstance.Cluster->RuntimeGrid.ToString());
+		}
+
+		int32 GridIndex = FoundIndex ? *FoundIndex : 0;
+		GridActors[GridIndex].Add(&ClusterInstance);
+	}
+
+	TSet<FName> CellsDone;
+	const FBox WorldBounds = Context.GetClusterInstance(WorldPartition)->Bounds;
+	for (int32 GridIndex = 0; GridIndex < AllGrids.Num(); GridIndex++)
+	{
+		const FSpatialHashRuntimeGrid& Grid = AllGrids[GridIndex];
+		const FSquare2DGridHelper PartionedActors = GetPartitionedActors(WorldPartition, WorldBounds, Grid, GridActors[GridIndex]);
+
+		TArray<FActorInstance> FilteredActors;
+		int32 Level = INDEX_NONE;
+		for (const FSquare2DGridHelper::FGridLevel& TempLevel : PartionedActors.Levels)
+		{
+			Level++;
+
+			for (const auto& TempCellMapping : TempLevel.CellsMapping)
+			{
+				const uint32 CellIndex = TempCellMapping.Key;
+				const int32 CellCoordX = CellIndex % TempLevel.GridSize;
+				const int32 CellCoordY = CellIndex / TempLevel.GridSize;
+
+				const FSquare2DGridHelper::FGridLevel::FGridCell& TempCell = TempLevel.Cells[TempCellMapping.Value];
+
+				for (const FSquare2DGridHelper::FGridLevel::FGridCellDataChunk& GridCellDataChunk : TempCell.GetDataChunks())
+				{
+					FIntVector CellGlobalCoords;
+					verify(PartionedActors.GetCellGlobalCoords(FIntVector(CellCoordX, CellCoordY, Level), CellGlobalCoords));
+					FName CellName = UWorldPartitionRuntimeSpatialHash::GetCellName(WorldPartition, Grid.GridName, CellGlobalCoords,
+																					GridCellDataChunk.GetDataLayersID());
+
+					bool bAlreadyInSet = false;
+					CellsDone.Add(CellName, &bAlreadyInSet);
+					if (!bAlreadyInSet)
+					{
+						// TODO
+						int32 IndexOfLastSlash;
+						FString MemoryLevelPath = LevelPath.ToString();
+						verify(MemoryLevelPath.FindLastChar('/', IndexOfLastSlash));
+						MemoryLevelPath = TEXT("/Memory") + MemoryLevelPath.Mid(IndexOfLastSlash);
+						FString NewLevelPath = FString::Printf(TEXT("/Memory/%s"), *CellName.ToString());
+						Worker_ComponentId ComponentId = LevelPathToComponentId.FindRef(NewLevelPath);
+						if (ComponentId == 0)
+						{
+							ComponentId = IdGenerator.Next();
+							LevelPathToComponentId.Add(NewLevelPath, ComponentId);
+						}
+						FString ModifiedCellName = CellName.ToString();
+						ModifiedCellName = ModifiedCellName.Replace(TEXT("-"), TEXT("n"));
+						WriteLevelComponent(Writer, FString::Printf(TEXT("WorldPartitionCell%s"), *ModifiedCellName), ComponentId,
+											NewLevelPath);
+					}
+				}
+			}
+		}
+	}
+
+	bool bOldFlag = PRIVATE_GIsRunningCookCommandlet;
+	PRIVATE_GIsRunningCookCommandlet = true;
+	WorldPartition->Uninitialize();
+	PRIVATE_GIsRunningCookCommandlet = bOldFlag;
+}
+
 void GenerateSchemaForSublevels(const FString& SchemaOutputPath, const TMultiMap<FName, FName>& LevelNamesToPaths)
 {
 	FCodeWriter Writer;
@@ -367,19 +525,22 @@ void GenerateSchemaForSublevels(const FString& SchemaOutputPath, const TMultiMap
 
 			for (int i = 0; i < LevelPaths.Num(); i++)
 			{
+				FString ScrambledLevelName = FString::Printf(TEXT("%sInd%d"), *LevelNameString, i);
+				GenerateWorldPartitionDummyLevels(Writer, IdGenerator, LevelPaths[i], ScrambledLevelName);
 				Worker_ComponentId ComponentId = LevelPathToComponentId.FindRef(LevelPaths[i].ToString());
 				if (ComponentId == 0)
 				{
 					ComponentId = IdGenerator.Next();
 					LevelPathToComponentId.Add(LevelPaths[i].ToString(), ComponentId);
 				}
-				WriteLevelComponent(Writer, FString::Printf(TEXT("%sInd%d"), *LevelNameString, i), ComponentId, LevelPaths[i].ToString());
+				WriteLevelComponent(Writer, ScrambledLevelName, ComponentId, LevelPaths[i].ToString());
 			}
 		}
 		else
 		{
 			// Write a single component.
 			FString LevelPath = LevelNamesToPaths.FindRef(LevelName).ToString();
+			GenerateWorldPartitionDummyLevels(Writer, IdGenerator, LevelNamesToPaths.FindRef(LevelName), LevelName.ToString());
 			Worker_ComponentId ComponentId = LevelPathToComponentId.FindRef(LevelPath);
 			if (ComponentId == 0)
 			{
