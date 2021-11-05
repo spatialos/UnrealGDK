@@ -1348,7 +1348,6 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 	// then don't bother doing any checks.
 	if (NetDriver->ActorSystem->IsClientInterestDirty(EntityId))
 	{
-		RepGraphConnection->RepGraphRequestedInterestChange = false;
 		NetConnection->TimeWhenClientInterestLastUpdated = CurrentTime;
 		return;
 	}
@@ -1369,9 +1368,11 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 		}
 	}
 
-	// If the rep graph has notified the connection that interest changed needed, mark interest dirty.
-	const bool bRepGraphNodeFlaggedDirty = RepGraphConnection->RepGraphRequestedInterestChange;
-	bShouldMarkInterestDirty |= bRepGraphNodeFlaggedDirty;
+	// Round robin updating client interest
+	if (RepGraph->GetReplicationGraphFrame() % 10 == RepGraphConnection->ConnectionOrderNum % 10)
+	{
+		bShouldMarkInterestDirty = true;
+	}
 
 	if (!bShouldMarkInterestDirty)
 	{
@@ -1384,7 +1385,6 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 		MetricsExport->WriteMetricsToProtocolBuffer(*ClientIdentifier, TEXT("interest_update_frequency"),
 													1 / TimeSinceLastClientInterestUpdate);
 	}
-	RepGraphConnection->RepGraphRequestedInterestChange = false;
 	NetConnection->TimeWhenClientInterestLastUpdated = CurrentTime;
 
 	NetDriver->ActorSystem->MarkClientInterestDirty(EntityId, /*bOverwrite*/ false);
