@@ -294,6 +294,9 @@ void ASpatialFunctionalTest::StartTest()
 	StartStep(0);
 }
 
+/*
+ * Adds support for multiple processes testing, see SpatialFunctionalTest.h for more context.
+*/
 void ASpatialFunctionalTest::CallRunTest(const TArray<FString>& Params)
 {
 	if (HasAuthority() == false)
