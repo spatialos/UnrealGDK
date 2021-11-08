@@ -1018,8 +1018,6 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 		}
 	}
 
-	FGuid NextMapGuid = UEngine::GetPackageGuid(FName(*NextMap), World->IsPlayInEditor());
-
 	FString NewURL = URL;
 
 	if (!NewURL.Contains(SpatialConstants::SpatialSessionIdURLOption))
@@ -1030,7 +1028,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 
 	// Notify clients we're switching level and give them time to receive.
 	FString URLMod = NewURL;
-	APlayerController* LocalPlayer = GameMode->ProcessClientTravel(URLMod, NextMapGuid, bSeamless, bAbsolute);
+	APlayerController* LocalPlayer = GameMode->ProcessClientTravel(URLMod, bSeamless, bAbsolute);
 
 	// We can't have the NextURL set this early when using SpatialProcessServerTravel so empty the string here.
 	// The reason for this is, on the next WorldTick the current World and NetDriver will be unloaded.

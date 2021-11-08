@@ -121,7 +121,7 @@ public:
 	virtual void NotifyStreamingLevelUnload(class ULevel* Level) override;
 
 	virtual void PushCrossServerRPCSender(AActor* Sender) override;
-	virtual void PopCrossServerRPCSender(AActor* Sender) override;
+	virtual void PopCrossServerRPCSender(AActor* Sender); //override;
 	// End UNetDriver interface.
 
 	void OnConnectionToSpatialOSSucceeded();
