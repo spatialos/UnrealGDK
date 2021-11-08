@@ -349,9 +349,6 @@ void GenerateSchemaForSublevels()
 void GenerateWorldPartitionDummyLevels(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, const FName& LevelPath,
 									   const FString& LevelName)
 {
-	// FBox LevelBounds;
-	// ULevel::GetLevelBoundsFromPackage(LevelPath, LevelBounds);
-
 	FSoftObjectPath LevelSoftPath(LevelPath);
 	UWorldPartition* WorldPartition = nullptr;
 
@@ -364,6 +361,7 @@ void GenerateWorldPartitionDummyLevels(FCodeWriter& Writer, FComponentIdGenerato
 			{
 				return;
 			}
+			// Unfortunately need this hack to trick the world partition into initiating in cook mode, otherwise we would crash
 			bool bOldFlag = PRIVATE_GIsRunningCookCommandlet;
 			PRIVATE_GIsRunningCookCommandlet = true;
 			WorldPartition->Initialize(World, FTransform::Identity);
@@ -381,119 +379,23 @@ void GenerateWorldPartitionDummyLevels(FCodeWriter& Writer, FComponentIdGenerato
 		return;
 	}
 
-	// WorldPartition->GenerateStreaming(EWorldPartitionStreamingMode::EditorStandalone);
+	TArray<FString> PackagesToGenerate;
+	WorldPartition->GenerateStreaming(EWorldPartitionStreamingMode::Cook, &PackagesToGenerate);
 
-	TObjectPtr<UWorldPartitionRuntimeHash> GenericHash = WorldPartition->RuntimeHash;
-	UWorldPartitionRuntimeSpatialHash* Hash = Cast<UWorldPartitionRuntimeSpatialHash>(GenericHash.Get());
-	if (Hash == nullptr)
+	for (const FString& PackageName : PackagesToGenerate)
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("The GDK for Unreal currently only supports (known) SpatialPartitions."));
-		return;
-	}
-	checkf(Hash->Grids.Num(), TEXT("Invalid partition grids setup"));
-
-	// Create actor clusters
-	FActorClusterContext Context(WorldPartition, Hash);
-
-	// Append grids from ASpatialHashRuntimeGridInfo actors to runtime spatial hash grids
-	TArray<FSpatialHashRuntimeGrid> AllGrids;
-	AllGrids.Append(Hash->Grids);
-
-	FActorContainerInstance* ContainerInstance = Context.GetClusterInstance(WorldPartition);
-	check(ContainerInstance);
-	for (auto& ActorDescViewPair : ContainerInstance->ActorDescViewMap)
-	{
-		FWorldPartitionActorDescView& ActorDescView = ActorDescViewPair.Value;
-		if (ActorDescView.GetActorClass()->IsChildOf<ASpatialHashRuntimeGridInfo>())
+		FString InGamePackageName = TEXT("/Memory") + PackageName;
+		Worker_ComponentId ComponentId = LevelPathToComponentId.FindRef(InGamePackageName);
+		if (ComponentId == 0)
 		{
-			FWorldPartitionReference Ref(WorldPartition, ActorDescView.GetGuid());
-			if (ASpatialHashRuntimeGridInfo* RuntimeGridActor = Cast<ASpatialHashRuntimeGridInfo>(Ref->GetActor()))
-			{
-				AllGrids.Add(RuntimeGridActor->GridSettings);
-			}
+			ComponentId = IdGenerator.Next();
+			LevelPathToComponentId.Add(InGamePackageName, ComponentId);
 		}
+		FString ModifiedPackageName = InGamePackageName.Replace(TEXT("-"), TEXT("n"));
+		WriteLevelComponent(Writer, ModifiedPackageName, ComponentId, InGamePackageName);
 	}
 
-	TMap<FName, int32> GridsMapping;
-	GridsMapping.Add(NAME_None, 0);
-	for (int32 i = 0; i < AllGrids.Num(); i++)
-	{
-		const FSpatialHashRuntimeGrid& Grid = AllGrids[i];
-		check(!GridsMapping.Contains(Grid.GridName));
-		GridsMapping.Add(Grid.GridName, i);
-	}
-
-	TArray<TArray<const FActorClusterInstance*>> GridActors;
-	GridActors.InsertDefaulted(0, AllGrids.Num());
-
-	for (const FActorClusterInstance& ClusterInstance : Context.GetClusterInstances())
-	{
-		check(ClusterInstance.Cluster);
-		int32* FoundIndex = GridsMapping.Find(ClusterInstance.Cluster->RuntimeGrid);
-		if (!FoundIndex)
-		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Invalid partition grid '%s' referenced by actor cluster"),
-				   *ClusterInstance.Cluster->RuntimeGrid.ToString());
-		}
-
-		int32 GridIndex = FoundIndex ? *FoundIndex : 0;
-		GridActors[GridIndex].Add(&ClusterInstance);
-	}
-
-	TSet<FName> CellsDone;
-	const FBox WorldBounds = Context.GetClusterInstance(WorldPartition)->Bounds;
-	for (int32 GridIndex = 0; GridIndex < AllGrids.Num(); GridIndex++)
-	{
-		const FSpatialHashRuntimeGrid& Grid = AllGrids[GridIndex];
-		const FSquare2DGridHelper PartionedActors = GetPartitionedActors(WorldPartition, WorldBounds, Grid, GridActors[GridIndex]);
-
-		TArray<FActorInstance> FilteredActors;
-		int32 Level = INDEX_NONE;
-		for (const FSquare2DGridHelper::FGridLevel& TempLevel : PartionedActors.Levels)
-		{
-			Level++;
-
-			for (const auto& TempCellMapping : TempLevel.CellsMapping)
-			{
-				const uint32 CellIndex = TempCellMapping.Key;
-				const int32 CellCoordX = CellIndex % TempLevel.GridSize;
-				const int32 CellCoordY = CellIndex / TempLevel.GridSize;
-
-				const FSquare2DGridHelper::FGridLevel::FGridCell& TempCell = TempLevel.Cells[TempCellMapping.Value];
-
-				for (const FSquare2DGridHelper::FGridLevel::FGridCellDataChunk& GridCellDataChunk : TempCell.GetDataChunks())
-				{
-					FIntVector CellGlobalCoords;
-					verify(PartionedActors.GetCellGlobalCoords(FIntVector(CellCoordX, CellCoordY, Level), CellGlobalCoords));
-					FName CellName = UWorldPartitionRuntimeSpatialHash::GetCellName(WorldPartition, Grid.GridName, CellGlobalCoords,
-																					GridCellDataChunk.GetDataLayersID());
-
-					bool bAlreadyInSet = false;
-					CellsDone.Add(CellName, &bAlreadyInSet);
-					if (!bAlreadyInSet)
-					{
-						// TODO
-						int32 IndexOfLastSlash;
-						FString MemoryLevelPath = LevelPath.ToString();
-						verify(MemoryLevelPath.FindLastChar('/', IndexOfLastSlash));
-						MemoryLevelPath = TEXT("/Memory") + MemoryLevelPath.Mid(IndexOfLastSlash);
-						FString NewLevelPath = FString::Printf(TEXT("/Memory/%s"), *CellName.ToString());
-						Worker_ComponentId ComponentId = LevelPathToComponentId.FindRef(NewLevelPath);
-						if (ComponentId == 0)
-						{
-							ComponentId = IdGenerator.Next();
-							LevelPathToComponentId.Add(NewLevelPath, ComponentId);
-						}
-						FString ModifiedCellName = CellName.ToString();
-						ModifiedCellName = ModifiedCellName.Replace(TEXT("-"), TEXT("n"));
-						WriteLevelComponent(Writer, FString::Printf(TEXT("WorldPartitionCell%s"), *ModifiedCellName), ComponentId,
-											NewLevelPath);
-					}
-				}
-			}
-		}
-	}
-
+	// Unfortunately need this hack to accompany the initialize hack above
 	bool bOldFlag = PRIVATE_GIsRunningCookCommandlet;
 	PRIVATE_GIsRunningCookCommandlet = true;
 	WorldPartition->Uninitialize();
