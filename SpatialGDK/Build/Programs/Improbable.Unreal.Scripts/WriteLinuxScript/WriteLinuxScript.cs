@@ -11,9 +11,9 @@ namespace Improbable.Unreal.Build.Util
     {
         public static void Main(string[] args)
         {
-            var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
+            bool help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
 
-            var exitCode = 0;
+            int exitCode = 0;
             if (args.Length < 2 && !help)
             {
                 help = true;
@@ -26,8 +26,8 @@ namespace Improbable.Unreal.Build.Util
                 Environment.Exit(exitCode);
             }
 
-            var outputFile = Path.GetFullPath(args[0]);
-            var baseGameName = args[1];
+            string outputFile = Path.GetFullPath(args[0]);
+            string baseGameName = args[1];
 
             Improbable.Common.WriteHeading(" > Writing Linux worker start script.");
 

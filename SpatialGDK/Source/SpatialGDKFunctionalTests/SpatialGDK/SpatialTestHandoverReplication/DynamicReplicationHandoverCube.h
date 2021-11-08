@@ -18,3 +18,4 @@ class ADynamicReplicationHandoverCube : public AHandoverCube
 public:
 	ADynamicReplicationHandoverCube();
 };
+F

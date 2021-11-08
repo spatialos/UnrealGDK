@@ -78,11 +78,11 @@ namespace Improbable.WorkerCoordinator
             // The first 4 arguments are for connecting to the Receptionist.
             // 2 optional arguments can be provided after the Receptionist args to
             // modify the default options of the coordinator.
-            var numArgsToSkip = 4;
+            int numArgsToSkip = 4;
 
             // Optional args with default values.
-            var numSimulatedPlayersToStart = 1;
-            var initialStartDelayMillis = 10000;
+            int numSimulatedPlayersToStart = 1;
+            int initialStartDelayMillis = 10000;
             if (Util.HasIntegerArgument(args, SimulatedPlayerSpawnCountArg))
             {
                 numSimulatedPlayersToStart = Util.GetIntegerArgument(args, SimulatedPlayerSpawnCountArg);
@@ -127,7 +127,7 @@ namespace Improbable.WorkerCoordinator
 
         public override void Run()
         {
-            var connection = CoordinatorConnection.ConnectAndKeepAlive(Logger, ReceptionistHost, ReceptionistPort, CoordinatorWorkerId, CoordinatorWorkerType);
+            Connection connection = CoordinatorConnection.ConnectAndKeepAlive(Logger, ReceptionistHost, ReceptionistPort, CoordinatorWorkerId, CoordinatorWorkerType);
 
             // Read worker flags.
             string devAuthToken = connection.GetWorkerFlag(DevAuthTokenWorkerFlag);
@@ -137,13 +137,13 @@ namespace Improbable.WorkerCoordinator
             Logger.WriteLog($"Starting {NumSimulatedPlayersToStart} simulated players.");
             Thread.Sleep(InitialStartDelayMillis);
 
-            var maxDelayMillis = deploymentTotalNumSimulatedPlayers * AverageDelayMillisBetweenConnections;
+            int maxDelayMillis = deploymentTotalNumSimulatedPlayers * AverageDelayMillisBetweenConnections;
 
             // Distribute player connections uniformly by generating a random time to connect between now and maxDelayMillis,
             // such that, on average, a player connects every AverageDelayMillisBetweenConnections milliseconds deployment-wide.
             // There can be multiple coordinator workers per deployment, to ensure that the combined connections created by all
             // coordinators are spread out uniformly, generate a start delay for each player independently of other players' start delays.
-            var startDelaysMillis = new int[NumSimulatedPlayersToStart];
+            int[] startDelaysMillis = new int[NumSimulatedPlayersToStart];
             for (int i = 0; i < NumSimulatedPlayersToStart; i++)
             {
                 startDelaysMillis[i] = Random.Next(maxDelayMillis);

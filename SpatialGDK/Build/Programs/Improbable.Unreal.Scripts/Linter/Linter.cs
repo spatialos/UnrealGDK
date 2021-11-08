@@ -15,8 +15,8 @@ namespace Improbable
         /// </summary>
         public static void Main(string[] args)
         {
-            var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
-            var validCommand = args.Count(arg => arg.ToLowerInvariant() == checkCommand || arg.ToLowerInvariant() == fixCommand) == 1;
+            bool help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
+            bool validCommand = args.Count(arg => arg.ToLowerInvariant() == checkCommand || arg.ToLowerInvariant() == fixCommand) == 1;
             int exitCode = 0;
 
             if (help || args.Length < 2 || !validCommand)
@@ -27,8 +27,8 @@ namespace Improbable
 
             try
             {
-                var command = args.First().ToLower();
-                var paths = args.Skip(1).ToList();
+                string command = args.First().ToLower();
+                List<string> paths = args.Skip(1).ToList();
                 switch (command)
                 {
                     case checkCommand:
@@ -68,7 +68,7 @@ namespace Improbable
 
         private static void CheckLint(List<string> paths)
         {
-            var pathsWithLint = GetFailedValidationPaths(paths);
+            List<string> pathsWithLint = GetFailedValidationPaths(paths);
 
             if (pathsWithLint.Count > 0)
             {
@@ -78,11 +78,11 @@ namespace Improbable
 
         private static void FixLint(List<string> paths)
         {
-            var pathsWithLint = GetFailedValidationPaths(paths);
+            List<string> pathsWithLint = GetFailedValidationPaths(paths);
 
-            foreach (var path in pathsWithLint)
+            foreach (string path in pathsWithLint)
             {
-                var content = File.ReadAllText(path);
+                string content = File.ReadAllText(path);
                 content = copyrightHeader + content;
                 File.WriteAllText(path, content, new UTF8Encoding(false));
 
@@ -92,16 +92,16 @@ namespace Improbable
 
         private static List<string> GetFailedValidationPaths(List<string> paths)
         {
-            var directories = paths.Select(path => new DirectoryInfo(path));
+            IEnumerable<DirectoryInfo> directories = paths.Select(path => new DirectoryInfo(path));
 
             List<string> filesWithLint = new List<string>();
 
-            foreach (var directory in directories.Where(IsIncluded))
+            foreach (DirectoryInfo directory in directories.Where(IsIncluded))
             {
-                var files = directory.EnumerateFiles("*.*", SearchOption.AllDirectories)
+                IEnumerable<FileInfo> files = directory.EnumerateFiles("*.*", SearchOption.AllDirectories)
                                      .Where(s => s.FullName.EndsWith(".h") || s.FullName.EndsWith(".cpp") || s.FullName.EndsWith(".Build.cs"));
 
-                foreach (var file in files.Where(NeedsChanges))
+                foreach (FileInfo file in files.Where(NeedsChanges))
                 {
                     filesWithLint.Add(file.FullName);
                 }
@@ -112,7 +112,7 @@ namespace Improbable
 
         private static bool IsIncluded(DirectoryInfo Directory)
         {
-            var result = Common.RunRedirectedWithExitCode("git", new[]
+            int result = Common.RunRedirectedWithExitCode("git", new[]
             {
                 "check-ignore",
                 Directory.FullName
@@ -123,7 +123,7 @@ namespace Improbable
 
         private static bool NeedsChanges(FileInfo fileInfo)
         {
-            var content = File.ReadAllText(fileInfo.FullName);
+            string content = File.ReadAllText(fileInfo.FullName);
             if (!content.StartsWith("// Copyright"))
             {
                 Console.Error.WriteLine(@"{0} is missing the copyright header", fileInfo.FullName);

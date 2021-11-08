@@ -47,7 +47,7 @@ namespace Improbable.WorkerCoordinator
         /// </summary>
         public static RegisseurWorkerCoordinator FromArgs(Logger logger, string[] args)
         {
-            var numArgsToSkip = 3;
+            int numArgsToSkip = 3;
 
             LifetimeComponent lifetimeComponent = LifetimeComponent.Create(logger, args, out int numArgs);
             numArgsToSkip += numArgs;
@@ -98,7 +98,7 @@ namespace Improbable.WorkerCoordinator
 
         public void StartSimulatedPlayer(string name)
         {
-            var args = Util.ReplacePlaceholderArgs(SimulatedPlayerArgs, new Dictionary<string, string>()
+            string[] args = Util.ReplacePlaceholderArgs(SimulatedPlayerArgs, new Dictionary<string, string>()
             {
                 { SimulatedPlayerWorkerNamePlaceholderArg, name }
             });

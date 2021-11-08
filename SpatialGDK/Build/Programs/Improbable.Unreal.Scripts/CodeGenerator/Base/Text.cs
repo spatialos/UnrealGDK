@@ -13,8 +13,8 @@ namespace Improbable.CodeGen.Base
 
         public static string ToPascalCase(IEnumerable<string> parts)
         {
-            var result = string.Empty;
-            foreach (var s in parts)
+            string result = string.Empty;
+            foreach (string s in parts)
             {
                 result = result + CapitalizeFirstLetter(s);
             }
@@ -34,25 +34,25 @@ namespace Improbable.CodeGen.Base
 
         public static string SnakeCaseToCamelCase(string text)
         {
-            var parts = text.Split(new[] {"_"}, StringSplitOptions.RemoveEmptyEntries);
+            string[] parts = text.Split(new[] {"_"}, StringSplitOptions.RemoveEmptyEntries);
             return parts[0] + ToPascalCase(parts.Skip(1));
         }
 
         public static string CapitalizeNamespace(string text)
         {
-            var strings = text.Split(new[] {"."}, StringSplitOptions.RemoveEmptyEntries);
+            string[] strings = text.Split(new[] {"."}, StringSplitOptions.RemoveEmptyEntries);
             return string.Join(".", strings.Select(SnakeCaseToPascalCase));
         }
 
         public static string[] GetNamespaceFromTypeName(string text)
         {
-            var strings = text.ToLower().Split('.');
+            string[] strings = text.ToLower().Split('.');
             return strings.Take(strings.Length - 1).ToArray();
         }
 
         public static string Indent(int level, string inputString)
         {
-            var indent = string.Empty.PadLeft(level, '\t');
+            string indent = string.Empty.PadLeft(level, '\t');
             return indent + inputString.Replace("\n", $"\n{indent}");
         }
 

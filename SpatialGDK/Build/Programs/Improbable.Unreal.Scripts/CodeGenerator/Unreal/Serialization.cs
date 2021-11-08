@@ -25,7 +25,7 @@ namespace Improbable.CodeGen.Unreal
 
         public static string GetFieldDeserialization(FieldDefinition field, string schemaObjectName, string targetObjectName, TypeDescription parentType, Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
         {
-            var fieldName = Text.SnakeCaseToPascalCase(field.Name);
+            string fieldName = Text.SnakeCaseToPascalCase(field.Name);
             switch (field.TypeSelector)
             {
                 case FieldType.Singular:
@@ -51,7 +51,7 @@ namespace Improbable.CodeGen.Unreal
 
         public static string GetFieldClearingCheck(FieldDefinition field)
         {
-            var fieldName = Text.SnakeCaseToPascalCase(field.Name);
+            string fieldName = Text.SnakeCaseToPascalCase(field.Name);
             switch (field.TypeSelector)
             {
                 case FieldType.Option:
@@ -184,10 +184,10 @@ namespace Improbable.CodeGen.Unreal
         private static string GetListTypeDeserialization(FieldDefinition.ListTypeRef listType, string schemaObjectName, string targetObjectName, string fieldName, string fieldId, TypeDescription parentType,
             Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
         {
-            var listInnerTypeName = Types.GetTypeDisplayName(listType.InnerType, bundle, parentType);
-            var listName = $"{Text.SnakeCaseToPascalCase(fieldName)}List";
+            string listInnerTypeName = Types.GetTypeDisplayName(listType.InnerType, bundle, parentType);
+            string listName = $"{Text.SnakeCaseToPascalCase(fieldName)}List";
 
-            var deserializationText = "";
+            string deserializationText = "";
             switch (listType.InnerType.ValueTypeSelector)
             {
                 case ValueType.Primitive:
@@ -223,12 +223,12 @@ for (uint32 i = 0; i < ListLength; ++i)
         private static string GetMapTypeDeserialization(FieldDefinition.MapTypeRef mapType, string schemaObjectName, string targetObjectName, string fieldName, string fieldId,
             TypeDescription parentType, Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
         {
-            var keyTypeName = Types.GetTypeDisplayName(mapType.KeyType, bundle, parentType);
-            var valueTypeName = Types.GetTypeDisplayName(mapType.ValueType, bundle, parentType);
-            var mapName = $"{fieldName}Map";
-            var kvPairName = "KvPair";
+            string keyTypeName = Types.GetTypeDisplayName(mapType.KeyType, bundle, parentType);
+            string valueTypeName = Types.GetTypeDisplayName(mapType.ValueType, bundle, parentType);
+            string mapName = $"{fieldName}Map";
+            string kvPairName = "KvPair";
 
-            var deserializationText = $@"{{
+            string deserializationText = $@"{{
 {Text.Indent(1, $@"{targetObjectName} = {Types.CollectionTypesToQualifiedTypes[Types.Collection.Map]}<{keyTypeName}, {valueTypeName}>();
 auto MapEntryCount = Schema_GetObjectCount({schemaObjectName}, {fieldId});
 for (uint32 i = 0; i < MapEntryCount; ++i)
@@ -256,8 +256,8 @@ auto Value = {GetValueTypeDeserialization(mapType.ValueType, kvPairName, "SCHEMA
                 return $"{targetObjectName} = ::improbable::utils::GetStringList({schemaObjectName}, {fieldId});";
             }
 
-            var listInnerType = Types.SchemaToCppTypes[primitive];
-            var listCopyFunction = "";
+            string listInnerType = Types.SchemaToCppTypes[primitive];
+            string listCopyFunction = "";
             switch (primitive)
             {
                 case PrimitiveType.Int32:

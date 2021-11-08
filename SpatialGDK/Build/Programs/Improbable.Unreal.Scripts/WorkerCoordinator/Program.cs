@@ -22,7 +22,7 @@ namespace Improbable.WorkerCoordinator
     {
         private static int Main(string[] args)
         {
-            var logger = new Logger("/improbable/logs/WorkerCoordinator.log", "WorkerCoordinator");
+            Logger logger = new Logger("/improbable/logs/WorkerCoordinator.log", "WorkerCoordinator");
             logger.WriteLog("Starting coordinator with args: " + string.Join(" ", args));
 
             AbstractWorkerCoordinator coordinator;

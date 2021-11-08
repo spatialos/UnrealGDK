@@ -11,13 +11,13 @@ namespace Improbable.CodeGen.Unreal
 
         public List<GeneratedFile> GenerateFiles(Bundle bundle)
         {
-            var generatedFiles = new List<GeneratedFile>();
-            var allGeneratedTypeContent = new Dictionary<string, TypeGeneratedCode>();
-            var types = bundle.Types.Select(kv => new TypeDescription(kv.Key, bundle))
+            List<GeneratedFile> generatedFiles = new List<GeneratedFile>();
+            Dictionary<string, TypeGeneratedCode> allGeneratedTypeContent = new Dictionary<string, TypeGeneratedCode>();
+            List<TypeDescription> types = bundle.Types.Select(kv => new TypeDescription(kv.Key, bundle))
                 .Union(bundle.Components.Select(kv => new TypeDescription(kv.Key, bundle)))
                 .ToList();
-            var topLevelTypes = types.Where(type => type.OuterType.Equals(""));
-            var topLevelEnums = bundle.Enums.Where(_enum => _enum.Value.OuterType.Equals(""));
+            IEnumerable<TypeDescription> topLevelTypes = types.Where(type => type.OuterType.Equals(""));
+            IEnumerable<KeyValuePair<string, EnumDefinition>> topLevelEnums = bundle.Enums.Where(_enum => _enum.Value.OuterType.Equals(""));
 
             // Generate utility files
             generatedFiles.AddRange(HelperFunctions.GetHelperFunctionFiles());
@@ -27,7 +27,7 @@ namespace Improbable.CodeGen.Unreal
             generatedFiles.AddRange(InterfaceGenerator.GenerateInterface(types.Where(type => type.ComponentId.HasValue).ToList(), bundle));
 
             // Generated all type file content
-            foreach (var toplevelType in topLevelTypes)
+            foreach (TypeDescription toplevelType in topLevelTypes)
             {
                 generatedFiles.Add(new GeneratedFile(Types.TypeToHeaderFilename(toplevelType.QualifiedName), HeaderGenerator.GenerateHeader(toplevelType, types, allGeneratedTypeContent, bundle)));
                 generatedFiles.Add(new GeneratedFile(Types.TypeToSourceFilename(toplevelType.QualifiedName), SourceGenerator.GenerateSource(toplevelType, types, allGeneratedTypeContent, bundle)));

@@ -33,7 +33,7 @@ namespace Improbable
             command = Environment.ExpandEnvironmentVariables(command);
             arguments = arguments.Select(Environment.ExpandEnvironmentVariables).ToArray();
 
-            var startInfo = new ProcessStartInfo(command, string.Join(" ", arguments.ToArray()))
+            ProcessStartInfo startInfo = new ProcessStartInfo(command, string.Join(" ", arguments.ToArray()))
             {
                 CreateNoWindow = true,
                 RedirectStandardError = true,
@@ -44,7 +44,7 @@ namespace Improbable
 
             try
             {
-                using (var process = Process.Start(startInfo))
+                using (Process process = Process.Start(startInfo))
                 {
                     if (process != null)
                     {
@@ -83,7 +83,7 @@ namespace Improbable
 
         public static void RunRedirected(string command, IEnumerable<string> arguments)
         {
-            var exitCode = RunRedirectedWithExitCode(command, arguments);
+            int exitCode = RunRedirectedWithExitCode(command, arguments);
             if (exitCode != 0)
             {
                 throw new Exception($"Exit code {exitCode} while running:\n{command}\n\t{string.Join("\n\t", arguments)}");

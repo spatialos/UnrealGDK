@@ -160,16 +160,16 @@ namespace Improbable.WorkerCoordinator
         private void Tick_NormalMode(object state)
         {
             // Check player status, restart player client if it exit early.
-            var isActiveProcessListEmpty = Host.CheckPlayerStatus();
+            bool isActiveProcessListEmpty = Host.CheckPlayerStatus();
 
             // Launch clients first.
             if (WaitingList.Count > 0)
             {
-                var curTime = DateTime.Now;
+                DateTime curTime = DateTime.Now;
 
-                for (var i = WaitingList.Count - 1; i >= 0; --i)
+                for (int i = WaitingList.Count - 1; i >= 0; --i)
                 {
-                    var clientInfo = WaitingList[i];
+                    ClientInfo clientInfo = WaitingList[i];
 
                     if (curTime < clientInfo.StartTime) continue;
 
@@ -199,15 +199,15 @@ namespace Improbable.WorkerCoordinator
             // Check player status, restart player client if it exit early.
             Host.CheckPlayerStatus();
 
-            var curTime = DateTime.Now;
+            DateTime curTime = DateTime.Now;
 
             // Data flow is waiting list -> running list -> waiting list.
             // Checking sequence is running list -> waiting list.
 
             // Running list.
-            for (var i = RunningList.Count - 1; i >= 0; --i)
+            for (int i = RunningList.Count - 1; i >= 0; --i)
             {
-                var clientInfo = RunningList[i];
+                ClientInfo clientInfo = RunningList[i];
 
                 if (curTime < clientInfo.EndTime) continue;
 
@@ -231,9 +231,9 @@ namespace Improbable.WorkerCoordinator
             }
 
             // Waiting list.
-            for (var i = WaitingList.Count - 1; i >= 0; --i)
+            for (int i = WaitingList.Count - 1; i >= 0; --i)
             {
-                var clientInfo = WaitingList[i];
+                ClientInfo clientInfo = WaitingList[i];
 
                 if (curTime < clientInfo.StartTime) continue;
 

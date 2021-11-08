@@ -14,18 +14,18 @@ namespace Improbable.CodeGen.Base
                 throw new FileNotFoundException($"Could not find schema bundle file at {Path.GetFullPath(filename)}");
             }
 
-            var contractResolver = new DefaultContractResolver
+            DefaultContractResolver contractResolver = new DefaultContractResolver
             {
                 NamingStrategy = new PascalCaseNamingStrategy()
             };
 
-            var settings = new JsonSerializerSettings
+            JsonSerializerSettings settings = new JsonSerializerSettings
             {
                 ContractResolver = contractResolver,
                 MissingMemberHandling = MissingMemberHandling.Error
             };
 
-            var bundleFile = JsonConvert.DeserializeObject<SchemaBundle>(File.ReadAllText(filename, Encoding.UTF8), settings);
+            SchemaBundle bundleFile = JsonConvert.DeserializeObject<SchemaBundle>(File.ReadAllText(filename, Encoding.UTF8), settings);
 
             return new Bundle(bundleFile);
         }
@@ -34,7 +34,7 @@ namespace Improbable.CodeGen.Base
         {
             protected override string ResolvePropertyName(string name)
             {
-                var pascal = char.ToLowerInvariant(name[0]) + name.Substring(1, name.Length - 1);
+                string pascal = char.ToLowerInvariant(name[0]) + name.Substring(1, name.Length - 1);
                 return pascal;
             }
         }

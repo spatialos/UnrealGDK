@@ -22,25 +22,25 @@ namespace Improbable.CodeGen.Base
             Types = bundle.SchemaFiles.SelectMany(f => f.Types).ToDictionary(t => t.QualifiedName, t => t);
             Enums = bundle.SchemaFiles.SelectMany(f => f.Enums).ToDictionary(t => t.QualifiedName, t => t);
 
-            var fileNameDict = new Dictionary<string, string>(); ;
+            Dictionary<string, string> fileNameDict = new Dictionary<string, string>(); ;
             TypeToFileName = fileNameDict;
 
-            var sourceRefDict = new Dictionary<string, SourceReference>();
+            Dictionary<string, string> sourceRefDict = new Dictionary<string, SourceReference>();
             TypeToSourceReference = sourceRefDict;
 
-            foreach (var file in bundle.SchemaFiles)
+            foreach (SchemaFile file in bundle.SchemaFiles)
             {
-                foreach (var type in file.Types)
+                foreach (TypeDefinition type in file.Types)
                 {
                     fileNameDict[type.QualifiedName] = file.CanonicalPath;
                 }
 
-                foreach (var type in file.Components)
+                foreach (ComponentDefinition type in file.Components)
                 {
                     fileNameDict[type.QualifiedName] = file.CanonicalPath;
                 }
 
-                foreach (var type in file.Enums)
+                foreach (EnumDefinition type in file.Enums)
                 {
                     fileNameDict[type.QualifiedName] = file.CanonicalPath;
                 }
