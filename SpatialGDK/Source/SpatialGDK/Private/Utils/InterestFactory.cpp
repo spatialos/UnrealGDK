@@ -105,6 +105,7 @@ SchemaResultType InterestFactory::CreateServerAuthInterestResultType()
 	SchemaResultType ServerAuthResultType{};
 	// Just the components that we won't have already checked out through authority
 	ServerAuthResultType.ComponentIds.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST);
+	ServerAuthResultType.ComponentSetsIds.Push(SpatialConstants::AUTH_SERVER_ONLY_COMPONENT_SET_ID);
 	return ServerAuthResultType;
 }
 
