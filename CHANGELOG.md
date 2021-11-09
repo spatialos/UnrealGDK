@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add the ability for tests to run without being placed within a standalone map. See `ANoneCrossServerPossessionTest` for an example of this.
 - Unreal Engine version 4.27.0 is supported!
 - Users can now change the `Server Port` under `Editor Settings -> Level Editor -> Play -> Multiplayer Options`, or alternatively under `Advanced Settings` in the `Play` dropdown menu and launch local deployments that use the new `Server Port` value
+- Added a warning for using a `NetDeltaSerialized` property with PushModel due to Spatial GDK differing from Native Unreal in how `NetDeltaSerialized` properties are replicated.
 
 ### Bug fixes:
 - Fix `A functional test is already running error` that would sometimes occur when re-running multi-server functional tests.
