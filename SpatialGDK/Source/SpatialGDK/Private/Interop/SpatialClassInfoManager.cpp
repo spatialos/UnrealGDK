@@ -157,6 +157,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		return;
 	}
 
+	Class->SetUpRuntimeReplicationData();
+
+	TArray<FLifetimeProperty> LifetimeReplicatedProperties;
+	Class->GetDefaultObject()->GetLifetimeReplicatedProps(LifetimeReplicatedProperties);
+
 	TArray<UFunction*> RelevantClassFunctions = SpatialGDK::GetClassRPCFunctions(Class);
 
 	// Save AlwaysWrite RPCs to validate there's at most one per class.
@@ -222,6 +227,33 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 				Info->InterestProperties.Add(InterestInfo);
 			}
 		}
+
+#if WITH_PUSH_MODEL
+		if (IS_PUSH_MODEL_ENABLED() && GetDefault<USpatialGDKSettings>()->bShouldWarnOnNetDeltaSerializedPushModel)
+		{
+			if (FStructProperty* StructProperty = CastField<FStructProperty>(Property))
+			{
+				const FLifetimeProperty* ReplicatedPropertyPtr =
+					LifetimeReplicatedProperties.FindByPredicate([StructProperty](const FLifetimeProperty& ReplicatedProperty) {
+						return ReplicatedProperty.RepIndex == StructProperty->RepIndex;
+					});
+				if (ensure(ReplicatedPropertyPtr))
+				{
+					const bool bIsPropertyNetDeltaSerialized =
+						EnumHasAnyFlags(StructProperty->Struct->StructFlags, EStructFlags::STRUCT_NetDeltaSerializeNative);
+					if (bIsPropertyNetDeltaSerialized && ReplicatedPropertyPtr->bIsPushBased)
+					{
+						UE_LOG(
+							LogSpatialClassInfoManager, Warning,
+							TEXT(
+								"Class %s Property %s is both NetDeltaSerialized and Push Model enabled - make sure to MARK_PROPERTY_DIRTY "
+								"when using this property, or they won't be replicated with SpatialGDK"),
+							*Class->GetName(), *Property->GetName());
+					}
+				}
+			}
+		}
+#endif // WITH_PUSH_MODEL
 	}
 
 	if (bIsActorClass)
