@@ -158,7 +158,7 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 
 	const VirtualWorkerId ReturnedWorkerId = LayerNameToLBStrategy[LayerName]->WhoShouldHaveAuthority(*RootOwner);
 
-    if (ReturnedWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+	if (ReturnedWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 	{
 		UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy returning virtual worker id %d for Actor %s."), ReturnedWorkerId,
 			   *AActor::GetDebugName(RootOwner));

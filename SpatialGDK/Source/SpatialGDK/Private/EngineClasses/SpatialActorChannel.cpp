@@ -483,9 +483,8 @@ void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 	// In native Unreal, with replication graph enabled, bHidden isn't respected as described above (from a networking
 	// perspective at least). We add a ReplicationGraph conditional here to accommodated that in Spatial (making sure
 	// hidden Actors are still networked to clients).
-	if (InActor->IsHidden() && !SpatialGDK::UsingSpatialReplicationGraph(InActor) &&
-	(!InActor->GetRootComponent() || !InActor->GetRootComponent()->IsCollisionEnabled())
-		&& !InActor->bAlwaysRelevant)
+	if (InActor->IsHidden() && !SpatialGDK::UsingSpatialReplicationGraph(InActor)
+		&& (!InActor->GetRootComponent() || !InActor->GetRootComponent()->IsCollisionEnabled()) && !InActor->bAlwaysRelevant)
 	{
 		NetDriver->RefreshActorVisibility(InActor, false);
 	}
