@@ -34,6 +34,7 @@ void ClientConnectionManager::Advance()
 		{
 		case EntityDelta::REMOVE:
 			EntityRemoved(Delta.EntityId);
+			break;
 		default:
 			break;
 		}
@@ -76,6 +77,30 @@ void ClientConnectionManager::OnRequestReceived(const Worker_Op&, const Worker_C
 void ClientConnectionManager::RegisterClientConnection(const Worker_EntityId InWorkerEntityId, USpatialNetConnection* ClientConnection)
 {
 	WorkerConnections.Add(InWorkerEntityId, ClientConnection);
+
+	const EntityViewElement* EntityView = SubView->GetView().Find(InWorkerEntityId);
+	if (!ensureAlwaysMsgf(EntityView != nullptr,
+						  TEXT("Failed to entity component data for system worker entity %lld. Client IP will be unset."),
+						  InWorkerEntityId))
+	{
+		return;
+	}
+
+	const SpatialGDK::ComponentData* Data = EntityView->Components.FindByPredicate([](const SpatialGDK::ComponentData& Component) {
+		return Component.GetComponentId() == SpatialConstants::WORKER_COMPONENT_ID;
+	});
+	if (!ensureAlwaysMsgf(Data != nullptr,
+						  TEXT("Failed to access system worker component data for system worker entity %lld. Client IP will be unset."),
+						  InWorkerEntityId))
+	{
+		return;
+	}
+
+	const SpatialGDK::Worker WorkerData(Data->GetUnderlying());
+	ClientConnection->ClientIP = *WorkerData.Connection.IPAddress;
+
+	UE_LOG(LogTemp, Log, TEXT("Registered client connection. System entity: %lld. Client IP: %s."), InWorkerEntityId,
+		   *WorkerData.Connection.IPAddress);
 }
 
 void ClientConnectionManager::CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp)

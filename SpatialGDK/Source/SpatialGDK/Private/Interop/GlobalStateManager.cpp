@@ -8,6 +8,7 @@
 #endif
 
 #include "Engine/Classes/AI/AISystemBase.h"
+#include "Engine/LevelStreaming.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
@@ -353,6 +354,21 @@ void UGlobalStateManager::TriggerBeginPlay()
 			{
 				HandleActorBasedOnLoadBalancer(Actor);
 			}
+		}
+	}
+
+	const TArray<ULevelStreaming*>& StreamingLevels = NetDriver->World->GetStreamingLevels();
+	for (ULevelStreaming* StreamingLevel : StreamingLevels)
+	{
+		const ULevel* Level = StreamingLevel->GetLoadedLevel();
+		if (Level == nullptr)
+		{
+			UE_LOG(LogGlobalStateManager, Warning, TEXT("Loaded level was nullptr on StreamingLevel %s"), *StreamingLevel->GetPathName());
+			continue;
+		}
+		for (AActor* Actor : Level->Actors)
+		{
+			HandleActorBasedOnLoadBalancer(Actor);
 		}
 	}
 

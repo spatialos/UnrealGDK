@@ -690,7 +690,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass =
 		USpatialStatics::GetSpatialMultiWorkerClass(CurrentWorld);
 
-	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
+	UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
 		MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
 
 	if (bMultiWorkerEnabled && MultiWorkerSettings->LockingPolicy == nullptr)
@@ -1042,7 +1042,14 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 						   TEXT("Creating a tombstone entity for initially dormant statup actor. "
 								"Actor: %s."),
 						   *ThisActor->GetName());
-					ActorSystem->CreateTombstoneEntity(ThisActor);
+					if (ThisActor->GetWorld() == nullptr)
+					{
+						UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("World is null when trying to create tombstone entity"));
+					}
+					else
+					{
+						ActorSystem->CreateTombstoneEntity(ThisActor);
+					}
 				}
 				else if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
 				{
@@ -2855,6 +2862,7 @@ void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerContr
 	PlayerController->SetReplicates(true);
 	PlayerController->Role = OriginalRole;
 	PlayerController->SetPlayer(OwnershipConnection);
+	PlayerController->ChangeState(NAME_Playing);
 }
 
 bool USpatialNetDriver::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
@@ -2974,7 +2982,17 @@ void USpatialPendingNetGame::InitNetDriver()
 		{
 			NetDriver = GEngine->FindNamedNetDriver(this, NAME_PendingNetDriver);
 		}
-		check(NetDriver);
+
+		// Handle the failed NetDriver initialisation without crashing a client
+		// Copied from UPendingNetGame::InitNetDriver
+		if (NetDriver == nullptr)
+		{
+			UE_LOG(LogNet, Warning,
+				   TEXT("Error initializing the pending net driver.  Check the configuration of NetDriverDefinitions and make sure "
+						"module/plugin dependencies are correct."));
+			ConnectionError = NSLOCTEXT("Engine", "NetworkDriverInit", "Error creating network driver.").ToString();
+			return;
+		}
 
 		if (!NetDriver->InitConnect(this, URL, ConnectionError))
 		{
@@ -3299,7 +3317,7 @@ void USpatialNetDriver::TryFinishStartup()
 			const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass =
 				USpatialStatics::GetSpatialMultiWorkerClass(GetWorld());
 
-			const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
+			UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
 				MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
 
 			LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);

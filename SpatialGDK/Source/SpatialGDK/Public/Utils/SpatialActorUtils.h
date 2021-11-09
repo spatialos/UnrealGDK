@@ -10,6 +10,7 @@
 #include "Containers/UnrealString.h"
 #include "Engine/EngineTypes.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Engine/NetDriver.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/GameMode.h"
@@ -85,13 +86,9 @@ inline FVector GetActorSpatialPosition(const AActor* InActor)
 	}
 	else if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
-		if (PlayerController->IsInState(NAME_Spectating))
+		if (USceneComponent* RootComponent = PlayerController->GetRootComponent())
 		{
-			Location = PlayerController->LastSpectatorSyncLocation;
-		}
-		else
-		{
-			Location = PlayerController->GetFocalLocation();
+			Location = RootComponent->GetComponentLocation();
 		}
 	}
 	else if (InActor->GetOwner() != nullptr && InActor->GetOwner()->GetIsReplicated())
@@ -122,9 +119,35 @@ inline bool DoesActorClassIgnoreVisibilityCheck(AActor* InActor)
 	return false;
 }
 
+inline bool UsingSpatialReplicationGraph(const UObject* WorldContextObject)
+{
+	const UWorld* World = WorldContextObject->GetWorld();
+	if (World == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Actor %s UsingSpatialRepGraph World==nullptr"), *GetNameSafe(WorldContextObject));
+		return false;
+	}
+
+	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+	{
+		if (SpatialNetDriver->GetReplicationDriver() != nullptr)
+		{
+			return true;
+		}
+		UE_LOG(LogTemp, Error, TEXT("Actor %s UsingSpatialRepGraph SpatialNetDriver->GetReplicationDriver() != nullptr"),
+			   *GetNameSafe(WorldContextObject));
+		return false;
+	}
+
+	UE_LOG(LogTemp, Error, TEXT("Actor %s UsingSpatialRepGraph No net driver"), *GetNameSafe(WorldContextObject));
+
+	return false;
+}
+
 inline bool ShouldActorHaveVisibleComponent(AActor* InActor)
 {
-	if (InActor->bAlwaysRelevant || !InActor->IsHidden() || DoesActorClassIgnoreVisibilityCheck(InActor))
+	if (InActor->bAlwaysRelevant || !InActor->IsHidden() || UsingSpatialReplicationGraph(InActor)
+		|| DoesActorClassIgnoreVisibilityCheck(InActor))
 	{
 		return true;
 	}

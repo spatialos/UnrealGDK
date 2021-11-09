@@ -200,6 +200,9 @@ public:
 			  Meta = (HidePin = "Target"))
 	static void SpatialSwitchHasAuthority(const AActor* Target, ESpatialHasAuthority& AuthorityPins);
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SpatialOS")
+	static FString GetPlayerClientIP(const APlayerController* PlayerController);
+
 private:
 	static FName GetCurrentWorkerType(const UObject* WorldContext);
 };

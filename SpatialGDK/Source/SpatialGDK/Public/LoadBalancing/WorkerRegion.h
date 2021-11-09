@@ -52,4 +52,9 @@ private:
 	void SetHeight(const float Height);
 	void SetPositionAndScale(const FBox2D& Extents, const float VerticalScale);
 	void SetColor(const FColor& Color);
+
+	UPROPERTY()
+	int WorkerInfoOffset;
+
+	static TMap<FVector2D, int> ExtentsTracking;
 };

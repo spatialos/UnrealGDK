@@ -18,6 +18,8 @@ const FName WORKER_TEXT_MATERIAL_TP2D_PARAM = TEXT("TP2D");
 const FString CUBE_MESH_PATH = TEXT("/Engine/BasicShapes/Cube.Cube");
 } // namespace
 
+TMap<FVector2D, int> AWorkerRegion::ExtentsTracking;
+
 AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -43,6 +45,19 @@ void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMat
 	CombinedMaterial = InCombinedMaterial;
 	WorkerInfoFont = InWorkerInfoFont;
 	WorkerInfo = InWorkerInfo;
+
+	WorkerInfoOffset = 0;
+	int* NumOverlapped = ExtentsTracking.Find(Extents.Min);
+	if (NumOverlapped == nullptr)
+	{
+		ExtentsTracking.Add(Extents.Min, 0);
+	}
+	else
+	{
+		*NumOverlapped = *NumOverlapped + 1;
+		WorkerInfoOffset = 80 * *NumOverlapped;
+	}
+
 	CanvasRenderTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), 1024, 1024);
 	CanvasRenderTarget->OnCanvasRenderTargetUpdate.AddDynamic(this, &AWorkerRegion::DrawToCanvasRenderTarget);
 	// Setup the boundary material to combine background and text - needs to be created before SetOpacity
@@ -68,7 +83,7 @@ void AWorkerRegion::DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32
 
 	// Draw the worker information to the canvas
 	Canvas->SetDrawColor(FColor::White);
-	Canvas->DrawText(WorkerInfoFont, WorkerInfo, 100, 500, 1.0, 1.0);
+	Canvas->DrawText(WorkerInfoFont, WorkerInfo, 100, 500 + WorkerInfoOffset, 1.0, 1.0);
 
 	// Write the canvas data to the dynamic boundary material
 	CombinedMaterialInstance->SetTextureParameterValue(WORKER_TEXT_MATERIAL_TP2D_PARAM, CanvasRenderTarget);

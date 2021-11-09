@@ -637,6 +637,16 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 			FVector2D ScreenLocation;
 			if (Actor != nullptr && ProjectActorToScreen(Actor->GetActorLocation(), PlayerLocation, ScreenLocation, Canvas))
 			{
+				if (Actor->IsOwnedByClient())
+				{
+					continue;
+				}
+
+				if (ScreenLocation.IsZero())
+				{
+					continue;
+				}
+
 				DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName(), true /*bCentre*/);
 			}
 		}
@@ -968,7 +978,7 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 		return;
 	}
 
-	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
+	UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
 		USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
 
 	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>();

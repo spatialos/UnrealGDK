@@ -2,12 +2,11 @@
 
 #include "Utils/SpatialStatics.h"
 
-#include "Engine/World.h"
 #include "EngineClasses/SpatialGameInstance.h"
+#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "GeneralProjectSettings.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "LoadBalancing/GameplayDebuggerLBStrategy.h"
@@ -16,6 +15,11 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/InspectionColors.h"
+
+#include "Engine/NetConnection.h"
+#include "Engine/World.h"
+#include "GeneralProjectSettings.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 DEFINE_LOG_CATEGORY(LogSpatial);
 
@@ -439,4 +443,36 @@ void USpatialStatics::SpatialSwitchHasAuthority(const AActor* Target, ESpatialHa
 	{
 		Authority = ESpatialHasAuthority::ClientNonAuth;
 	}
+}
+
+FString USpatialStatics::GetPlayerClientIP(const APlayerController* PlayerController)
+{
+	if (PlayerController == nullptr)
+	{
+		UE_LOG(LogSpatial, Error, TEXT("Called GetPlayerClientIP with nullptr PlayerController"));
+		return TEXT("");
+	}
+
+	if (PlayerController->GetWorld()->GetNetMode() == NM_Client)
+	{
+		UE_LOG(LogSpatial, Error, TEXT("Called GetPlayerClientIP from a client. It should only be called from a server."));
+		return TEXT("");
+	}
+
+	UNetConnection* NetConnection = PlayerController->GetNetConnection();
+
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+	{
+		return NetConnection->LowLevelGetRemoteAddress();
+	}
+	const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(PlayerController->GetWorld()->GetNetDriver());
+	if (SpatialNetDriver == nullptr)
+	{
+		UE_LOG(LogSpatial, Error, TEXT("Called GetPlayerClientIP but SpatialNetDriver was inaccessible."));
+		return TEXT("");
+	}
+
+	USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(NetConnection);
+
+	return SpatialNetConnection->ClientIP;
 }

@@ -17,6 +17,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineStats.h"
 #include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSystem.h"
@@ -477,9 +478,13 @@ void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
 
 	// Unreal applies the following rules (in order) in determining the relevant set of Actors for a player:
 	// If the Actor is hidden (bHidden == true) and the root component does not collide then the Actor is not relevant.
-	// We apply the same rules to add/remove the Visible component to an actor that determines if clients will checkout the actor or
-	// not. Make sure that the Actor is also not always relevant.
-	if (InActor->IsHidden() && (!InActor->GetRootComponent() || !InActor->GetRootComponent()->IsCollisionEnabled())
+	// We apply the same rules to add/remove the Visible component to an actor that determines if clients will checkout
+	// the actor or not. Make sure that the Actor is also not always relevant.
+	// In native Unreal, with replication graph enabled, bHidden isn't respected as described above (from a networking
+	// perspective at least). We add a ReplicationGraph conditional here to accommodated that in Spatial (making sure
+	// hidden Actors are still networked to clients).
+	if (InActor->IsHidden() && !SpatialGDK::UsingSpatialReplicationGraph(InActor) &&
+	(!InActor->GetRootComponent() || !InActor->GetRootComponent()->IsCollisionEnabled())
 		&& !InActor->bAlwaysRelevant)
 	{
 		NetDriver->RefreshActorVisibility(InActor, false);

@@ -45,14 +45,23 @@ FString ULayeredLBStrategy::ToString() const
 	return Description;
 }
 
-void ULayeredLBStrategy::SetLayers(const TArray<FLayerInfo>& WorkerLayers)
+void ULayeredLBStrategy::SetLayers(TArray<FLayerInfo>& WorkerLayers)
 {
 	check(WorkerLayers.Num() != 0);
 
 	// For each Layer, add a LB Strategy for that layer.
 	for (int32 LayerIndex = 0; LayerIndex < WorkerLayers.Num(); ++LayerIndex)
 	{
-		const FLayerInfo& LayerInfo = WorkerLayers[LayerIndex];
+		FLayerInfo& LayerInfo = WorkerLayers[LayerIndex];
+
+		if (*LayerInfo.LoadBalanceStrategy == nullptr)
+		{
+			UE_LOG(LogLayeredLBStrategy, Error,
+				   TEXT("WorkerLayer %s does not specify a load balancing strategy (or it cannot be resolved). Using default layer."),
+				   *LayerInfo.Name.ToString());
+
+			LayerInfo.LoadBalanceStrategy = UAbstractSpatialMultiWorkerSettings::GetDefaultLayerInfo().LoadBalanceStrategy;
+		}
 		checkf(*LayerInfo.LoadBalanceStrategy != nullptr,
 			   TEXT("WorkerLayer %s does not specify a load balancing strategy (or it cannot be resolved)"), *LayerInfo.Name.ToString());
 
@@ -149,8 +158,11 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 
 	const VirtualWorkerId ReturnedWorkerId = LayerNameToLBStrategy[LayerName]->WhoShouldHaveAuthority(*RootOwner);
 
-	UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy returning virtual worker id %d for Actor %s."), ReturnedWorkerId,
-		   *AActor::GetDebugName(RootOwner));
+    if (ReturnedWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+	{
+		UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy returning virtual worker id %d for Actor %s."), ReturnedWorkerId,
+			   *AActor::GetDebugName(RootOwner));
+	}
 	return ReturnedWorkerId;
 }
 
@@ -282,6 +294,11 @@ bool ULayeredLBStrategy::CouldHaveAuthority(const TSubclassOf<AActor> Class) con
 	return *VirtualWorkerIdToLayerName.Find(LocalVirtualWorkerId) == GetLayerNameForClass(Class);
 }
 
+UAbstractLBStrategy* ULayeredLBStrategy::GetDefaultStrategy() const
+{
+	return GetLBStrategyForLayer(SpatialConstants::DefaultLayer);
+}
+
 UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 {
 	// The default strategy is guaranteed to exist as long as the strategy is ready.
@@ -310,6 +327,9 @@ UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForLayer(FName Layer) cons
 	{
 		return *Entry;
 	}
+
+	UE_LOG(LogLayeredLBStrategy, Warning, TEXT("No strategy exists for layer %s"), *Layer.ToString());
+
 	return nullptr;
 }
 

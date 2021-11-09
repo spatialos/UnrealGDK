@@ -6,6 +6,8 @@
 #include "SpatialView/MessagesToSend.h"
 #include "SpatialView/OpList/SplitOpList.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialWorkerView);
+
 namespace SpatialGDK
 {
 WorkerView::WorkerView(FComponentSetData ComponentSetData)
@@ -68,7 +70,12 @@ void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentI
 	if (ensure(Element != nullptr))
 	{
 		ComponentData* Component = Element->Components.FindByPredicate(ComponentIdEquality{ ComponentId });
-		check(Component != nullptr);
+		if (Component == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("WorkerView::SendRemoveComponent called but component was null. EntityId: %lld, ComponentId: %lld"),
+				   EntityId, ComponentId);
+			return;
+		}
 		Element->Components.RemoveAtSwap(Component - Element->Components.GetData());
 		LocalChanges->ComponentMessages.Emplace(EntityId, ComponentId, SpanId);
 	}

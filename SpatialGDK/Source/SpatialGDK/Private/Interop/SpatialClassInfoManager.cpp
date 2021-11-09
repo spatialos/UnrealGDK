@@ -21,6 +21,7 @@
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
+#include "Utils/Interest/NetCullDistanceInterest.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);

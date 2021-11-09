@@ -138,6 +138,7 @@ struct ConfigureConnection
 		UnrealGDKVersionPair.name = "gdk_version";
 		UnrealGDKVersionPair.version = GDKVersion.Get();
 		Params.versions = &UnrealGDKVersionPair;
+		Params.network.connection_timeout_millis = 600000;
 
 		// Override the security type to be secure only if the user has requested it and we are not using an editor build.
 		if ((!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection)
