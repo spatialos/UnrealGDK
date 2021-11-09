@@ -118,6 +118,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	// Struct types will set this to nullptr.
 	UClass* Class = Cast<UClass>(Type);
 
+	TArray<FLifetimeProperty> ReplicatedProperties;
+	if (IsValid(Class))
+	{
+		Class->SetUpRuntimeReplicationData();
+		Class->GetDefaultObject()->GetLifetimeReplicatedProps(ReplicatedProperties);
+	}
+
 	// Create type node.
 	TSharedPtr<FUnrealType> TypeNode = MakeShared<FUnrealType>();
 	TypeNode->Type = Type;
@@ -144,6 +151,19 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		if (Property->IsA<GDK_PROPERTY(StructProperty)>())
 		{
 			GDK_PROPERTY(StructProperty)* StructProperty = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Property);
+
+			const FLifetimeProperty* ReplicatedPropertyPtr =
+				ReplicatedProperties.FindByPredicate([Property](const FLifetimeProperty& ReplicatedProperty) {
+					return ReplicatedProperty.RepIndex == Property->RepIndex;
+				});
+			if (EnumHasAnyFlags(StructProperty->Struct->StructFlags, EStructFlags::STRUCT_NetDeltaSerializeNative)
+				&& ReplicatedPropertyPtr != nullptr && ReplicatedPropertyPtr->bIsPushBased)
+			{
+				UE_LOG(LogSpatialGDKSchemaGenerator, Warning,
+					   TEXT("Class %s Property %s is both NetDeltaSerialized and Push Model enabled - make sure to MARK_PROPERTY_DIRTY "
+							"when using this property, or they won't be replicated with SpatialGDK"),
+					   *Type->GetName(), *Property->GetName());
+			}
 
 			// This is the property for the 0th struct array member.
 			uint32 ParentPropertyNodeChecksum = PropertyNode->CompatibleChecksum;
