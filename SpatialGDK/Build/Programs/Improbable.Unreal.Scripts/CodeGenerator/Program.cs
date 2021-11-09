@@ -35,7 +35,7 @@ namespace CodeGenerator
                 .WithParsed(Run)
                 .WithNotParsed(errors =>
                 {
-                    foreach (Error error in errors)
+                    foreach (var error in errors)
                     {
                         Console.Error.WriteLine(error);
                     }
@@ -48,20 +48,20 @@ namespace CodeGenerator
         {
             try
             {
-                Bundle bundle = SchemaBundleLoader.LoadBundle(options.InputBundle);
+                var bundle = SchemaBundleLoader.LoadBundle(options.InputBundle);
 
                 ValidateBundle(bundle);
 
-                List<ICodeGenerator> generators = new List<ICodeGenerator>
+                var generators = new List<ICodeGenerator>
                 {
                     new UnrealGenerator()
                 };
 
-                List<GeneratedFile> output = new List<GeneratedFile>();
+                var output = new List<GeneratedFile>();
 
                 generators.ForEach((ICodeGenerator g) => output.AddRange(g.GenerateFiles(bundle)));
 
-                foreach (GeneratedFile generatedFile in output)
+                foreach (var generatedFile in output)
                 {
                     WriteFile(options.OutputDir, generatedFile);
                 }
@@ -75,7 +75,7 @@ namespace CodeGenerator
 
         private static void ValidateBundle(Bundle bundle)
         {
-            foreach (KeyValuePair<string, ComponentDefinition> component in bundle.Components)
+            foreach (var component in bundle.Components)
             {
                 if (component.Value.ComponentId < ExternalComponentIdLowerBound || component.Value.ComponentId > ExternalComponentIdUpperBound)
                 {
@@ -87,8 +87,8 @@ Component {component.Value.QualifiedName} has ID: {component.Value.ComponentId}"
 
         private static void WriteFile(string codegenOutputFolder, GeneratedFile file)
         {
-            string generatedFilePath = Path.Combine(codegenOutputFolder, file.RelativeFilePath);
-            string generatedFileDirectory = Path.GetDirectoryName(generatedFilePath);
+            var generatedFilePath = Path.Combine(codegenOutputFolder, file.RelativeFilePath);
+            var generatedFileDirectory = Path.GetDirectoryName(generatedFilePath);
             if (!Directory.Exists(generatedFileDirectory))
             {
                 Directory.CreateDirectory(generatedFileDirectory);

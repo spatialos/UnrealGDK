@@ -17,9 +17,9 @@ namespace Improbable
 
         public static void Main(string[] args)
         {
-            bool help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
+            var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
 
-            int exitCode = 0;
+            var exitCode = 0;
             if (args.Length < 4 && !help)
             {
                 help = true;
@@ -29,27 +29,23 @@ namespace Improbable
 
             if (help)
             {
-                // IMP-BEGIN Filebeat
                 Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nobuild] [-nocompile] <Additional UAT args>");
-                // IMP-END
+
                 Environment.Exit(exitCode);
             }
 
-            string gameName = args[0];
-            string platform = args[1];
-            string configuration = args[2];
-            string projectFile = Path.GetFullPath(args[3]);
-            // IMP-BEGIN Filebeat
-            bool installFilebeat = args.Count(arg => arg.ToLowerInvariant() == "-filebeat") > 0;
-            // IMP-END
-            bool noBuild = args.Count(arg => arg.ToLowerInvariant() == "-nobuild") > 0;
-            bool noCompile = args.Count(arg => arg.ToLowerInvariant() == "-nocompile") > 0;
-            bool noServer = args.Count(arg => arg.ToLowerInvariant() == "-noserver") > 0;
-            string additionalUATArgs = string.Join(" ", args.Skip(4).Where(arg => (arg.ToLowerInvariant() != "-nobuild") && (arg.ToLowerInvariant() != "-nocompile")));
+            var gameName = args[0];
+            var platform = args[1];
+            var configuration = args[2];
+            var projectFile = Path.GetFullPath(args[3]);
+            var noBuild = args.Count(arg => arg.ToLowerInvariant() == "-nobuild") > 0;
+            var noCompile = args.Count(arg => arg.ToLowerInvariant() == "-nocompile") > 0;
+            var noServer = args.Count(arg => arg.ToLowerInvariant() == "-noserver") > 0;
+            var additionalUATArgs = string.Join(" ", args.Skip(4).Where(arg => (arg.ToLowerInvariant() != "-nobuild") && (arg.ToLowerInvariant() != "-nocompile")));
 
-            string stagingDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "unreal"));
-            string outputDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "assembly", "worker"));
-            string baseGameName = Path.GetFileNameWithoutExtension(projectFile);
+            var stagingDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "unreal"));
+            var outputDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "assembly", "worker"));
+            var baseGameName = Path.GetFileNameWithoutExtension(projectFile);
 
             // Locate the Unreal Engine.
             Console.WriteLine("Finding Unreal Engine build.");
@@ -85,7 +81,7 @@ namespace Improbable
             {
                 // Finally check the registry for the path using the engine association as the key.
                 string unrealEngineBuildKey = "HKEY_CURRENT_USER\\Software\\Epic Games\\Unreal Engine\\Builds";
-                object unrealEngineValue = Registry.GetValue(unrealEngineBuildKey, engineAssociation, "");
+                var unrealEngineValue = Registry.GetValue(unrealEngineBuildKey, engineAssociation, "");
 
                 if (unrealEngineValue != null)
                 {
@@ -129,15 +125,15 @@ namespace Improbable
                     });
                 }
 
-                string windowsEditorPath = Path.Combine(stagingDir, "WindowsEditor");
+                var windowsEditorPath = Path.Combine(stagingDir, "WindowsEditor");
                 if (!Directory.Exists(windowsEditorPath))
                 {
                     Directory.CreateDirectory(windowsEditorPath);
                 }
 
-                string PathToUnrealEditor = Path.Combine(unrealEngine, "Engine\\Binaries\\Win64\\UE4Editor.exe");
+                var PathToUnrealEditor = Path.Combine(unrealEngine, "Engine\\Binaries\\Win64\\UE4Editor.exe");
 
-                string StartEditorScript =
+                var StartEditorScript =
 $@"setlocal ENABLEDELAYEDEXPANSION
 {PathToUnrealEditor} {projectFile} %*
 exit /b !ERRORLEVEL!";
@@ -165,9 +161,7 @@ exit /b !ERRORLEVEL!";
                     "-cook",
                     "-stage",
                     "-package",
-                    // IMP-BEGIN Unnecessary build args
-                    // "-unversioned",
-                    // IMP-END
+                    "-unversioned",
                     "-compressed",
                     "-stagingdirectory=" + Quote(stagingDir),
                     "-stdout",
@@ -181,7 +175,7 @@ exit /b !ERRORLEVEL!";
                     additionalUATArgs
                 });
 
-                string windowsTargetPath = Path.Combine(stagingDir, noServer ? "WindowsClient" : "WindowsNoEditor");
+                var windowsTargetPath = Path.Combine(stagingDir, noServer ? "WindowsClient" : "WindowsNoEditor");
 
                 ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, windowsTargetPath, baseGameName);
 
@@ -205,10 +199,8 @@ exit /b !ERRORLEVEL!";
                     "-cook",
                     "-stage",
                     "-package",
-                    // IMP-BEGIN Unnecessary build args
-                    // "-unversioned",
-                    // "-compressed",
-                    // IMP-END
+                    "-unversioned",
+                    "-compressed",
                     "-stagingdirectory=" + Quote(stagingDir),
                     "-stdout",
                     "-FORCELOGFLUSH",
@@ -222,7 +214,7 @@ exit /b !ERRORLEVEL!";
                     additionalUATArgs
                 });
 
-                string linuxSimulatedPlayerPath = Path.Combine(stagingDir, noServer ? "LinuxClient" : "LinuxNoEditor");
+                var linuxSimulatedPlayerPath = Path.Combine(stagingDir, noServer ? "LinuxClient" : "LinuxNoEditor");
 
                 ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, linuxSimulatedPlayerPath, baseGameName);
 
@@ -233,7 +225,7 @@ exit /b !ERRORLEVEL!";
                 // Coordinator files are located in      ./UnrealGDK/SpatialGDK/Binaries/ThirdParty/Improbable/Programs/WorkerCoordinator/.
                 // Executable of this build script is in ./UnrealGDK/SpatialGDK/Binaries/ThirdParty/Improbable/Programs/Build.exe
                 // Assembly.GetEntryAssembly().Location gives the location of the Build.exe executable.
-                string workerCoordinatorPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "./WorkerCoordinator"));
+                var workerCoordinatorPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "./WorkerCoordinator"));
                 if (Directory.Exists(workerCoordinatorPath))
                 {
                     Common.RunRedirected("xcopy", new[]
@@ -249,33 +241,7 @@ exit /b !ERRORLEVEL!";
                     Common.WriteWarning($"Worker coordinator binary not found at {workerCoordinatorPath}. Please run Setup.bat to build the worker coordinator.");
                 }
 
-                // Begin Filebeat Custom
-                if(installFilebeat)
-                {
-                    Common.WriteHeading(" > Copying filebeat to staging.");
-                    Common.RunRedirectedWithExitCode("robocopy", new[]
-                    {
-                            "../filebeat-sidecar",
-                            linuxSimulatedPlayerPath,
-                            "/e",
-                            "/a-:R",
-                            "/it",
-                            "/is",
-                            "/ns",
-                            "/nc",
-                            "/nfl",
-                            "/ndl",
-                            "/np"
-                    });
-
-                    // Replace CLRF line endings with LF in the start script
-                    string scriptPath = Path.Combine(linuxSimulatedPlayerPath, "StartSidecarThenCoordinator.sh");
-                    string scriptContents = File.ReadAllText(scriptPath);
-                    LinuxScripts.WriteWithLinuxLineEndings(scriptContents, scriptPath);
-                }
-                // End Custom
-
-                string archiveFileName = "UnrealSimulatedPlayer@Linux.zip";
+                var archiveFileName = "UnrealSimulatedPlayer@Linux.zip";
                 Zip(Quote(linuxSimulatedPlayerPath), Quote(Path.Combine(outputDir, archiveFileName)));
             }
             else if (gameName == baseGameName + "Server")
@@ -294,9 +260,7 @@ exit /b !ERRORLEVEL!";
                     "-cook",
                     "-stage",
                     "-package",
-                    // IMP-BEGIN Unnecessary build args
-                    // "-unversioned",
-                    // IMP-END
+                    "-unversioned",
                     "-compressed",
                     "-stagingdirectory=" + Quote(stagingDir),
                     "-stdout",
@@ -312,39 +276,13 @@ exit /b !ERRORLEVEL!";
                 });
 
                 bool isLinux = platform == "Linux";
-                string assemblyPlatform = isLinux ? "Linux" : "Windows";
-                string serverPath = Path.Combine(stagingDir, assemblyPlatform + "Server");
+                var assemblyPlatform = isLinux ? "Linux" : "Windows";
+                var serverPath = Path.Combine(stagingDir, assemblyPlatform + "Server");
 
                 ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, serverPath, baseGameName);
 
                 if (isLinux)
                 {
-                    // IMP-BEGIN Filebeat
-                    if(installFilebeat)
-                    {
-                        Common.WriteHeading(" > Copying filebeat to staging.");
-                        Common.RunRedirectedWithExitCode("robocopy", new[]
-                        {
-                                "../filebeat-sidecar",
-                                serverPath,
-                                "/e",
-                                "/a-:R",
-                                "/it",
-                                "/is",
-                                "/ns",
-                                "/nc",
-                                "/nfl",
-                                "/ndl",
-                                "/np"
-                        });
-
-                        // Replace CLRF line endings with LF in the start script
-                        string scriptPath = Path.Combine(serverPath, "StartSidecarThenWorker.sh");
-                        string scriptContents = File.ReadAllText(scriptPath);
-                        LinuxScripts.WriteWithLinuxLineEndings(scriptContents, scriptPath);
-                    }
-                    // IMP-END
-                    
                     // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
                     // Also ensure script uses Linux line endings
                     LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetUnrealWorkerShellScript(baseGameName), Path.Combine(serverPath, "StartWorker.sh"));
@@ -368,10 +306,8 @@ exit /b !ERRORLEVEL!";
                     "-cook",
                     "-stage",
                     "-package",
-                    // IMP-BEGIN Unnecessary build args
-                    // "-unversioned",
-                    // "-compressed",
-                    // IMP-END
+                    "-unversioned",
+                    "-compressed",
                     "-stagingdirectory=" + Quote(stagingDir),
                     "-stdout",
                     "-FORCELOGFLUSH",
@@ -386,20 +322,13 @@ exit /b !ERRORLEVEL!";
                     additionalUATArgs
                 });
 
-                string windowsClientPath = Path.Combine(stagingDir, "WindowsClient");
+                var windowsClientPath = Path.Combine(stagingDir, "WindowsClient");
 
                 ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, windowsClientPath, baseGameName);
 
-                // IMP-BEGIN Don't zip client builds
-                // RenameExeForLauncher(windowsClientPath, baseGameName + "Client");
+                RenameExeForLauncher(windowsClientPath, baseGameName + "Client");
 
-                // Common.RunRedirected(runUATBat, new[]
-                // {
-                //     "ZipUtils",
-                //     "-add=" + Quote(windowsClientPath),
-                //     "-archive=" + Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")),
-                // });
-                // IMP-END
+                Zip(Quote(windowsClientPath), Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")));
             }
             else
             {
@@ -436,8 +365,8 @@ exit /b !ERRORLEVEL!";
         {
             // Add a _ to the start of the exe name, to ensure it is the exe selected by the launcher.
             // TO-DO: Remove this once LAUNCH-341 has been completed, and the _ is no longer necessary.
-            string oldExe = Path.Combine(workerPath, $"{gameName}.exe");
-            string renamedExe = Path.Combine(workerPath, $"_{gameName}.exe");
+            var oldExe = Path.Combine(workerPath, $"{gameName}.exe");
+            var renamedExe = Path.Combine(workerPath, $"_{gameName}.exe");
             if (File.Exists(renamedExe))
             {
                 File.Delete(renamedExe);
@@ -466,7 +395,7 @@ exit /b !ERRORLEVEL!";
 
         private static void ForceSpatialNetworkingInConfig(string workerPath, string gameName)
         {
-            string defaultGameIniPath = Path.Combine(workerPath, gameName, "Config", "DefaultGame.ini");
+            var defaultGameIniPath = Path.Combine(workerPath, gameName, "Config", "DefaultGame.ini");
 
             Console.WriteLine($"Forcing bSpatialNetworking to True in {defaultGameIniPath}");
             string defaultGameIniOverrideText =

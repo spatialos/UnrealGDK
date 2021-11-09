@@ -38,18 +38,18 @@ namespace Improbable.CodeGen.Base
             Namespace = $"{Text.GetNamespaceFromTypeName(qualifiedName)}";
             QualifiedName = qualifiedName;
 
-            List<string> directNestedTypes = bundle.GetNestedTypes(qualifiedName);
-            List<string> directNestedEnums = bundle.GetNestedEnums(qualifiedName);
+            var directNestedTypes = bundle.GetNestedTypes(qualifiedName);
+            var directNestedEnums = bundle.GetNestedEnums(qualifiedName);
 
             NestedTypes = directNestedTypes.Select(id =>
             {
-                TypeDefinition t = bundle.Types[id];
+                var t = bundle.Types[id];
                 return new TypeDescription(t.QualifiedName, bundle);
             }).ToList();
 
             NestedEnums = directNestedEnums.Select(id => bundle.Enums[id]).ToList();
 
-            bundle.Components.TryGetValue(qualifiedName, out ComponentDefinition component);
+            bundle.Components.TryGetValue(qualifiedName, out var component);
             ComponentId = component?.ComponentId;
 
             if (ComponentId.HasValue)

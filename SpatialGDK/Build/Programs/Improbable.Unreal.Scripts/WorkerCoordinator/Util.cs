@@ -26,20 +26,20 @@ namespace Improbable.WorkerCoordinator
         /// </summary>
         public static int GetIntegerArgument(IEnumerable<string> args, string argumentName)
         {
-            string[] argsWithName = args.Where(arg => arg.StartsWith($"{argumentName}=")).ToArray();
+            var argsWithName = args.Where(arg => arg.StartsWith($"{argumentName}=")).ToArray();
             if (argsWithName.Length != 1)
             {
                 throw new ArgumentException($"Expected exactly one value for argument \"{argumentName}\", found {argsWithName.Length}.");
             }
 
-            string argWithName = argsWithName[0];
-            string[] split = argWithName.Split(new[] { '=' }, 2, StringSplitOptions.None);
+            var argWithName = argsWithName[0];
+            var split = argWithName.Split(new[] { '=' }, 2, StringSplitOptions.None);
             if (split.Length != 2)
             {
                 throw new ArgumentException($"Cannot parse value for argument \"{argumentName}\". Expected format \"{argumentName}=<integer>\", found \"{argWithName}\".");
             }
 
-            string valueString = split[1];
+            var valueString = split[1];
             if (int.TryParse(valueString, out int value))
             {
                 return value;

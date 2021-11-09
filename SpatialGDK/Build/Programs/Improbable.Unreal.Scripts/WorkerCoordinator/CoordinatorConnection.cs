@@ -13,7 +13,7 @@ namespace Improbable.WorkerCoordinator
 
         public static Connection ConnectAndKeepAlive(Logger logger, string receptionistHost, ushort receptionistPort, string workerId, string coordinatorWorkerType)
         {
-            ConnectionParameters connectionParameters = new ConnectionParameters
+            var connectionParameters = new ConnectionParameters
             {
                 WorkerType = coordinatorWorkerType,
                 Network =
@@ -24,7 +24,7 @@ namespace Improbable.WorkerCoordinator
             };
 
             Connection connection;
-            using (Future<Connection> future = Connection.ConnectAsync(receptionistHost, receptionistPort, workerId, connectionParameters))
+            using (var future = Connection.ConnectAsync(receptionistHost, receptionistPort, workerId, connectionParameters))
             {
                 connection = future.Get();
             }
@@ -45,16 +45,16 @@ namespace Improbable.WorkerCoordinator
         /// </summary>
         private static void KeepConnectionAlive(Connection connection, Logger logger)
         {
-            Thread thread = new Thread(() =>
+            var thread = new Thread(() =>
             {
-                bool isConnected = true;
+                var isConnected = true;
 
                 while (isConnected)
                 {
                     using (OpList opList = connection.GetOpList(GetOpListTimeoutInMilliseconds))
                     {
-                        int OpCount = opList.GetOpCount();
-                        for (int i = 0; i < OpCount; ++i)
+                        var OpCount = opList.GetOpCount();
+                        for (var i = 0; i < OpCount; ++i)
                         {
                             switch (opList.GetOpType(i))
                             {

@@ -105,10 +105,10 @@ namespace Improbable.CodeGen.Unreal
         // For a type, get all required includes based on fields, events and nested types
         public static List<string> GetRequiredTypeIncludes(TypeDescription type, Bundle bundle)
         {
-            List<string> includeTypeQualifiedNames = new List<string>();
+            var includeTypeQualifiedNames = new List<string>();
 
             // Get all possible includes required by fields (and those in nested types)
-            foreach (FieldDefinition field in type.Fields.Concat(type.NestedTypes.SelectMany(t => t.Fields)))
+            foreach (var field in type.Fields.Concat(type.NestedTypes.SelectMany(t => t.Fields)))
             {
                 AddRequiredTypeQualifiedNames(field, ref includeTypeQualifiedNames);
             }
@@ -116,11 +116,11 @@ namespace Improbable.CodeGen.Unreal
             // Get all possible includes required by events (if type is a component)
             if (type.ComponentId.HasValue)
             {
-                foreach (ComponentDefinition.EventDefinition _event in type.Events)
+                foreach (var _event in type.Events)
                 {
                     includeTypeQualifiedNames.Add(_event.Type);
                 }
-                foreach (ComponentDefinition.CommandDefinition command in bundle.Components[type.QualifiedName].Commands)
+                foreach (var command in bundle.Components[type.QualifiedName].Commands)
                 {
                     includeTypeQualifiedNames.Add(command.RequestType);
                     includeTypeQualifiedNames.Add(command.ResponseType);
@@ -128,7 +128,7 @@ namespace Improbable.CodeGen.Unreal
             }
 
             // Filter out #includes for types nested in our type (they are defined in the same file so we don't need to include anything)
-            IEnumerable<string> nestedTypeOrEnumNames = type.NestedTypes.Select(t => t.QualifiedName).Concat(type.NestedEnums.Select(e => e.QualifiedName));
+            var nestedTypeOrEnumNames = type.NestedTypes.Select(t => t.QualifiedName).Concat(type.NestedEnums.Select(e => e.QualifiedName));
             includeTypeQualifiedNames = includeTypeQualifiedNames.Where(name => !nestedTypeOrEnumNames.Contains($"{name}.")).ToList();
 
             // Map any nested type dependencies to their include file
@@ -141,7 +141,7 @@ namespace Improbable.CodeGen.Unreal
         // e.g. if type Bar is nested in type Foo, it will be generated as Foo_Bar
         public static string GetNestedTypeQualifiedName(TypeDescription type)
         {
-            string[] splitQualifiedName = type.QualifiedName.Split('.');
+            var splitQualifiedName = type.QualifiedName.Split('.');
             if (splitQualifiedName.Count() == 1)
             {
                 throw new InvalidOperationException("Tried to find nested type name for a top-level type");
@@ -202,8 +202,8 @@ namespace Improbable.CodeGen.Unreal
 
         public static string GetOutermostType(string typeRef, Bundle bundle)
         {
-            string outerTypeIterator = typeRef;
-            string outermostType = typeRef;
+            var outerTypeIterator = typeRef;
+            var outermostType = typeRef;
             while (!outerTypeIterator.Equals(""))
             {
                 outermostType = outerTypeIterator;
@@ -245,7 +245,7 @@ namespace Improbable.CodeGen.Unreal
         //      const ::improbable::List<...>& get_my_list_memeber();
         public static string GetConstAccessorTypeModification(FieldDefinition field, Bundle bundle, TypeDescription typeContext)
         {
-            string qualifiedFieldType = GetFieldTypeAsCpp(field, bundle, typeContext);
+            var qualifiedFieldType = GetFieldTypeAsCpp(field, bundle, typeContext);
             if (field.TypeSelector == FieldType.Singular && field.SingularType.Type.ValueTypeSelector == ValueType.Primitive &&
                 field.SingularType.Type.Primitive != PrimitiveType.Bytes && field.SingularType.Type.Primitive != PrimitiveType.String)
             {
@@ -276,13 +276,13 @@ namespace Improbable.CodeGen.Unreal
 
         public static string GetTypeClassQualifiedPath(string qualifiedName, Bundle bundle)
         {
-            string outermostType = GetOutermostType(qualifiedName, bundle);
+            var outermostType = GetOutermostType(qualifiedName, bundle);
             // Exit early if the type defined is top-level
             if (outermostType.Equals(""))
             {
                 return Text.ReplacesDotsWithDoubleColons(qualifiedName);
             }
-            string typeName = string.Join("_", qualifiedName.Split('.').Skip(outermostType.Count(c => c == '.')));
+            var typeName = string.Join("_", qualifiedName.Split('.').Skip(outermostType.Count(c => c == '.')));
             return $"{Text.ReplacesDotsWithDoubleColons(outermostType.Substring(0, outermostType.LastIndexOf(".")))}::{typeName}";
         }
 
@@ -298,7 +298,7 @@ namespace Improbable.CodeGen.Unreal
           */
         public static string GetTypeClassName(string qualifiedName, Bundle bundle)
         {
-            string qualifiedPath = GetTypeClassQualifiedPath(qualifiedName, bundle);
+            var qualifiedPath = GetTypeClassQualifiedPath(qualifiedName, bundle);
             return qualifiedPath.Substring(qualifiedPath.LastIndexOf("::") + 2);
         }
 
@@ -323,12 +323,12 @@ namespace Improbable.CodeGen.Unreal
         // validation).
         public static List<TypeDescription> SortTopLevelTypesTopologically(TypeDescription type, List<TypeDescription> types, Bundle bundle)
         {
-            List<TypeDescription> topLevelTypes = new List<TypeDescription>(GetRecursivelyNestedTypes(type)) { type };
+            var topLevelTypes = new List<TypeDescription>(GetRecursivelyNestedTypes(type)) { type };
             Dictionary<string, bool> allTopLevelTypesToVisitedMap = topLevelTypes.ToDictionary(t => t.QualifiedName, t => false);
 
             bool graphIsCyclic = false;
 
-            List<TypeDescription> sortedTypes = new List<TypeDescription>();
+            var sortedTypes = new List<TypeDescription>();
             while (allTopLevelTypesToVisitedMap.Count() > 0)
             {
                 Visit(allTopLevelTypesToVisitedMap.First().Key, topLevelTypes, ref allTopLevelTypesToVisitedMap, ref graphIsCyclic, ref sortedTypes, types, bundle);
@@ -342,13 +342,13 @@ namespace Improbable.CodeGen.Unreal
 
         private static string GetNamespaceFromQualifiedName(string qualifiedName, Bundle bundle)
         {
-            string outermostTypeWrapper = GetOutermostType(qualifiedName, bundle);
+            var outermostTypeWrapper = GetOutermostType(qualifiedName, bundle);
             return outermostTypeWrapper.Substring(0, outermostTypeWrapper.LastIndexOf(".")).Replace(".", "::");
         }
 
         private static string TypeToFilename(string qualifiedName, string extension)
         {
-            string[] path = qualifiedName.Split('.');
+            var path = qualifiedName.Split('.');
             return $"{string.Join("/", path)}{extension}";
         }
 
@@ -392,7 +392,7 @@ namespace Improbable.CodeGen.Unreal
 
         private static void Visit(string typeName, List<TypeDescription> topLevelTypes, ref Dictionary<string, bool> nestedTypeNameToVisitedMap, ref bool graphIsCyclic, ref List<TypeDescription> sortedTypes, List<TypeDescription> types, Bundle bundle)
         {
-            TypeDescription type = topLevelTypes.FirstOrDefault(t => t.QualifiedName == typeName);
+            var type = topLevelTypes.FirstOrDefault(t => t.QualifiedName == typeName);
 
             // Exit early if trying to visit a nested type of a previously visited component (also is fine, this is sorting in action)
             if (type.Equals(default(TypeDescription))) 
@@ -409,7 +409,7 @@ namespace Improbable.CodeGen.Unreal
 
             nestedTypeNameToVisitedMap[typeName] = true;
 
-            foreach (FieldDefinition field in type.Fields)
+            foreach (var field in type.Fields)
             {
                 // We're only doing this topological sort to cater for compiler errors from declaring incomplete type members
                 // This only occurs for singular type or map keys

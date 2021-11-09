@@ -24,7 +24,7 @@ namespace Improbable.CodeGen.Unreal
 
         public static string GenerateInterfaceHeader(List<TypeDescription> componentTypes, Bundle bundle)
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
 
             builder.AppendLine($@"#pragma once
 
@@ -51,9 +51,9 @@ public:
 
 void RemoveCallback(USpatialDispatcher::FCallbackId Id);
 ")}");
-            foreach (TypeDescription component in componentTypes)
+            foreach (var component in componentTypes)
             {
-                string qualifiedType = Types.GetTypeDisplayName(component.QualifiedName);
+                var qualifiedType = Types.GetTypeDisplayName(component.QualifiedName);
                 builder.AppendLine(Text.Indent(1, $@"// Component {component.QualifiedName} = {component.ComponentId}
 void SendComponentUpdate(Worker_EntityId EntityId, const {qualifiedType}::Update& Update);
 USpatialDispatcher::FCallbackId OnAddComponent(const TFunction<void(const {qualifiedType}::AddComponentOp&)>& Callback);

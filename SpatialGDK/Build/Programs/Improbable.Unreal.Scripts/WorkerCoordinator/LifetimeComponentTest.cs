@@ -16,7 +16,7 @@ namespace Improbable.WorkerCoordinator
         {
             // Set test arguments
             // Set `maxLifetime=0` means use non-lifetime mode.
-            string[] testArgs = new[]
+            var testArgs = new[]
             {
                 $"{LifetimeComponent.MaxLifetimeArg}=0",
                 $"{LifetimeComponent.MinLifetimeArg}=1",
@@ -24,13 +24,13 @@ namespace Improbable.WorkerCoordinator
                 $"{LifetimeComponent.UseNewSimulatedPlayerArg}=0"
             };
 
-            LoggerTest logger = new LoggerTest();
+            var logger = new LoggerTest();
 
-            LifetimeComponent component = LifetimeComponent.Create(logger, testArgs, out int num);
+            var component = LifetimeComponent.Create(logger, testArgs, out var num);
 
             component.SetHost(new LifetimeComponentHostTest());
 
-            for (int i = 0; i < 10; ++i)
+            for (var i = 0; i < 10; ++i)
             {
                 component.AddSimulatedPlayer(new ClientInfo()
                 {
