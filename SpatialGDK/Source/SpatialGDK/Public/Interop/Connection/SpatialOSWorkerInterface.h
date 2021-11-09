@@ -5,7 +5,7 @@
 #include "Interop/Connection/OutgoingMessages.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialView/CommandRetryHandler.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 
 class SPATIALGDK_API SpatialOSWorkerInterface
 {

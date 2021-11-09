@@ -6,12 +6,11 @@
 #include "Internationalization/Regex.h"
 
 #include "SpatialGDKEditorSchemaGenerator.h"
-#include "Utils/GDKPropertyMacros.h"
 
 // Regex pattern matcher to match alphanumeric characters.
 const FRegexPattern AlphanumericPattern(TEXT("[A-Za-z0-9]"));
 
-FString GetEnumDataType(const GDK_PROPERTY(EnumProperty) * EnumProperty)
+FString GetEnumDataType(const FEnumProperty* EnumProperty)
 {
 	FString DataType;
 

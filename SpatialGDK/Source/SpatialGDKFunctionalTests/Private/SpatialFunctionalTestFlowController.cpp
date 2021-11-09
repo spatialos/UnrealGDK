@@ -23,11 +23,7 @@ ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	PrimaryActorTick.bTickEvenWhenPaused = true;
 
-#if ENGINE_MINOR_VERSION < 24
-	bReplicateMovement = false;
-#else
 	SetReplicatingMovement(false);
-#endif
 	OwningTest = nullptr;
 	bHasAckFinishedTest = true;
 	bIsReadyToRunTest = false;
@@ -88,8 +84,12 @@ void ASpatialFunctionalTestFlowController::TrySetReadyToRunTest()
 {
 	if (IsLocalController())
 	{
-		if (IsActorReady() && OwningTest != nullptr && OwningTest->HasPreparedTest()
-			&& (WorkerDefinition.Type != ESpatialFunctionalTestWorkerType::Client || IsOwnedByClient()))
+		const bool bActorReady = IsActorReady();
+		const bool bOwningTestThere = OwningTest != nullptr;
+		const bool bOwningTestPrepared = bOwningTestThere ? OwningTest->HasPreparedTest() : false;
+		const bool bIsServerType = WorkerDefinition.Type != ESpatialFunctionalTestWorkerType::Client;
+		const bool bOwnedByClient = IsOwnedByClient();
+		if (bActorReady && bOwningTestPrepared && (bIsServerType || bOwnedByClient))
 		{
 			OwningTest->SetLocalFlowController(this);
 			SetReadyToRunTest(true);

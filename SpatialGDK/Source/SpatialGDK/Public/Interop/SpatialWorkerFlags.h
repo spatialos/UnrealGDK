@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Utils/SpatialBasicAwaiter.h"
-#include <WorkerSDK/improbable/c_worker.h>
+#include <improbable/c_worker.h>
 
 #include "SpatialWorkerFlags.generated.h"
 
@@ -19,6 +19,8 @@ class SPATIALGDK_API USpatialWorkerFlags : public UObject
 	GENERATED_BODY()
 
 public:
+	void ProcessFlagChanges(const TArray<Worker_Op>& Ops);
+
 	/** Gets value of a worker flag. Must be connected to SpatialOS to properly work.
 	 * @param InFlagName - Name of worker flag
 	 * @param OutFlagValue - Value of worker flag

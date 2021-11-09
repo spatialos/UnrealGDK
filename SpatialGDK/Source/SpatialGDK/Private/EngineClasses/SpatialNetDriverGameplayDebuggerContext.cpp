@@ -14,7 +14,7 @@
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/SubView.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 #include "Utils/SpatialActorUtils.h"
 #endif // WITH_GAMEPLAY_DEBUGGER
 
@@ -75,7 +75,10 @@ void USpatialNetDriverGameplayDebuggerContext::Init(const SpatialGDK::FSubView& 
 	LBStrategy = NewObject<UGameplayDebuggerLBStrategy>();
 	LBStrategy->Init(*this, *NetDriver->LoadBalanceStrategy);
 	NetDriver->LoadBalanceStrategy = LBStrategy;
-	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
+	if (!USpatialStatics::IsStrategyWorkerEnabled())
+	{
+		NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
+	}
 
 	TSet<VirtualWorkerId> VirtualWorkerIds = LBStrategy->GetVirtualWorkerIds();
 

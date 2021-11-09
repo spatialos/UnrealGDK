@@ -53,7 +53,6 @@
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
 #include "TestMapGeneration.h"
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialStatics.h"
@@ -66,6 +65,7 @@ FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 	: AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::Never)
 	, bStartingCloudDeployment(false)
 	, SpatialDebugger(nullptr)
+	, CachedRuntimeGRPCPort(0)
 {
 }
 
@@ -109,18 +109,6 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	OnAutoStartLocalDeploymentChanged();
 
-	// This code block starts a local deployment when loading maps for automation testing
-	// However, it is no longer required in 4.25 and beyond, due to the editor flow refactors.
-#if ENGINE_MINOR_VERSION < 25
-	FEditorDelegates::PreBeginPIE.AddLambda([this](bool bIsSimulatingInEditor) {
-		if (GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment && GIsAutomationTesting
-			&& GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
-		{
-			VerifyAndStartDeployment(GetDefault<ULevelEditorPlaySettings>()->GetSnapshotOverride());
-		}
-	});
-#endif
-
 	// We try to stop a local deployment either when the appropriate setting is selected, or when running with automation tests
 	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor) {
 		if ((GIsAutomationTesting || AutoStopLocalDeployment == EAutoStopLocalDeploymentMode::OnEndPIE)
@@ -141,7 +129,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	});
 
 	LocalDeploymentManager->Init();
-	LocalReceptionistProxyServerManager->Init(GetDefault<USpatialGDKEditorSettings>()->LocalReceptionistPort);
+	LocalReceptionistProxyServerManager->Init(GetDefault<USpatialGDKEditorSettings>()->GetDefaultReceptionistPort());
 
 	SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
 
@@ -769,7 +757,7 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 	{
 		USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 		SpatialGDKEditorSettings->SetSpatialDebuggerEditorEnabled(!SpatialGDKEditorSettings->IsSpatialDebuggerEditorEnabled());
-		GDK_PROPERTY(Property)* SpatialDebuggerEditorEnabledProperty =
+		FProperty* SpatialDebuggerEditorEnabledProperty =
 			USpatialGDKEditorSettings::StaticClass()->FindPropertyByName(FName("bSpatialDebuggerEditorEnabled"));
 		SpatialGDKEditorSettings->UpdateSinglePropertyInConfigFile(SpatialDebuggerEditorEnabledProperty,
 																   SpatialGDKEditorSettings->GetDefaultConfigFilename());
@@ -786,7 +774,7 @@ void FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor()
 {
 	USpatialGDKSettings* SpatialGDKRuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
 	SpatialGDKRuntimeSettings->SetMultiWorkerEditorEnabled(!SpatialGDKRuntimeSettings->IsMultiWorkerEditorEnabled());
-	GDK_PROPERTY(Property)* EnableMultiWorkerProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("bEnableMultiWorker"));
+	FProperty* EnableMultiWorkerProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("bEnableMultiWorker"));
 	SpatialGDKRuntimeSettings->UpdateSinglePropertyInConfigFile(EnableMultiWorkerProperty,
 																SpatialGDKRuntimeSettings->GetDefaultConfigFilename());
 
@@ -943,10 +931,11 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
 	const FString SnapshotName = ForceSnapshot.IsEmpty() ? SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad() : ForceSnapshot;
 	const FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, SnapshotName);
-
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
+	const uint16 RuntimeGRPCPort = SpatialGDKEditorSettings->GetDefaultReceptionistPort();
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotPath, RuntimeVersion] {
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotPath, RuntimeVersion,
+															 RuntimeGRPCPort] {
 		if (!FetchRuntimeBinaryWrapper(RuntimeVersion))
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but could not fetch the local runtime."));
@@ -983,7 +972,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 		};
 
 		LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotPath,
-														GetOptionalExposedRuntimeIP(), CallBack);
+														GetOptionalExposedRuntimeIP(), RuntimeGRPCPort, CallBack);
 	});
 }
 
@@ -1026,16 +1015,23 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> OnR
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
+	const uint16 RuntimeGRPCPort = SpatialGDKEditorSettings->GetDefaultReceptionistPort();
+	// If the Runtime port has changed, the previous Inspector process should be killed 
+	const bool bShouldKillInspectorProcess = RuntimeGRPCPort != CachedRuntimeGRPCPort && CachedRuntimeGRPCPort != 0;
+	CachedRuntimeGRPCPort = RuntimeGRPCPort;
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion, OnReady] {
-		if (InspectorProcess && InspectorProcess->Update())
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion, OnReady, RuntimeGRPCPort, bShouldKillInspectorProcess] {
+		if (!bShouldKillInspectorProcess)
 		{
-			// We already have an inspector process running. Call ready callback if any.
-			if (OnReady)
+			if (InspectorProcess && InspectorProcess->Update())
 			{
-				OnReady();
+				// We already have an inspector process running. Call ready callback if any.
+				if (OnReady)
+				{
+					OnReady();
+				}
+				return;
 			}
-			return;
 		}
 
 		// Check for any old inspector processes that may be leftover from previous runs. Kill any we find.
@@ -1049,9 +1045,8 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> OnR
 			return;
 		}
 
-		FString InspectorArgs = FString::Printf(
-			TEXT("--grpc_addr=%s --http_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorGRPCAddress,
-			*SpatialGDKServicesConstants::InspectorHTTPAddress, *SpatialGDKServicesConstants::SchemaBundlePath);
+		FString InspectorArgs =
+			FString::Printf(TEXT("--grpc_addr=localhost:%hu --http_addr=%s --schema_bundle=\"%s\""), RuntimeGRPCPort, *SpatialGDKServicesConstants::InspectorHTTPAddress, *SpatialGDKServicesConstants::SchemaBundlePath);
 
 		InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,
 							 SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
@@ -1145,8 +1140,7 @@ bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentCanExecute() const
 void FSpatialGDKEditorToolbarModule::OnToggleSpatialNetworking()
 {
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-	GDK_PROPERTY(Property)* SpatialNetworkingProperty =
-		UGeneralProjectSettings::StaticClass()->FindPropertyByName(FName("bSpatialNetworking"));
+	FProperty* SpatialNetworkingProperty = UGeneralProjectSettings::StaticClass()->FindPropertyByName(FName("bSpatialNetworking"));
 
 	GeneralProjectSettings->SetUsesSpatialNetworking(!GeneralProjectSettings->UsesSpatialNetworking());
 	GeneralProjectSettings->UpdateSinglePropertyInConfigFile(SpatialNetworkingProperty, GeneralProjectSettings->GetDefaultConfigFilename());
@@ -1508,11 +1502,7 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 			}
 		}
 
-#if ENGINE_MINOR_VERSION >= 26
 		FGlobalTabmanager::Get()->TryInvokeTab(FName(TEXT("OutputLog")));
-#else
-		FGlobalTabmanager::Get()->InvokeTab(FName(TEXT("OutputLog")));
-#endif
 		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
 		PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
 		PackageAssembly->BuildAndUploadAssembly(CloudDeploymentConfiguration);

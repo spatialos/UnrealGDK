@@ -50,7 +50,7 @@ struct FChangeListPropertyIterator
 	{
 	}
 
-	GDK_PROPERTY(Property) * operator*() const
+	FProperty* operator*() const
 	{
 		if (bValid)
 		{
@@ -1205,7 +1205,7 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 	{
 		int32 AbsOffset = It.Key();
 		FObjectReferences& ObjectReferences = It.Value();
-		GDK_PROPERTY(Property)* Property = ObjectReferences.Property;
+		FProperty* Property = ObjectReferences.Property;
 
 		if (AbsOffset >= MaxAbsOffset)
 		{
@@ -1224,7 +1224,7 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 
 		if (ObjectReferences.Array)
 		{
-			GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property);
+			FArrayProperty* ArrayProperty = CastField<FArrayProperty>(Property);
 			check(ArrayProperty != nullptr);
 
 			Property->CopySingleValue(StoredData + StoredDataOffset, Data + AbsOffset);
@@ -1284,7 +1284,7 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 
 			if (ObjectReferences.bSingleProp)
 			{
-				GDK_PROPERTY(ObjectPropertyBase)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectPropertyBase)>(Property);
+				FObjectPropertyBase* ObjectProperty = CastField<FObjectPropertyBase>(Property);
 				check(ObjectProperty);
 
 				ObjectProperty->SetObjectPropertyValue(Data + AbsOffset, SinglePropObject);
@@ -1297,8 +1297,8 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 				FSpatialNetBitReader ValueDataReader(NetDriver->PackageMap, ObjectReferences.Buffer.GetData(),
 													 ObjectReferences.NumBufferBits, NewMappedRefs, NewUnresolvedRefs);
 
-				check(Property->IsA<GDK_PROPERTY(ArrayProperty)>());
-				UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property));
+				check(Property->IsA<FArrayProperty>());
+				UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(CastField<FArrayProperty>(Property));
 
 				FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, ReplicatedObject, Parent.ArrayIndex,
 																  Parent.Property, NetDeltaStruct);
@@ -1311,11 +1311,10 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 				TSet<FUnrealObjectRef> NewUnresolvedRefs;
 				FSpatialNetBitReader BitReader(NetDriver->PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits,
 											   NewMappedRefs, NewUnresolvedRefs);
-				check(Property->IsA<GDK_PROPERTY(StructProperty)>());
+				check(Property->IsA<FStructProperty>());
 
 				bool bHasUnresolved = false;
-				ReadStructProperty(BitReader, GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Property), NetDriver, Data + AbsOffset,
-								   bHasUnresolved);
+				ReadStructProperty(BitReader, CastField<FStructProperty>(Property), NetDriver, Data + AbsOffset, bHasUnresolved);
 
 				ObjectReferences.MappedRefs.Append(NewMappedRefs);
 			}
@@ -1925,7 +1924,7 @@ void ActorSystem::TryInvokeRepNotifiesForObject(FWeakObjectPtr& WeakObjectPtr, F
 		return;
 	}
 
-	ObjectRepNotifies.RepNotifies.Sort([](GDK_PROPERTY(Property) & A, GDK_PROPERTY(Property) & B) -> bool {
+	ObjectRepNotifies.RepNotifies.Sort([](FProperty& A, FProperty& B) -> bool {
 		// We want to call RepNotifies on properties with a lower RepIndex earlier.
 		return A.RepIndex < B.RepIndex;
 	});
@@ -1934,8 +1933,7 @@ void ActorSystem::TryInvokeRepNotifiesForObject(FWeakObjectPtr& WeakObjectPtr, F
 	Channel->InvokeRepNotifies(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
 }
 
-void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
-													  TArray<GDK_PROPERTY(Property) *>& RepNotifies)
+void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel, TArray<FProperty*>& RepNotifies)
 {
 	if (const TSharedRef<FObjectReplicator>* ReplicatorRef = Channel.ReplicationMap.Find(&Object))
 	{
@@ -2204,7 +2202,7 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 		{
 			FSpatialGDKSpanId PropertySpan = EventTracer->TraceEvent(
 				PROPERTY_CHANGED_EVENT_NAME, "", Causes, NumCauses, [Object, EntityId, Itr](FSpatialTraceEventDataBuilder& EventBuilder) {
-					GDK_PROPERTY(Property)* Property = *Itr;
+					FProperty* Property = *Itr;
 					EventBuilder.AddObject(Object);
 					EventBuilder.AddEntityId(EntityId);
 					EventBuilder.AddKeyValue("property_name", Property->GetName());

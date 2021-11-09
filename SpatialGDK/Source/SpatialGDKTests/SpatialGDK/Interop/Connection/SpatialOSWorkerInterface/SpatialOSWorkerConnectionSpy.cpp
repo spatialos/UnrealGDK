@@ -4,7 +4,7 @@
 
 #include "Interop/Connection/OutgoingMessages.h"
 #include "SpatialCommonTypes.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>

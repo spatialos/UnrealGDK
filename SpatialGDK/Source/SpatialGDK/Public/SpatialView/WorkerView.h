@@ -5,7 +5,7 @@
 #include "SpatialView/ComponentSetData.h"
 #include "SpatialView/MessagesToSend.h"
 #include "SpatialView/OpList/OpList.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 
 namespace SpatialGDK
 {
