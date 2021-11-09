@@ -82,6 +82,9 @@ public:
 
 	UPROPERTY(Replicated)
 	int32 CondServerOnly_Var;
+
+	UPROPERTY(Replicated)
+	int32 CondAuthServerOnly_Var;
 };
 
 /**
@@ -132,6 +135,9 @@ public:
 
 	UPROPERTY(Replicated)
 	int32 CondServerOnly_Var;
+
+	UPROPERTY(Replicated)
+	int32 CondAuthServerOnly_Var;
 
 	UPROPERTY(Replicated)
 	UTestReplicationConditionsComponent_Common* StaticComponent;

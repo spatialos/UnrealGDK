@@ -42,7 +42,7 @@ ASpatialTestReplicationConditions::ASpatialTestReplicationConditions()
 {
 	Author = "Mike";
 	Description = TEXT("Test Unreal Replication Conditions in a MultiServer Context");
-	static_assert(COND_Max == 16, TEXT("New replication condition added - add more tests!"));
+	static_assert(COND_Max == 17, TEXT("New replication condition added, Expected 17 - add more tests!"));
 }
 
 void ASpatialTestReplicationConditions::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -83,6 +83,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		{
 			const bool bWrite = false;
 			bool bCondIgnore[COND_Max]{};
+			bCondIgnore[COND_AuthServerOnly] = true;
 			ProcessCommonActorProperties(bWrite, bCondIgnore);
 		}
 
@@ -159,6 +160,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			bCondIgnore[COND_AutonomousOnly] = true;
 			bCondIgnore[COND_SkipOwner] = true;
 			bCondIgnore[COND_ServerOnly] = true;
+			bCondIgnore[COND_AuthServerOnly] = true;
 			ProcessCommonActorProperties(bWrite, bCondIgnore);
 		}
 
@@ -239,6 +241,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			bCondIgnore[COND_AutonomousOnly] = true;
 			bCondIgnore[COND_ReplayOrOwner] = true;
 			bCondIgnore[COND_ServerOnly] = true;
+			bCondIgnore[COND_AuthServerOnly] = true;
 			ProcessCommonActorProperties(bWrite, bCondIgnore);
 		}
 
@@ -480,6 +483,7 @@ void ASpatialTestReplicationConditions::ProcessCommonActorProperties(bool bWrite
 	WrappedAction(TestActor_Common->CondSimulatedOrPhysicsNoReplay_Var, 130, COND_SimulatedOrPhysicsNoReplay);
 	WrappedAction(TestActor_Common->CondSkipReplay_Var, 140, COND_SkipReplay);
 	WrappedAction(TestActor_Common->CondServerOnly_Var, 150, COND_ServerOnly);
+	WrappedAction(TestActor_Common->CondAuthServerOnly_Var, 160, COND_AuthServerOnly);
 
 	WrappedAction(TestActor_Common->StaticComponent->CondNone_Var, 210, COND_None, StaticCompText);
 	WrappedAction(TestActor_Common->StaticComponent->CondOwnerOnly_Var, 230, COND_OwnerOnly, StaticCompText);
@@ -493,6 +497,7 @@ void ASpatialTestReplicationConditions::ProcessCommonActorProperties(bool bWrite
 				  StaticCompText);
 	WrappedAction(TestActor_Common->StaticComponent->CondSkipReplay_Var, 340, COND_SkipReplay, StaticCompText);
 	WrappedAction(TestActor_Common->StaticComponent->CondServerOnly_Var, 350, COND_ServerOnly, StaticCompText);
+	WrappedAction(TestActor_Common->StaticComponent->CondAuthServerOnly_Var, 360, COND_AuthServerOnly, StaticCompText);
 
 	WrappedAction(TestActor_Common->DynamicComponent->CondNone_Var, 410, COND_None, DynamicCompText);
 	WrappedAction(TestActor_Common->DynamicComponent->CondOwnerOnly_Var, 430, COND_OwnerOnly, DynamicCompText);
@@ -506,6 +511,7 @@ void ASpatialTestReplicationConditions::ProcessCommonActorProperties(bool bWrite
 				  DynamicCompText);
 	WrappedAction(TestActor_Common->DynamicComponent->CondSkipReplay_Var, 540, COND_SkipReplay, DynamicCompText);
 	WrappedAction(TestActor_Common->DynamicComponent->CondServerOnly_Var, 550, COND_ServerOnly, DynamicCompText);
+	WrappedAction(TestActor_Common->DynamicComponent->CondAuthServerOnly_Var, 550, COND_AuthServerOnly, DynamicCompText);
 }
 
 void ASpatialTestReplicationConditions::ProcessCustomActorProperties(ATestReplicationConditionsActor_Custom* Actor, const bool bWrite,
