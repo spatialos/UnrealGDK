@@ -296,7 +296,7 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 {
 	TArray<FWorkerComponentData> ComponentDatas;
 
-	static_assert(SCHEMA_Count == 5, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 
 	if (Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
@@ -313,11 +313,6 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 	{
 		ComponentDatas.Add(
 			CreateComponentData(Info.SchemaComponents[SCHEMA_ServerOnly], Object, RepChangeState, SCHEMA_ServerOnly, OutBytesWritten));
-	}
-	if (Info.SchemaComponents[SCHEMA_AuthServerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
-	{
-		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_AuthServerOnly], Object, RepChangeState, SCHEMA_AuthServerOnly,
-											   OutBytesWritten));
 	}
 
 	if (Info.SchemaComponents[SCHEMA_InitialOnly] != SpatialConstants::INVALID_COMPONENT_ID)
@@ -373,7 +368,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 {
 	TArray<FWorkerComponentUpdate> ComponentUpdates;
 
-	static_assert(SCHEMA_Count == 5, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 
 	if (RepChangeState)
 	{
@@ -406,18 +401,6 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			uint32 BytesWritten = 0;
 			FWorkerComponentUpdate HandoverUpdate =
 				CreateComponentUpdate(Info.SchemaComponents[SCHEMA_ServerOnly], Object, *RepChangeState, SCHEMA_ServerOnly, BytesWritten);
-			if (BytesWritten > 0)
-			{
-				ComponentUpdates.Add(HandoverUpdate);
-				OutBytesWritten += BytesWritten;
-			}
-		}
-
-		if (Info.SchemaComponents[SCHEMA_AuthServerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			uint32 BytesWritten = 0;
-			FWorkerComponentUpdate HandoverUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_AuthServerOnly], Object,
-																		  *RepChangeState, SCHEMA_AuthServerOnly, BytesWritten);
 			if (BytesWritten > 0)
 			{
 				ComponentUpdates.Add(HandoverUpdate);

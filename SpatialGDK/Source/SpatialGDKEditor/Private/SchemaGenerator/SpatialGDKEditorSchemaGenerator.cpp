@@ -492,7 +492,7 @@ TMap<Worker_ComponentId, FString> CreateComponentIdToClassPathMap()
 
 FString GetComponentSetNameBySchemaType(ESchemaComponentType SchemaType)
 {
-	static_assert(SCHEMA_Count == 5, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 
 	switch (SchemaType)
 	{
@@ -504,8 +504,6 @@ FString GetComponentSetNameBySchemaType(ESchemaComponentType SchemaType)
 		return SpatialConstants::SERVER_ONLY_COMPONENT_SET_NAME;
 	case SCHEMA_InitialOnly:
 		return SpatialConstants::INITIAL_ONLY_COMPONENT_SET_NAME;
-	case SCHEMA_AuthServerOnly:
-		return SpatialConstants::AUTH_SERVER_ONLY_COMPONENT_SET_NAME;
 	default:
 		// For some reason these statements, if formatted cause a bug in VS where the lines reported by the compiler and debugger are wrong.
 		// clang-format off
@@ -517,7 +515,7 @@ FString GetComponentSetNameBySchemaType(ESchemaComponentType SchemaType)
 
 Worker_ComponentId GetComponentSetIdBySchemaType(ESchemaComponentType SchemaType)
 {
-	static_assert(SCHEMA_Count == 5, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 
 	switch (SchemaType)
 	{
@@ -529,8 +527,6 @@ Worker_ComponentId GetComponentSetIdBySchemaType(ESchemaComponentType SchemaType
 		return SpatialConstants::HANDOVER_COMPONENT_SET_ID;
 	case SCHEMA_InitialOnly:
 		return SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID;
-	case SCHEMA_AuthServerOnly:
-		return SpatialConstants::AUTH_SERVER_ONLY_COMPONENT_SET_ID;
 	default:
 		// clang-format off
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not return component set ID. Schema component type was invalid: %d"), SchemaType);
@@ -836,8 +832,7 @@ void WriteComponentSetFiles(const USchemaDatabase* SchemaDatabase, FString Schem
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly, SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_ServerOnly, SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_InitialOnly, SchemaOutputPath);
-	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_AuthServerOnly, SchemaOutputPath);
-	static_assert(SCHEMA_Count == 5, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 }
 
 USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
