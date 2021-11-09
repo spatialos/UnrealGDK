@@ -114,8 +114,9 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 		}
 	}
 
-	// Same as in Native, we're always replicating all FastArrays on every tick. Note that users can create NetDeltaSerialized structs, only
-	// FastArrays are See usages of FObjectReplicator::ReplicateCustomDeltaProperties.
+	// Same as in Native, we're always replicating all FastArrays on every tick (see usages of
+	// FObjectReplicator::ReplicateCustomDeltaProperties). Note that while users can create
+	// NetDeltaSerialized structs, this path only covers FastArrays replication.
 	for (int32 CmdIndex = 0; CmdIndex < Changes.RepLayout.Cmds.Num(); ++CmdIndex)
 	{
 		const FRepLayoutCmd& Cmd = Changes.RepLayout.Cmds[CmdIndex];
