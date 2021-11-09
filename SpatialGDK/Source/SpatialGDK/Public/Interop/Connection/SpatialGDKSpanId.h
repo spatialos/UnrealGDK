@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "SpatialCommonTypes.h"
+#include "Interop/Connection/UserSpanId.h"
 
 #include <WorkerSDK/improbable/c_trace.h>
 
@@ -11,7 +12,10 @@ struct SPATIALGDK_API FSpatialGDKSpanId
 {
 	FSpatialGDKSpanId();
 	explicit FSpatialGDKSpanId(const Trace_SpanIdType* TraceSpanId);
+	explicit FSpatialGDKSpanId(const FUserSpanId& UserSpan);
 
+	static FUserSpanId ToUserSpan(const FSpatialGDKSpanId& SpanId);
+	static FSpatialGDKSpanId FromUserSpan(const FUserSpanId& UserSpanId);
 	FString ToString() const;
 	static FString ToString(const Trace_SpanIdType* TraceSpanId);
 

@@ -31,6 +31,23 @@ const Trace_SpanIdType* FSpatialGDKSpanId::GetConstId() const
 	return Id;
 }
 
+FUserSpanId FSpatialGDKSpanId::ToUserSpan(const FSpatialGDKSpanId& SpanId)
+{
+	FUserSpanId UserSpan;
+	UserSpan.Data.SetNum(sizeof(SpanId));
+	memcpy(UserSpan.Data.GetData(), &SpanId, sizeof(FSpatialGDKSpanId));
+	return UserSpan;
+}
+
+FSpatialGDKSpanId FSpatialGDKSpanId::FromUserSpan(const FUserSpanId& UserSpanId)
+{
+	if (ensure(sizeof(FSpatialGDKSpanId) == UserSpanId.Data.Num()))
+	{
+		return FSpatialGDKSpanId((const Trace_SpanIdType*)UserSpanId.Data.GetData());
+	}
+	return {};
+}
+
 FString FSpatialGDKSpanId::ToString() const
 {
 	return ToString(Id);
