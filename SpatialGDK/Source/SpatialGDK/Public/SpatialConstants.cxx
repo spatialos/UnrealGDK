@@ -61,7 +61,6 @@ const FString OWNER_ONLY_COMPONENT_SET_NAME = TEXT("OwnerOnlyComponentSet");
 const FString SERVER_ONLY_COMPONENT_SET_NAME = TEXT("ServerOnlyComponentSet");
 const FString ROUTING_WORKER_COMPONENT_SET_NAME = TEXT("RoutingWorkerComponentSet");
 const FString INITIAL_ONLY_COMPONENT_SET_NAME = TEXT("InitialOnlyComponentSet");
-const FString AUTH_SERVER_ONLY_COMPONENT_SET_NAME = TEXT("AuthServerOnlyComponentSet");
 
 const PhysicalWorkerName TRANSLATOR_UNSET_PHYSICAL_NAME = FString("UnsetWorkerName");
 

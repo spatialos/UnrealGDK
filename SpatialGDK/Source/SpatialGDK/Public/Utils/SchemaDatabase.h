@@ -103,7 +103,6 @@ enum class ESchemaDatabaseVersion : uint8
 	FieldIDsAdded,
 	HandoverToServerOnlyChanged,
 	DoRepLifetimeActiveOverrideSupported,
-	AuthServerOnlyAdded,
 
 	// Add new versions here
 
