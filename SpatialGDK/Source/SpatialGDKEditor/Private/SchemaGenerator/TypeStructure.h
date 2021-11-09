@@ -69,6 +69,7 @@ enum EReplicatedPropertyGroup
 	REP_SingleClient,
 	REP_InitialOnly,
 	REP_ServerOnly,
+	REP_AuthServerOnly,
 
 	// Iteration helpers
 	REP_Count,
