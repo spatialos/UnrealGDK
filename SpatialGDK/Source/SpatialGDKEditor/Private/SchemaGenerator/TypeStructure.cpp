@@ -26,7 +26,7 @@ TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups()
 
 FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 {
-	static_assert(REP_Count == 5, "Unexpected number of ReplicatedPropertyGroups, please update this function.");
+	static_assert(REP_Count == 4, "Unexpected number of ReplicatedPropertyGroups, please update this function.");
 
 	switch (Group)
 	{
@@ -36,8 +36,6 @@ FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 		return TEXT("InitialOnly");
 	case REP_ServerOnly:
 		return TEXT("ServerOnly");
-	case REP_AuthServerOnly:
-		return TEXT("AuthServerOnly");
 	default:
 		return TEXT("");
 	}
@@ -459,7 +457,7 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 		if (PropertyInfo->ReplicationData.IsValid())
 		{
 			EReplicatedPropertyGroup Group = REP_MultiClient;
-			static_assert(REP_Count == 5,
+			static_assert(REP_Count == 4,
 						  "Unexpected number of ReplicatedPropertyGroups. Please make sure the GetFlatRepData function is still correct.");
 			switch (PropertyInfo->ReplicationData->Condition)
 			{
@@ -473,9 +471,6 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 				break;
 			case COND_ServerOnly:
 				Group = REP_ServerOnly;
-				break;
-			case COND_AuthServerOnly:
-				Group = REP_AuthServerOnly;
 				break;
 			case COND_InitialOrOwner:
 				UE_LOG(LogSpatialGDKSchemaGenerator, Error,
