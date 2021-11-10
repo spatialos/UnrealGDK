@@ -167,7 +167,7 @@ TArray<AActor*> USpatialReplicationGraph::GatherClientInterestedActors(UNetConne
 		UE_LOG(
 			LogSpatialReplicationGraph, Error,
 			TEXT("Replication connection driver was null when trying to calculate client interest, did we call this before replication?"))
-		return TArray<AActor*>{};
+		return {};
 	}
 
 	FNetViewerArray Viewer;
@@ -290,10 +290,7 @@ TArray<AActor*> USpatialReplicationGraph::ExtractClientInterestActorsFromGather(
 
 			ClientInterestedActors.Emplace(Actor);
 
-			{
-				QUICK_SCOPE_CYCLE_COUNTER(NET_ReplicateActors_DependentActors);
-				GatherDependentActors(ConnectionActorInfoMap, GlobalActorInfo, ClientInterestedActors);
-			}
+			GatherDependentActors(ConnectionActorInfoMap, GlobalActorInfo, ClientInterestedActors);
 		}
 	}
 

@@ -23,16 +23,6 @@ inline void AddUint32ListToSchema(Schema_Object* Object, Schema_FieldId Id, TArr
 
 void ChangeInterestQuery::DebugOutput(const FString& DiffType) const
 {
-	// Minimal output
-	// if (ComponentSets.Find(SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID) != INDEX_NONE)
-	//{
-	//	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: client auth interest"));
-	//}
-	// else
-	//{
-	//	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: client non auth interest"));
-	//}
-
 	const FString EntitiesString = FString::JoinBy(Entities, TEXT(" "), [](const Worker_EntityId_Key EntityId) {
 		return FString::Printf(TEXT("%lld"), EntityId);
 	});

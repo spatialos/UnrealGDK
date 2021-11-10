@@ -142,7 +142,6 @@ private:
 
 	void AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase) * Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
-	void AddClientInterestEntityIdQuery(Interest& OutInterest, const AActor* InActor) const;
 	TArray<Worker_EntityId> GetClientInterestedEntityIds(const APlayerController* InPlayerController) const;
 
 	USpatialPackageMapClient* PackageMap;

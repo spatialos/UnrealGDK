@@ -209,14 +209,14 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 
 void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
 													  const FString& SnapshotName, const FString& RuntimeIPToExpose,
-													  const LocalDeploymentCallback& CallBack)
+													  const bool bEnableSessionLogRecording, const LocalDeploymentCallback& CallBack)
 {
 	int NumRetries = RuntimeStartRetries;
 	while (NumRetries > 0)
 	{
 		NumRetries--;
-		ERuntimeStartResponse Response =
-			StartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose, CallBack);
+		ERuntimeStartResponse Response = StartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose,
+															  bEnableSessionLogRecording, CallBack);
 		if (Response != ERuntimeStartResponse::Timeout)
 		{
 			break;
@@ -236,7 +236,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfi
 
 FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLocalDeployment(
 	const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs, const FString& SnapshotName,
-	const FString& RuntimeIPToExpose, const LocalDeploymentCallback& CallBack)
+	const FString& RuntimeIPToExpose, const bool bEnableSessionLogRecording, const LocalDeploymentCallback& CallBack)
 {
 	RuntimeStartTime = FDateTime::Now();
 	bRedeployRequired = false;
@@ -286,20 +286,25 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to create runtime event log path."));
 	}
 
-	FString SessionLogsDir = FPaths::Combine(LocalDeploymentLogsDir, TEXT("session_logs"));
-	PlatformFile.CreateDirectoryTree(*SessionLogsDir);
-
 	// runtime.exe --config=squid_config.json --snapshot=snapshots/default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
 	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots/<timestamp>
 	// --schema-bundle=spatial/build/assembly/schema/schema.sb
 	// --event-tracing-logs-directory=`<Project>/spatial/localdeployment/<timestamp>/`
 	FString RuntimeArgs =
 		FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
-							 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"
-							 "--record-session --recording-directory=\"%s\""),
+							 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
 						*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
 						*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *CurrentSnapshotPath, *SchemaBundle,
-						*EventTracingPath, *LaunchArgs, *SessionLogsDir);
+						*EventTracingPath, *LaunchArgs);
+
+	if (bEnableSessionLogRecording)
+	{
+		FString SessionLogsDir = FPaths::Combine(LocalDeploymentLogsDir, TEXT("session_logs"));
+		PlatformFile.CreateDirectoryTree(*SessionLogsDir);
+
+		FString AdditionRuntimeArgs = FString::Printf(TEXT(" --record-session --recording-directory=\"%s\""), *SessionLogsDir);
+		RuntimeArgs += AdditionRuntimeArgs;
+	}
 
 	if (!RuntimeIPToExpose.IsEmpty())
 	{

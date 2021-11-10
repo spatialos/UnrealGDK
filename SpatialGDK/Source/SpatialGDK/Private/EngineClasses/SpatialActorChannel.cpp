@@ -1342,8 +1342,6 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 		return;
 	}
 
-	bool bShouldMarkInterestDirty = false;
-
 	// If interest is already marked dirty (e.g. because we just gained authority over the PC and want to flush immediate),
 	// then don't bother doing any checks.
 	if (NetDriver->ActorSystem->IsClientInterestDirty(EntityId))
@@ -1351,6 +1349,8 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 		NetConnection->TimeWhenClientInterestLastUpdated = CurrentTime;
 		return;
 	}
+
+	bool bShouldMarkInterestDirty = false;
 
 	// Round robin updating client interest
 	if (RepGraph->GetReplicationGraphFrame() % Settings->ClientEntityIdInterestUpdateFrameFrequency

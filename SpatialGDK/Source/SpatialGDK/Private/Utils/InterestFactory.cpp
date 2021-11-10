@@ -402,8 +402,8 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const APlayerControll
 
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(PlayerController->GetNetDriver());
 
-	// MAKE DEBUGGING EASIER, REVERT ME
 #if WITH_EDITOR
+	// Make debugging easier
 	ClientInterestedEntities.Sort();
 #endif
 
@@ -417,12 +417,6 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const APlayerControll
 		{
 			FullInterested.Add(EntityId);
 		}
-
-		// 		const FString EntitiesString = FString::JoinBy(FullInterested, TEXT(" "), [](const Worker_EntityId_Key EntityId) {
-		// 			return FString::Printf(TEXT("%lld"), EntityId);
-		// 		});
-		//
-		// 		UE_LOG(LogChangeInterest, Log, TEXT("Interest: %s %s"), *PlayerController->GetName(), *EntitiesString);
 
 		TSet<Worker_EntityId_Key> Add, Remove;
 		if (bOverwrite)
@@ -476,44 +470,6 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const APlayerControll
 	return true;
 }
 
-void UnrealServerInterestFactory::AddClientInterestEntityIdQuery(Interest& OutInterest, const AActor* InActor) const
-{
-	const APlayerController* PlayerController = Cast<APlayerController>(InActor);
-	if (!ensure(GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
-		|| !ensureMsgf(PlayerController != nullptr, TEXT("Only PCs can use client entity interest: %s"), *GetNameSafe(InActor)))
-	{
-		return;
-	}
-
-	Query RepGraphEntityIdQuery = Query();
-	RepGraphEntityIdQuery.ResultComponentIds = ClientNonAuthInterestResultType.ComponentIds;
-	RepGraphEntityIdQuery.ResultComponentSetIds = ClientNonAuthInterestResultType.ComponentSetsIds;
-
-	// If and when the Runtime has a better interest changing API, we can ask for a diff here instead.
-	TArray<Worker_EntityId> ClientInterestedEntities = GetClientInterestedEntityIds(PlayerController);
-
-	// MAKE DEBUGGING EASIER, REVERT ME
-#if WITH_EDITOR
-	ClientInterestedEntities.Sort();
-#endif
-
-	if (UMetricsExport* MetricsExport = InActor->GetWorld()->GetGameInstance()->GetSubsystem<UMetricsExport>())
-	{
-		USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PlayerController->NetConnection);
-		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
-		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("total_interested_entities"), ClientInterestedEntities.Num());
-	}
-
-	for (Worker_EntityId EntityId : ClientInterestedEntities)
-	{
-		QueryConstraint Constraint;
-		Constraint.EntityIdConstraint = EntityId;
-		RepGraphEntityIdQuery.Constraint.OrConstraint.Add(Constraint);
-	}
-
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, RepGraphEntityIdQuery);
-}
-
 TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityIds(const APlayerController* InPlayerController) const
 {
 	TArray<Worker_EntityId> InterestedEntityIdList{};
@@ -527,17 +483,7 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 		return TArray<Worker_EntityId>();
 	}
 
-	// If and when the Runtime has a better interest changing API, we can ask for a diff here instead.
-	// FString ViewLocationStr = NetConnection->ViewTarget->GetActorLocation().ToString();
 	TArray<AActor*> ClientInterestedActors = RepGraph->GatherClientInterestedActors(NetConnection);
-	// UE_LOG(LogTemp, Warning, TEXT("Connection %s, location %s"), *NetConnection->GetName(), *ViewLocationStr);
-	// 	if (NetConnection->PlayerController && NetConnection->PlayerController->GetViewTarget())
-	// 	{
-	// 		FVector ViewLocation = FVector::ZeroVector;
-	// 		FRotator ViewRotation = NetConnection->PlayerController->GetControlRotation();
-	// 		NetConnection->PlayerController->GetPlayerViewPoint(ViewLocation, ViewRotation);
-	// 		UE_LOG(LogTemp, Warning, TEXT("Connection %s, location %s"), *NetConnection->GetName(), *ViewLocation.ToString());
-	// 	}
 
 	UNetReplicationGraphConnection* ConnectionDriver =
 		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());

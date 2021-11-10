@@ -47,6 +47,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, ExposedRuntimeIP(TEXT(""))
 	, bAutoStartLocalDeployment(true)
 	, bSpatialDebuggerEditorEnabled(false)
+	, bEnableSessionLogRecording(true)
 	, AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::OnEndPIE)
 	, bDeleteDynamicEntities(false)
 	, bStopPIEOnTestingCompleted(true)
