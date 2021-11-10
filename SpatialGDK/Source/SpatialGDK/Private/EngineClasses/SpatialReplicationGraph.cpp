@@ -149,7 +149,6 @@ void USpatialReplicationGraph::PostReplicateActors(UNetReplicationGraphConnectio
 	}
 }
 
-// IMPROBABLE-BEGIN - Client entity list interest
 // To get a list of Actors relevant to a client, we iterate global and connection nodes.
 // This functionality lives outside the normal rep graph calls because we call a different function on rep graph nodes
 // so don't share benefit of iterating at the same time.
@@ -283,8 +282,7 @@ TArray<AActor*> USpatialReplicationGraph::ExtractClientInterestActorsFromGather(
 			// At this point the replication flow does starvation scaling which we don't care about for interest.
 
 			// At this point the replication flow does pending dormancy scaling where it prioritizes replicating Actors that are changing
-			// their dormancy so the change can be enacted. I guess we don't care for interest? We can just remove from interest list once
-			// an Actor goes fully dormant.
+			// their dormancy so the change can be enacted.
 
 			// At this point the replication flow does game code priority (where game code sets ForceNetUpdateFrame).
 

@@ -1327,7 +1327,7 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 
 void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 {
-	// Only do stuff if rep graph enabled, client entity interest is enabled, and we're processing a player controller
+	// Only valid if rep graph enabled, client entity interest is enabled, and we're processing a player controller
 	const double CurrentTime = NetDriver->GetElapsedTime();
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	const UReplicationGraph* RepGraph = Cast<USpatialReplicationGraph>(NetDriver->GetReplicationDriver());
@@ -1335,7 +1335,7 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 	UNetReplicationGraphConnection* RepGraphConnection =
 		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
 
-	if (RepGraph == nullptr || !RepGraph->IsClientEntityInterestEnabled() || RepGraphConnection == nullptr || NetConnection == nullptr)
+	if (RepGraph == nullptr || RepGraphConnection == nullptr || NetConnection == nullptr)
 	{
 		UE_LOG(LogSpatialActorChannel, Error,
 			   TEXT("Failed to handle client entity interest, some connection or setting was misconfigured"));
@@ -1352,24 +1352,9 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 		return;
 	}
 
-	// If we've passed the X seconds threshold, mark interest dirty (controlled by ClientEntityIdListQueryUpdateFrequency).
-	const float TimeSinceLastClientInterestUpdate = CurrentTime - NetConnection->TimeWhenClientInterestLastUpdated;
-
-	if (Settings->ClientEntityIdListQueryUpdateFrequency > 0.f)
-	{
-		const float UpdateThresholdSecs = 1.f / Settings->ClientEntityIdListQueryUpdateFrequency;
-		const bool bHitInterestTimeThreshold = TimeSinceLastClientInterestUpdate >= UpdateThresholdSecs;
-		bShouldMarkInterestDirty |= bHitInterestTimeThreshold;
-
-		if (bHitInterestTimeThreshold)
-		{
-			UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Frame %u. Hit client interest %f second threshold for %s"),
-				   RepGraph->GetReplicationGraphFrame(), UpdateThresholdSecs, *Actor->GetName());
-		}
-	}
-
 	// Round robin updating client interest
-	if (RepGraph->GetReplicationGraphFrame() % 10 == RepGraphConnection->ConnectionOrderNum % 10)
+	if (RepGraph->GetReplicationGraphFrame() % Settings->ClientEntityIdInterestUpdateFrameFrequency
+		== RepGraphConnection->ConnectionOrderNum % Settings->ClientEntityIdInterestUpdateFrameFrequency)
 	{
 		bShouldMarkInterestDirty = true;
 	}
@@ -1382,6 +1367,7 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 	if (UMetricsExport* MetricsExport = Actor->GetWorld()->GetGameInstance()->GetSubsystem<UMetricsExport>())
 	{
 		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
+		const float TimeSinceLastClientInterestUpdate = CurrentTime - NetConnection->TimeWhenClientInterestLastUpdated;
 		MetricsExport->WriteMetricsToProtocolBuffer(*ClientIdentifier, TEXT("interest_update_frequency"),
 													1 / TimeSinceLastClientInterestUpdate);
 	}

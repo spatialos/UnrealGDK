@@ -226,7 +226,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
 	, bUseClientEntityInterestQueries(false)
-	, ClientEntityIdListQueryUpdateFrequency(0.f)
+	, ClientEntityIdInterestUpdateFrameFrequency(10)
 	, bUseNarrowPhaseNCDInterestCulling(true)
 	, bUserSpaceServerInterest(false)
 	, bEnableCrossLayerActorSpawning(true)

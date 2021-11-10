@@ -485,10 +485,10 @@ public:
 	bool bUseClientEntityInterestQueries;
 
 	/**
-	 * How many times per second will a client's entity ID list query be updated (set to 0 to ignore).
+	 * Frame frequency that a client's interest will be updated when using bUseClientEntityInterestQueries
 	 */
 	UPROPERTY(EditAnywhere, config, Category = "Client Entity Interest", meta = (EditCondition = "bUseClientEntityInterestQueries"))
-	float ClientEntityIdListQueryUpdateFrequency;
+	uint32 ClientEntityIdInterestUpdateFrameFrequency;
 
 	/**
 	 * Do we use explicit NCD to affect client entity interest or just grid cell broadphase

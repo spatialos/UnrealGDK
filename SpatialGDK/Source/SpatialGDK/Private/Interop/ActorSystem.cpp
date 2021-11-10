@@ -1617,17 +1617,6 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 	// Any Actor created here will have been received over the wire as an entity so we can mark it ready.
 	EntityActor.SetActorReady(NetDriver->IsServer() && EntityActor.bNetStartup);
 
-	// When we check out a startup Actor entity spawned by another server, call the notify function so relevant
-	// rep graph nodes can have their interest flagged as dirty.
-	if (NetDriver->IsServer() && GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries && !EntityActor.HasAuthority()
-		&& EntityActor.bNetStartup)
-	{
-		if (UReplicationGraph* RepGraph = Cast<UReplicationGraph>(NetDriver->GetReplicationDriver()))
-		{
-			RepGraph->NotifyActorEntityCreation(&EntityActor);
-		}
-	}
-
 	// Taken from PostNetInit
 	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor.HasActorBegunPlay())
 	{

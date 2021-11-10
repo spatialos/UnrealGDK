@@ -237,11 +237,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	if (!bInitAsClient && GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
 	{
-		if (UReplicationGraph* RepGraph = Cast<UReplicationGraph>(GetReplicationDriver()))
-		{
-			RepGraph->SetClientEntityInterestEnabled(true);
-		}
-		else
+		UReplicationGraph* RepGraph = Cast<UReplicationGraph>(GetReplicationDriver());
+		if (RepGraph == nullptr)
 		{
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Client entity interest setting was enabled BUT there was no rep graph set"));
 		}
