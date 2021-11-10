@@ -81,7 +81,6 @@
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialDebuggerSystem.h"
-#include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialLoadBalancingHandler.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
@@ -591,9 +590,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClassesAfterStartup()
 		const SpatialGDK::FSubView& WorkerEntitySubView = Connection->GetCoordinator().CreateSubView(
 			SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-		RPCService =
-			MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, WorkerEntitySubView,
-													  USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
+		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, WorkerEntitySubView,
+															   Connection->GetEventTracer(), this);
 
 		if (IsServer())
 		{

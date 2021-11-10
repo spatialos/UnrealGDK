@@ -147,41 +147,5 @@ public class SpatialGDK : ModuleRules
 
             PublicAdditionalLibraries.AddRange(WorkerLibraries);
         }
-
-        // Detect existence of trace library, if present add preprocessor
-        string TraceStaticLibPath = "";
-        string TraceDynamicLib = "";
-        string TraceDynamicLibPath = "";
-        if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
-        {
-            TraceStaticLibPath = Path.Combine(WorkerLibraryDir, "legacy_trace_dynamic.lib");
-            TraceDynamicLib = "legacy_trace_dynamic.dll";
-            TraceDynamicLibPath = Path.Combine(WorkerLibraryDir, TraceDynamicLib);
-        }
-        else if (Target.Platform == UnrealTargetPlatform.Linux)
-        {
-            TraceStaticLibPath = Path.Combine(WorkerLibraryDir, "liblegacy_trace_dynamic.so");
-            TraceDynamicLib = "liblegacy_trace_dynamic.so";
-            TraceDynamicLibPath = Path.Combine(WorkerLibraryDir, TraceDynamicLib);
-        }
-
-        if (File.Exists(TraceStaticLibPath) && File.Exists(TraceDynamicLibPath))
-        {
-            Log.TraceInformation("Detection of trace libraries found at {0} and {1}, enabling trace functionality.", TraceStaticLibPath, TraceDynamicLibPath);
-            PublicDefinitions.Add("TRACE_LIB_ACTIVE=1");
-
-            PublicAdditionalLibraries.Add(TraceStaticLibPath);
-
-            RuntimeDependencies.Add(TraceDynamicLibPath, StagedFileType.NonUFS);
-            if (bAddDelayLoad)
-            {
-                PublicDelayLoadDLLs.Add(TraceDynamicLib);
-            }
-        }
-        else
-        {
-            Log.TraceInformation("Didn't find trace libraries at {0} and {1}, disabling trace functionality.", TraceStaticLibPath, TraceDynamicLibPath);
-            PublicDefinitions.Add("TRACE_LIB_ACTIVE=0");
-        }
     }
 }
