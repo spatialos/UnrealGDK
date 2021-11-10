@@ -56,7 +56,6 @@ void UTestReplicationConditionsComponent_Common::GetLifetimeReplicatedProps(TArr
 
 	// Our added conditions
 	DOREPLIFETIME_CONDITION(ThisClass, CondServerOnly_Var, COND_ServerOnly);
-	DOREPLIFETIME_CONDITION(ThisClass, CondAuthServerOnly_Var, COND_AuthServerOnly);
 }
 
 ATestReplicationConditionsActor_Common::ATestReplicationConditionsActor_Common()
@@ -88,7 +87,6 @@ void ATestReplicationConditionsActor_Common::GetLifetimeReplicatedProps(TArray<F
 
 	// Our added conditions
 	DOREPLIFETIME_CONDITION(ThisClass, CondServerOnly_Var, COND_ServerOnly);
-	DOREPLIFETIME_CONDITION(ThisClass, CondAuthServerOnly_Var, COND_AuthServerOnly);
 
 	DOREPLIFETIME(ThisClass, StaticComponent);
 	DOREPLIFETIME(ThisClass, DynamicComponent);

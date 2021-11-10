@@ -166,12 +166,3 @@ class ASpatialTypeActorWithInitialOnly : public AActor
 	UPROPERTY(Replicated)
 	float InitialOnlyProperty;
 };
-
-UCLASS(SpatialType)
-class ASpatialTypeActorWithOnlyAuthServer : public AActor
-{
-	GENERATED_UCLASS_BODY()
-
-	UPROPERTY(Replicated)
-	float AuthServerOnlyProperty;
-};

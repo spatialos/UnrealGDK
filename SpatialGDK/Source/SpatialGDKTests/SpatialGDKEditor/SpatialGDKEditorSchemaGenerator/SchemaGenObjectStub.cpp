@@ -115,15 +115,3 @@ void ASpatialTypeActorWithInitialOnly::GetLifetimeReplicatedProps(TArray<FLifeti
 
 	DOREPLIFETIME_CONDITION(ASpatialTypeActorWithInitialOnly, InitialOnlyProperty, COND_InitialOnly);
 }
-
-ASpatialTypeActorWithOnlyAuthServer::ASpatialTypeActorWithOnlyAuthServer(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
-{
-}
-
-void ASpatialTypeActorWithOnlyAuthServer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME_CONDITION(ASpatialTypeActorWithOnlyAuthServer, AuthServerOnlyProperty, COND_AuthServerOnly);
-}

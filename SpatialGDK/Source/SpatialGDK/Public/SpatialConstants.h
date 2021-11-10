@@ -38,7 +38,6 @@ enum ESchemaComponentType : int32
 	SCHEMA_OwnerOnly,
 	SCHEMA_ServerOnly,
 	SCHEMA_InitialOnly,
-	SCHEMA_AuthServerOnly,
 
 	SCHEMA_Count,
 
@@ -109,7 +108,6 @@ const Worker_ComponentSetId LB_DELEGATION_AUTH_COMPONENT_SET_ID = 9910;
 const Worker_ComponentSetId PARTITION_WORKER_AUTH_COMPONENT_SET_ID = 9911;
 const Worker_ComponentSetId PARTITION_METADATA_AUTH_COMPONENT_SET_ID = 9912;
 const Worker_ComponentSetId SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID = 9913;
-const Worker_ComponentSetId AUTH_SERVER_ONLY_COMPONENT_SET_ID = 9914;
 
 extern const FString SERVER_AUTH_COMPONENT_SET_NAME;
 extern const FString CLIENT_AUTH_COMPONENT_SET_NAME;
@@ -118,7 +116,6 @@ extern const FString OWNER_ONLY_COMPONENT_SET_NAME;
 extern const FString SERVER_ONLY_COMPONENT_SET_NAME;
 extern const FString ROUTING_WORKER_COMPONENT_SET_NAME;
 extern const FString INITIAL_ONLY_COMPONENT_SET_NAME;
-extern const FString AUTH_SERVER_ONLY_COMPONENT_SET_NAME;
 
 const Worker_ComponentId NOT_STREAMED_COMPONENT_ID = 9986;
 const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID = 9984;
