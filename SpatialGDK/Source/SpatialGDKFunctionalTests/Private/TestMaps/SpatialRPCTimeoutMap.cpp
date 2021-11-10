@@ -10,10 +10,10 @@ USpatialRPCTimeoutMap::USpatialRPCTimeoutMap()
 {
 	// clang-format off
 	SetCustomConfig(TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR
-		TEXT("QueuedIncomingRPCWaitTime=0") LINE_TERMINATOR
-		TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
-		TEXT("PlayNumberOfClients=2"));
+		TEXT("QueuedIncomingRPCWaitTime=0"));
 	// clang-format on
+
+	SetNumberOfClients(2);
 
 	EnableMultiProcess();
 }
@@ -24,10 +24,10 @@ void USpatialRPCTimeoutMap::CreateCustomContentForMap()
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->DefaultGameMode = ASpatialTestRPCTimeoutGameMode::StaticClass();
 
-	// Add the test
 	FTransform Transform1 = FTransform::Identity;
 	Transform1.SetLocation(FVector(-300.f, -500.f, 200.f));
 
+	// Added a second player start actor to ensure both characters are visible from the game window for debugging
 	AddActorToLevel<APlayerStart>(CurrentLevel, Transform1);
 	AddActorToLevel<ASpatialTestRPCTimeout>(CurrentLevel, FTransform::Identity);
 }

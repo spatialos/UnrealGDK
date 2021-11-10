@@ -6,8 +6,7 @@
 #include "SpatialRPCTimeoutMap.generated.h"
 
 /**
- * This map is mostly for use with SpatialTestPropertyReplication.
- * It is a simple example map that demonstrates how to create a map for a test.
+ * This map is for use with SpatialTestRPCTimeout
  */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API USpatialRPCTimeoutMap : public UGeneratedTestMap
