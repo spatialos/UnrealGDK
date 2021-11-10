@@ -234,27 +234,32 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 		for (TFieldIterator<FProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
 		{
-			if (FStructProperty* StructProperty = CastField<FStructProperty>(*PropertyIt))
+			FStructProperty* StructProperty = CastField<FStructProperty>(*PropertyIt);
+			if (StructProperty == nullptr)
 			{
-				const FLifetimeProperty* ReplicatedPropertyPtr =
-					LifetimeReplicatedProperties.FindByPredicate([StructProperty](const FLifetimeProperty& ReplicatedProperty) {
-						return ReplicatedProperty.RepIndex == StructProperty->RepIndex;
-					});
-				if (ensure(ReplicatedPropertyPtr))
-				{
-					const bool bIsPropertyNetDeltaSerialized =
-						EnumHasAnyFlags(StructProperty->Struct->StructFlags, EStructFlags::STRUCT_NetDeltaSerializeNative);
-					if (bIsPropertyNetDeltaSerialized && ReplicatedPropertyPtr->bIsPushBased)
-					{
-						UE_LOG(
-							LogSpatialClassInfoManager, Warning,
-							TEXT(
-								"Class %s Property %s is both NetDeltaSerialized and Push Model enabled - make sure to MARK_PROPERTY_DIRTY "
-								"when using this property, or they won't be replicated with SpatialGDK"),
-							*Class->GetName(), *StructProperty->GetName());
-					}
-				}
+				continue;
 			}
+
+			const FLifetimeProperty* ReplicatedPropertyPtr =
+				LifetimeReplicatedProperties.FindByPredicate([StructProperty](const FLifetimeProperty& ReplicatedProperty) {
+					return ReplicatedProperty.RepIndex == StructProperty->RepIndex;
+				});
+			if (!ensure(ReplicatedPropertyPtr))
+			{
+				continue;
+			}
+
+			const bool bIsPropertyNetDeltaSerialized =
+				EnumHasAnyFlags(StructProperty->Struct->StructFlags, EStructFlags::STRUCT_NetDeltaSerializeNative);
+			if (bIsPropertyNetDeltaSerialized && ReplicatedPropertyPtr->bIsPushBased)
+			{
+				continue;
+			}
+
+			UE_LOG(LogSpatialClassInfoManager, Warning,
+				   TEXT("Class %s Property %s is both NetDeltaSerialized and Push Model enabled - make sure to MARK_PROPERTY_DIRTY "
+						"when using this property, or they won't be replicated with SpatialGDK"),
+				   *Class->GetName(), *StructProperty->GetName());
 		}
 	}
 
