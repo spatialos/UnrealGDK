@@ -511,7 +511,7 @@ void ASpatialTestReplicationConditions::ProcessCommonActorProperties(bool bWrite
 				  DynamicCompText);
 	WrappedAction(TestActor_Common->DynamicComponent->CondSkipReplay_Var, 540, COND_SkipReplay, DynamicCompText);
 	WrappedAction(TestActor_Common->DynamicComponent->CondServerOnly_Var, 550, COND_ServerOnly, DynamicCompText);
-	WrappedAction(TestActor_Common->DynamicComponent->CondAuthServerOnly_Var, 550, COND_AuthServerOnly, DynamicCompText);
+	WrappedAction(TestActor_Common->DynamicComponent->CondAuthServerOnly_Var, 560, COND_AuthServerOnly, DynamicCompText);
 }
 
 void ASpatialTestReplicationConditions::ProcessCustomActorProperties(ATestReplicationConditionsActor_Custom* Actor, const bool bWrite,
