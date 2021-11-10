@@ -7,7 +7,6 @@
 #include "Misc/MessageDialog.h"
 
 #include "SpatialConstants.h"
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/SpatialStatics.h"
 
 #if WITH_EDITOR
@@ -319,7 +318,7 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	}
 }
 
-bool USpatialGDKSettings::CanEditChange(const GDK_PROPERTY(Property) * InProperty) const
+bool USpatialGDKSettings::CanEditChange(const FProperty* InProperty) const
 {
 	if (!InProperty)
 	{
@@ -389,14 +388,31 @@ void USpatialGDKSettings::SetServicesRegion(EServicesRegion::Type NewRegion)
 	ServicesRegion = NewRegion;
 
 	// Save in default config so this applies for other platforms e.g. Linux, Android.
-	GDK_PROPERTY(Property)* ServicesRegionProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("ServicesRegion"));
+	FProperty* ServicesRegionProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("ServicesRegion"));
 	UpdateSinglePropertyInConfigFile(ServicesRegionProperty, GetDefaultConfigFilename());
 }
 
 bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 {
 	return (IsRunningGame() || IsRunningClientOnly()) && bPreventClientCloudDeploymentAutoConnect;
-};
+}
+
+uint16 USpatialGDKSettings::GetDefaultReceptionistPort() const
+{
+#if WITH_EDITOR
+	uint16 LevelSettingsServerPort = 0;
+	GetDefault<ULevelEditorPlaySettings>()->GetServerPort(LevelSettingsServerPort);
+	if (LevelSettingsServerPort == 0)
+	{
+		UE_LOG(LogSpatialGDKSettings, Error, TEXT("Could not retrieve ServerPort from LevelEditorPlaySettings"));
+		return DEFAULT_RECEPTIONIST_PORT;
+	}
+
+	return LevelSettingsServerPort;
+#else
+	return DEFAULT_RECEPTIONIST_PORT;
+#endif // WITH_EDITOR
+}
 
 UEventTracingSamplingSettings* USpatialGDKSettings::GetEventTracingSamplingSettings() const
 {

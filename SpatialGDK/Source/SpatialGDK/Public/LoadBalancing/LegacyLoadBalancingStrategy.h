@@ -2,7 +2,9 @@
 
 #pragma once
 
+#include "Interop/SkeletonEntities.h"
 #include "Interop/SpatialCommandsHandler.h"
+#include "Interop/Startup/SpatialStartupCommon.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/LoadBalancingStrategy.h"
 
@@ -26,22 +28,26 @@ public:
 	FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, SpatialVirtualWorkerTranslator& InTranslator);
 	~FLegacyLoadBalancing();
 
-	virtual void Init(FLoadBalancingSharedData InSharedData, TArray<FLBDataStorage*>& OutLoadBalancingData,
+	virtual void Init(ISpatialOSWorker& Connection, FLoadBalancingSharedData InSharedData, TArray<FLBDataStorage*>& OutLoadBalancingData,
 					  TArray<FLBDataStorage*>& OutServerWorkerData) override;
 
 	virtual void Advance(ISpatialOSWorker& Connection, const TSet<Worker_EntityId_Key>& DeletedEntities) override;
 	virtual void Flush(ISpatialOSWorker& Connection) override;
+	virtual bool IsReady() override { return !StartupExecutor.IsSet(); }
 
 	virtual void OnWorkersConnected(TArrayView<FLBWorkerHandle> ConnectedWorkers) override;
 	virtual void OnWorkersDisconnected(TArrayView<FLBWorkerHandle> DisconnectedWorkers) override;
 	virtual void TickPartitions() override;
 	virtual void CollectEntitiesToMigrate(FMigrationContext& Ctx) override;
+	virtual void OnSkeletonManifestReceived(Worker_EntityId, FSkeletonEntityManifest) override;
 
 protected:
-	void QueryTranslation(ISpatialOSWorker& Connection);
 	void EvaluateDebugComponent(Worker_EntityId, FMigrationContext& Ctx);
 	TOptional<TPair<Worker_EntityId, uint32>> EvaluateDebugComponentWithSet(Worker_EntityId);
 	TOptional<uint32> EvaluateDebugComponent(Worker_EntityId);
+
+	TOptional<FStartupExecutor> StartupExecutor;
+	void CreateAndAssignPartitions();
 
 	// +++ Data Storage +++
 	TUniquePtr<FSpatialPositionStorage> PositionStorage;
@@ -56,12 +62,9 @@ protected:
 	TArray<FPartitionHandle> Partitions;
 	TArray<FLBWorkerHandle> VirtualWorkerIdToHandle;
 	TSet<FLBWorkerHandle> ConnectedWorkers;
-	SpatialVirtualWorkerTranslator& Translator;
 	FCommandsHandler CommandsHandler;
-	TOptional<Worker_RequestId> WorkerTranslationRequest;
 	uint32 ExpectedWorkers = 0;
 	bool bCreatedPartitions = false;
-	bool bTranslatorIsReady = false;
 	// --- Partition Assignment ---
 
 	// +++ Load Balancing +++
@@ -73,6 +76,17 @@ protected:
 
 	Worker_EntityId WorkerForCustomAssignment = SpatialConstants::INVALID_ENTITY_ID;
 	// --- Load Balancing ---
+
+	// +++ Skeleton entity processing +++
+	struct ManifestProcessing
+	{
+		FSkeletonEntityManifest ManifestData;
+		TMap<int32, TSet<Worker_EntityId_Key>> InProgressManifests;
+		TArray<FManifestCreationHandle> PublishedManifests;
+		uint32 ProcessedEntities = 0;
+	};
+	TMap<Worker_EntityId_Key, ManifestProcessing> ReceivedManifests;
+	// --- Skeleton entity processing ---
 
 	// +++ EXPERIMENTAL Interest computations
 	TUniquePtr<FAlwaysRelevantStorage> AlwaysRelevantStorage;

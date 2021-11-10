@@ -169,8 +169,9 @@ const Worker_ComponentId SKELETON_ENTITY_QUERY_TAG_COMPONENT_ID = 2013;
 const Worker_ComponentId SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID = 2014;
 const Worker_ComponentId SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID = 2015;
 const Worker_ComponentId WORKER_PARTITION_TAG_COMPONENT_ID = 2016;
+const Worker_ComponentId LOADBALANCER_PARTITION_TAG_COMPONENT_ID = 2017;
 // Add component ids above here, this should always be last and be equal to the previous component id
-const Worker_ComponentId LAST_EC_COMPONENT_ID = 2016;
+const Worker_ComponentId LAST_EC_COMPONENT_ID = 2017;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
@@ -178,9 +179,6 @@ const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID = 3;
 const Schema_FieldId DEPLOYMENT_MAP_SCHEMA_HASH = 4;
 
 const Schema_FieldId SNAPSHOT_VERSION_NUMBER_ID = 1;
-
-const Schema_FieldId SKELETON_ENTITY_MANIFEST_ENTITIES_TO_POPULATE_ID = 1;
-const Schema_FieldId SKELETON_ENTITY_MANIFEST_POPULATED_SKELETON_ENTITIES_ID = 2;
 
 const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID = 1;
 
@@ -360,9 +358,6 @@ inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 }
 
 const FString LOCAL_HOST = TEXT("127.0.0.1");
-const uint16 DEFAULT_PORT = 7777;
-
-const uint16 DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT = 7777;
 
 const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 

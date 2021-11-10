@@ -4,7 +4,6 @@
 
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepDataUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -47,7 +46,7 @@ private:
 	uint32 FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes,
 							ESchemaComponentType PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
 
-	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, GDK_PROPERTY(Property) * Property, const uint8* Data,
+	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, FProperty* Property, const uint8* Data,
 					 TArray<Schema_FieldId>* ClearedIds);
 
 	USpatialNetDriver* NetDriver;

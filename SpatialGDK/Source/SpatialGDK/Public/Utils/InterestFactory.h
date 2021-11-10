@@ -6,8 +6,6 @@
 #include "Schema/ChangeInterest.h"
 #include "Schema/Interest.h"
 
-#include "Utils/GDKPropertyMacros.h"
-
 #include <WorkerSDK/improbable/c_worker.h>
 
 /**
@@ -140,7 +138,7 @@ private:
 	// Add interest to the actor's owner.
 	void AddServerActorOwnerInterest(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const;
 
-	void AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase) * Property, uint8* Data, QueryConstraint& OutConstraint) const;
+	void AddObjectToConstraint(FObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
 	TArray<Worker_EntityId> GetClientInterestedEntityIds(const APlayerController* InPlayerController) const;
 

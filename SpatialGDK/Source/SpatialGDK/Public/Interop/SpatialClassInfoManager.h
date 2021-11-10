@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/SchemaDatabase.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
@@ -52,7 +51,7 @@ struct FRPCInfo
 
 struct FInterestPropertyInfo
 {
-	GDK_PROPERTY(Property) * Property;
+	FProperty* Property;
 	int32 Offset;
 };
 

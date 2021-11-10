@@ -27,8 +27,7 @@ public:
 	bool IsReady();
 
 	TOptional<Worker_PartitionId> GetPartitionId(FPartitionHandle);
-	FPartitionHandle CreatePartition(FString DisplayName, void* UserData, const SpatialGDK::QueryConstraint& Interest,
-									 TArray<ComponentData> MetaData);
+	FPartitionHandle CreatePartition(FString DisplayName, const SpatialGDK::QueryConstraint& Interest, TArray<ComponentData> MetaData);
 	void SetPartitionInterest(FPartitionHandle Partition, const SpatialGDK::QueryConstraint& NewInterest);
 	void AssignPartitionTo(FPartitionHandle Partition, FLBWorkerHandle Worker);
 	void UpdatePartitionMetadata(FPartitionHandle, TArray<ComponentUpdate>);
@@ -43,8 +42,9 @@ public:
 	Worker_EntityId GetSystemWorkerEntityIdForWorker(FLBWorkerHandle);
 	FLBWorkerHandle GetWorkerForServerWorkerEntity(Worker_EntityId);
 
-private:
 	struct Impl;
+
+private:
 	TUniquePtr<Impl> m_Impl;
 };
 } // namespace SpatialGDK

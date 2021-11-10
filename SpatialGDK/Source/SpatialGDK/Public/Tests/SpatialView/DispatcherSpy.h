@@ -5,7 +5,7 @@
 #include "SpatialView/Callbacks.h"
 #include "SpatialView/DispatcherInterface.h"
 #include "SpatialView/ScopedDispatcherCallback.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 
 #include "Containers/Array.h"
 #include "Templates/Function.h"

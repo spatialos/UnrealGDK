@@ -304,13 +304,9 @@ const TSet<UClass*>& AllTestClassesSet()
 	return TestClassesSet;
 };
 
-#if ENGINE_MINOR_VERSION < 25
 FString ExpectedContentsDirectory =
 	TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema");
-#else
-FString ExpectedContentsDirectory =
-	TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema_425");
-#endif
+
 TMap<FString, FString> ExpectedContentsFilenames = {
 	{ "SpatialTypeActor", "SpatialTypeActor.schema" },
 	{ "NonSpatialTypeActor", "NonSpatialTypeActor.schema" },
@@ -940,7 +936,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "spawner.schema",
 										   "tombstone.schema",
 										   "unreal_metadata.schema",
-										   "virtual_worker_translation.schema" };
+										   "virtual_worker_translation.schema",
+										   "partition_components.schema" };
 	TArray<FString> CoreSDKFilePaths = { "improbable\\restricted\\system_components.schema", "improbable\\standard_library.schema" };
 
 	// WHEN

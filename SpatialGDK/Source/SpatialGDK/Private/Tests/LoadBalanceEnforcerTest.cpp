@@ -15,7 +15,7 @@
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/SubView.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 #include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Utils/SchemaOption.h"
 

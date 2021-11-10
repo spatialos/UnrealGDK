@@ -17,7 +17,7 @@
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/SubView.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 #include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Utils/RPCRingBuffer.h"
 
@@ -147,7 +147,7 @@ SpatialGDK::SpatialRPCService CreateRPCService(const TArray<Worker_EntityId>& En
 											   TestDispatcher, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
 	SpatialGDK::SpatialRPCService RPCService =
-		SpatialGDK::SpatialRPCService(AuthSubView, NonAuthSubView, WorkerEntitySubView, nullptr, nullptr, nullptr);
+		SpatialGDK::SpatialRPCService(AuthSubView, NonAuthSubView, WorkerEntitySubView, nullptr, nullptr);
 
 	const SpatialGDK::ViewDelta Delta;
 	AuthSubView.Advance(Delta);

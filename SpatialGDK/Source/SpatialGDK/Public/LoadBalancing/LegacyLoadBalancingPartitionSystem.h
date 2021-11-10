@@ -7,10 +7,15 @@
 #include "LegacyLoadBalancingPartitionSystem.generated.h"
 
 UCLASS()
-class ULegacyPartitionSystem : public USpatialPartitionSystem
+class SPATIALGDK_API ULegacyPartitionSystem : public USpatialPartitionSystem
 {
 	GENERATED_BODY()
 public:
+	struct PartitionInfo
+	{
+		bool bDelegated = false;
+	};
+
 	ULegacyPartitionSystem();
 
 	const TMap<Worker_EntityId_Key, SpatialGDK::LegacyLB_GridCell>& GetGridCells() const { return GridCells.GetObjects(); }
@@ -19,6 +24,8 @@ public:
 	{
 		return VirtualWorkerIds.GetObjects();
 	}
+
+	const TMap<Worker_RequestId_Key, PartitionInfo>& GetPartitions() { return Partitions; }
 
 protected:
 	virtual TArray<SpatialGDK::FLBDataStorage*> GetData() override;
@@ -33,7 +40,7 @@ protected:
 	FDelegateHandle WorldChangedDelegate;
 	FDelegateHandle PostTickDispatchDelegate;
 
-	TSet<Worker_RequestId_Key> Partitions;
+	TMap<Worker_RequestId_Key, PartitionInfo> Partitions;
 	SpatialGDK::TLBDataStorage<SpatialGDK::LegacyLB_GridCell> GridCells;
 	SpatialGDK::TLBDataStorage<SpatialGDK::LegacyLB_Layer> Layers;
 	SpatialGDK::TLBDataStorage<SpatialGDK::LegacyLB_VirtualWorkerAssignment> VirtualWorkerIds;

@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 
+#include "Interop/SkeletonEntityManifestPublisher.h"
+#include "Interop/Startup/SpatialStartupCommon.h"
 #include "LoadBalancing/ActorSetSystem.h"
 #include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/LoadBalancingTypes.h"
@@ -26,20 +28,30 @@ class ISpatialOSWorker;
 class FLoadBalancingStrategy;
 class FPartitionManager;
 
+struct FStrategySystemViews
+{
+	const FSubView& LBView;
+	const FSubView& ServerWorkerView;
+	const FSubView& SkeletonManifestView;
+	const FSubView& FilledManifestSubView;
+};
+
 class FSpatialStrategySystem
 {
 public:
-	FSpatialStrategySystem(ViewCoordinator& Coordinator, const FSubView& InLBView, const FSubView& InServerWorkerView,
+	FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionMgr, FStrategySystemViews InViews,
 						   TUniquePtr<FLoadBalancingStrategy> Strategy, TUniquePtr<InterestFactory> InInterestF);
 
 	~FSpatialStrategySystem();
+
+	void Init(ISpatialOSWorker& Connection);
 
 	void Advance(ISpatialOSWorker& Connection);
 	void Flush(ISpatialOSWorker& Connection);
 	void Destroy(ISpatialOSWorker& Connection);
 
 private:
-	const FSubView& LBView;
+	FStrategySystemViews Views;
 
 	TUniquePtr<FPartitionManager> PartitionsMgr;
 	TUniquePtr<InterestFactory> InterestF;
@@ -49,6 +61,7 @@ private:
 	TLBDataStorage<NetOwningClientWorker> NetOwningClientView;
 	TLBDataStorage<ActorSetMember> SetMemberView;
 	FActorSetSystem ActorSetSystem;
+	FSkeletonManifestPublisher ManifestPublisher;
 	FLBDataCollection DataStorages;
 	FLBDataCollection UserDataStorages;
 	FLBDataCollection ServerWorkerDataStorages;

@@ -21,7 +21,6 @@
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
@@ -133,11 +132,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
 	// Remove PIE prefix on class if it exists to properly look up the class.
 	FString ClassPath = Class->GetPathName();
-#if ENGINE_MINOR_VERSION >= 26
 	GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), ClassPath, false /*bIsReading*/);
-#else
-	GEngine->NetworkRemapPath(NetDriver, ClassPath, false /*bIsReading*/);
-#endif
 
 	if (!bHandoverActive.IsSet())
 	{
@@ -212,9 +207,9 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	}
 
-	for (TFieldIterator<GDK_PROPERTY(Property)> PropertyIt(Class); PropertyIt; ++PropertyIt)
+	for (TFieldIterator<FProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
 	{
-		GDK_PROPERTY(Property)* Property = *PropertyIt;
+		FProperty* Property = *PropertyIt;
 
 		if (Property->PropertyFlags & CPF_AlwaysInterested)
 		{

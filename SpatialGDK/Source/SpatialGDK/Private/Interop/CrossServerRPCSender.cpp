@@ -28,7 +28,9 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef InTargetObjectRef,
 	CommandRequest CommandRequest(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID,
 								  SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
-	uint64 UniqueRPCId = FMath::RandHelper(INT_MAX);
+	// We just want a semi-globally unique id for the RPC to avoid false discards.
+	FGuid Guid = FGuid::NewGuid();
+	uint64 UniqueRPCId = CityHash64((char*)&Guid, sizeof(FGuid));
 	RPCPayload::WriteToSchemaObject(CommandRequest.GetRequestObject(), InTargetObjectRef.Offset, Info.Index, UniqueRPCId,
 									InPayload.PayloadData.GetData(), InPayload.PayloadData.Num());
 

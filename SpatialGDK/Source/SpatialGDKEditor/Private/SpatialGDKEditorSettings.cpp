@@ -60,7 +60,6 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bBuildAndUploadAssembly(true)
 	, AssemblyBuildConfiguration(TEXT("Development"))
 	, bConnectServerToCloud(false)
-	, LocalReceptionistPort(SpatialConstants::DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT)
 	, ListeningAddress(SpatialConstants::LOCAL_HOST)
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 	, bPackageMobileCommandLineArgs(true)
@@ -187,6 +186,13 @@ bool USpatialGDKEditorSettings::IsDeploymentNameValid(const FString& Name)
 	FRegexMatcher RegMatcher(DeploymentPatternRegex, Name);
 
 	return RegMatcher.FindNext();
+}
+
+uint16 USpatialGDKEditorSettings::GetDefaultReceptionistPort() const
+{
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	return SpatialGDKSettings->GetDefaultReceptionistPort();
 }
 
 bool USpatialGDKEditorSettings::IsRegionCodeValid(const ERegionCode::Type RegionCode)
