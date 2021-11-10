@@ -9,6 +9,7 @@
 #include "Misc/MessageDialog.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "UObject/Class.h"
+#include "UObject/CoreNet.h"
 #include "UObject/UObjectIterator.h"
 
 #if WITH_EDITOR
@@ -157,11 +158,6 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		return;
 	}
 
-	Class->SetUpRuntimeReplicationData();
-
-	TArray<FLifetimeProperty> LifetimeReplicatedProperties;
-	Class->GetDefaultObject()->GetLifetimeReplicatedProps(LifetimeReplicatedProperties);
-
 	TArray<UFunction*> RelevantClassFunctions = SpatialGDK::GetClassRPCFunctions(Class);
 
 	// Save AlwaysWrite RPCs to validate there's at most one per class.
@@ -227,11 +223,18 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 				Info->InterestProperties.Add(InterestInfo);
 			}
 		}
-
+	}
 #if WITH_PUSH_MODEL
-		if (IS_PUSH_MODEL_ENABLED() && GetDefault<USpatialGDKSettings>()->bShouldWarnOnNetDeltaSerializedPushModel)
+	if (IS_PUSH_MODEL_ENABLED() && GetDefault<USpatialGDKSettings>()->bShouldWarnOnNetDeltaSerializedPushModel)
+	{
+		Class->SetUpRuntimeReplicationData();
+
+		TArray<FLifetimeProperty> LifetimeReplicatedProperties;
+		Class->GetDefaultObject()->GetLifetimeReplicatedProps(LifetimeReplicatedProperties);
+
+		for (TFieldIterator<FProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
 		{
-			if (FStructProperty* StructProperty = CastField<FStructProperty>(Property))
+			if (FStructProperty* StructProperty = CastField<FStructProperty>(*PropertyIt))
 			{
 				const FLifetimeProperty* ReplicatedPropertyPtr =
 					LifetimeReplicatedProperties.FindByPredicate([StructProperty](const FLifetimeProperty& ReplicatedProperty) {
@@ -248,13 +251,14 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 							TEXT(
 								"Class %s Property %s is both NetDeltaSerialized and Push Model enabled - make sure to MARK_PROPERTY_DIRTY "
 								"when using this property, or they won't be replicated with SpatialGDK"),
-							*Class->GetName(), *Property->GetName());
+							*Class->GetName(), *StructProperty->GetName());
 					}
 				}
 			}
 		}
-#endif // WITH_PUSH_MODEL
 	}
+
+#endif // WITH_PUSH_MODEL
 
 	if (bIsActorClass)
 	{
