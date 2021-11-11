@@ -9,6 +9,7 @@
 #include "Misc/MessageDialog.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "UObject/Class.h"
+#include "UObject/CoreNet.h"
 #include "UObject/UObjectIterator.h"
 
 #if WITH_EDITOR
@@ -223,6 +224,44 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 			}
 		}
 	}
+#if WITH_PUSH_MODEL
+	if (IS_PUSH_MODEL_ENABLED() && GetDefault<USpatialGDKSettings>()->bShouldWarnOnNetDeltaSerializedPushModel)
+	{
+		Class->SetUpRuntimeReplicationData();
+
+		TArray<FLifetimeProperty> LifetimeReplicatedProperties;
+		Class->GetDefaultObject()->GetLifetimeReplicatedProps(LifetimeReplicatedProperties);
+
+		for (TFieldIterator<FProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
+		{
+			FStructProperty* StructProperty = CastField<FStructProperty>(*PropertyIt);
+			if (StructProperty == nullptr)
+			{
+				continue;
+			}
+
+			const FLifetimeProperty* ReplicatedPropertyPtr =
+				LifetimeReplicatedProperties.FindByPredicate([StructProperty](const FLifetimeProperty& ReplicatedProperty) {
+					return ReplicatedProperty.RepIndex == StructProperty->RepIndex;
+				});
+			if (!ensure(ReplicatedPropertyPtr))
+			{
+				continue;
+			}
+
+			const bool bIsPropertyNetDeltaSerialized =
+				EnumHasAnyFlags(StructProperty->Struct->StructFlags, EStructFlags::STRUCT_NetDeltaSerializeNative);
+			if (bIsPropertyNetDeltaSerialized && ReplicatedPropertyPtr->bIsPushBased)
+			{
+				UE_LOG(LogSpatialClassInfoManager, Warning,
+					   TEXT("A property is both NetDeltaSerialized and Push Model enabled - make sure to MARK_PROPERTY_DIRTY "
+							"when using this property, or they won't be replicated with SpatialGDK: Class %s Property %s"),
+					   *Class->GetName(), *StructProperty->GetName());
+			}
+		}
+	}
+
+#endif // WITH_PUSH_MODEL
 
 	if (bIsActorClass)
 	{
