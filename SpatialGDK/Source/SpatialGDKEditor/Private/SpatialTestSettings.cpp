@@ -68,7 +68,7 @@ void FSpatialTestSettings::Override(const FString& MapName)
 
 	// Generated config, applied to generated maps
 	const FString GeneratedMapConfigurationFilename = GenerateMapConfigurationFilename(MapName);
-	if (FPaths::FileExists(GeneratedMapConfigurationFilename) == true)
+	if (FPaths::FileExists(GeneratedMapConfigurationFilename))
 	{
 		// Override the settings from the generated map specific config file
 		Load(GeneratedMapConfigurationFilename);
