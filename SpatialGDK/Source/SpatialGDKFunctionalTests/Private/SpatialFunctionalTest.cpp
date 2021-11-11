@@ -254,7 +254,7 @@ void ASpatialFunctionalTest::PrepareTest()
 		}
 
 		const FString GeneratedMapConfigurationFilename = FSpatialTestSettings::GenerateMapConfigurationFilename(GetWorld()->GetMapName());
-		if (FPaths::FileExists(GeneratedMapConfigurationFilename) == true)
+		if (FPaths::FileExists(GeneratedMapConfigurationFilename))
 		{
 			FSpatialTestSettings::Load(GeneratedMapConfigurationFilename);
 		}
