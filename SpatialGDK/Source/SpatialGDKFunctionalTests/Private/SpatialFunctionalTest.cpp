@@ -965,7 +965,7 @@ void ASpatialFunctionalTest::CrossServerRunTest_Implementation(const TArray<FStr
 
 void ASpatialFunctionalTest::MulticastLogFailureMessage_Implementation(const FString& Message)
 {
-	UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("Spatial Functional Test failed! Error: %s"), *Message);
+	UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Spatial Functional Test failed! Error: %s"), *Message);
 }
 
 void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
