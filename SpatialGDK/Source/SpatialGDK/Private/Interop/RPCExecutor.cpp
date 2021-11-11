@@ -8,8 +8,6 @@
 #include "Interop/SpatialSender.h"
 #include "Utils/RepLayoutUtils.h"
 
-DEFINE_LOG_CATEGORY(LogRPCExecutor);
-
 namespace SpatialGDK
 {
 RPCExecutor::RPCExecutor(USpatialNetDriver* InNetDriver, SpatialEventTracer* EventTracer)
@@ -49,24 +47,10 @@ bool RPCExecutor::ExecuteCommand(const FCrossServerRPCParams& Params)
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 	const float TimeQueued = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
-	bool CanProcessRPC = UnresolvedRefs.Num() == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued
-						 || (Function->SpatialFunctionFlags & SPATIALFUNC_NeverQueueForUnresolvedParameters) != 0;
+	bool CanProcessRPC = UnresolvedRefs.Num() == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued;
 
 	if (CanProcessRPC)
 	{
-		if (UnresolvedRefs.Num() > 0 && SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued
-			&& (Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
-		{
-			const FString UnresolvedEntityIds = FString::JoinBy(UnresolvedRefs, TEXT(", "), [](const FUnrealObjectRef& Ref) {
-				return Ref.ToString();
-			});
-
-			UE_LOG(LogSpatialRPCService, Warning,
-				   TEXT("Executed RPC %s::%s with unresolved references (%s) after %.3f seconds of queueing. Owner name: %s"),
-				   *GetNameSafe(TargetObject), *GetNameSafe(Function), *UnresolvedEntityIds, TimeQueued,
-				   *GetNameSafe(TargetObject->GetOuter()));
-		}
-
 		if (EventTracer != nullptr)
 		{
 			FSpatialGDKSpanId SpanId =

@@ -6,8 +6,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "RPCExecutorInterface.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogRPCExecutor, Log, All);
-
 namespace SpatialGDK
 {
 class RPCExecutor : public RPCExecutorInterface
