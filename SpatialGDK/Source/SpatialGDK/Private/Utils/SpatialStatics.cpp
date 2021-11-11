@@ -2,11 +2,14 @@
 
 #include "Utils/SpatialStatics.h"
 
+#include "Engine/NetConnection.h"
+#include "Engine/World.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "GeneralProjectSettings.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "LoadBalancing/GameplayDebuggerLBStrategy.h"
@@ -15,11 +18,6 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/InspectionColors.h"
-
-#include "Engine/NetConnection.h"
-#include "Engine/World.h"
-#include "GeneralProjectSettings.h"
-#include "Kismet/KismetSystemLibrary.h"
 
 DEFINE_LOG_CATEGORY(LogSpatial);
 

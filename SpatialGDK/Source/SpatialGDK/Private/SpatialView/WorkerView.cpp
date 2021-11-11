@@ -72,7 +72,8 @@ void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentI
 		ComponentData* Component = Element->Components.FindByPredicate(ComponentIdEquality{ ComponentId });
 		if (Component == nullptr)
 		{
-			UE_LOG(LogTemp, Error, TEXT("WorkerView::SendRemoveComponent called but component was null. EntityId: %lld, ComponentId: %lld"),
+			UE_LOG(LogSpatialWorkerView, Error,
+				   TEXT("WorkerView::SendRemoveComponent called but component was null. EntityId: %lld, ComponentId: %lld"),
 				   EntityId, ComponentId);
 			return;
 		}
