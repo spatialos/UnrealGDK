@@ -22,9 +22,9 @@ namespace
 {
 ESchemaComponentType PropertyGroupToSchemaComponentType(EReplicatedPropertyGroup Group)
 {
-	static_assert(REP_Count == 4,
+	static_assert(REP_Count == 5,
 				  "Unexpected number of ReplicatedPropertyGroups, please make sure PropertyGroupToSchemaComponentType is still correct.");
-	static_assert(SCHEMA_Count == 4,
+	static_assert(SCHEMA_Count == 5,
 				  "Unexpected number of Schema component types, please make sure PropertyGroupToSchemaComponentType is still correct.");
 
 	switch (Group)
@@ -37,6 +37,8 @@ ESchemaComponentType PropertyGroupToSchemaComponentType(EReplicatedPropertyGroup
 		return SCHEMA_InitialOnly;
 	case REP_ServerOnly:
 		return SCHEMA_ServerOnly;
+	case REP_AuthServerOnly:
+		return SCHEMA_AuthServerOnly;
 	default:
 		checkNoEntry();
 		return SCHEMA_Invalid;
@@ -482,9 +484,9 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 
 EReplicatedPropertyGroup SchemaComponentTypeToPropertyGroup(ESchemaComponentType SchemaType)
 {
-	static_assert(REP_Count == 4,
+	static_assert(REP_Count == 5,
 				  "Unexpected number of ReplicatedPropertyGroups, please make sure SchemaComponentTypeToPropertyGroup is still correct.");
-	static_assert(SCHEMA_Count == 4,
+	static_assert(SCHEMA_Count == 5,
 				  "Unexpected number of Schema component types, please make sure SchemaComponentTypeToPropertyGroup is still correct.");
 
 	switch (SchemaType)
@@ -497,6 +499,8 @@ EReplicatedPropertyGroup SchemaComponentTypeToPropertyGroup(ESchemaComponentType
 		return REP_InitialOnly;
 	case SCHEMA_ServerOnly:
 		return REP_ServerOnly;
+	case SCHEMA_AuthServerOnly:
+		return REP_AuthServerOnly;
 	default:
 		checkNoEntry();
 		return REP_MultiClient;

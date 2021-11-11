@@ -29,17 +29,6 @@ public:
 			UE_LOG(LogTemp, Fatal, TEXT("Failed to load %s. Have you run `UnrealGDK/Setup.bat`?"), *WorkerFilePath);
 		}
 
-#if TRACE_LIB_ACTIVE
-
-		FString TraceFilePath = Path / TEXT("legacy_trace_dynamic.dll");
-		TraceLibraryHandle = FPlatformProcess::GetDllHandle(*TraceFilePath);
-		if (TraceLibraryHandle == nullptr)
-		{
-			UE_LOG(LogTemp, Fatal, TEXT("Failed to load %s. Have you run `UnrealGDK/SetupIncTraceLibs.bat`?"), *TraceFilePath);
-		}
-
-#endif // TRACE_LIB_ACTIVE
-
 #elif PLATFORM_PS4
 		WorkerLibraryHandle = FPlatformProcess::GetDllHandle(TEXT("libimprobable_worker.prx"));
 		if (WorkerLibraryHandle == nullptr)

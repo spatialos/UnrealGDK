@@ -614,7 +614,7 @@ TSharedPtr<SpatialGDK::SpatialEventTracer> USpatialConnectionManager::CreateEven
 		return nullptr;
 	}
 
-	return MakeShared<SpatialGDK::SpatialEventTracer>(WorkerId);
+	return MakeShared<SpatialGDK::SpatialEventTracer>(WorkerId, Settings->GetEventTracingSamplingSettings());
 };
 
 void USpatialConnectionManager::OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaTime)

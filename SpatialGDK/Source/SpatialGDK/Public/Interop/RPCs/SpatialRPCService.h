@@ -30,8 +30,7 @@ class SPATIALGDK_API SpatialRPCService
 {
 public:
 	explicit SpatialRPCService(const FSubView& InActorAuthSubView, const FSubView& InActorNonAuthSubView,
-							   const FSubView& InWorkerEntitySubView, USpatialLatencyTracer* InSpatialLatencyTracer,
-							   SpatialEventTracer* InEventTracer, USpatialNetDriver* InNetDriver);
+							   const FSubView& InWorkerEntitySubView, SpatialEventTracer* InEventTracer, USpatialNetDriver* InNetDriver);
 
 	void AdvanceView();
 	void ProcessChanges(const float NetDriverTime);
@@ -84,7 +83,6 @@ private:
 	bool DoesEntityIdHaveValidObject(const Worker_EntityId EntityId) const;
 
 	USpatialNetDriver* NetDriver;
-	USpatialLatencyTracer* SpatialLatencyTracer;
 	SpatialEventTracer* EventTracer;
 
 	FRPCContainer OutgoingRPCs{ ERPCQueueType::Send };
