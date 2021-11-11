@@ -15,7 +15,6 @@
 #include "Schema/Interest.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 
@@ -67,7 +66,7 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 
 				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 				{
-					GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Cmd.Property);
+					FArrayProperty* ArrayProperty = CastField<FArrayProperty>(Cmd.Property);
 
 					// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
 					if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
@@ -126,10 +125,10 @@ uint32 ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObjec
 	return BytesEnd - BytesStart;
 }
 
-void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, GDK_PROPERTY(Property) * Property, const uint8* Data,
+void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, FProperty* Property, const uint8* Data,
 								   TArray<Schema_FieldId>* ClearedIds)
 {
-	if (GDK_PROPERTY(StructProperty)* StructProperty = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Property))
+	if (FStructProperty* StructProperty = CastField<FStructProperty>(Property))
 	{
 		UScriptStruct* Struct = StructProperty->Struct;
 		FSpatialNetBitWriter ValueDataWriter(PackageMap);
@@ -161,53 +160,53 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 
 		AddBytesToSchema(Object, FieldId, ValueDataWriter);
 	}
-	else if (GDK_PROPERTY(BoolProperty)* BoolProperty = GDK_CASTFIELD<GDK_PROPERTY(BoolProperty)>(Property))
+	else if (FBoolProperty* BoolProperty = CastField<FBoolProperty>(Property))
 	{
 		Schema_AddBool(Object, FieldId, (uint8)BoolProperty->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(FloatProperty)* FloatProperty = GDK_CASTFIELD<GDK_PROPERTY(FloatProperty)>(Property))
+	else if (FFloatProperty* FloatProperty = CastField<FFloatProperty>(Property))
 	{
 		Schema_AddFloat(Object, FieldId, FloatProperty->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(DoubleProperty)* DoubleProperty = GDK_CASTFIELD<GDK_PROPERTY(DoubleProperty)>(Property))
+	else if (FDoubleProperty* DoubleProperty = CastField<FDoubleProperty>(Property))
 	{
 		Schema_AddDouble(Object, FieldId, DoubleProperty->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(Int8Property)* Int8Property = GDK_CASTFIELD<GDK_PROPERTY(Int8Property)>(Property))
+	else if (FInt8Property* Int8Property = CastField<FInt8Property>(Property))
 	{
 		Schema_AddInt32(Object, FieldId, (int32)Int8Property->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(Int16Property)* Int16Property = GDK_CASTFIELD<GDK_PROPERTY(Int16Property)>(Property))
+	else if (FInt16Property* Int16Property = CastField<FInt16Property>(Property))
 	{
 		Schema_AddInt32(Object, FieldId, (int32)Int16Property->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(IntProperty)* IntProperty = GDK_CASTFIELD<GDK_PROPERTY(IntProperty)>(Property))
+	else if (FIntProperty* IntProperty = CastField<FIntProperty>(Property))
 	{
 		Schema_AddInt32(Object, FieldId, IntProperty->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(Int64Property)* Int64Property = GDK_CASTFIELD<GDK_PROPERTY(Int64Property)>(Property))
+	else if (FInt64Property* Int64Property = CastField<FInt64Property>(Property))
 	{
 		Schema_AddInt64(Object, FieldId, Int64Property->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(ByteProperty)* ByteProperty = GDK_CASTFIELD<GDK_PROPERTY(ByteProperty)>(Property))
+	else if (FByteProperty* ByteProperty = CastField<FByteProperty>(Property))
 	{
 		Schema_AddUint32(Object, FieldId, (uint32)ByteProperty->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(UInt16Property)* UInt16PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt16Property)>(Property))
+	else if (FUInt16Property* UInt16PropertyPtr = CastField<FUInt16Property>(Property))
 	{
 		Schema_AddUint32(Object, FieldId, (uint32)UInt16PropertyPtr->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(UInt32Property)* UInt32PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt32Property)>(Property))
+	else if (FUInt32Property* UInt32PropertyPtr = CastField<FUInt32Property>(Property))
 	{
 		Schema_AddUint32(Object, FieldId, UInt32PropertyPtr->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(UInt64Property)* UInt64PropertyPtr = GDK_CASTFIELD<GDK_PROPERTY(UInt64Property)>(Property))
+	else if (FUInt64Property* UInt64PropertyPtr = CastField<FUInt64Property>(Property))
 	{
 		Schema_AddUint64(Object, FieldId, UInt64PropertyPtr->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(ObjectPropertyBase)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectPropertyBase)>(Property))
+	else if (FObjectPropertyBase* ObjectProperty = CastField<FObjectPropertyBase>(Property))
 	{
-		if (GDK_CASTFIELD<GDK_PROPERTY(SoftObjectProperty)>(Property))
+		if (CastField<FSoftObjectProperty>(Property))
 		{
 			const FSoftObjectPtr* ObjectPtr = reinterpret_cast<const FSoftObjectPtr*>(Data);
 
@@ -224,19 +223,19 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			AddObjectRefToSchema(Object, FieldId, FUnrealObjectRef::FromObjectPtr(ObjectValue, PackageMap));
 		}
 	}
-	else if (GDK_PROPERTY(NameProperty)* NameProperty = GDK_CASTFIELD<GDK_PROPERTY(NameProperty)>(Property))
+	else if (FNameProperty* NameProperty = CastField<FNameProperty>(Property))
 	{
 		AddStringToSchema(Object, FieldId, NameProperty->GetPropertyValue(Data).ToString());
 	}
-	else if (GDK_PROPERTY(StrProperty)* StrProperty = GDK_CASTFIELD<GDK_PROPERTY(StrProperty)>(Property))
+	else if (FStrProperty* StrProperty = CastField<FStrProperty>(Property))
 	{
 		AddStringToSchema(Object, FieldId, StrProperty->GetPropertyValue(Data));
 	}
-	else if (GDK_PROPERTY(TextProperty)* TextProperty = GDK_CASTFIELD<GDK_PROPERTY(TextProperty)>(Property))
+	else if (FTextProperty* TextProperty = CastField<FTextProperty>(Property))
 	{
 		AddStringToSchema(Object, FieldId, TextProperty->GetPropertyValue(Data).ToString());
 	}
-	else if (GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property))
+	else if (FArrayProperty* ArrayProperty = CastField<FArrayProperty>(Property))
 	{
 		FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 		for (int i = 0; i < ArrayHelper.Num(); i++)
@@ -246,7 +245,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 
 		if (ArrayHelper.Num() > 0 || (ArrayHelper.Num() == 0 && ClearedIds))
 		{
-			if (ArrayProperty->Inner->IsA<GDK_PROPERTY(ObjectPropertyBase)>())
+			if (ArrayProperty->Inner->IsA<FObjectPropertyBase>())
 			{
 				if (ArrayProperty->PropertyFlags & CPF_AlwaysInterested)
 				{
@@ -260,7 +259,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			ClearedIds->Add(FieldId);
 		}
 	}
-	else if (GDK_PROPERTY(EnumProperty)* EnumProperty = GDK_CASTFIELD<GDK_PROPERTY(EnumProperty)>(Property))
+	else if (FEnumProperty* EnumProperty = CastField<FEnumProperty>(Property))
 	{
 		if (EnumProperty->ElementSize < 4)
 		{
@@ -271,17 +270,16 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			AddProperty(Object, FieldId, EnumProperty->GetUnderlyingProperty(), Data, ClearedIds);
 		}
 	}
-	else if (Property->IsA<GDK_PROPERTY(DelegateProperty)>() || Property->IsA<GDK_PROPERTY(MulticastDelegateProperty)>()
-			 || Property->IsA<GDK_PROPERTY(InterfaceProperty)>())
+	else if (Property->IsA<FDelegateProperty>() || Property->IsA<FMulticastDelegateProperty>() || Property->IsA<FInterfaceProperty>())
 	{
 		// These properties can be set to replicate, but won't serialize across the network.
 	}
-	else if (Property->IsA<GDK_PROPERTY(MapProperty)>())
+	else if (Property->IsA<FMapProperty>())
 	{
 		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Replicated TMaps are not supported."),
 			   *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
 	}
-	else if (Property->IsA<GDK_PROPERTY(SetProperty)>())
+	else if (Property->IsA<FSetProperty>())
 	{
 		UE_LOG(LogComponentFactory, Error, TEXT("Class %s with name %s in field %d: Replicated TSets are not supported."),
 			   *Property->GetClass()->GetName(), *Property->GetName(), FieldId);
@@ -298,7 +296,7 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 {
 	TArray<FWorkerComponentData> ComponentDatas;
 
-	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
+	static_assert(SCHEMA_Count == 5, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 
 	if (Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
@@ -315,6 +313,11 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 	{
 		ComponentDatas.Add(
 			CreateComponentData(Info.SchemaComponents[SCHEMA_ServerOnly], Object, RepChangeState, SCHEMA_ServerOnly, OutBytesWritten));
+	}
+	if (Info.SchemaComponents[SCHEMA_AuthServerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_AuthServerOnly], Object, RepChangeState, SCHEMA_AuthServerOnly,
+											   OutBytesWritten));
 	}
 
 	if (Info.SchemaComponents[SCHEMA_InitialOnly] != SpatialConstants::INVALID_COMPONENT_ID)
@@ -370,7 +373,7 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 {
 	TArray<FWorkerComponentUpdate> ComponentUpdates;
 
-	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
+	static_assert(SCHEMA_Count == 5, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 
 	if (RepChangeState)
 	{
@@ -403,6 +406,18 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			uint32 BytesWritten = 0;
 			FWorkerComponentUpdate HandoverUpdate =
 				CreateComponentUpdate(Info.SchemaComponents[SCHEMA_ServerOnly], Object, *RepChangeState, SCHEMA_ServerOnly, BytesWritten);
+			if (BytesWritten > 0)
+			{
+				ComponentUpdates.Add(HandoverUpdate);
+				OutBytesWritten += BytesWritten;
+			}
+		}
+
+		if (Info.SchemaComponents[SCHEMA_AuthServerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			uint32 BytesWritten = 0;
+			FWorkerComponentUpdate HandoverUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_AuthServerOnly], Object,
+																		  *RepChangeState, SCHEMA_AuthServerOnly, BytesWritten);
 			if (BytesWritten > 0)
 			{
 				ComponentUpdates.Add(HandoverUpdate);

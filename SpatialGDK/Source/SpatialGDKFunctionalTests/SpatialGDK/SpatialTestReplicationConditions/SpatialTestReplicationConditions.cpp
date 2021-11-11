@@ -42,7 +42,7 @@ ASpatialTestReplicationConditions::ASpatialTestReplicationConditions()
 {
 	Author = "Mike";
 	Description = TEXT("Test Unreal Replication Conditions in a MultiServer Context");
-	static_assert(COND_Max == 16, TEXT("New replication condition added - add more tests!"));
+	static_assert(COND_Max == 17, TEXT("New replication condition added, Expected 17 - add more tests!"));
 }
 
 void ASpatialTestReplicationConditions::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -83,6 +83,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		{
 			const bool bWrite = false;
 			bool bCondIgnore[COND_Max]{};
+			bCondIgnore[COND_AuthServerOnly] = true;
 			ProcessCommonActorProperties(bWrite, bCondIgnore);
 		}
 
@@ -94,15 +95,12 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessCustomActorProperties(TestActor_CustomEnabled, bWrite, bEnabled);
 		}
 
-		if (!bSpatialEnabled) // TODO: UNR-5212 - fix DOREPLIFETIME_ACTIVE_OVERRIDE replication
+		if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
+					   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
 		{
-			if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
-						   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
-			{
-				const bool bWrite = false;
-				const bool bEnabled = false;
-				ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
-			}
+			const bool bWrite = false;
+			const bool bEnabled = false;
+			ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
 		}
 
 		if (AssertTrue(TestActor_AutonomousOnly->AreAllDynamicComponentsValid(),
@@ -162,6 +160,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			bCondIgnore[COND_AutonomousOnly] = true;
 			bCondIgnore[COND_SkipOwner] = true;
 			bCondIgnore[COND_ServerOnly] = true;
+			bCondIgnore[COND_AuthServerOnly] = true;
 			ProcessCommonActorProperties(bWrite, bCondIgnore);
 		}
 
@@ -173,15 +172,12 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessCustomActorProperties(TestActor_CustomEnabled, bWrite, bEnabled);
 		}
 
-		if (!bSpatialEnabled) // TODO: UNR-5212 - fix DOREPLIFETIME_ACTIVE_OVERRIDE replication
+		if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
+					   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
 		{
-			if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
-						   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
-			{
-				const bool bWrite = false;
-				const bool bEnabled = false;
-				ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
-			}
+			const bool bWrite = false;
+			const bool bEnabled = false;
+			ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
 		}
 
 		if (AssertTrue(TestActor_AutonomousOnly->AreAllDynamicComponentsValid(),
@@ -245,6 +241,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			bCondIgnore[COND_AutonomousOnly] = true;
 			bCondIgnore[COND_ReplayOrOwner] = true;
 			bCondIgnore[COND_ServerOnly] = true;
+			bCondIgnore[COND_AuthServerOnly] = true;
 			ProcessCommonActorProperties(bWrite, bCondIgnore);
 		}
 
@@ -256,15 +253,12 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessCustomActorProperties(TestActor_CustomEnabled, bWrite, bEnabled);
 		}
 
-		if (!bSpatialEnabled) // TODO: UNR-5212 - fix DOREPLIFETIME_ACTIVE_OVERRIDE replication
+		if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
+					   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
 		{
-			if (AssertTrue(TestActor_CustomDisabled->AreAllDynamicComponentsValid(),
-						   TEXT("TestActor_CustomDisabled - All dynamic components should have arrived")))
-			{
-				const bool bWrite = false;
-				const bool bEnabled = false;
-				ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
-			}
+			const bool bWrite = false;
+			const bool bEnabled = false;
+			ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, bEnabled);
 		}
 
 		if (AssertTrue(TestActor_AutonomousOnly->AreAllDynamicComponentsValid(),
@@ -309,47 +303,17 @@ void ASpatialTestReplicationConditions::PrepareTest()
 	AddStep(TEXT("ASpatialTestReplicationConditions Spawn and Setup Test Actor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		AssertTrue(HasAuthority(), TEXT("Server 1 requires authority over the test actor"));
 
-		TestActor_Common = GetWorld()->SpawnActor<ATestReplicationConditionsActor_Common>(ActorSpawnPosition, FRotator::ZeroRotator,
-																						  FActorSpawnParameters());
-		if (!AssertTrue(IsValid(TestActor_Common), TEXT("Failed to spawn TestActor_Common")))
-		{
-			return;
-		}
+		TestActor_Common = SpawnActor<ATestReplicationConditionsActor_Common>(ActorSpawnPosition);
 
-		TestActor_CustomEnabled = GetWorld()->SpawnActor<ATestReplicationConditionsActor_Custom>(ActorSpawnPosition, FRotator::ZeroRotator,
-																								 FActorSpawnParameters());
-		if (!AssertTrue(IsValid(TestActor_CustomEnabled), TEXT("Failed to spawn TestActor_CustomEnabled")))
-		{
-			return;
-		}
+		TestActor_CustomEnabled = SpawnActor<ATestReplicationConditionsActor_Custom>(ActorSpawnPosition);
 
-		TestActor_CustomDisabled = GetWorld()->SpawnActor<ATestReplicationConditionsActor_Custom>(ActorSpawnPosition, FRotator::ZeroRotator,
-																								  FActorSpawnParameters());
-		if (!AssertTrue(IsValid(TestActor_CustomDisabled), TEXT("Failed to spawn TestActor_CustomDisabled")))
-		{
-			return;
-		}
+		TestActor_CustomDisabled = SpawnActor<ATestReplicationConditionsActor_Custom>(ActorSpawnPosition);
 
-		TestActor_AutonomousOnly = GetWorld()->SpawnActor<ATestReplicationConditionsActor_AutonomousOnly>(
-			ActorSpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
-		if (!AssertTrue(IsValid(TestActor_AutonomousOnly), TEXT("Failed to spawn TestActor_AutonomousOnly")))
-		{
-			return;
-		}
+		TestActor_AutonomousOnly = SpawnActor<ATestReplicationConditionsActor_AutonomousOnly>(ActorSpawnPosition);
 
-		TestActor_PhysicsEnabled = GetWorld()->SpawnActor<ATestReplicationConditionsActor_Physics>(
-			ActorSpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
-		if (!AssertTrue(IsValid(TestActor_PhysicsEnabled), TEXT("Failed to spawn TestActor_PhysicsEnabled")))
-		{
-			return;
-		}
+		TestActor_PhysicsEnabled = SpawnActor<ATestReplicationConditionsActor_Physics>(ActorSpawnPosition);
 
-		TestActor_PhysicsDisabled = GetWorld()->SpawnActor<ATestReplicationConditionsActor_Physics>(
-			ActorSpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
-		if (!AssertTrue(IsValid(TestActor_PhysicsDisabled), TEXT("Failed to spawn TestActor_PhysicsDisabled")))
-		{
-			return;
-		}
+		TestActor_PhysicsDisabled = SpawnActor<ATestReplicationConditionsActor_Physics>(ActorSpawnPosition);
 
 		TestActor_Common->SpawnDynamicComponents();
 		TestActor_CustomEnabled->SpawnDynamicComponents();
@@ -376,11 +340,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		ProcessPhysicsActorProperties(TestActor_PhysicsEnabled, bWrite, /*bPhysicsEnabled*/ true, /*bPhysicsExpected*/ true);
 		ProcessPhysicsActorProperties(TestActor_PhysicsDisabled, bWrite, /*bPhysicsEnabled*/ false, /*bPhysicsExpected*/ false);
 
-		AController* PlayerController = Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
-		if (!AssertTrue(IsValid(PlayerController), TEXT("Failed to retrieve player controller")))
-		{
-			return;
-		}
+		AController* PlayerController = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
 
 		AssertTrue(PlayerController->HasAuthority(), TEXT("Server 1 requires authority over controller"));
 		TestActor_Common->SetOwner(PlayerController);
@@ -397,13 +357,6 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		// Set both custom actors to be owned by the PlayerController, just so we guarantee that they stay on server 1
 		TestActor_CustomEnabled->SetOwner(PlayerController);
 		TestActor_CustomDisabled->SetOwner(PlayerController);
-
-		RegisterAutoDestroyActor(TestActor_Common);
-		RegisterAutoDestroyActor(TestActor_CustomEnabled);
-		RegisterAutoDestroyActor(TestActor_CustomDisabled);
-		RegisterAutoDestroyActor(TestActor_AutonomousOnly);
-		RegisterAutoDestroyActor(TestActor_PhysicsEnabled);
-		RegisterAutoDestroyActor(TestActor_PhysicsDisabled);
 
 		FinishStep();
 	});
@@ -530,6 +483,7 @@ void ASpatialTestReplicationConditions::ProcessCommonActorProperties(bool bWrite
 	WrappedAction(TestActor_Common->CondSimulatedOrPhysicsNoReplay_Var, 130, COND_SimulatedOrPhysicsNoReplay);
 	WrappedAction(TestActor_Common->CondSkipReplay_Var, 140, COND_SkipReplay);
 	WrappedAction(TestActor_Common->CondServerOnly_Var, 150, COND_ServerOnly);
+	WrappedAction(TestActor_Common->CondAuthServerOnly_Var, 160, COND_AuthServerOnly);
 
 	WrappedAction(TestActor_Common->StaticComponent->CondNone_Var, 210, COND_None, StaticCompText);
 	WrappedAction(TestActor_Common->StaticComponent->CondOwnerOnly_Var, 230, COND_OwnerOnly, StaticCompText);
@@ -543,6 +497,7 @@ void ASpatialTestReplicationConditions::ProcessCommonActorProperties(bool bWrite
 				  StaticCompText);
 	WrappedAction(TestActor_Common->StaticComponent->CondSkipReplay_Var, 340, COND_SkipReplay, StaticCompText);
 	WrappedAction(TestActor_Common->StaticComponent->CondServerOnly_Var, 350, COND_ServerOnly, StaticCompText);
+	WrappedAction(TestActor_Common->StaticComponent->CondAuthServerOnly_Var, 360, COND_AuthServerOnly, StaticCompText);
 
 	WrappedAction(TestActor_Common->DynamicComponent->CondNone_Var, 410, COND_None, DynamicCompText);
 	WrappedAction(TestActor_Common->DynamicComponent->CondOwnerOnly_Var, 430, COND_OwnerOnly, DynamicCompText);
@@ -556,6 +511,7 @@ void ASpatialTestReplicationConditions::ProcessCommonActorProperties(bool bWrite
 				  DynamicCompText);
 	WrappedAction(TestActor_Common->DynamicComponent->CondSkipReplay_Var, 540, COND_SkipReplay, DynamicCompText);
 	WrappedAction(TestActor_Common->DynamicComponent->CondServerOnly_Var, 550, COND_ServerOnly, DynamicCompText);
+	WrappedAction(TestActor_Common->DynamicComponent->CondAuthServerOnly_Var, 560, COND_AuthServerOnly, DynamicCompText);
 }
 
 void ASpatialTestReplicationConditions::ProcessCustomActorProperties(ATestReplicationConditionsActor_Custom* Actor, const bool bWrite,

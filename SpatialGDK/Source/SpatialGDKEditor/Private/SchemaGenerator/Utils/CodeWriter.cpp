@@ -38,7 +38,7 @@ FCodeWriter& FCodeWriter::Print(const FString& String)
 	// Replace 4 spaces with tabs.
 	for (auto& Line : Lines)
 	{
-		Line.Replace(TEXT("    "), TEXT("\t"));
+		Line = Line.Replace(TEXT("    "), TEXT("\t"));
 	}
 
 	// Determine scope to trim by.

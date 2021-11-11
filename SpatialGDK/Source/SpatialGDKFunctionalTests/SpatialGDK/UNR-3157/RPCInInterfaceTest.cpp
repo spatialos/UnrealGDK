@@ -3,6 +3,7 @@
 #include "RPCInInterfaceTest.h"
 #include "Engine/World.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestFlowController.h"
@@ -23,14 +24,10 @@ void ARPCInInterfaceTest::PrepareTest()
 
 	{ // Step 1 - Create actor
 		AddStep(TEXT("ServerCreateActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			ASpatialFunctionalTestFlowController* Client1FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
+			AController* PlayerController = GetFlowPlayerController(ESpatialFunctionalTestWorkerType::Client, 1);
 
-			TestActor = GetWorld()->SpawnActor<ARPCInInterfaceActor>();
-			AssertIsValid(TestActor, "Actor exists", this);
-			if (TestActor)
-			{
-				TestActor->SetOwner(Client1FlowController->GetOwner());
-			}
+			TestActor = SpawnActor<ARPCInInterfaceActor>();
+			TestActor->SetOwner(PlayerController);
 
 			FinishStep();
 		});

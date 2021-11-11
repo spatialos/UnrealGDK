@@ -43,11 +43,8 @@ void ASpatialTestPossession::PrepareTest()
 				continue;
 			}
 			// Spawn the actor for the client to possess, and increment the y variable for the next spawn
-			ATestPossessionPawn* TestPawn = GetWorld()->SpawnActor<ATestPossessionPawn>(FVector(0.0f, YToSpawnAt, 50.0f),
-																						FRotator::ZeroRotator, FActorSpawnParameters());
+			ATestPossessionPawn* TestPawn = SpawnActor<ATestPossessionPawn>(FVector(0.0f, YToSpawnAt, 50.0f));
 			YToSpawnAt += YSpawnIncrement;
-
-			RegisterAutoDestroyActor(TestPawn);
 
 			AController* PlayerController = Cast<AController>(FlowController->GetOwner());
 

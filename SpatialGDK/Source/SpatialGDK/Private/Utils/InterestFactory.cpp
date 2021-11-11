@@ -10,7 +10,6 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/Interest/NetCullDistanceInterest.h"
 
 #include "Engine/Classes/GameFramework/Actor.h"
@@ -106,6 +105,7 @@ SchemaResultType InterestFactory::CreateServerAuthInterestResultType()
 	SchemaResultType ServerAuthResultType{};
 	// Just the components that we won't have already checked out through authority
 	ServerAuthResultType.ComponentIds.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST);
+	ServerAuthResultType.ComponentSetsIds.Push(SpatialConstants::AUTH_SERVER_ONLY_COMPONENT_SET_ID);
 	return ServerAuthResultType;
 }
 
@@ -121,7 +121,7 @@ Worker_ComponentUpdate UnrealServerInterestFactory::CreateInterestUpdate(AActor*
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy) const
+Interest InterestFactory::CreateServerWorkerInterest(TArray<Worker_ComponentId> PartitionsComponents) const
 {
 	// Build the Interest component as we go by updating the component-> query list mappings.
 	Interest ServerInterest;
@@ -155,6 +155,13 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 									   SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID,
 									   SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID };
 	ServerQuery.Constraint.bSelfConstraint = true;
+	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
+
+	// Interest in load balancing partitions
+	ServerQuery = Query();
+	ServerQuery.ResultComponentIds = MoveTemp(PartitionsComponents);
+	ServerQuery.ResultComponentIds.Add(SpatialConstants::LOADBALANCER_PARTITION_TAG_COMPONENT_ID);
+	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::LOADBALANCER_PARTITION_TAG_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
 
 	return ServerInterest;
@@ -631,16 +638,16 @@ QueryConstraint UnrealServerInterestFactory::CreateAlwaysInterestedConstraint(co
 	for (const FInterestPropertyInfo& PropertyInfo : InInfo.InterestProperties)
 	{
 		uint8* Data = (uint8*)InActor + PropertyInfo.Offset;
-		if (GDK_PROPERTY(ObjectPropertyBase)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectPropertyBase)>(PropertyInfo.Property))
+		if (FObjectPropertyBase* ObjectProperty = CastField<FObjectPropertyBase>(PropertyInfo.Property))
 		{
 			AddObjectToConstraint(ObjectProperty, Data, AlwaysInterestedConstraint);
 		}
-		else if (GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(PropertyInfo.Property))
+		else if (FArrayProperty* ArrayProperty = CastField<FArrayProperty>(PropertyInfo.Property))
 		{
 			FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 			for (int i = 0; i < ArrayHelper.Num(); i++)
 			{
-				AddObjectToConstraint(GDK_CASTFIELD<GDK_PROPERTY(ObjectPropertyBase)>(ArrayProperty->Inner), ArrayHelper.GetRawPtr(i),
+				AddObjectToConstraint(CastField<FObjectPropertyBase>(ArrayProperty->Inner), ArrayHelper.GetRawPtr(i),
 									  AlwaysInterestedConstraint);
 			}
 		}
@@ -747,8 +754,7 @@ UnrealServerInterestFactory::UnrealServerInterestFactory(USpatialClassInfoManage
 {
 }
 
-void UnrealServerInterestFactory::AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase) * Property, uint8* Data,
-														QueryConstraint& OutConstraint) const
+void UnrealServerInterestFactory::AddObjectToConstraint(FObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const
 {
 	UObject* ObjectOfInterest = Property->GetObjectPropertyValue(Data);
 

@@ -68,6 +68,8 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunc
 	Writer->WriteValue(TEXT("disconnect_worker"), WorkerConfig.WorkerPermissions.bDisconnectWorker);
 	Writer->WriteValue(TEXT("reserve_entity_id"), WorkerConfig.WorkerPermissions.bReserveEntityID);
 	Writer->WriteValue(TEXT("entity_query"), WorkerConfig.WorkerPermissions.bAllowEntityQuery);
+	Writer->WriteValue(TEXT("disable_entity_query_restricted_components"),
+					   WorkerConfig.WorkerPermissions.bDisableEntityQueryRestrictedComponents);
 	Writer->WriteObjectEnd();
 
 	if (WorkerConfig.NumEditorInstances > 0)
@@ -130,6 +132,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 		ClientWorker.WorkerPermissions.bDisconnectWorker = false;
 		ClientWorker.WorkerPermissions.bReserveEntityID = false;
 		ClientWorker.WorkerPermissions.bAllowEntityQuery = true;
+		ClientWorker.WorkerPermissions.bDisableEntityQueryRestrictedComponents = true;
 		WriteWorkerSection(Writer, ClientWorker);
 
 		// For cloud configs we always add the SimulatedPlayerCoordinator and DeploymentManager.
@@ -179,7 +182,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 		Writer->WriteValue(TEXT("max_concurrent_workers"), LaunchConfigDescription.MaxConcurrentWorkers);
 
 		// Event tracing
-		if (SpatialGDKSettings->bEventTracingEnabled)
+		if (SpatialGDKSettings->GetEventTracingEnabled())
 		{
 			Writer->WriteObjectStart(TEXT("event_tracing_configuration"));
 			Writer->WriteValue(TEXT("enabled"), true);
@@ -201,10 +204,8 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 			Writer->WriteObjectStart(TEXT("event_filter_configuration"));
 
 			UEventTracingSamplingSettings* SamplingSettings = SpatialGDKSettings->GetEventTracingSamplingSettings();
-			Writer->WriteValue(TEXT("event_pre_filter"),
-							   SamplingSettings->RuntimeEventPreFilter.Len() ? *SamplingSettings->RuntimeEventPreFilter : TEXT("false"));
-			Writer->WriteValue(TEXT("event_post_filter"),
-							   SamplingSettings->RuntimeEventPostFilter.Len() ? SamplingSettings->RuntimeEventPostFilter : TEXT("false"));
+			Writer->WriteValue(TEXT("event_pre_filter"), *SamplingSettings->GetRuntimeEventPreFilterString());
+			Writer->WriteValue(TEXT("event_post_filter"), *SamplingSettings->GetRuntimeEventPostFilterString());
 
 			Writer->WriteObjectEnd(); // event_filter_configuration end
 			Writer->WriteObjectEnd(); // event_tracing_configuration end

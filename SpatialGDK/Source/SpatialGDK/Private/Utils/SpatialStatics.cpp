@@ -10,6 +10,7 @@
 #include "GeneralProjectSettings.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "LoadBalancing/GameplayDebuggerLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "SpatialConstants.h"
@@ -43,6 +44,22 @@ bool CanProcessActor(const AActor* Actor)
 
 	return true;
 }
+
+const ULayeredLBStrategy* GetLayeredLBStrategy(const USpatialNetDriver* NetDriver)
+{
+	if (const ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy))
+	{
+		return LayeredLBStrategy;
+	}
+	if (const UGameplayDebuggerLBStrategy* DebuggerLBStrategy = Cast<UGameplayDebuggerLBStrategy>(NetDriver->LoadBalanceStrategy))
+	{
+		if (const ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(DebuggerLBStrategy->GetWrappedStrategy()))
+		{
+			return LayeredLBStrategy;
+		}
+	}
+	return nullptr;
+}
 } // anonymous namespace
 
 bool USpatialStatics::IsSpatialNetworkingEnabled()
@@ -73,10 +90,7 @@ bool USpatialStatics::IsHandoverEnabled(const UObject* WorldContextObject)
 			return true;
 		}
 
-		if (const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy))
-		{
-			return LBStrategy->RequiresHandoverData();
-		}
+		return SpatialNetDriver->LoadBalanceStrategy->RequiresHandoverData();
 	}
 	return true;
 }
@@ -218,17 +232,14 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 
 	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 	{
-		// Calling IsActorGroupOwnerForClass before NotifyBeginPlay has been called (when NetDriver is ready) is invalid.
-		if (!SpatialNetDriver->IsReady())
+		if (const ULayeredLBStrategy* LBStrategy = GetLayeredLBStrategy(SpatialNetDriver))
 		{
-			UE_LOG(LogSpatial, Error,
-				   TEXT("Called IsActorGroupOwnerForClass before NotifyBeginPlay has been called is invalid. Actor class: %s"),
-				   *GetNameSafe(ActorClass));
-			return true;
-		}
-
-		if (const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy))
-		{
+			if (!LBStrategy->IsReady())
+			{
+				UE_LOG(LogSpatial, Error, TEXT("Called IsActorGroupOwnerForClass before LBStrategy is ready. Actor class: %s"),
+					   *GetNameSafe(ActorClass));
+				return true;
+			}
 			return LBStrategy->CouldHaveAuthority(ActorClass);
 		}
 	}
@@ -351,7 +362,7 @@ FName USpatialStatics::GetLayerName(const UObject* WorldContextObject)
 		return NAME_None;
 	}
 
-	const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy);
+	const ULayeredLBStrategy* LBStrategy = GetLayeredLBStrategy(SpatialNetDriver);
 	if (!ensureAlwaysMsgf(LBStrategy != nullptr, TEXT("Failed calling GetLayerName because load balancing strategy was nullptr")))
 	{
 		return FName();

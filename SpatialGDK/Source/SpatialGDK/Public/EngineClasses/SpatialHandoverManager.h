@@ -27,8 +27,12 @@ public:
 	void Advance();
 
 	const TSet<Worker_EntityId_Key>& GetActorsToHandover() { return ActorsToHandover; }
+	const TSet<Worker_EntityId_Key>& GetActorsToCheckForAuth() { return ActorsToACK; }
 
 	void Flush(ISpatialOSWorker& Connection, const TSet<Worker_EntityId_Key>& ActorsReleased);
+
+	const TSet<Worker_EntityId_Key>& GetDelegatedPartitions() { return PartitionsDelegated; }
+	const TSet<Worker_EntityId_Key>& GetDelegationLost() { return DelegationLost; }
 
 private:
 	void PopulateDataStore(const Worker_EntityId EntityId);
@@ -48,6 +52,9 @@ private:
 	TSet<Worker_EntityId_Key> OwnedPartitions;
 	TSet<Worker_EntityId_Key> ActorsToHandover;
 	TSet<Worker_EntityId_Key> ActorsToACK;
+
+	TSet<Worker_EntityId_Key> PartitionsDelegated;
+	TSet<Worker_EntityId_Key> DelegationLost;
 };
 
 } // namespace SpatialGDK

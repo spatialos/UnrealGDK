@@ -11,7 +11,6 @@
 #include "SpatialConstants.h"
 #include "Utils/ObjectAllocUtils.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/SpatialLatencyTracer.h"
 
 #include "Algo/AnyOf.h"
 #include "Net/NetworkProfiler.h"
@@ -23,10 +22,9 @@ DECLARE_CYCLE_STAT(TEXT("SpatialRPCService SendRPC"), STAT_SpatialRPCServiceSend
 namespace SpatialGDK
 {
 SpatialRPCService::SpatialRPCService(const FSubView& InActorAuthSubView, const FSubView& InActorNonAuthSubView,
-									 const FSubView& InWorkerEntitySubView, USpatialLatencyTracer* InSpatialLatencyTracer,
-									 SpatialEventTracer* InEventTracer, USpatialNetDriver* InNetDriver)
+									 const FSubView& InWorkerEntitySubView, SpatialEventTracer* InEventTracer,
+									 USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
-	, SpatialLatencyTracer(InSpatialLatencyTracer)
 	, EventTracer(InEventTracer)
 	, RPCStore(FRPCStore())
 	, ClientServerRPCs(ActorCanExtractRPCDelegate::CreateRaw(this, &SpatialRPCService::ActorCanExtractRPC),
@@ -40,9 +38,11 @@ SpatialRPCService::SpatialRPCService(const FSubView& InActorAuthSubView, const F
 	if (NetDriver != nullptr && NetDriver->IsServer()
 		&& Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
 	{
-		CrossServerRPCs.Emplace(CrossServerRPCService(ActorCanExtractRPCDelegate::CreateRaw(this, &SpatialRPCService::ActorCanExtractRPC),
-													  ExtractRPCDelegate::CreateRaw(this, &SpatialRPCService::ProcessOrQueueIncomingRPC),
-													  InActorAuthSubView, InWorkerEntitySubView, RPCStore));
+		CrossServerRPCs.Emplace(
+			CrossServerRPCService(ActorCanExtractRPCDelegate::CreateRaw(this, &SpatialRPCService::ActorCanExtractRPC),
+								  ExtractRPCDelegate::CreateRaw(this, &SpatialRPCService::ProcessOrQueueIncomingRPC),
+								  DoesEntityIdHaveValidObjectDelegate::CreateRaw(this, &SpatialRPCService::DoesEntityIdHaveValidObject),
+								  InActorAuthSubView, InWorkerEntitySubView, RPCStore));
 	}
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateRaw(this, &SpatialRPCService::ApplyRPC));
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateRaw(this, &SpatialRPCService::SendRPC));
@@ -502,6 +502,13 @@ FRPCErrorInfo SpatialRPCService::ApplyRPC(const FPendingRPCParams& Params)
 	return ApplyRPCInternal(TargetObject, Function, Params);
 }
 
+bool SpatialRPCService::DoesEntityIdHaveValidObject(const Worker_EntityId EntityId) const
+{
+	check(NetDriver && NetDriver->PackageMap);
+	const TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver->PackageMap->GetObjectFromEntityId(EntityId);
+	return TargetObjectWeakPtr.IsValid();
+}
+
 namespace SpatialRPCServicePrivate
 {
 /**
@@ -649,7 +656,7 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 
 	// Destroy the parameters.
 	// warning: highly dependent on UObject::ProcessEvent freeing of parms!
-	for (TFieldIterator<GDK_PROPERTY(Property)> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+	for (TFieldIterator<FProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
 	{
 		It->DestroyValue_InContainer(Parms);
 	}
@@ -804,7 +811,12 @@ void SpatialRPCService::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTarg
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
-		SpanId = EventTracer->TraceEvent(PUSH_RPC_EVENT_NAME, "", EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1,
+		// If the stack is empty we want to create a trace event such that it is a root event. This means giving it no causes.
+		// If the stack has an item, an event was created in project space and should be used as the cause of this "push RPC" events.
+		const bool bStackEmpty = EventTracer->IsStackEmpty();
+		const int32 NumCauses = bStackEmpty ? 0 : 1;
+		const Trace_SpanIdType* Causes = bStackEmpty ? nullptr : EventTracer->GetFromStack().GetConstId();
+		SpanId = EventTracer->TraceEvent(PUSH_RPC_EVENT_NAME, "", Causes, NumCauses,
 										 [TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
 											 EventBuilder.AddObject(TargetObject);
 											 EventBuilder.AddFunction(Function);

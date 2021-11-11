@@ -8,7 +8,7 @@
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SpatialOSWorker.h"
 #include "SpatialView/SubView.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 
 namespace SpatialGDK
 {
@@ -20,6 +20,9 @@ FSpatialHandoverManager::FSpatialHandoverManager(const FSubView& InActorView, co
 
 void FSpatialHandoverManager::Advance()
 {
+	PartitionsDelegated.Empty();
+	DelegationLost.Empty();
+
 	for (const EntityDelta& Delta : PartitionView.GetViewDelta().EntityDeltas)
 	{
 		switch (Delta.Type)
@@ -27,9 +30,11 @@ void FSpatialHandoverManager::Advance()
 		case EntityDelta::ADD:
 			PartitionsToACK.Add(Delta.EntityId);
 			OwnedPartitions.Add(Delta.EntityId);
+			PartitionsDelegated.Add(Delta.EntityId);
 			break;
 		case EntityDelta::REMOVE:
 			OwnedPartitions.Remove(Delta.EntityId);
+			DelegationLost.Add(Delta.EntityId);
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
 
@@ -97,6 +102,8 @@ void FSpatialHandoverManager::HandleChange(Worker_EntityId EntityId, const LBCom
 	{
 		if (OwnedPartitions.Contains(Components.Intent.PartitionId))
 		{
+			// TODO : Think about the need to maybe clear the handover array if there was a lock.
+			// A locked actor means that it remains in the actor to handover array.
 			ActorsToACK.Add(EntityId);
 		}
 		else

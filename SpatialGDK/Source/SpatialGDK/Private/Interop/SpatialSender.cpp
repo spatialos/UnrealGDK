@@ -35,7 +35,6 @@
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialDebuggerSystem.h"
-#include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialStatics.h"
 
@@ -62,11 +61,7 @@ bool USpatialSender::ValidateOrExit_IsSupportedClass(const FString& PathName)
 {
 	// Level blueprint classes could have a PIE prefix, this will remove it.
 	FString RemappedPathName = PathName;
-#if ENGINE_MINOR_VERSION >= 26
 	GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), RemappedPathName, false /*bIsReading*/);
-#else
-	GEngine->NetworkRemapPath(NetDriver, RemappedPathName, false /*bIsReading*/);
-#endif
 
 	return ClassInfoManager->ValidateOrExit_IsSupportedClass(RemappedPathName);
 }

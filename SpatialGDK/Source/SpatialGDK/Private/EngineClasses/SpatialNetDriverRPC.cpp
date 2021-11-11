@@ -285,7 +285,12 @@ FSpatialGDKSpanId FSpatialNetDriverRPC::CreatePushRPCEvent(UObject* TargetObject
 
 	if (EventTracer != nullptr)
 	{
-		SpanId = EventTracer->TraceEvent(PUSH_RPC_EVENT_NAME, "", EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1,
+		// If the stack is empty we want to create a trace event such that it is a root event. This means giving it no causes.
+		// If the stack has an item, an event was created in project space and should be used as the cause of this  "send RPC" events.
+		const bool bStackEmpty = EventTracer->IsStackEmpty();
+		const int32 NumCauses = bStackEmpty ? 0 : 1;
+		const Trace_SpanIdType* Causes = bStackEmpty ? nullptr : EventTracer->GetFromStack().GetConstId();
+		SpanId = EventTracer->TraceEvent(PUSH_RPC_EVENT_NAME, "", Causes, NumCauses,
 										 [TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
 											 EventBuilder.AddObject(TargetObject);
 											 EventBuilder.AddFunction(Function);
@@ -355,7 +360,7 @@ struct RAIIParamsHolder : FStackOnly
 	{
 		// Destroy the parameters.
 		// warning: highly dependent on UObject::ProcessEvent freeing of parms!
-		for (TFieldIterator<GDK_PROPERTY(Property)> It(&Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+		for (TFieldIterator<FProperty> It(&Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
 		{
 			It->DestroyValue_InContainer(Parms);
 		}
@@ -376,11 +381,18 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, const FRPCPayload&
 	if (TargetObject == nullptr)
 	{
 		const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver.PackageMap->GetObjectFromEntityId(EntityId);
-		AActor* Actor = CastChecked<AActor>(ActorReceivingRPC.Get());
-		checkf(Actor != nullptr, TEXT("Receiving actor should have been checked in CanReceiveRPC"));
-		UE_LOG(LogSpatialNetDriverRPC, Error,
-			   TEXT("Failed to execute RPC on Actor %s (Entity %llu)'s Subobject %i because the Subobject is null"), *Actor->GetName(),
-			   EntityId, RPCData.Offset);
+		if (UObject* ActorReceiving = ActorReceivingRPC.Get())
+		{
+			AActor* Actor = CastChecked<AActor>(ActorReceiving);
+			checkf(Actor != nullptr, TEXT("Invalid RPC recipient, the receiver should be an Actor!"));
+			UE_LOG(LogSpatialNetDriverRPC, Error,
+				   TEXT("Failed to execute RPC on Actor %s (Entity %llu)'s Subobject %i because the Subobject is null"), *Actor->GetName(),
+				   EntityId, RPCData.Offset);
+		}
+		else
+		{
+			UE_LOG(LogSpatialNetDriverRPC, Verbose, TEXT("Actor with Entity %llu was destroyed before the RPC could execute"), EntityId);
+		}
 
 		return RPCConsumed;
 	}

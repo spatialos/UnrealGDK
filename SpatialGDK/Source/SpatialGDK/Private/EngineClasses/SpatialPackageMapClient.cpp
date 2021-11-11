@@ -183,14 +183,17 @@ void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealOb
 	}
 	else
 	{
-		// TODO UNR-5785 - Remove this once fixed, as really SpatialGuidCache and Native's GuidCache should be in sync
+		// Sanity check consistency between SpatialGuidCache and native's GuidCache, as it would be pretty bad if they were out of sync.
 		const FNetworkGUID ObjectNetGUID = GetNetGUIDFromObject(Object);
 		if (!ObjectNetGUID.IsValid())
 		{
-			UE_LOG(LogSpatialPackageMap, Log,
-				   TEXT("SpatialGuidCache has a NetGUID mapping which native's GuidCache does not have for object: %s with NetGUID: %u. "
-						"Removing existing mapping from SpatialGuidCache and recreating."),
-				   *Object->GetName(), NetGUID.Value);
+			// TODO UNR-5844: Remove this workaround if we have not seen this ensure triggered.
+			ensureAlwaysMsgf(
+				false,
+				TEXT("SpatialGuidCache has a NetGUID mapping which native's GuidCache does not have for object: %s with NetGUID: %u. "
+					 "Removing existing mapping from SpatialGuidCache and recreating."),
+				*Object->GetName(), NetGUID.Value);
+
 			RemoveSubobject(ObjectRef);
 			SpatialGuidCache->AssignNewSubobjectNetGUID(Object, ObjectRef);
 		}
@@ -604,33 +607,38 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 		}
 	}
 
-	// Remove dynamically attached subobjects
+	// Remove dynamic subobjects and objects replicated on the actorchannel.
 	if (USpatialActorChannel* Channel = SpatialNetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		for (UObject* DynamicSubobject : Channel->CreateSubObjects)
+		for (const auto& ObjReplicatorPair : Channel->ReplicationMap)
 		{
-			if (FNetworkGUID* SubobjectNetGUID = NetGUIDLookup.Find(DynamicSubobject))
+			if (FNetworkGUID* ObjectNetGUID = NetGUIDLookup.Find(ObjReplicatorPair.Value->GetWeakObjectPtr()))
 			{
-				if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*SubobjectNetGUID))
+				if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*ObjectNetGUID))
 				{
 					UnrealObjectRefToNetGUID.Remove(*SubobjectRef);
-					NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
+					NetGUIDToUnrealObjectRef.Remove(*ObjectNetGUID);
 				}
 			}
 		}
 	}
 
-	// Remove actor.
+	// Remove actor mappings.
 	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
-	// TODO: Figure out why NetGUIDToUnrealObjectRef might not have this GUID. UNR-989
-	if (FUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID))
+	if (EntityNetGUID.IsValid())
 	{
-		UnrealObjectRefToNetGUID.Remove(*ActorRef);
-	}
-	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
-	if (StablyNamedRefOption.IsSet())
-	{
-		UnrealObjectRefToNetGUID.Remove(StablyNamedRefOption.GetValue());
+		// This may have already been removed by the code removing items replicated on the ActorChannel.
+
+		// TODO: Figure out why NetGUIDToUnrealObjectRef might not have this GUID. UNR-989
+		if (FUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID))
+		{
+			UnrealObjectRefToNetGUID.Remove(*ActorRef);
+		}
+		NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
+		if (StablyNamedRefOption.IsSet())
+		{
+			UnrealObjectRefToNetGUID.Remove(StablyNamedRefOption.GetValue());
+		}
 	}
 }
 
@@ -729,11 +737,7 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRe
 		if (Iterator->Path.IsSet())
 		{
 			FString TempPath(*Iterator->Path);
-#if ENGINE_MINOR_VERSION >= 26
 			GEngine->NetworkRemapPath(Cast<USpatialNetDriver>(Driver)->GetSpatialOSNetConnection(), TempPath, bReading);
-#else
-			GEngine->NetworkRemapPath(Driver, TempPath, bReading);
-#endif
 			Iterator->Path = TempPath;
 		}
 		if (!Iterator->Outer.IsSet())
@@ -772,11 +776,7 @@ FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPathForStaticObject(const 
 {
 	// Put the PIE prefix back (if applicable) so that the correct object can be found.
 	FString TempPath = PathName;
-#if ENGINE_MINOR_VERSION >= 26
 	GEngine->NetworkRemapPath(Cast<USpatialNetDriver>(Driver)->GetSpatialOSNetConnection(), TempPath, true /*bIsReading*/);
-#else
-	GEngine->NetworkRemapPath(Driver, TempPath, true /*bIsReading*/);
-#endif
 
 	// This function should only be called for stably named object references, not dynamic ones.
 	FNetGuidCacheObject CacheObject;

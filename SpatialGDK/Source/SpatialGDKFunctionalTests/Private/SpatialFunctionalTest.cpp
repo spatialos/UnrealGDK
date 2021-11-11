@@ -48,6 +48,22 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	PreparationTimeLimit = 30.0f;
 	bReadyToSpawnServerControllers = false;
 	CachedTestResult = EFunctionalTestResult::Default;
+
+	bIsStandaloneTest = false;
+	GeneratedTestMap = nullptr;
+	bIsGeneratingMap = false;
+}
+
+ASpatialFunctionalTest::ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients /*=1*/,
+											   const FVector& InTestPositionInWorld /*=FVector::ZeroVector*/)
+	: ASpatialFunctionalTest()
+{
+	bIsStandaloneTest = true;
+	TestPositionInWorld = InTestPositionInWorld;
+
+	GeneratedTestMap = UGeneratedTestMap::MakeGeneratedTestMap(MapCiCategory, this->GetClass()->GetName());
+
+	GeneratedTestMap->SetNumberOfClients(NumberOfClients);
 }
 
 void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -231,7 +247,8 @@ bool ASpatialFunctionalTest::IsReady_Implementation()
 
 	for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
 	{
-		if (FlowController->IsReadyToRunTest()) // Check if the owner already finished initialization
+		const bool bFlowControllerReadyToRun = FlowController->IsReadyToRunTest();
+		if (bFlowControllerReadyToRun) // Check if the owner already finished initialization
 		{
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 			{
@@ -286,9 +303,9 @@ const FSpatialFunctionalTestStepDefinition ASpatialFunctionalTest::GetStepDefini
 	return DummyStepDefinition;
 }
 
-int ASpatialFunctionalTest::GetNumberOfServerWorkers()
+int32 ASpatialFunctionalTest::GetNumberOfServerWorkers() const
 {
-	int Counter = 0;
+	int32 Counter = 0;
 	for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
 	{
 		if (FlowController != nullptr && FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
@@ -299,9 +316,9 @@ int ASpatialFunctionalTest::GetNumberOfServerWorkers()
 	return Counter;
 }
 
-int ASpatialFunctionalTest::GetNumberOfClientWorkers()
+int32 ASpatialFunctionalTest::GetNumberOfClientWorkers() const
 {
-	int Counter = 0;
+	int32 Counter = 0;
 	for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
 	{
 		if (FlowController != nullptr && FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
@@ -670,7 +687,8 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddStep(const FStr
 	return StepDefinitions[StepDefinitions.Num() - 1];
 }
 
-ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(ESpatialFunctionalTestWorkerType WorkerType, int WorkerId)
+ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(const ESpatialFunctionalTestWorkerType WorkerType,
+																				const int WorkerId)
 {
 	ensureMsgf(WorkerType != ESpatialFunctionalTestWorkerType::All, TEXT("Trying to call GetFlowController with All WorkerType"));
 	for (auto* FlowController : FlowControllers)
@@ -678,6 +696,40 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(
 		if (FlowController->WorkerDefinition.Type == WorkerType && FlowController->WorkerDefinition.Id == WorkerId)
 		{
 			return FlowController;
+		}
+	}
+	checkf(false, TEXT("We should always find a flow controller."));
+	return nullptr;
+}
+
+APlayerController* ASpatialFunctionalTest::GetFlowPlayerController(const ESpatialFunctionalTestWorkerType WorkerType, const int WorkerId)
+{
+	ASpatialFunctionalTestFlowController* FlowController = GetFlowController(WorkerType, WorkerId);
+	APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
+	checkf(IsValid(PlayerController), TEXT("The parent of a FlowController should always be a valid PlayerController."));
+
+	return PlayerController;
+}
+
+APlayerController* ASpatialFunctionalTest::GetLocalFlowPlayerController()
+{
+	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
+	if (ensureAlwaysMsgf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server.")))
+	{
+		return Cast<APlayerController>(FlowController->GetOwner());
+	}
+	return nullptr;
+}
+
+APawn* ASpatialFunctionalTest::GetLocalFlowPawn()
+{
+	APlayerController* PlayerController = GetLocalFlowPlayerController();
+	if (IsValid(PlayerController))
+	{
+		APawn* PlayerCharacter = PlayerController->GetPawn();
+		if (IsValid(PlayerCharacter))
+		{
+			return PlayerCharacter;
 		}
 	}
 	return nullptr;
@@ -808,30 +860,6 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 			FoundActor->SetLifeSpan(0.01f);
 		}
 	}
-}
-
-APlayerController* ASpatialFunctionalTest::GetFlowPlayerController()
-{
-	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
-	if (ensureAlwaysMsgf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server.")))
-	{
-		return Cast<APlayerController>(FlowController->GetOwner());
-	}
-	return nullptr;
-}
-
-APawn* ASpatialFunctionalTest::GetFlowPawn()
-{
-	APlayerController* PlayerController = GetFlowPlayerController();
-	if (IsValid(PlayerController))
-	{
-		APawn* PlayerCharacter = PlayerController->GetPawn();
-		if (IsValid(PlayerCharacter))
-		{
-			return PlayerCharacter;
-		}
-	}
-	return nullptr;
 }
 
 namespace
@@ -1106,4 +1134,44 @@ void ASpatialFunctionalTest::ClearAllTakenSnapshots()
 {
 	bWasLoadedFromTakenSnapshot = false;
 	TakenSnapshots.Empty();
+}
+
+void ASpatialFunctionalTest::GenerateMap()
+{
+	bIsGeneratingMap = true;
+	GeneratedTestMap->GenerateMap();
+	CreateCustomContentForMap();
+	GeneratedTestMap->AddActorToLevel(GeneratedTestMap->GetWorld()->GetCurrentLevel(), this->GetClass(), FTransform(TestPositionInWorld));
+	bIsGeneratingMap = false;
+}
+
+bool ASpatialFunctionalTest::ShouldGenerateMap()
+{
+	return bIsStandaloneTest;
+}
+
+bool ASpatialFunctionalTest::SaveMap()
+{
+	return GeneratedTestMap->SaveMap();
+}
+
+bool ASpatialFunctionalTest::GenerateCustomConfig()
+{
+	return GeneratedTestMap->GenerateCustomConfig();
+}
+
+FString ASpatialFunctionalTest::GetMapName()
+{
+	return GeneratedTestMap->GetMapName();
+}
+
+void ASpatialFunctionalTest::SetCustomConfigForMap(FString& String)
+{
+	GeneratedTestMap->SetCustomConfig(String);
+}
+
+ASpatialWorldSettings* ASpatialFunctionalTest::GetWorldSettingsForMap()
+{
+	checkf(bIsGeneratingMap, TEXT("GetWorldSettingsForMap should only be called from within an overridden CreateCustomContentForMap."));
+	return CastChecked<ASpatialWorldSettings>(GeneratedTestMap->GetWorld()->GetWorldSettings());
 }

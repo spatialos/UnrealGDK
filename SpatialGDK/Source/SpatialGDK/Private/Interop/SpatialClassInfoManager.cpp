@@ -9,6 +9,7 @@
 #include "Misc/MessageDialog.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "UObject/Class.h"
+#include "UObject/CoreNet.h"
 #include "UObject/UObjectIterator.h"
 
 #if WITH_EDITOR
@@ -21,7 +22,6 @@
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
@@ -133,11 +133,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
 	// Remove PIE prefix on class if it exists to properly look up the class.
 	FString ClassPath = Class->GetPathName();
-#if ENGINE_MINOR_VERSION >= 26
 	GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), ClassPath, false /*bIsReading*/);
-#else
-	GEngine->NetworkRemapPath(NetDriver, ClassPath, false /*bIsReading*/);
-#endif
 
 	if (!bHandoverActive.IsSet())
 	{
@@ -212,9 +208,9 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	}
 
-	for (TFieldIterator<GDK_PROPERTY(Property)> PropertyIt(Class); PropertyIt; ++PropertyIt)
+	for (TFieldIterator<FProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
 	{
-		GDK_PROPERTY(Property)* Property = *PropertyIt;
+		FProperty* Property = *PropertyIt;
 
 		if (Property->PropertyFlags & CPF_AlwaysInterested)
 		{
@@ -228,6 +224,44 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 			}
 		}
 	}
+#if WITH_PUSH_MODEL
+	if (IS_PUSH_MODEL_ENABLED() && GetDefault<USpatialGDKSettings>()->bShouldWarnOnNetDeltaSerializedPushModel)
+	{
+		Class->SetUpRuntimeReplicationData();
+
+		TArray<FLifetimeProperty> LifetimeReplicatedProperties;
+		Class->GetDefaultObject()->GetLifetimeReplicatedProps(LifetimeReplicatedProperties);
+
+		for (TFieldIterator<FProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
+		{
+			FStructProperty* StructProperty = CastField<FStructProperty>(*PropertyIt);
+			if (StructProperty == nullptr)
+			{
+				continue;
+			}
+
+			const FLifetimeProperty* ReplicatedPropertyPtr =
+				LifetimeReplicatedProperties.FindByPredicate([StructProperty](const FLifetimeProperty& ReplicatedProperty) {
+					return ReplicatedProperty.RepIndex == StructProperty->RepIndex;
+				});
+			if (!ensure(ReplicatedPropertyPtr))
+			{
+				continue;
+			}
+
+			const bool bIsPropertyNetDeltaSerialized =
+				EnumHasAnyFlags(StructProperty->Struct->StructFlags, EStructFlags::STRUCT_NetDeltaSerializeNative);
+			if (bIsPropertyNetDeltaSerialized && ReplicatedPropertyPtr->bIsPushBased)
+			{
+				UE_LOG(LogSpatialClassInfoManager, Warning,
+					   TEXT("A property is both NetDeltaSerialized and Push Model enabled - make sure to MARK_PROPERTY_DIRTY "
+							"when using this property, or they won't be replicated with SpatialGDK: Class %s Property %s"),
+					   *Class->GetName(), *StructProperty->GetName());
+			}
+		}
+	}
+
+#endif // WITH_PUSH_MODEL
 
 	if (bIsActorClass)
 	{
@@ -490,6 +524,11 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 const TArray<Schema_FieldId>& USpatialClassInfoManager::GetFieldIdsByComponentId(Worker_ComponentId ComponentId)
 {
 	return SchemaDatabase->FieldIdsArray[SchemaDatabase->ComponentIdToFieldIdsIndex[ComponentId]].FieldIds;
+}
+
+const TArray<Schema_FieldId>& USpatialClassInfoManager::GetListIdsByComponentId(Worker_ComponentId ComponentId)
+{
+	return SchemaDatabase->ListIdsArray[SchemaDatabase->ComponentIdToFieldIdsIndex[ComponentId]].FieldIds;
 }
 
 const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction* Function)

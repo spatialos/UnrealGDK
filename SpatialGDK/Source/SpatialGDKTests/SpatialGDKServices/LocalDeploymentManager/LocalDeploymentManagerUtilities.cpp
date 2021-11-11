@@ -74,17 +74,18 @@ bool DeleteWorkerJson()
 
 bool FStartDeployment::Update()
 {
-	if (const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>())
+	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
 		FLocalDeploymentManager* LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
 		const FString LaunchConfig =
 			FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
-		const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
-		const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoadPath();
-		const FString RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
+		const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
+		const FString SnapshotName = SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoadPath();
+		const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
+		const uint16 RuntimeGRPCPort = SpatialGDKEditorSettings->GetDefaultReceptionistPort();
 
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName,
-																 RuntimeVersion] {
+																 RuntimeVersion, RuntimeGRPCPort] {
 			if (!GenerateWorkerJson())
 			{
 				return;
@@ -112,7 +113,7 @@ bool FStartDeployment::Update()
 				return;
 			}
 
-			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotName, TEXT(""), nullptr);
+			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotName, TEXT(""), RuntimeGRPCPort, nullptr);
 		});
 	}
 
@@ -148,6 +149,13 @@ bool FStopDeployment::Update()
 
 bool FWaitForDeployment::Update()
 {
+	// Workaround code to initialize StartTime outside of latent command execution
+	// Allows for this function to be executed immediately
+	if (StartTime == 0.0)
+	{
+		StartTime = FPlatformTime::Seconds();
+	}
+
 	FLocalDeploymentManager* const LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
 
 	if (LocalDeploymentManager->IsDeploymentStarting())
@@ -201,4 +209,24 @@ bool FCheckDeploymentState::Update()
 	}
 
 	return true;
+}
+
+/** 
+* Wrapper function for automation latent commands to execute the commands synchronously
+*
+* This function was written as a workaround whenever waiting for latent commands cause issues (e.g. when maps are not 
+* properly closed prior to some tests, see `GDKAutomationTestBase.h` for reference). This function cannot access
+* `InternalUpdate()` calls to initialize the private `StartTime` variable, hence any latent command used with this function
+* should initialise `StartTime` at the start of their `Update()` function (e.g. see `FWaitForDeployment` for reference).
+*/
+void ExecuteLatentCommandSynchronously(IAutomationLatentCommand& Command)
+{
+	while (true)
+	{
+		bool bResult = Command.Update();
+		if (bResult)
+		{
+			break;
+		}
+	}
 }

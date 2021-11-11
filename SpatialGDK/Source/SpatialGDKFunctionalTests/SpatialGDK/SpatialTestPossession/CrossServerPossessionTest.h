@@ -14,5 +14,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ACrossServerPossessionTest : public ASpatial
 public:
 	ACrossServerPossessionTest();
 
+	virtual void CreateCustomContentForMap() override;
+
 	virtual void PrepareTest() override;
 };

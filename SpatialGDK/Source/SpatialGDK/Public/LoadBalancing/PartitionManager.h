@@ -19,7 +19,8 @@ class ViewCoordinator;
 class FPartitionManager
 {
 public:
-	FPartitionManager(Worker_EntityId InStrategyWorkerEntityId, ViewCoordinator& Coordinator, TUniquePtr<InterestFactory>&& InterestF);
+	FPartitionManager(const FSubView& InServerWorkerView, Worker_EntityId InStrategyWorkerEntityId, ViewCoordinator& Coordinator,
+					  TUniquePtr<InterestFactory>&& InterestF);
 	~FPartitionManager();
 
 	void Init(ISpatialOSWorker& Connection);
@@ -27,10 +28,10 @@ public:
 	bool IsReady();
 
 	TOptional<Worker_PartitionId> GetPartitionId(FPartitionHandle);
-	FPartitionHandle CreatePartition(FString DisplayName, void* UserData, const SpatialGDK::QueryConstraint& Interest);
+	FPartitionHandle CreatePartition(FString DisplayName, const SpatialGDK::QueryConstraint& Interest, TArray<ComponentData> MetaData);
 	void SetPartitionInterest(FPartitionHandle Partition, const SpatialGDK::QueryConstraint& NewInterest);
 	void AssignPartitionTo(FPartitionHandle Partition, FLBWorkerHandle Worker);
-	void SetPartitionMetadata(FPartitionHandle /*???*/);
+	void UpdatePartitionMetadata(FPartitionHandle, TArray<ComponentUpdate>);
 
 	void AdvanceView(ISpatialOSWorker& Connection);
 	void Flush(ISpatialOSWorker& Connection);
@@ -39,9 +40,12 @@ public:
 	TArray<FLBWorkerHandle> GetDisconnectedWorkers();
 
 	Worker_EntityId GetServerWorkerEntityIdForWorker(FLBWorkerHandle);
+	Worker_EntityId GetSystemWorkerEntityIdForWorker(FLBWorkerHandle);
+	FLBWorkerHandle GetWorkerForServerWorkerEntity(Worker_EntityId);
+
+	struct Impl;
 
 private:
-	struct Impl;
 	TUniquePtr<Impl> m_Impl;
 };
 } // namespace SpatialGDK

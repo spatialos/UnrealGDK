@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
 #pragma once
 
 #include "Interop/Connection/SpatialGDKSpanId.h"
@@ -14,25 +13,15 @@
 // Documentation for event tracing in the GDK can be found here: https://brevi.link/gdk-event-tracing-documentation
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
+class UEventTracingSamplingSettings;
+
 namespace SpatialGDK
 {
-struct TraceQueryDeleter
-{
-	void operator()(Trace_Query* Query) const
-	{
-		if (Query != nullptr)
-		{
-			Trace_Query_Destroy(Query);
-		}
-	}
-};
-typedef TUniquePtr<Trace_Query, TraceQueryDeleter> TraceQueryPtr;
-
 // SpatialEventTracer wraps Trace_EventTracer related functionality
 class SPATIALGDK_API SpatialEventTracer
 {
 public:
-	explicit SpatialEventTracer(const FString& WorkerId);
+	explicit SpatialEventTracer(const FString& WorkerId, const UEventTracingSamplingSettings* SamplingSettings);
 	~SpatialEventTracer();
 
 	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; }
@@ -66,6 +55,7 @@ public:
 
 	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const FSpatialGDKSpanId& SpanId);
 	FSpatialGDKSpanId PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
+	bool IsObjectStackEmpty() const;
 
 	void SetFlushOnWrite(bool bValue);
 

@@ -25,16 +25,45 @@ struct FPartitionDesc : TSharedFromThis<FPartitionDesc>
 };
 using FPartitionHandle = TSharedPtr<FPartitionDesc>;
 
-struct FMigrationContext
+class FActorSetSystem;
+class FPartitionManager;
+class FSkeletonManifestPublisher;
+
+// Some abstractions from SpatialOS and Unreal that are expected to be available to all load balancing systems.
+struct FLoadBalancingSharedData
 {
-	FMigrationContext(const TSet<Worker_EntityId_Key>& InMigratingEntities, const TSet<Worker_EntityId_Key>& InModifiedEntities)
-		: MigratingEntities(InMigratingEntities)
-		, ModifiedEntities(InModifiedEntities)
+	FLoadBalancingSharedData(FPartitionManager& InPartitionManager, FActorSetSystem& InActorSets,
+							 FSkeletonManifestPublisher& InManifestPublisher)
+		: PartitionManager(InPartitionManager)
+		, ActorSets(InActorSets)
+		, ManifestPublisher(InManifestPublisher)
 	{
 	}
 
+	FLoadBalancingSharedData(const FLoadBalancingSharedData& Other)
+		: PartitionManager(Other.PartitionManager)
+		, ActorSets(Other.ActorSets)
+		, ManifestPublisher(Other.ManifestPublisher)
+	{
+	}
+
+	FPartitionManager& PartitionManager;
+	FActorSetSystem& ActorSets;
+	FSkeletonManifestPublisher& ManifestPublisher;
+};
+
+struct FMigrationContext
+{
+	FMigrationContext(const TSet<Worker_EntityId_Key>& InMigratingEntities, const TSet<Worker_EntityId_Key>& InModifiedEntities,
+					  const TSet<Worker_EntityId_Key>& InDeletedEntities)
+		: MigratingEntities(InMigratingEntities)
+		, ModifiedEntities(InModifiedEntities)
+		, DeletedEntities(InDeletedEntities)
+	{
+	}
 	const TSet<Worker_EntityId_Key>& MigratingEntities;
 	const TSet<Worker_EntityId_Key>& ModifiedEntities;
+	const TSet<Worker_EntityId_Key>& DeletedEntities;
 	TMap<Worker_EntityId_Key, FPartitionHandle> EntitiesToMigrate;
 };
 

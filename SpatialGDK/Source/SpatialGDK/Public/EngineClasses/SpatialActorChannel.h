@@ -13,7 +13,6 @@
 #include "Schema/StandardLibrary.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialGDKSettings.h"
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepDataUtils.h"
 #include "Utils/SpatialStatics.h"
 
@@ -49,8 +48,7 @@ struct FObjectReferences
 	}
 
 	// Single property constructor
-	FObjectReferences(const FUnrealObjectRef& InObjectRef, bool bUnresolved, int32 InCmdIndex, int32 InParentIndex,
-					  GDK_PROPERTY(Property) * InProperty)
+	FObjectReferences(const FUnrealObjectRef& InObjectRef, bool bUnresolved, int32 InCmdIndex, int32 InParentIndex, FProperty* InProperty)
 		: bSingleProp(true)
 		, bFastArrayProp(false)
 		, ShadowOffset(InCmdIndex)
@@ -69,7 +67,7 @@ struct FObjectReferences
 
 	// Struct (memory stream) constructor
 	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, TSet<FUnrealObjectRef>&& InDynamicRefs,
-					  TSet<FUnrealObjectRef>&& InUnresolvedRefs, int32 InCmdIndex, int32 InParentIndex, GDK_PROPERTY(Property) * InProperty,
+					  TSet<FUnrealObjectRef>&& InUnresolvedRefs, int32 InCmdIndex, int32 InParentIndex, FProperty* InProperty,
 					  bool InFastArrayProp = false)
 		: MappedRefs(MoveTemp(InDynamicRefs))
 		, UnresolvedRefs(MoveTemp(InUnresolvedRefs))
@@ -84,7 +82,7 @@ struct FObjectReferences
 	}
 
 	// Array constructor
-	FObjectReferences(FObjectReferencesMap* InArray, int32 InCmdIndex, int32 InParentIndex, GDK_PROPERTY(Property) * InProperty)
+	FObjectReferences(FObjectReferencesMap* InArray, int32 InCmdIndex, int32 InParentIndex, FProperty* InProperty)
 		: bSingleProp(false)
 		, bFastArrayProp(false)
 		, Array(InArray)
@@ -105,7 +103,7 @@ struct FObjectReferences
 	TUniquePtr<FObjectReferencesMap, FObjectReferencesMapDeleter> Array;
 	int32 ShadowOffset;
 	int32 ParentIndex;
-	GDK_PROPERTY(Property) * Property;
+	FProperty* Property;
 };
 
 // Utility class to manage mapped and unresolved references.
@@ -249,11 +247,11 @@ public:
 
 	FRepChangeState CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object);
 
-	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
-	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-								  const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
+	FObjectReplicator* GetObjectReplicatorForSpatialUpdate(UObject* TargetObject);
+	void InvokeRepNotifies(UObject* TargetObject, const TArray<FProperty*>& RepNotifies,
+						   const TMap<FProperty*, FSpatialGDKSpanId>& PropertySpanIds);
 
-	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
+	void RemoveRepNotifiesWithUnresolvedObjs(TArray<FProperty*>& RepNotifies, const FRepLayout& RepLayout,
 											 const FObjectReferencesMap& RefMap, const UObject* Object) const;
 
 	Worker_ComponentId GetInterestComponentId() const;

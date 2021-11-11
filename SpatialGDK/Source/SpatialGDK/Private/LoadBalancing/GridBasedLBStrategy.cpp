@@ -217,6 +217,11 @@ bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location
 	return Location.X >= Box.Min.X && Location.Y >= Box.Min.Y && Location.X < Box.Max.X && Location.Y < Box.Max.Y;
 }
 
+bool FLegacyLBContext::Cell::IsInside(const FVector2D& Location) const
+{
+	return Location.X >= Region.Min.X && Location.Y >= Region.Min.Y && Location.X < Region.Max.X && Location.Y < Region.Max.Y;
+}
+
 UGridBasedLBStrategy::LBStrategyRegions UGridBasedLBStrategy::GetLBStrategyRegions() const
 {
 	LBStrategyRegions VirtualWorkerToCell;
@@ -274,9 +279,18 @@ bool UGridBasedLBStrategy::IsStrategyWorkerAware() const
 
 void UGridBasedLBStrategy::GetLegacyLBInformation(FLegacyLBContext& Ctx) const
 {
+	if (!ensureAlwaysMsgf(VirtualWorkerIds.Num() == WorkerCells.Num(),
+						  TEXT("Found a mismatch between virtual worker count and worker cells count in load balancing strategy")))
+	{
+		return;
+	}
 	if (Ctx.Layers.Num() == 0)
 	{
 		Ctx.Layers.AddDefaulted();
+	}
+	if (WorkerCells.Num() > 0)
+	{
+		Ctx.Layers.Last().FirstWorkerId = VirtualWorkerIds[0];
 	}
 	for (int32 i = 0; i < WorkerCells.Num(); ++i)
 	{

@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
-#include "Utils/GDKPropertyMacros.h"
+
 #include "Utils/RPCContainer.h"
 
 #include "SpatialGDKSettings.generated.h"
@@ -13,6 +13,8 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSettings, Log, All);
 
 class ASpatialDebugger;
+class USpatialPartitionSystem;
+class USpatialServerWorkerSystem;
 
 /**
  * Enum that maps Unreal's log verbosity to allow use in settings.
@@ -70,8 +72,23 @@ class SPATIALGDK_API UEventTracingSamplingSettings : public UObject
 {
 	GENERATED_BODY()
 public:
+	struct TraceQueryDeleter
+	{
+		void operator()(Trace_Query* Query) const
+		{
+			if (Query != nullptr)
+			{
+				Trace_Query_Destroy(Query);
+			}
+		}
+	};
+
+	using TraceQueryPtr = TUniquePtr<Trace_Query, TraceQueryDeleter>;
+
+	UEventTracingSamplingSettings();
+
 	UPROPERTY(EditAnywhere, Category = "Event Tracing", meta = (ClampMin = 0.0f, ClampMax = 1.0f))
-	double SamplingProbability = 1.0f;
+	double SamplingProbability;
 
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
 	TMap<FName, double> EventSamplingModeOverrides;
@@ -90,9 +107,25 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
 	FString RuntimeEventPostFilter;
 
+	const FString& GetGDKEventPreFilterString() const { return GetFilterString(GDKEventPreFilter); }
+	const FString& GetGDKEventPostFilterString() const { return GetFilterString(GDKEventPostFilter); }
+	const FString& GetRuntimeEventPreFilterString() const { return GetFilterString(RuntimeEventPreFilter); }
+	const FString& GetRuntimeEventPostFilterString() const { return GetFilterString(RuntimeEventPostFilter); }
+
+	TraceQueryPtr GetGDKEventPreFilter() const { return ParseOrDefault(GDKEventPreFilter, TEXT("gdk-pre-filter")); }
+	TraceQueryPtr GetGDKEventPostFilter() const { return ParseOrDefault(GDKEventPostFilter, TEXT("gdk-post-filter")); }
+	TraceQueryPtr GetRuntimeEventPreFilter() const { return ParseOrDefault(RuntimeEventPreFilter, TEXT("runtime-pre-filter")); }
+	TraceQueryPtr GetRuntimeEventPostFilter() const { return ParseOrDefault(RuntimeEventPostFilter, TEXT("runtime-post-filter")); }
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
+private:
+	static FString DefaultFilter;
+
+	static bool IsFilterValid(const FString& Str);
+	static TraceQueryPtr ParseOrDefault(const FString& Str, const TCHAR* FilterForLog);
+	static const FString& GetFilterString(const FString& Filter);
 };
 
 UCLASS(config = SpatialGDKSettings, defaultconfig)
@@ -265,13 +298,46 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Local Connection")
 	FString DefaultReceptionistHost;
 
+	UPROPERTY(EditAnywhere, Config, Category = "Replication",
+			  meta = (Tooltip = "Whether to warn on detecting NetDeltaSerialized properties marked as Push Model"))
+	bool bShouldWarnOnNetDeltaSerializedPushModel = true;
+
 private:
 	/** Will stop a non editor client auto connecting via command line args to a cloud deployment */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
 	bool bPreventClientCloudDeploymentAutoConnect;
 
+	/*
+	 * -- EXPERIMENTAL --
+	 * This will enable event tracing for the Unreal client/worker.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
+	bool bEventTracingEnabled;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * Same as bEventTracingEnabled, but used if WITH_EDITOR is defined.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
+	bool bEventTracingEnabledWithEditor;
+
+	/**
+	 * Default port value used for Worker connections, starting a deployment and the Inspector process,
+	 * has to coincide with the ULevelEditorPlaySettings default ServerPort value
+	 */
+	const uint16 DEFAULT_RECEPTIONIST_PORT = 7777;
+
+	friend class AEventTracingSettingsOverride;
+
 public:
 	bool GetPreventClientCloudDeploymentAutoConnect() const;
+
+	/**
+	 * Gets the correct port needed to create Worker connections
+	 * When compiled WITH_EDITOR, the port is given by the value of ServerPort in ULevelEditorPlaySettings
+	 * When not using editor, the class member DEFAULT_RECEPTIONIST_PORT is the correct value
+	 */
+	uint16 GetDefaultReceptionistPort() const;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings",
 			  meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
@@ -294,6 +360,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
+	/** Toggle to allow debug checking of invalid data modification on non-auth workers when using Spatial Networking */
+	UPROPERTY(config, EditAnywhere, Category = "Debug", meta = (DisplayName = "SpatialOS Networking Authority Debugger"))
+	bool bSpatialAuthorityDebugger;
+
 	/** Enables multi-worker, if false uses single worker strategy in the editor.  */
 	UPROPERTY(EditAnywhere, config, Category = "Load Balancing", meta = (DisplayName = "Enable multi-worker in editor"))
 	bool bEnableMultiWorker;
@@ -302,14 +372,22 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL Run the strategy worker"))
 	bool bRunStrategyWorker;
 
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL PartitionSystem to use"))
+	TSubclassOf<USpatialPartitionSystem> PartitionSystemClass;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL ServerWorkerSystem to use"))
+	TSubclassOf<USpatialServerWorkerSystem> ServerWorkerSystemClass;
+
 #if WITH_EDITOR
 	void SetMultiWorkerEditorEnabled(const bool bIsEnabled);
 	FORCEINLINE bool IsMultiWorkerEditorEnabled() const { return bEnableMultiWorker; }
 #endif // WITH_EDITOR
 
+	bool GetEventTracingEnabled() const;
+
 private:
 #if WITH_EDITOR
-	bool CanEditChange(const GDK_PROPERTY(Property) * InProperty) const override;
+	bool CanEditChange(const FProperty* InProperty) const override;
 
 	void UpdateServicesRegionFile();
 #endif
@@ -449,16 +527,10 @@ public:
 
 	/*
 	 * -- EXPERIMENTAL --
-	 * This will enable event tracing for the Unreal client/worker.
-	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
-	bool bEventTracingEnabled;
-
-	/*
-	 * -- EXPERIMENTAL --
 	 * Class containing various settings used to configure event trace sampling
 	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing", meta = (EditCondition = "bEventTracingEnabled"))
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing",
+			  meta = (EditCondition = "bEventTracingEnabled || bEventTracingEnabledWithEditor"))
 	TSubclassOf<UEventTracingSamplingSettings> EventTracingSamplingSettingsClass;
 
 	UEventTracingSamplingSettings* GetEventTracingSamplingSettings() const;
@@ -504,12 +576,6 @@ public:
 		*/
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Enable Initial Only Replication Condition"))
 	bool bEnableInitialOnlyReplicationCondition;
-
-	/*
-	 * Enables writing of ActorSetMember and ActorGroupMember components to load balancing entities
-	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication")
-	bool bEnableStrategyLoadBalancingComponents;
 
 	/**	-- EXPERIMENTAL --
 		Enables skeleton entities. If enabled, skeleton entities for level actors would be created during startup.

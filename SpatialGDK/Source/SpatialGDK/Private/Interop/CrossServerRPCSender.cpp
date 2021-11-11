@@ -28,15 +28,22 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef InTargetObjectRef,
 	CommandRequest CommandRequest(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID,
 								  SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
-	uint64 UniqueRPCId = FMath::RandHelper(INT_MAX);
+	// We just want a semi-globally unique id for the RPC to avoid false discards.
+	FGuid Guid = FGuid::NewGuid();
+	uint64 UniqueRPCId = CityHash64((char*)&Guid, sizeof(FGuid));
 	RPCPayload::WriteToSchemaObject(CommandRequest.GetRequestObject(), InTargetObjectRef.Offset, Info.Index, UniqueRPCId,
 									InPayload.PayloadData.GetData(), InPayload.PayloadData.Num());
 
 	FSpatialGDKSpanId SpanId;
-	if (EventTracer)
+	if (EventTracer != nullptr)
 	{
+		// If the stack is empty we want to create a trace event such that it is a root event. This means giving it no causes.
+		// If the stack has an item, an event was created in project space and should be used as the cause of this "send RPC" events.
+		const bool bStackEmpty = EventTracer->IsStackEmpty();
+		const int32 NumCauses = bStackEmpty ? 0 : 1;
+		const Trace_SpanIdType* Causes = bStackEmpty ? nullptr : EventTracer->GetFromStack().GetConstId();
 		SpanId = EventTracer->TraceEvent(
-			SEND_CROSS_SERVER_RPC_EVENT_NAME, "", EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1,
+			SEND_CROSS_SERVER_RPC_EVENT_NAME, "", Causes, NumCauses,
 			[TargetObject, Function, InTargetObjectRef, UniqueRPCId](FSpatialTraceEventDataBuilder& EventBuilder) {
 				EventBuilder.AddObject(TargetObject);
 				EventBuilder.AddFunction(Function);

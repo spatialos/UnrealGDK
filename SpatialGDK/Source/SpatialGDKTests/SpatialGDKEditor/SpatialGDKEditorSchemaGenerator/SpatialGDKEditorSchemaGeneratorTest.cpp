@@ -106,7 +106,7 @@ ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FStrin
 
 FString ComponentTypeToString(ESchemaComponentType Type)
 {
-	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check ComponentTypeToString is still correct.");
+	static_assert(SCHEMA_Count == 5, "Unexpected number of Schema type components, please check ComponentTypeToString is still correct.");
 
 	switch (Type)
 	{
@@ -118,6 +118,8 @@ FString ComponentTypeToString(ESchemaComponentType Type)
 		return TEXT("ServerOnly");
 	case SCHEMA_InitialOnly:
 		return TEXT("InitialOnly");
+	case SCHEMA_AuthServerOnly:
+		return TEXT("AuthServerOnly");
 	default:
 		return TEXT("");
 	}
@@ -304,13 +306,9 @@ const TSet<UClass*>& AllTestClassesSet()
 	return TestClassesSet;
 };
 
-#if ENGINE_MINOR_VERSION < 25
 FString ExpectedContentsDirectory =
 	TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema");
-#else
-FString ExpectedContentsDirectory =
-	TEXT("SpatialGDK/Source/SpatialGDKTests/SpatialGDKEditor/SpatialGDKEditorSchemaGenerator/ExpectedSchema_425");
-#endif
+
 TMap<FString, FString> ExpectedContentsFilenames = {
 	{ "SpatialTypeActor", "SpatialTypeActor.schema" },
 	{ "NonSpatialTypeActor", "NonSpatialTypeActor.schema" },
@@ -940,7 +938,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "spawner.schema",
 										   "tombstone.schema",
 										   "unreal_metadata.schema",
-										   "virtual_worker_translation.schema" };
+										   "virtual_worker_translation.schema",
+										   "partition_components.schema" };
 	TArray<FString> CoreSDKFilePaths = { "improbable\\restricted\\system_components.schema", "improbable\\standard_library.schema" };
 
 	// WHEN
@@ -1087,7 +1086,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	SchemaTestFixture Fixture;
 
 	TSet<UClass*> Classes = { ASpatialTypeActor::StaticClass(), USchemaGenObjectStubHandOver::StaticClass(),
-							  ASpatialTypeActorWithOwnerOnly::StaticClass(), ASpatialTypeActorWithInitialOnly::StaticClass() };
+							  ASpatialTypeActorWithOwnerOnly::StaticClass(), ASpatialTypeActorWithInitialOnly::StaticClass(),
+							  ASpatialTypeActorWithOnlyAuthServer::StaticClass() };
 
 	FString SchemaFolder = FPaths::Combine(SchemaOutputFolder, TEXT("schema"));
 	FString UnrealSchemaFolder = FPaths::Combine(SchemaFolder, TEXT("unreal"));
@@ -1106,6 +1106,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	SpatialGDKEditor::Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
 	SpatialGDKEditor::Schema::GenerateSchemaForRPCEndpoints(SchemaGenerationFolder);
 	SpatialGDKEditor::Schema::GenerateSchemaForNCDs(SchemaGenerationFolder);
+	SpatialGDKEditor::Schema::CreateServerWorkerAuthoritySet(FString(), SchemaGenerationFolder);
 
 	// Run the schema compiler
 	FString SchemaJsonPath;
@@ -1113,11 +1114,12 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	TestTrue("Schema compiler run successful",
 			 SpatialGDKEditor::Schema::RunSchemaCompiler(SchemaJsonPath, SchemaFolder, SchemaBuildFolder));
 
-	TestTrue("Schema bundle file successfully read", SpatialGDKEditor::Schema::ExtractInformationFromSchemaJson(
-														 SchemaJsonPath, SchemaDatabase->ComponentSetIdToComponentIds,
-														 SchemaDatabase->ComponentIdToFieldIdsIndex, SchemaDatabase->FieldIdsArray));
+	TestTrue("Schema bundle file successfully read",
+			 SpatialGDKEditor::Schema::ExtractInformationFromSchemaJson(SchemaJsonPath, SchemaDatabase->ComponentSetIdToComponentIds,
+																		SchemaDatabase->ComponentIdToFieldIdsIndex,
+																		SchemaDatabase->FieldIdsArray, SchemaDatabase->ListIdsArray));
 
-	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 14);
+	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 15);
 
 	TestTrue("Found spatial well known components",
 			 SchemaDatabase->ComponentSetIdToComponentIds.Contains(SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID));
@@ -1172,7 +1174,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 		}
 
 		uint32 ServerAuthSets[] = { SpatialConstants::DATA_COMPONENT_SET_ID, SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID,
-									SpatialConstants::HANDOVER_COMPONENT_SET_ID, SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID };
+									SpatialConstants::HANDOVER_COMPONENT_SET_ID, SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID,
+									SpatialConstants::AUTH_SERVER_ONLY_COMPONENT_SET_ID };
 
 		for (uint32 ComponentType = SCHEMA_Begin; ComponentType < SCHEMA_Count; ++ComponentType)
 		{
@@ -1182,6 +1185,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 			{
 				return false;
 			}
+
+
 			// We should have a class for each type of set
 			TestTrue("Set is not empty", DataComponents->ComponentIDs.Num() > 0);
 

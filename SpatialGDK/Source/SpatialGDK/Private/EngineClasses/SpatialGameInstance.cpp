@@ -22,7 +22,6 @@
 #include "Interop/SpatialWorkerFlags.h"
 #include "SpatialConstants.h"
 #include "Utils/SpatialDebugger.h"
-#include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialStatics.h"
@@ -131,15 +130,6 @@ void USpatialGameInstance::StartSpatialConnection()
 		TryInjectSpatialLocatorIntoCommandLine();
 		CreateNewSpatialConnectionManager();
 	}
-#if TRACE_LIB_ACTIVE
-	else
-	{
-		// In native, setup worker name here as we don't get a HandleOnConnected() callback
-		FString WorkerName =
-			FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
-		SpatialLatencyTracer->SetWorkerId(WorkerName);
-	}
-#endif
 }
 
 void USpatialGameInstance::TryInjectSpatialLocatorIntoCommandLine()
@@ -233,8 +223,6 @@ void USpatialGameInstance::Init()
 		GetEngine()->OnNetworkFailure().AddStatic(&HandleOnSimulatedPlayerNetworkFailure);
 	}
 
-	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
-
 	if (HasSpatialNetDriver())
 	{
 		FWorldDelegates::LevelInitializedNetworkActors.AddUObject(this, &USpatialGameInstance::OnLevelInitializedNetworkActors);
@@ -245,9 +233,6 @@ void USpatialGameInstance::HandleOnConnected(USpatialNetDriver& NetDriver)
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Successfully connected to SpatialOS"));
 	SetSpatialWorkerId(SpatialConnectionManager->GetWorkerConnection()->GetWorkerId());
-#if TRACE_LIB_ACTIVE
-	SpatialLatencyTracer->SetWorkerId(GetSpatialWorkerId());
-#endif
 
 	OnSpatialConnected.Broadcast();
 
@@ -274,9 +259,6 @@ void USpatialGameInstance::HandlePrepareShutdownWorkerFlagUpdated(const FString&
 void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
 {
 	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
-#if TRACE_LIB_ACTIVE
-	SpatialLatencyTracer->ResetWorkerId();
-#endif
 	OnSpatialConnectionFailed.Broadcast(Reason);
 }
 
@@ -304,4 +286,9 @@ void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, 
 	{
 		GlobalStateManager->HandleActorBasedOnLoadBalancer(Actor);
 	}
+}
+
+void USpatialGameInstance::OnWorldChanged(UWorld* OldWorld, UWorld* NewWorld)
+{
+	WorldChangedEvent.Broadcast(OldWorld, NewWorld);
 }

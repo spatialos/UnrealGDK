@@ -47,6 +47,7 @@ struct FWorkerPermissionsSection
 		, bDisconnectWorker(true)
 		, bReserveEntityID(true)
 		, bAllowEntityQuery(true)
+		, bDisableEntityQueryRestrictedComponents(false)
 	{
 	}
 
@@ -66,10 +67,14 @@ struct FWorkerPermissionsSection
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow entity ID reservations"))
 	bool bReserveEntityID;
 
-	/** Controls which components can be returned from entity queries that the worker instance performs. If an entity query specifies other
-	 * components to be returned, the query will fail. */
+	/** Controls whether the worker is allowed to make queries for entities in the deployment. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow entity queries"))
 	bool bAllowEntityQuery;
+
+	/** Disables entity queries from the worker for restricted components, like the system worker entities, which may contain sensitive
+	 * information. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Disable entity queries on restricted components"))
+	bool bDisableEntityQueryRestrictedComponents;
 };
 
 USTRUCT()
@@ -449,11 +454,6 @@ public:
 			  meta = (DisplayName = "Connect local server worker to the cloud deployment"))
 	bool bConnectServerToCloud;
 
-	/** Port on which the receptionist proxy will be available. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection",
-			  meta = (EditCondition = "bConnectServerToCloud", DisplayName = "Local Receptionist Port"))
-	int32 LocalReceptionistPort;
-
 	/** Network address to bind the receptionist proxy to. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection",
 			  meta = (EditCondition = "bConnectServerToCloud", DisplayName = "Listening Address"))
@@ -680,4 +680,10 @@ public:
 	static bool IsAssemblyNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
 	static void TrimTMap(TMap<FString, FString>& Map);
+
+	/**
+	 * Gets the correct port needed to start a deployment and the Inspector process
+	 * Implemented by calling USpatialGDKSettings::GetDefaultReceptionistPort()
+	 */
+	uint16 GetDefaultReceptionistPort() const;
 };

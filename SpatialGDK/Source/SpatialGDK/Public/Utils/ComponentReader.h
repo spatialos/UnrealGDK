@@ -4,7 +4,6 @@
 
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "Interop/SpatialReceiver.h"
-#include "Utils/GDKPropertyMacros.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialComponentReader, All, All);
 
@@ -30,13 +29,11 @@ private:
 						   FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged);
 
 	void ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index,
-					   GDK_PROPERTY(Property) * Property, uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex,
-					   bool& bOutReferencesChanged);
-	void ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap,
-					GDK_PROPERTY(ArrayProperty) * Property, uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex,
-					bool& bOutReferencesChanged);
+					   FProperty* Property, uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex, bool& bOutReferencesChanged);
+	void ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, FArrayProperty* Property,
+					uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex, bool& bOutReferencesChanged);
 
-	uint32 GetPropertyCount(const Schema_Object* Object, Schema_FieldId Id, GDK_PROPERTY(Property) * Property);
+	uint32 GetPropertyCount(const Schema_Object* Object, Schema_FieldId Id, FProperty* Property);
 
 private:
 	class USpatialPackageMapClient* PackageMap;

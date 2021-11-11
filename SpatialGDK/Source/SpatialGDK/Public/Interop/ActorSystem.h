@@ -38,8 +38,8 @@ struct ActorData
 
 struct FObjectRepNotifies
 {
-	TArray<GDK_PROPERTY(Property)*> RepNotifies;
-	TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
+	TArray<FProperty*> RepNotifies;
+	TMap<FProperty*, FSpatialGDKSpanId> PropertySpanIds;
 };
 using FObjectToRepNotifies = TMap<FWeakObjectPtr, FObjectRepNotifies>;
 
@@ -56,6 +56,7 @@ public:
 
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref);
 	void CleanupRepStateMap(FSpatialObjectRepState& RepState);
+	void ResolvePendingOpsFromEntityUpdate(const TArray<FWeakObjectPtr>& ToResolveOps);
 	void ResolveAsyncPendingLoad(UObject* LoadedObject, const FUnrealObjectRef& ObjectRef);
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
@@ -85,6 +86,9 @@ public:
 	void SendCreateEntityRequest(USpatialActorChannel& ActorChannel, uint32& OutBytesWritten);
 	void OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpatialGDKSpanId CreateOpSpan);
 	bool HasPendingOpsForChannel(const USpatialActorChannel& ActorChannel) const;
+	bool IsCreateEntityRequestInFlight(Worker_EntityId EntityId) const;
+
+	void RefreshActorDormancyOnEntityCreation(Worker_EntityId EntityId, bool bMakeDormant);
 
 	static Worker_ComponentData CreateLevelComponentData(const AActor& Actor, const UWorld& NetDriverWorld,
 														 const USpatialClassInfoManager& ClassInfoManager);
@@ -115,6 +119,7 @@ private:
 
 	void ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate);
 	void ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate);
+	void ProcessAuthorityGains(const FEntitySubViewUpdate& SubViewUpdate);
 	void ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate);
 
 	void ApplyComponentAdd(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
@@ -123,7 +128,8 @@ private:
 	void AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
 	void HandleActorAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId, Worker_Authority Authority);
 
-	void ComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
+	void ComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data,
+						TArray<FWeakObjectPtr>& OutToResolveOps);
 	void ComponentUpdated(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
 	void ComponentRemoved(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
@@ -135,8 +141,8 @@ private:
 	// Invokes RepNotifies queued inside ActorRepNotifiesToSend/SubobjectRepNotifiesToSend.
 	void InvokeRepNotifies();
 	void TryInvokeRepNotifiesForObject(FWeakObjectPtr& Object, FObjectRepNotifies& ObjectRepNotifies) const;
-	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel,
-													TArray<GDK_PROPERTY(Property) *>& RepNotifies);
+	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, const USpatialActorChannel& Channel, TArray<FProperty*>& RepNotifies);
+	void CleanUpTornOffChannels();
 
 	// Authority
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
@@ -145,8 +151,9 @@ private:
 
 	// Component add
 	void HandleDormantComponentAdded(Worker_EntityId EntityId) const;
-	void HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
-	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info);
+	void HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data,
+									  TArray<FWeakObjectPtr>& OutToResolveOps);
+	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info, TArray<FWeakObjectPtr>& OutToResolveOps);
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentId ComponentId,
 							Schema_ComponentData* Data);
 
@@ -170,6 +177,8 @@ private:
 										   USpatialActorChannel& Channel, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 
 	USpatialActorChannel* TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, Worker_EntityId EntityId);
+	bool InvokePreNetReceive(UObject& Object);
+	void InvokePostNetReceives();
 	FObjectRepNotifies& GetObjectRepNotifies(UObject& Object);
 
 	// Entity remove
@@ -199,15 +208,25 @@ private:
 
 	TSet<Worker_EntityId_Key> PresentEntities;
 
+	TMap<Worker_EntityId_Key, bool> EntitiesMapToRefreshDormancy;
+
+	TSet<Worker_EntityId_Key> CreateEntityRequestsInFlight;
+
 	TMap<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>> CreateEntityRequestIdToActorChannel;
 
 	TMap<Worker_EntityId_Key, TSet<Worker_ComponentId>> PendingDynamicSubobjectComponents;
 
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
 
+	// Objects for a given entity are stored here then sent after all updates for that entity have been applied.
+	TArray<FWeakObjectPtr> PostNetReceivesToSend;
+
 	// RepNotifies are stored here then sent after all updates we have are applied
 	FObjectToRepNotifies ActorRepNotifiesToSend;
 	FObjectToRepNotifies SubobjectRepNotifiesToSend;
+
+	// Channels are set as torn off after we have sent all our other user callbacks, such as rep notifies.
+	TArray<Worker_EntityId> EntityChannelsToSetTornOff;
 
 	// Deserialized state store for Actor relevant components.
 	TMap<Worker_EntityId_Key, ActorData> ActorDataStore;

@@ -121,6 +121,11 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		return 0;
 	}
 
+	if (!CreateServerWorkerAuthoritySet())
+	{
+		return 0;
+	}
+
 	// Sort classes here so that batching does not have an effect on ordering.
 	ReferencedClasses.Sort([](const FSoftClassPath& A, const FSoftClassPath& B) {
 		return FNameLexicalLess()(A.GetAssetPathName(), B.GetAssetPathName());
@@ -171,7 +176,8 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	}
 
 	if (!ExtractInformationFromSchemaJson(SchemaJsonOutput, SchemaDatabase->ComponentSetIdToComponentIds,
-										  SchemaDatabase->ComponentIdToFieldIdsIndex, SchemaDatabase->FieldIdsArray))
+										  SchemaDatabase->ComponentIdToFieldIdsIndex, SchemaDatabase->FieldIdsArray,
+										  SchemaDatabase->ListIdsArray))
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to extract component set from schema bundle."));
 		return 0;

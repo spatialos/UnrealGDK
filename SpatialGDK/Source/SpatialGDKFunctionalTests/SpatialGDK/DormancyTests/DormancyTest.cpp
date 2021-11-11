@@ -4,11 +4,6 @@
 
 #include "DormancyTestActor.h"
 
-AActor* ADormancyTest::CreateDormancyTestActor()
-{
-	return GetWorld()->SpawnActor<ADormancyTestActor>({ 0.0f, 0.0f, 0.0f }, FRotator::ZeroRotator);
-}
-
 void ADormancyTest::RequireDormancyTestState(const TEnumAsByte<enum ENetDormancy> ExpectedNetDormancy, const int ExpectedTestIntProp,
 											 const int ExpectedCount)
 {
@@ -32,14 +27,4 @@ void ADormancyTest::DestroyDormancyTestActors()
 			Iter->Destroy();
 		}
 	}
-}
-
-void ADormancyTest::RequireDormancyActorCount(const int ExpectedCount)
-{
-	int Counter = 0;
-	for (TActorIterator<ADormancyTestActor> Iter(GetWorld()); Iter; ++Iter)
-	{
-		Counter++;
-	}
-	RequireEqual_Int(Counter, ExpectedCount, TEXT("Number of TestDormancyActors in world"));
 }

@@ -19,10 +19,10 @@ public:
 	SPATIALGDKSERVICES_API static bool HasDevLoginTag(const FString& DeploymentName, bool bIsRunningInChina, FText& OutErrorMessage);
 	SPATIALGDKSERVICES_API static FProcHandle StartLocalReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName,
 																				const FString& ListeningAddress,
-																				const int32 ReceptionistPort, FString& OutResult,
+																				const uint16 ReceptionistPort, FString& OutResult,
 																				int32& OutExitCode);
 	SPATIALGDKSERVICES_API static void StopLocalReceptionistProxyServer(FProcHandle& ProcessHandle);
-	SPATIALGDKSERVICES_API static bool GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName);
+	SPATIALGDKSERVICES_API static bool GetProcessInfoFromPort(uint16 Port, FString& OutPid, FString& OutState, FString& OutProcessName);
 	SPATIALGDKSERVICES_API static bool GetProcessName(const FString& PID, FString& OutProcessName);
 	SPATIALGDKSERVICES_API static bool TryKillProcessWithPID(const FString& PID);
 	SPATIALGDKSERVICES_API static void TryKillProcessWithName(const FString& ProcessName);

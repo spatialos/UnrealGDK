@@ -72,12 +72,15 @@ void ASpatialTestPlayerControllerHandover::PrepareTest()
 		{
 			TArray<VirtualWorkerId> Workers;
 			WorkerPositions.GenerateKeyArray(Workers);
-			int32 i = Workers.Find(DestinationWorker);
-			check(i != -1);
-
-			i = (i + 1) % Workers.Num();
-
-			DestinationWorker = Workers[i];
+			if (AssertTrue(Workers.Num() > 0, TEXT("Found workers")))
+			{
+				int32 i = Workers.Find(DestinationWorker);
+				if (AssertTrue(i != -1, TEXT("Found the local worker")))
+				{
+					i = (i + 1) % Workers.Num();
+					DestinationWorker = Workers[i];
+				}
+			}
 		}
 
 		FinishStep();
@@ -226,13 +229,8 @@ void ASpatialTestPlayerControllerHandover::PrepareTest()
 		if (PlayerController && PlayerController->HasAuthority())
 		{
 			AssertTrue(PlayerController->GetStateName() == NAME_Spectating, TEXT("State was handed over on player controller"));
-#if ENGINE_MINOR_VERSION <= 24
-			AssertTrue(PlayerController->PlayerState->bOnlySpectator, TEXT("State was handed over on player state"));
-			PlayerController->PlayerState->bOnlySpectator = false;
-#else
 			AssertTrue(PlayerController->PlayerState->IsOnlyASpectator(), TEXT("State was handed over on player state"));
 			PlayerController->PlayerState->SetIsOnlyASpectator(false);
-#endif
 		}
 
 		FinishStep();

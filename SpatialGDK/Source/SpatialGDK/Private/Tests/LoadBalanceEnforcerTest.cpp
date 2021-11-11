@@ -15,7 +15,7 @@
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/SubView.h"
-#include "SpatialView/ViewDelta.h"
+#include "SpatialView/ViewDelta/ViewDelta.h"
 #include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Utils/SchemaOption.h"
 
@@ -49,7 +49,7 @@ TUniquePtr<SpatialVirtualWorkerTranslator> CreateVirtualWorkerTranslator()
 	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, ThisVirtualWorker, ThisWorker, ThisWorkerId);
 	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, OtherVirtualWorker, OtherWorker, OtherWorkerId);
 
-	VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(DataObject);
+	VirtualWorkerTranslator->ApplyMappingFromSchema(DataObject);
 
 	return VirtualWorkerTranslator;
 }

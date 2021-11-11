@@ -50,13 +50,8 @@ void ASpatialTestMultipleOwnership::PrepareTest()
 
 	// The server spawns the 2 MultipleOwnershipPawns and registers them for auto-destroy
 	AddStep(TEXT("SpatialTestMultipleOwnershipServerSpawnPawns"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		AMultipleOwnershipPawn* MultipleOwnershipPawn1 =
-			GetWorld()->SpawnActor<AMultipleOwnershipPawn>(FVector(200.0f, 300.0f, 60.0f), FRotator::ZeroRotator, FActorSpawnParameters());
-		AMultipleOwnershipPawn* MultipleOwnershipPawn2 =
-			GetWorld()->SpawnActor<AMultipleOwnershipPawn>(FVector(200.0f, -300.0f, 60.0f), FRotator::ZeroRotator, FActorSpawnParameters());
-
-		RegisterAutoDestroyActor(MultipleOwnershipPawn1);
-		RegisterAutoDestroyActor(MultipleOwnershipPawn2);
+		AMultipleOwnershipPawn* MultipleOwnershipPawn1 = SpawnActor<AMultipleOwnershipPawn>(FVector(200.0f, 300.0f, 60.0f));
+		AMultipleOwnershipPawn* MultipleOwnershipPawn2 = SpawnActor<AMultipleOwnershipPawn>(FVector(200.0f, -300.0f, 60.0f));
 
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 		{
