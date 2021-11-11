@@ -694,8 +694,9 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 				// TODO : Most likely cause is that when an entity with a set leader is received, it schedules its leader
 				// for load balancing. If we have not yet received the leader, then this happens. This is an interest race.
 				// Need to revisit the ActorSetSystem eventually anyway, in the meantime this is the fastest fix to apply.
-				UE_LOG(LogSpatialLegacyLoadBalancing, Error, TEXT("Missing load balancing data for entity %llu. Has position : %s, Has group : %s"),
-					EntityId, bHasGroup ? TEXT("true") : TEXT("false"), bHasPosition ? TEXT("true") : TEXT("false"));
+				UE_LOG(LogSpatialLegacyLoadBalancing, Error,
+					   TEXT("Missing load balancing data for entity %llu. Has position : %s, Has group : %s"), EntityId,
+					   bHasGroup ? TEXT("true") : TEXT("false"), bHasPosition ? TEXT("true") : TEXT("false"));
 				continue;
 			}
 

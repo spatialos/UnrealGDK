@@ -3322,7 +3322,8 @@ void USpatialNetDriver::TryFinishStartup()
 			SpatialGDK::FStrategySystemViews Views(
 				{ LBView, ServerWorkerView, LocallyAuthSkeletonEntityManifestsSubview, FilledManifestSubView });
 
-			StrategySystem = MakeUnique<SpatialGDK::FSpatialStrategySystem>(MoveTemp(PartitionMgr), Views, MoveTemp(Strategy), MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
+			StrategySystem = MakeUnique<SpatialGDK::FSpatialStrategySystem>(Views, MoveTemp(Strategy),
+																			MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
 
 			StrategySystem->Init(Connection->GetCoordinator());
 

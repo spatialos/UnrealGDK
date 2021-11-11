@@ -36,6 +36,36 @@ CommandRequest CreateClaimPartitionRequest(Worker_PartitionId Partition)
 }
 } // namespace
 
+PartitionInterestUpdate::PartitionInterestUpdate()
+{
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	if (Settings->PartitionSystemClass)
+	{
+		USpatialPartitionSystem* PartitionSystem = Cast<USpatialPartitionSystem>(Settings->PartitionSystemClass->GetDefaultObject());
+		TArray<FLBDataStorage*> DataStores = PartitionSystem->GetData();
+		for (auto Store : DataStores)
+		{
+			PartitionMetaData.Append(Store->GetComponentsToWatch().Array());
+		}
+	}
+}
+
+void PartitionInterestUpdate::Clear()
+{
+	NewWorker.Empty();
+	NewServerWorker.Empty();
+	NewPartition.Empty();
+	RemovedWorker.Empty();
+	RemovedServerWorker.Empty();
+	RemovedPartition.Empty();
+}
+
+bool PartitionInterestUpdate::HasChanged() const
+{
+	return NewPartition.Num() > 0 || NewWorker.Num() > 0 || NewServerWorker.Num() > 0 || RemovedPartition.Num() > 0
+		   || RemovedWorker.Num() > 0 || RemovedServerWorker.Num() > 0;
+}
+
 FPartitionManager::Impl::Impl(const FSubView& InServerWorkerView, ViewCoordinator& Coordinator, InterestFactory& InInterestF)
 	: WorkerView(InServerWorkerView)
 	, SystemWorkerView(Coordinator.CreateSubView(SpatialConstants::WORKER_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
@@ -53,173 +83,6 @@ FPartitionManager::Impl::Impl(const FSubView& InServerWorkerView, ViewCoordinato
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	InterestUpdate.bEnabled = Settings->bUserSpaceServerInterest;
 }
-
-	struct PartitionInterestUpdate
-	{
-		bool bEnabled;
-
-		TArray<Worker_EntityId> NewPartition;
-		TArray<Worker_EntityId> NewWorker;
-		TArray<Worker_EntityId> NewServerWorker;
-
-		TArray<Worker_EntityId> RemovedPartition;
-		TArray<Worker_EntityId> RemovedWorker;
-		TArray<Worker_EntityId> RemovedServerWorker;
-
-		TArray<Worker_ComponentId> PartitionMetaData;
-
-		PartitionInterestUpdate()
-		{
-			const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-			if (Settings->PartitionSystemClass)
-			{
-				USpatialPartitionSystem* PartitionSystem =
-					Cast<USpatialPartitionSystem>(Settings->PartitionSystemClass->GetDefaultObject());
-				TArray<FLBDataStorage*> DataStores = PartitionSystem->GetData();
-				for (auto Store : DataStores)
-				{
-					PartitionMetaData.Append(Store->GetComponentsToWatch().Array());
-				}
-			}
-		}
-
-		void Clear()
-		{
-			NewWorker.Empty();
-			NewServerWorker.Empty();
-			NewPartition.Empty();
-			RemovedWorker.Empty();
-			RemovedServerWorker.Empty();
-			RemovedPartition.Empty();
-		}
-
-		bool HasChanged() const
-		{
-			return NewPartition.Num() > 0 || NewWorker.Num() > 0 || NewServerWorker.Num() > 0 || RemovedPartition.Num() > 0
-				   || RemovedWorker.Num() > 0 || RemovedServerWorker.Num() > 0;
-		}
-	};
-
-	PartitionInterestUpdate InterestUpdate;
-
-	void FlushInterestUpdates(ISpatialOSWorker& Connection)
-	{
-		if (!InterestUpdate.bEnabled)
-		{
-			return;
-		}
-
-		for (auto Worker : ConnectedWorkers)
-		{
-			if (!Worker->State->bInterestInitialized)
-			{
-				ChangeInterestRequest Request;
-				Request.SystemEntityId = Worker->State->SystemWorkerId;
-				Request.bOverwrite = false;
-
-				{
-					// Initial snapshot interest query.
-					ChangeInterestQuery SnapshotQuery;
-					SnapshotQuery.Entities.Add(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID);
-					SnapshotQuery.Entities.Add(SpatialConstants::INITIAL_SPAWNER_ENTITY_ID);
-					SnapshotQuery.Entities.Add(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID);
-					SnapshotQuery.Components = InterestF.GetServerNonAuthInterestResultType().ComponentIds;
-					SnapshotQuery.ComponentSets = InterestF.GetServerNonAuthInterestResultType().ComponentSetsIds;
-					Request.QueriesToAdd.Add(SnapshotQuery);
-				}
-
-				if (PartitionView.GetCompleteEntities().Num() > 0)
-				{
-					ChangeInterestQuery PartitionQuery;
-					PartitionQuery.Entities.Append(PartitionView.GetCompleteEntities());
-					PartitionQuery.Components = InterestUpdate.PartitionMetaData;
-					PartitionQuery.Components.Add(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
-					Request.QueriesToAdd.Add(MoveTemp(PartitionQuery));
-				}
-				if (SystemWorkersDispatcher.SubView.GetCompleteEntities().Num() > 0)
-				{
-					ChangeInterestQuery WorkerQuery;
-					WorkerQuery.Entities.Append(SystemWorkersDispatcher.SubView.GetCompleteEntities());
-					WorkerQuery.Components = { SpatialConstants::WORKER_COMPONENT_ID, SpatialConstants::SYSTEM_COMPONENT_ID };
-					Request.QueriesToAdd.Add(MoveTemp(WorkerQuery));
-				}
-				if (WorkersDispatcher.SubView.GetCompleteEntities().Num() > 0)
-				{
-					ChangeInterestQuery ServerWorkerQuery;
-					ServerWorkerQuery.Entities.Append(WorkersDispatcher.SubView.GetCompleteEntities());
-					for (auto Entity : ServerWorkerQuery.Entities)
-					{
-						UE_LOG(LogTemp, Log, TEXT("Make worker %llu interested in %llu"), Request.SystemEntityId, Entity);
-					}
-					ServerWorkerQuery.Components = { SpatialConstants::SERVER_WORKER_COMPONENT_ID,
-													 SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
-					Request.QueriesToAdd.Add(MoveTemp(ServerWorkerQuery));
-				}
-				Request.DebugOutput();
-				Request.SendRequest(Connection);
-
-				Worker->State->bInterestInitialized = true;
-			}
-			else if (InterestUpdate.HasChanged())
-			{
-				ChangeInterestRequest Request;
-				Request.SystemEntityId = Worker->State->SystemWorkerId;
-				Request.bOverwrite = false;
-
-				if (InterestUpdate.NewPartition.Num() > 0)
-				{
-					ChangeInterestQuery PartitionQuery;
-					PartitionQuery.Entities.Append(InterestUpdate.NewPartition);
-					PartitionQuery.Components = InterestUpdate.PartitionMetaData;
-					PartitionQuery.Components.Add(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
-					Request.QueriesToAdd.Add(MoveTemp(PartitionQuery));
-				}
-				if (InterestUpdate.RemovedPartition.Num() > 0)
-				{
-					ChangeInterestQuery PartitionQuery;
-					PartitionQuery.Entities.Append(InterestUpdate.NewPartition);
-					PartitionQuery.Components = InterestUpdate.PartitionMetaData;
-					PartitionQuery.Components.Add(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
-					Request.QueriesToRemove.Add(MoveTemp(PartitionQuery));
-				}
-				if (InterestUpdate.NewWorker.Num() > 0)
-				{
-					ChangeInterestQuery WorkerQuery;
-					WorkerQuery.Entities.Append(InterestUpdate.NewWorker);
-					WorkerQuery.Components = { SpatialConstants::WORKER_COMPONENT_ID, SpatialConstants::SYSTEM_COMPONENT_ID };
-					Request.QueriesToAdd.Add(MoveTemp(WorkerQuery));
-				}
-				if (InterestUpdate.RemovedWorker.Num() > 0)
-				{
-					ChangeInterestQuery WorkerQuery;
-					WorkerQuery.Entities.Append(InterestUpdate.RemovedWorker);
-					WorkerQuery.Components = { SpatialConstants::WORKER_COMPONENT_ID, SpatialConstants::SYSTEM_COMPONENT_ID };
-					Request.QueriesToRemove.Add(MoveTemp(WorkerQuery));
-				}
-				if (InterestUpdate.NewServerWorker.Num() > 0)
-				{
-					ChangeInterestQuery ServerWorkerQuery;
-					ServerWorkerQuery.Entities.Append(InterestUpdate.NewServerWorker);
-					ServerWorkerQuery.Components = { SpatialConstants::SERVER_WORKER_COMPONENT_ID,
-													 SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
-					Request.QueriesToAdd.Add(MoveTemp(ServerWorkerQuery));
-				}
-				if (InterestUpdate.RemovedServerWorker.Num() > 0)
-				{
-					ChangeInterestQuery ServerWorkerQuery;
-					ServerWorkerQuery.Entities.Append(InterestUpdate.RemovedServerWorker);
-					ServerWorkerQuery.Components = { SpatialConstants::SERVER_WORKER_COMPONENT_ID,
-													 SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
-					Request.QueriesToRemove.Add(MoveTemp(ServerWorkerQuery));
-				}
-
-				Request.DebugOutput();
-				Request.SendRequest(Connection);
-			}
-		}
-
-		InterestUpdate.Clear();
-	}
 
 void FPartitionManager::Impl::AdvanceView(ISpatialOSWorker& Connection)
 {
@@ -466,7 +329,8 @@ void FPartitionManager::Impl::Flush(ISpatialOSWorker& Connection)
 
 					PartitionState.RequestedAssignment = PartitionState.UserAssignment;
 					PartitionState.AssignmentRequest = CommandsHandler.ClaimPartition(
-						Connection, SystemWorkerEntityId, PartitionState.Id, [this, PartitionEntry, &Connection, SystemWorkerEntityId](const Worker_CommandResponseOp& Op) {
+						Connection, SystemWorkerEntityId, PartitionState.Id,
+						[this, PartitionEntry, &Connection, SystemWorkerEntityId](const Worker_CommandResponseOp& Op) {
 							if (Partitions.Contains(PartitionEntry))
 							{
 								FPartitionInternalState& State = *PartitionEntry->State;
@@ -498,6 +362,125 @@ void FPartitionManager::Impl::Flush(ISpatialOSWorker& Connection)
 			}
 		}
 	}
+}
+
+void FPartitionManager::Impl::FlushInterestUpdates(ISpatialOSWorker& Connection)
+{
+	if (!InterestUpdate.bEnabled)
+	{
+		return;
+	}
+
+	for (auto Worker : ConnectedWorkers)
+	{
+		if (!Worker->State->bInterestInitialized)
+		{
+			ChangeInterestRequest Request;
+			Request.SystemEntityId = Worker->State->SystemWorkerId;
+			Request.bOverwrite = false;
+
+			{
+				// Initial snapshot interest query.
+				ChangeInterestQuery SnapshotQuery;
+				SnapshotQuery.Entities.Add(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID);
+				SnapshotQuery.Entities.Add(SpatialConstants::INITIAL_SPAWNER_ENTITY_ID);
+				SnapshotQuery.Entities.Add(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID);
+				SnapshotQuery.Components = InterestF.GetServerNonAuthInterestResultType().ComponentIds;
+				SnapshotQuery.ComponentSets = InterestF.GetServerNonAuthInterestResultType().ComponentSetsIds;
+				Request.QueriesToAdd.Add(SnapshotQuery);
+			}
+
+			if (PartitionView.GetCompleteEntities().Num() > 0)
+			{
+				ChangeInterestQuery PartitionQuery;
+				PartitionQuery.Entities.Append(PartitionView.GetCompleteEntities());
+				PartitionQuery.Components = InterestUpdate.PartitionMetaData;
+				PartitionQuery.Components.Add(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
+				Request.QueriesToAdd.Add(MoveTemp(PartitionQuery));
+			}
+			if (SystemWorkersDispatcher.SubView.GetCompleteEntities().Num() > 0)
+			{
+				ChangeInterestQuery WorkerQuery;
+				WorkerQuery.Entities.Append(SystemWorkersDispatcher.SubView.GetCompleteEntities());
+				WorkerQuery.Components = { SpatialConstants::WORKER_COMPONENT_ID, SpatialConstants::SYSTEM_COMPONENT_ID };
+				Request.QueriesToAdd.Add(MoveTemp(WorkerQuery));
+			}
+			if (WorkersDispatcher.SubView.GetCompleteEntities().Num() > 0)
+			{
+				ChangeInterestQuery ServerWorkerQuery;
+				ServerWorkerQuery.Entities.Append(WorkersDispatcher.SubView.GetCompleteEntities());
+				for (auto Entity : ServerWorkerQuery.Entities)
+				{
+					UE_LOG(LogTemp, Log, TEXT("Make worker %llu interested in %llu"), Request.SystemEntityId, Entity);
+				}
+				ServerWorkerQuery.Components = { SpatialConstants::SERVER_WORKER_COMPONENT_ID,
+												 SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+				Request.QueriesToAdd.Add(MoveTemp(ServerWorkerQuery));
+			}
+			Request.DebugOutput();
+			Request.SendRequest(Connection);
+
+			Worker->State->bInterestInitialized = true;
+		}
+		else if (InterestUpdate.HasChanged())
+		{
+			ChangeInterestRequest Request;
+			Request.SystemEntityId = Worker->State->SystemWorkerId;
+			Request.bOverwrite = false;
+
+			if (InterestUpdate.NewPartition.Num() > 0)
+			{
+				ChangeInterestQuery PartitionQuery;
+				PartitionQuery.Entities.Append(InterestUpdate.NewPartition);
+				PartitionQuery.Components = InterestUpdate.PartitionMetaData;
+				PartitionQuery.Components.Add(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
+				Request.QueriesToAdd.Add(MoveTemp(PartitionQuery));
+			}
+			if (InterestUpdate.RemovedPartition.Num() > 0)
+			{
+				ChangeInterestQuery PartitionQuery;
+				PartitionQuery.Entities.Append(InterestUpdate.NewPartition);
+				PartitionQuery.Components = InterestUpdate.PartitionMetaData;
+				PartitionQuery.Components.Add(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
+				Request.QueriesToRemove.Add(MoveTemp(PartitionQuery));
+			}
+			if (InterestUpdate.NewWorker.Num() > 0)
+			{
+				ChangeInterestQuery WorkerQuery;
+				WorkerQuery.Entities.Append(InterestUpdate.NewWorker);
+				WorkerQuery.Components = { SpatialConstants::WORKER_COMPONENT_ID, SpatialConstants::SYSTEM_COMPONENT_ID };
+				Request.QueriesToAdd.Add(MoveTemp(WorkerQuery));
+			}
+			if (InterestUpdate.RemovedWorker.Num() > 0)
+			{
+				ChangeInterestQuery WorkerQuery;
+				WorkerQuery.Entities.Append(InterestUpdate.RemovedWorker);
+				WorkerQuery.Components = { SpatialConstants::WORKER_COMPONENT_ID, SpatialConstants::SYSTEM_COMPONENT_ID };
+				Request.QueriesToRemove.Add(MoveTemp(WorkerQuery));
+			}
+			if (InterestUpdate.NewServerWorker.Num() > 0)
+			{
+				ChangeInterestQuery ServerWorkerQuery;
+				ServerWorkerQuery.Entities.Append(InterestUpdate.NewServerWorker);
+				ServerWorkerQuery.Components = { SpatialConstants::SERVER_WORKER_COMPONENT_ID,
+												 SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+				Request.QueriesToAdd.Add(MoveTemp(ServerWorkerQuery));
+			}
+			if (InterestUpdate.RemovedServerWorker.Num() > 0)
+			{
+				ChangeInterestQuery ServerWorkerQuery;
+				ServerWorkerQuery.Entities.Append(InterestUpdate.RemovedServerWorker);
+				ServerWorkerQuery.Components = { SpatialConstants::SERVER_WORKER_COMPONENT_ID,
+												 SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+				Request.QueriesToRemove.Add(MoveTemp(ServerWorkerQuery));
+			}
+
+			Request.DebugOutput();
+			Request.SendRequest(Connection);
+		}
+	}
+
+	InterestUpdate.Clear();
 }
 
 void FPartitionManager::Impl::SetPartitionReady(Worker_EntityId EntityId)
@@ -540,11 +523,12 @@ TArray<ComponentData> FPartitionManager::Impl::CreatePartitionEntityComponents(c
 	return Components_Owning;
 }
 
-FPartitionManager::~FPartitionManager() = default;
-
 FPartitionManager::FPartitionManager(const FSubView& InServerWorkerView, ViewCoordinator& Coordinator, InterestFactory& InterestF)
 	: m_Impl(MakeUnique<Impl>(InServerWorkerView, Coordinator, InterestF))
+{
 }
+
+FPartitionManager::~FPartitionManager() = default;
 
 void FPartitionManager::Init(ISpatialOSWorker& Connection)
 {

@@ -39,20 +39,43 @@ struct FLBWorkerInternalState
 
 	FName WorkerType;
 	FString FullWorkerName;
+	bool bInterestInitialized = false;
+	bool bReadyToBeginPlay = false;
+};
+
+struct PartitionInterestUpdate
+{
+	bool bEnabled;
+
+	TArray<Worker_EntityId> NewPartition;
+	TArray<Worker_EntityId> NewWorker;
+	TArray<Worker_EntityId> NewServerWorker;
+
+	TArray<Worker_EntityId> RemovedPartition;
+	TArray<Worker_EntityId> RemovedWorker;
+	TArray<Worker_EntityId> RemovedServerWorker;
+
+	TArray<Worker_ComponentId> PartitionMetaData;
+
+	PartitionInterestUpdate();
+
+	void Clear();
+	bool HasChanged() const;
 };
 
 struct FPartitionManager::Impl
 {
-	Impl(const FSubView& InServerWorkerView, ViewCoordinator& Coordinator, TUniquePtr<InterestFactory>&& InInterestF);
+	Impl(const FSubView& InServerWorkerView, ViewCoordinator& Coordinator, InterestFactory& InInterestF);
 
 	void AdvanceView(ISpatialOSWorker& Connection);
 
 	void CheckWorkersConnected(TSet<Worker_EntityId_Key> WorkersToInspect, const TSet<Worker_EntityId_Key>& SystemWorkerModified);
-	void WorkerConnected(Worker_EntityId ServerWorkerEntityId);
+	FLBWorkerHandle WorkerConnected(Worker_EntityId ServerWorkerEntityId);
 
 	bool WaitForPartitionIdAvailable(ISpatialOSWorker& Connection);
 
 	void Flush(ISpatialOSWorker& Connection);
+	void FlushInterestUpdates(ISpatialOSWorker& Connection);
 
 	void SetPartitionReady(Worker_EntityId EntityId);
 
@@ -65,7 +88,8 @@ struct FPartitionManager::Impl
 	const FSubView& SystemWorkerView;
 	const FSubView& PartitionView;
 
-	TUniquePtr<InterestFactory> InterestF;
+	InterestFactory& InterestF;
+	PartitionInterestUpdate InterestUpdate;
 
 	Worker_EntityId StrategyWorkerEntityId = 0;
 	TOptional<FStartupExecutor> StartupExecutor;

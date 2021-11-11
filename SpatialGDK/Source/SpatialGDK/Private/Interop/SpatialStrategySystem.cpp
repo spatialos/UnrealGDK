@@ -17,10 +17,9 @@ DEFINE_LOG_CATEGORY(LogSpatialStrategySystem);
 
 namespace SpatialGDK
 {
-FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionsMgr, FStrategySystemViews InViews,
-											   TUniquePtr<FLoadBalancingStrategy> InStrategy, TUniquePtr<InterestFactory> InInterestF)
+FSpatialStrategySystem::FSpatialStrategySystem(FStrategySystemViews InViews, TUniquePtr<FLoadBalancingStrategy> InStrategy,
+											   TUniquePtr<InterestFactory> InInterestF)
 	: Views(InViews)
-	, PartitionsMgr(MoveTemp(InPartitionsMgr))
 	, InterestF(MoveTemp(InInterestF))
 	, ManifestPublisher(InViews.FilledManifestSubView)
 	, DataStorages(InViews.LBView)
@@ -30,10 +29,13 @@ FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InP
 {
 }
 
-void FSpatialStrategySystem::Init(ISpatialOSWorker& Connection)
+void FSpatialStrategySystem::Init(ViewCoordinator& Coordinator)
 {
+	PartitionsMgr = MakeUnique<SpatialGDK::FPartitionManager>(Views.ServerWorkerView, Coordinator, *InterestF);
+	PartitionsMgr->Init(Coordinator);
+
 	FLoadBalancingSharedData SharedData(*PartitionsMgr, ActorSetSystem, ManifestPublisher, *InterestF);
-	Strategy->Init(Connection, SharedData, UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
+	Strategy->Init(Coordinator, SharedData, UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
 	DataStorages.DataStorages.Add(&AuthACKView);
 	DataStorages.DataStorages.Add(&NetOwningClientView);
 	DataStorages.DataStorages.Add(&SetMemberView);

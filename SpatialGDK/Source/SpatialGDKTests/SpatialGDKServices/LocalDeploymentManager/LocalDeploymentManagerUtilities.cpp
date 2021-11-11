@@ -84,15 +84,16 @@ bool FStartDeployment::Update()
 		const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 		const uint16 RuntimeGRPCPort = SpatialGDKEditorSettings->GetDefaultReceptionistPort();
 
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName,
-																 RuntimeVersion, RuntimeGRPCPort] {
-			if (!GenerateWorkerJson())
-			{
-				return;
-			}
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask,
+				  [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion, RuntimeGRPCPort] {
+					  if (!GenerateWorkerJson())
+					  {
+						  return;
+					  }
 
-			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotName, TEXT(""), RuntimeGRPCPort, nullptr);
-		});
+					  LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotName, TEXT(""),
+																	  RuntimeGRPCPort, false, nullptr);
+				  });
 	}
 
 	return true;
@@ -189,14 +190,14 @@ bool FCheckDeploymentState::Update()
 	return true;
 }
 
-/** 
-* Wrapper function for automation latent commands to execute the commands synchronously
-*
-* This function was written as a workaround whenever waiting for latent commands cause issues (e.g. when maps are not 
-* properly closed prior to some tests, see `GDKAutomationTestBase.h` for reference). This function cannot access
-* `InternalUpdate()` calls to initialize the private `StartTime` variable, hence any latent command used with this function
-* should initialise `StartTime` at the start of their `Update()` function (e.g. see `FWaitForDeployment` for reference).
-*/
+/**
+ * Wrapper function for automation latent commands to execute the commands synchronously
+ *
+ * This function was written as a workaround whenever waiting for latent commands cause issues (e.g. when maps are not
+ * properly closed prior to some tests, see `GDKAutomationTestBase.h` for reference). This function cannot access
+ * `InternalUpdate()` calls to initialize the private `StartTime` variable, hence any latent command used with this function
+ * should initialise `StartTime` at the start of their `Update()` function (e.g. see `FWaitForDeployment` for reference).
+ */
 void ExecuteLatentCommandSynchronously(IAutomationLatentCommand& Command)
 {
 	while (true)

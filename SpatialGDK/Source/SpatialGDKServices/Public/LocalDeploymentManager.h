@@ -33,7 +33,8 @@ public:
 
 	void SPATIALGDKSERVICES_API TryStartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion,
 														const FString& LaunchArgs, const FString& SnapshotName,
-														const FString& RuntimeIPToExpose, const uint16 RuntimeGRPCPort, const bool bEnableSessionLogRecording, const LocalDeploymentCallback& CallBack);
+														const FString& RuntimeIPToExpose, const uint16 RuntimeGRPCPort,
+														const bool bEnableSessionLogRecording, const LocalDeploymentCallback& CallBack);
 
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
 	bool SPATIALGDKSERVICES_API TryStopLocalDeploymentGracefully();

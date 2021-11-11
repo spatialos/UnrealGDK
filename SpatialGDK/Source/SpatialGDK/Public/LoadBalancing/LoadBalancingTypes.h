@@ -46,7 +46,7 @@ struct FLoadBalancingSharedData
 		: PartitionManager(Other.PartitionManager)
 		, ActorSets(Other.ActorSets)
 		, ManifestPublisher(Other.ManifestPublisher)
-		, InterestF(Other.InInterestF)
+		, InterestF(Other.InterestF)
 	{
 	}
 

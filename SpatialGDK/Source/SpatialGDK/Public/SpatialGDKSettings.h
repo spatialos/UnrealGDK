@@ -332,7 +332,7 @@ public:
 	 * Gets the correct port needed to create Worker connections
 	 * When compiled WITH_EDITOR, the port is given by the value of ServerPort in ULevelEditorPlaySettings
 	 * When not using editor, the class member DEFAULT_RECEPTIONIST_PORT is the correct value
-	*/
+	 */
 	uint16 GetDefaultReceptionistPort() const;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings",
