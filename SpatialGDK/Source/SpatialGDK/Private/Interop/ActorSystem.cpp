@@ -979,16 +979,20 @@ void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, c
 	// Non-owning client - data
 	// If initial-only disabled + initial-only to all (counter-intuitive, but initial only is sent as normal if disabled and not sent at all
 	// on dynamic components if enabled)
+	// Auth Server - data/owner-only/handover/auth-server-only
 	const bool bIsServer = NetDriver->IsServer();
 	const bool bIsAuthClient = NetDriver->HasClientAuthority(EntityId);
 	const bool bInitialOnlyExpected = !GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition;
+	const bool bIsAuthServer = bIsServer && NetDriver->HasServerAuthority(EntityId);
+
 
 	Worker_ComponentId ComponentFilter[SCHEMA_Count];
 	ComponentFilter[SCHEMA_Data] = true;
 	ComponentFilter[SCHEMA_OwnerOnly] = bIsServer || bIsAuthClient;
 	ComponentFilter[SCHEMA_ServerOnly] = bIsServer;
 	ComponentFilter[SCHEMA_InitialOnly] = bInitialOnlyExpected;
-	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
+	ComponentFilter[SCHEMA_AuthServerOnly] = bIsAuthServer;
+	static_assert(SCHEMA_Count == 5, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 
 	bool bComponentsComplete = true;
 	for (int i = 0; i < SCHEMA_Count; ++i)
