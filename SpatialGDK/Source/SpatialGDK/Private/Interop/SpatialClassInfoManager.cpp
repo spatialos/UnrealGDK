@@ -253,13 +253,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 				EnumHasAnyFlags(StructProperty->Struct->StructFlags, EStructFlags::STRUCT_NetDeltaSerializeNative);
 			if (bIsPropertyNetDeltaSerialized && ReplicatedPropertyPtr->bIsPushBased)
 			{
-				continue;
+				UE_LOG(LogSpatialClassInfoManager, Warning,
+					   TEXT("A property is both NetDeltaSerialized and Push Model enabled - make sure to MARK_PROPERTY_DIRTY "
+							"when using this property, or they won't be replicated with SpatialGDK: Class %s Property %s"),
+					   *Class->GetName(), *StructProperty->GetName());
 			}
-
-			UE_LOG(LogSpatialClassInfoManager, Warning,
-				   TEXT("Class %s Property %s is both NetDeltaSerialized and Push Model enabled - make sure to MARK_PROPERTY_DIRTY "
-						"when using this property, or they won't be replicated with SpatialGDK"),
-				   *Class->GetName(), *StructProperty->GetName());
 		}
 	}
 
