@@ -18,6 +18,9 @@ class FDirectAssignmentStorage;
 class FDebugComponentStorage;
 class FCustomWorkerAssignmentStorage;
 class FActorSetSystem;
+class FAlwaysRelevantStorage;
+class FServerAlwaysRelevantStorage;
+class FInterestManager;
 
 class FLegacyLoadBalancing : public FLoadBalancingStrategy
 {
@@ -28,7 +31,7 @@ public:
 	virtual void Init(ISpatialOSWorker& Connection, FLoadBalancingSharedData InSharedData, TArray<FLBDataStorage*>& OutLoadBalancingData,
 					  TArray<FLBDataStorage*>& OutServerWorkerData) override;
 
-	virtual void Advance(ISpatialOSWorker& Connection) override;
+	virtual void Advance(ISpatialOSWorker& Connection, const TSet<Worker_EntityId_Key>& DeletedEntities) override;
 	virtual void Flush(ISpatialOSWorker& Connection) override;
 	virtual bool IsReady() override { return !StartupExecutor.IsSet(); }
 
@@ -84,6 +87,12 @@ protected:
 	};
 	TMap<Worker_EntityId_Key, ManifestProcessing> ReceivedManifests;
 	// --- Skeleton entity processing ---
+
+	// +++ EXPERIMENTAL Interest computations
+	TUniquePtr<FAlwaysRelevantStorage> AlwaysRelevantStorage;
+	TUniquePtr<FServerAlwaysRelevantStorage> ServerAlwaysRelevantStorage;
+	TUniquePtr<FInterestManager> InterestManager;
+	// --- EXPERIMENTAL Interest computations
 };
 
 } // namespace SpatialGDK

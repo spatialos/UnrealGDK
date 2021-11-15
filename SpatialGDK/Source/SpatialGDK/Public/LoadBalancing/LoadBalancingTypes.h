@@ -28,15 +28,17 @@ using FPartitionHandle = TSharedPtr<FPartitionDesc>;
 class FActorSetSystem;
 class FPartitionManager;
 class FSkeletonManifestPublisher;
+class InterestFactory;
 
 // Some abstractions from SpatialOS and Unreal that are expected to be available to all load balancing systems.
 struct FLoadBalancingSharedData
 {
 	FLoadBalancingSharedData(FPartitionManager& InPartitionManager, FActorSetSystem& InActorSets,
-							 FSkeletonManifestPublisher& InManifestPublisher)
+							 FSkeletonManifestPublisher& InManifestPublisher, InterestFactory& InInterestF)
 		: PartitionManager(InPartitionManager)
 		, ActorSets(InActorSets)
 		, ManifestPublisher(InManifestPublisher)
+		, InterestF(InInterestF)
 	{
 	}
 
@@ -44,12 +46,14 @@ struct FLoadBalancingSharedData
 		: PartitionManager(Other.PartitionManager)
 		, ActorSets(Other.ActorSets)
 		, ManifestPublisher(Other.ManifestPublisher)
+		, InterestF(Other.InterestF)
 	{
 	}
 
 	FPartitionManager& PartitionManager;
 	FActorSetSystem& ActorSets;
 	FSkeletonManifestPublisher& ManifestPublisher;
+	InterestFactory& InterestF;
 };
 
 struct FMigrationContext

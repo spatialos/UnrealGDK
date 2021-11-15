@@ -3,8 +3,10 @@
 #include "EngineClasses/SpatialReplicationGraph.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialHandoverManager.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/SpatialReplicationGraphLoadBalancingHandler.h"
+#include "LoadBalancing/AbstractLockingPolicy.h"
 #include "Utils/SpatialActorUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReplicationGraph);
@@ -17,7 +19,15 @@ void USpatialReplicationGraph::InitForNetDriver(UNetDriver* InNetDriver)
 	{
 		if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(InNetDriver))
 		{
-			LoadBalancingHandler = MakeUnique<FSpatialLoadBalancingHandler>(SpatialNetDriver);
+			bStrategyWorkerEnabled = USpatialStatics::IsStrategyWorkerEnabled();
+			if (bStrategyWorkerEnabled && SpatialNetDriver->LoadBalanceStrategy)
+			{
+				bDirectAssignment = SpatialNetDriver->LoadBalanceStrategy->IsStrategyWorkerAware();
+			}
+			if (!bStrategyWorkerEnabled)
+			{
+				LoadBalancingHandler = MakeUnique<FSpatialLoadBalancingHandler>(SpatialNetDriver);
+			}
 		}
 	}
 
@@ -63,23 +73,62 @@ void USpatialReplicationGraph::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 
 void USpatialReplicationGraph::PreReplicateActors(UNetReplicationGraphConnection* ConnectionManager)
 {
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
+	FSpatialReplicationGraphLoadBalancingContext LoadBalancingCtx(SpatialNetDriver, this, ConnectionManager->ActorInfoMap,
+																  PrioritizedReplicationList);
 	if (LoadBalancingHandler.IsValid())
 	{
-		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
-		FSpatialReplicationGraphLoadBalancingContext LoadBalancingCtx(SpatialNetDriver, this, ConnectionManager->ActorInfoMap,
-																	  PrioritizedReplicationList);
 		LoadBalancingHandler->EvaluateActorsToMigrate(LoadBalancingCtx);
+	}
 
-		for (AActor* Actor : LoadBalancingCtx.AdditionalActorsToReplicate)
+	if (bStrategyWorkerEnabled)
+	{
+		auto& HandoverManager = SpatialNetDriver->HandoverManager;
+		TSet<Worker_EntityId_Key> ActorsToHandover = HandoverManager->GetActorsToHandover();
+		TSet<AActor*> ActorsToConsider;
+		for (Worker_EntityId EntityId : ActorsToHandover)
 		{
-			// Only add net owners to the list as they will visit their dependents when replicated.
-			AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
-			if (NetOwner == Actor)
+			TWeakObjectPtr<UObject> ObjectPtr = SpatialNetDriver->PackageMap->GetObjectFromEntityId(EntityId);
+			AActor* Actor = Cast<AActor>(ObjectPtr.Get());
+			if (Actor == nullptr)
 			{
-				FConnectionReplicationActorInfo& ConnectionData = ConnectionManager->ActorInfoMap.FindOrAdd(Actor);
-				FGlobalActorReplicationInfo& GlobalData = GlobalActorReplicationInfoMap.Get(Actor);
-				PrioritizedReplicationList.Items.Emplace(FPrioritizedRepList::FItem(0, Actor, &GlobalData, &ConnectionData));
+				EntitiesHandedOver.Add(EntityId);
 			}
+			else
+			{
+				if (!ensureAlways(Actor->HasAuthority()) || SpatialNetDriver->LockingPolicy->IsLocked(Actor))
+				{
+					continue;
+				}
+				ActorsToConsider.Add(Actor);
+				ActorsHandedOver.Add(Actor);
+				EntitiesHandedOver.Add(EntityId);
+			}
+		}
+		for (auto ReplicatedActor : LoadBalancingCtx.GetActorsBeingReplicated())
+		{
+			AActor& ReplicatedThisFrame = *ReplicatedActor;
+			if (ActorsToConsider.Contains(&ReplicatedThisFrame))
+			{
+				ActorsToConsider.Remove(&ReplicatedThisFrame);
+			}
+		}
+
+		for (auto ActorToConsider : ActorsToConsider)
+		{
+			LoadBalancingCtx.AddActorToReplicate(ActorToConsider);
+		}
+	}
+
+	for (AActor* Actor : LoadBalancingCtx.AdditionalActorsToReplicate)
+	{
+		// Only add net owners to the list as they will visit their dependents when replicated.
+		AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
+		if (NetOwner == Actor)
+		{
+			FConnectionReplicationActorInfo& ConnectionData = ConnectionManager->ActorInfoMap.FindOrAdd(Actor);
+			FGlobalActorReplicationInfo& GlobalData = GlobalActorReplicationInfoMap.Get(Actor);
+			PrioritizedReplicationList.Items.Emplace(FPrioritizedRepList::FItem(0, Actor, &GlobalData, &ConnectionData));
 		}
 	}
 }
@@ -89,6 +138,14 @@ void USpatialReplicationGraph::PostReplicateActors(UNetReplicationGraphConnectio
 	if (LoadBalancingHandler.IsValid())
 	{
 		LoadBalancingHandler->ProcessMigrations();
+	}
+
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
+	if (bStrategyWorkerEnabled)
+	{
+		FSpatialLoadBalancingHandler::UpdateActorsHandedOver(*SpatialNetDriver, EntitiesHandedOver, ActorsHandedOver);
+		ActorsHandedOver.Empty();
+		EntitiesHandedOver.Empty();
 	}
 }
 

@@ -227,6 +227,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseClientEntityInterestQueries(false)
 	, ClientEntityIdInterestUpdateFrameFrequency(10)
 	, bUseNarrowPhaseNCDInterestCulling(true)
+	, bUserSpaceServerInterest(false)
 	, bEnableCrossLayerActorSpawning(true)
 	, StartupLogRate(5.0f)
 	, ActorMigrationLogRate(5.0f)

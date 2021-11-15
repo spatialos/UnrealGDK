@@ -985,7 +985,6 @@ void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, c
 	const bool bInitialOnlyExpected = !GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition;
 	const bool bIsAuthServer = bIsServer && NetDriver->HasServerAuthority(EntityId);
 
-
 	Worker_ComponentId ComponentFilter[SCHEMA_Count];
 	ComponentFilter[SCHEMA_Data] = true;
 	ComponentFilter[SCHEMA_OwnerOnly] = bIsServer || bIsAuthClient;
