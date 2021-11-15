@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Interop/SpatialClassInfoManager.h"
+#include "Schema/ChangeInterest.h"
 #include "Schema/Interest.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
@@ -121,6 +122,8 @@ public:
 	// Returns false if we could not get an owner's entityId in the Actor's owner chain.
 	bool DoOwnersHaveEntityId(const AActor* Actor) const;
 
+	bool CreateClientInterestDiff(const APlayerController* PlayerController, ChangeInterestRequest& Request, const bool bOverwrite) const;
+
 private:
 	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
@@ -131,6 +134,8 @@ private:
 	void AddServerActorOwnerInterest(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const;
 
 	void AddObjectToConstraint(FObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
+
+	TArray<Worker_EntityId> GetClientInterestedEntityIds(const APlayerController* InPlayerController) const;
 
 	USpatialPackageMapClient* PackageMap;
 };

@@ -4,7 +4,7 @@
 
 #include "improbable/c_worker.h"
 
-#define WORKER_SDK_VERSION "15.3.1"
+#define WORKER_SDK_VERSION "15.4.0"
 
 constexpr bool StringsEqual(char const* A, char const* B)
 {

@@ -228,6 +228,15 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
+	if (!bInitAsClient && GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
+	{
+		UReplicationGraph* RepGraph = Cast<UReplicationGraph>(GetReplicationDriver());
+		if (RepGraph == nullptr)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Client entity interest setting was enabled BUT there was no rep graph set"));
+		}
+	}
+
 #if WITH_EDITOR
 	PlayInEditorID = GPlayInEditorID;
 
@@ -787,7 +796,7 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 		   TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
 }
 
-void USpatialNetDriver::OnActorSpawned(AActor* Actor) const
+void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
@@ -1838,6 +1847,13 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		Payload.PayloadData = RPCs->CreateRPCPayloadData(Function, Parameters);
 		FSpatialGDKSpanId SpanId = RPCs->CreatePushRPCEvent(CallingObject, Function);
 
+#if !UE_BUILD_SHIPPING
+		if (SpatialMetrics != nullptr)
+		{
+			SpatialMetrics->TrackSentRPC(Function, Info.Type, Payload.PayloadData.Num());
+		}
+#endif // !UE_BUILD_SHIPPING
+
 		SpatialGDK::TRPCQueue<FRPCPayload, FSpatialGDKSpanId>* Queue = nullptr;
 		switch (Info.Type)
 		{
@@ -2256,14 +2272,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-		Connection->Advance(DeltaTime);
-
-		if (Connection->HasDisconnected())
-		{
-			Receiver->OnDisconnect(Connection->GetConnectionStatus(), Connection->GetDisconnectReason());
-			return;
-		}
-
 		const bool bIsDefaultServerOrClientWorker = [this] {
 			if (IsServer())
 			{
@@ -2273,6 +2281,18 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			// Assume client, since the GameInstance might not be around.
 			return true;
 		}();
+
+		Connection->Advance(DeltaTime);
+
+		if (Connection->HasDisconnected())
+		{
+			if (bIsDefaultServerOrClientWorker)
+			{
+				Receiver->OnDisconnect(Connection->GetConnectionStatus(), Connection->GetDisconnectReason());
+			}
+			Connection = nullptr; // prevent worker from processing stale command retries - probably want a proper shutdown process here
+			return;
+		}
 
 		if (bIsDefaultServerOrClientWorker)
 		{
@@ -2619,6 +2639,11 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 			if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
 			{
 				ActorSystem->ProcessPositionUpdates();
+			}
+
+			if (ActorSystem.IsValid())
+			{
+				ActorSystem->Flush();
 			}
 
 			if (ServerWorkerSystemImpl.IsValid())
