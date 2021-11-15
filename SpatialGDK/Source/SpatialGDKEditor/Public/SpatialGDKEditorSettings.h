@@ -341,6 +341,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Enable spatial debugger in editor"))
 	bool bSpatialDebuggerEditorEnabled;
 
+	/** Records SpatialOS session logs locally. */
+	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Record SpatialOS session logs"))
+	bool bEnableSessionLogRecording;
+
 	/** Allows the local SpatialOS deployment to be automatically stopped. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-stop local deployment"))
 	EAutoStopLocalDeploymentMode AutoStopLocalDeployment;

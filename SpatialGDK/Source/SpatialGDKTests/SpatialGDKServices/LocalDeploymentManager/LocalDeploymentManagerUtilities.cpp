@@ -84,37 +84,38 @@ bool FStartDeployment::Update()
 		const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 		const uint16 RuntimeGRPCPort = SpatialGDKEditorSettings->GetDefaultReceptionistPort();
 
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName,
-																 RuntimeVersion, RuntimeGRPCPort] {
-			if (!GenerateWorkerJson())
-			{
-				return;
-			}
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask,
+				  [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion, RuntimeGRPCPort] {
+					  if (!GenerateWorkerJson())
+					  {
+						  return;
+					  }
 
-			if (!GenerateWorkerAssemblies())
-			{
-				return;
-			}
+					  if (!GenerateWorkerAssemblies())
+					  {
+						  return;
+					  }
 
-			FSpatialLaunchConfigDescription LaunchConfigDescription;
+					  FSpatialLaunchConfigDescription LaunchConfigDescription;
 
-			FWorkerTypeLaunchSection AutomationWorkerConfig;
-			AutomationWorkerConfig.WorkerTypeName = TEXT("AutomationWorker");
-			LaunchConfigDescription.AdditionalWorkerConfigs.Add(AutomationWorkerConfig);
+					  FWorkerTypeLaunchSection AutomationWorkerConfig;
+					  AutomationWorkerConfig.WorkerTypeName = TEXT("AutomationWorker");
+					  LaunchConfigDescription.AdditionalWorkerConfigs.Add(AutomationWorkerConfig);
 
-			if (!GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, /*bGenerateCloudConfig*/ false))
-			{
-				return;
-			}
+					  if (!GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, /*bGenerateCloudConfig*/ false))
+					  {
+						  return;
+					  }
 
-			if (LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStarting()
-				|| LocalDeploymentManager->IsDeploymentStopping())
-			{
-				return;
-			}
+					  if (LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStarting()
+						  || LocalDeploymentManager->IsDeploymentStopping())
+					  {
+						  return;
+					  }
 
-			LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotName, TEXT(""), RuntimeGRPCPort, nullptr);
-		});
+					  LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotName, TEXT(""),
+																	  RuntimeGRPCPort, false, nullptr);
+				  });
 	}
 
 	return true;
