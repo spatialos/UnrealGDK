@@ -5,7 +5,7 @@
 
 #include "EngineClasses/SpatialPartitionSystem.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Schema/ChangeInterest.h" // Move to PartitionManagerImpl.h ?
+#include "Schema/ChangeInterest.h"
 #include "SpatialView/SpatialOSWorker.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
