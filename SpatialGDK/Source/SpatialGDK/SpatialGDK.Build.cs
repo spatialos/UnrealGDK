@@ -41,6 +41,11 @@ public class SpatialGDK : ModuleRules
                 "UMG"
             });
 
+        if (Target.bWithPushModel)
+        {
+            PublicDependencyModuleNames.Add("NetCore");
+        }
+
         if (Target.bBuildDeveloperTools || (Target.Configuration != UnrealTargetConfiguration.Shipping &&
                                             Target.Configuration != UnrealTargetConfiguration.Test))
         {

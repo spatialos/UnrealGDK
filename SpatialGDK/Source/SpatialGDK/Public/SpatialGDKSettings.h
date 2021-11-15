@@ -298,6 +298,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Local Connection")
 	FString DefaultReceptionistHost;
 
+	UPROPERTY(EditAnywhere, Config, Category = "Replication",
+			  meta = (Tooltip = "Whether to warn on detecting NetDeltaSerialized properties marked as Push Model"))
+	bool bShouldWarnOnNetDeltaSerializedPushModel = true;
+
 private:
 	/** Will stop a non editor client auto connecting via command line args to a cloud deployment */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
