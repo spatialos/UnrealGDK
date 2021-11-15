@@ -152,11 +152,14 @@ struct ConfigureConnection
 #endif
 		}
 
-		WorkerFowControlParameters.downstream_window_size_bytes = Config.DownstreamWindowSizeBytes;
-		WorkerFowControlParameters.upstream_window_size_bytes = Config.UpstreamWindowSizeBytes;
+		WorkerFlowControlParameters.downstream_window_size_bytes = Config.DownstreamWindowSizeBytes;
+		WorkerFlowControlParameters.upstream_window_size_bytes = Config.UpstreamWindowSizeBytes;
 
-		Params.network.kcp.flow_control = &WorkerFowControlParameters; // Both tcp and udp use same window concepts.
-		Params.network.tcp.flow_control = &WorkerFowControlParameters;
+		UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Downstream window size: %d Upstream window size: %d"),
+			   WorkerFlowControlParameters.downstream_window_size_bytes, WorkerFlowControlParameters.upstream_window_size_bytes);
+
+		Params.network.kcp.flow_control = &WorkerFlowControlParameters; // Both tcp and udp use same window concepts.
+		Params.network.tcp.flow_control = &WorkerFlowControlParameters;
 	}
 
 	FString FormatWorkerSDKLogFilePrefix() const
@@ -179,7 +182,7 @@ struct ConfigureConnection
 	Worker_CompressionParameters EnableCompressionParams{};
 	Worker_LogsinkParameters Logsink{};
 	Worker_NameVersionPair UnrealGDKVersionPair{};
-	Worker_FlowControlParameters WorkerFowControlParameters{};
+	Worker_FlowControlParameters WorkerFlowControlParameters{};
 	Worker_HeartbeatParameters HeartbeatParams{};
 };
 
@@ -465,8 +468,8 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 void USpatialConnectionManager::FinishConnecting()
 {
 	/*
-	 * This function is now guaranteed to be called one frame after the object initialization linked to Server Travel happens (related to UNR-2287)
-	 * therefore an AsyncTask is no longer needed.
+	 * This function is now guaranteed to be called one frame after the object initialization linked to Server Travel happens (related to
+	 * UNR-2287) therefore an AsyncTask is no longer needed.
 	 */
 
 	const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
@@ -635,8 +638,8 @@ void USpatialConnectionManager::OnWorldTickStart(UWorld* World, ELevelTick TickT
 	else
 	{
 		/* Note that the if-else statement purposely adds a one frame delay between obtaining the worker connection
-		 * and the call to FinishConnecting(). See the function definition for details on why this is needed. 
-		*/
+		 * and the call to FinishConnecting(). See the function definition for details on why this is needed.
+		 */
 
 		FinishConnecting();
 		StopPollingForConnection();
