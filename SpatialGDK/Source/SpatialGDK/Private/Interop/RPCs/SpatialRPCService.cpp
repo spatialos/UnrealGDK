@@ -586,7 +586,7 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 	const bool bCannotWaitLongerThanQueueTime = !bIsReliableChannel || bMissingServerObject;
 	const bool bQueueTimeExpired = TimeQueued > SpatialSettings->QueuedIncomingRPCWaitTime;
 	const bool bMustExecuteRPC = UnresolvedRefCount == 0 || (bCannotWaitLongerThanQueueTime && bQueueTimeExpired)
-								|| (Function->SpatialFunctionFlags & SPATIALFUNC_NeverQueueForUnresolvedParameters) != 0;
+								 || (Function->SpatialFunctionFlags & SPATIALFUNC_NeverQueueForUnresolvedParameters) != 0;
 
 	if (bMustExecuteRPC)
 	{
