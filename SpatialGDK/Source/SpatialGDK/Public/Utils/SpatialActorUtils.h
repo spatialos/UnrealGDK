@@ -134,7 +134,7 @@ inline bool UsingSpatialReplicationGraph(const UObject* WorldContextObject)
 		{
 			return true;
 		}
-		UE_LOG(LogTemp, Log, TEXT("Actor %s UsingSpatialRepGraph SpatialNetDriver->GetReplicationDriver() != nullptr"),
+		UE_LOG(LogTemp, Log, TEXT("Actor %s UsingSpatialRepGraph SpatialNetDriver->GetReplicationDriver() == nullptr"),
 			   *GetNameSafe(WorldContextObject));
 		return false;
 	}

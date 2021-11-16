@@ -80,7 +80,7 @@ void ClientConnectionManager::RegisterClientConnection(const Worker_EntityId InW
 
 	const EntityViewElement* EntityView = SubView->GetView().Find(InWorkerEntityId);
 	if (!ensureAlwaysMsgf(EntityView != nullptr,
-						  TEXT("Failed to entity component data for system worker entity %lld. Client IP will be unset."),
+						  TEXT("Failed to find entity component data for system worker entity %lld. Client IP will be unset."),
 						  InWorkerEntityId))
 	{
 		return;
@@ -99,7 +99,7 @@ void ClientConnectionManager::RegisterClientConnection(const Worker_EntityId InW
 	const SpatialGDK::Worker WorkerData(Data->GetUnderlying());
 	ClientConnection->ClientIP = *WorkerData.Connection.IPAddress;
 
-	UE_LOG(LogTemp, Log, TEXT("Registered client connection. System entity: %lld. Client IP: %s."), InWorkerEntityId,
+	UE_LOG(LogWorkerEntitySystem, Log, TEXT("Registered client connection. System entity: %lld. Client IP: %s."), InWorkerEntityId,
 		   *WorkerData.Connection.IPAddress);
 }
 
