@@ -65,11 +65,10 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunc
 	Writer->WriteObjectStart(TEXT("permissions"));
 	Writer->WriteValue(TEXT("entity_creation"), WorkerConfig.WorkerPermissions.bAllowEntityCreation);
 	Writer->WriteValue(TEXT("entity_deletion"), WorkerConfig.WorkerPermissions.bAllowEntityDeletion);
-	Writer->WriteValue(TEXT("disconnect_worker"), WorkerConfig.WorkerPermissions.bDisconnectWorker);
+	Writer->WriteValue(TEXT("system_entity_command"), WorkerConfig.WorkerPermissions.bAllowSystemEntityCommand);
 	Writer->WriteValue(TEXT("reserve_entity_id"), WorkerConfig.WorkerPermissions.bReserveEntityID);
 	Writer->WriteValue(TEXT("entity_query"), WorkerConfig.WorkerPermissions.bAllowEntityQuery);
-	Writer->WriteValue(TEXT("disable_entity_query_restricted_components"),
-					   WorkerConfig.WorkerPermissions.bDisableEntityQueryRestrictedComponents);
+	// TOOD: add back in `disconnect_worker` and `disable_entity_query_restricted_components`
 	Writer->WriteObjectEnd();
 
 	if (WorkerConfig.NumEditorInstances > 0)

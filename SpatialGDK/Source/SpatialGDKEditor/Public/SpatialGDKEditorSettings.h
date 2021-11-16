@@ -48,6 +48,7 @@ struct FWorkerPermissionsSection
 		, bReserveEntityID(true)
 		, bAllowEntityQuery(true)
 		, bDisableEntityQueryRestrictedComponents(false)
+		, bAllowSystemEntityCommand(true)
 	{
 	}
 
@@ -75,6 +76,10 @@ struct FWorkerPermissionsSection
 	 * information. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Disable entity queries on restricted components"))
 	bool bDisableEntityQueryRestrictedComponents;
+
+	/** Enables a worker instance to execute system entity commands. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow system entity commands"))
+	bool bAllowSystemEntityCommand;
 };
 
 USTRUCT()
