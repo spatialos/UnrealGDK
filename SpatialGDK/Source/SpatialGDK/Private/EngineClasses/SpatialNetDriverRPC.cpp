@@ -451,7 +451,8 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, const FRPCPayload&
 
 	const bool bCannotWaitLongerThanQueueTime = !bIsReliableChannel || bMissingServerObject;
 	const bool bQueueTimeExpired = TimeQueued > SpatialSettings->QueuedIncomingRPCWaitTime;
-	const bool bMustExecuteRPC = UnresolvedRefCount == 0 || (bCannotWaitLongerThanQueueTime && bQueueTimeExpired);
+	const bool bMustExecuteRPC = UnresolvedRefCount == 0 || (bCannotWaitLongerThanQueueTime && bQueueTimeExpired)
+								 || (Function->SpatialFunctionFlags & SPATIALFUNC_NeverQueueForUnresolvedParameters) != 0;
 
 	if (!bMustExecuteRPC)
 	{
@@ -459,7 +460,8 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, const FRPCPayload&
 	}
 
 	if (UnresolvedRefCount > 0 && RPCType.IsSet() && !SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(RPCType.GetValue())
-		&& (Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
+		&& (Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0
+		&& (Function->SpatialFunctionFlags & SPATIALFUNC_NeverQueueForUnresolvedParameters) == 0))
 	{
 		const FString UnresolvedEntityIds = FString::JoinBy(UnresolvedRefs, TEXT(", "), [](const FUnrealObjectRef& Ref) {
 			return Ref.ToString();
