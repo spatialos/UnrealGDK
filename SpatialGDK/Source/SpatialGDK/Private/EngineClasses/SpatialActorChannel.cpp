@@ -251,7 +251,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 
 void USpatialActorChannel::RetireEntityIfAuthoritative()
 {
-	if (NetDriver->Connection == nullptr)
+	if (NetDriver->Connection == nullptr || NetDriver->ActorSystem == nullptr)
 	{
 		return;
 	}

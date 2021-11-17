@@ -75,6 +75,7 @@ protected:
 	bool bDirectAssignment = false;
 
 	Worker_EntityId WorkerForCustomAssignment = SpatialConstants::INVALID_ENTITY_ID;
+	Worker_EntityId WorkerWithAuthOverGSM = SpatialConstants::INVALID_ENTITY_ID;
 	// --- Load Balancing ---
 
 	// +++ Skeleton entity processing +++

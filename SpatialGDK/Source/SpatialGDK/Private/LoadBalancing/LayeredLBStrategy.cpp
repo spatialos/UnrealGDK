@@ -427,6 +427,12 @@ TArray<SpatialGDK::ComponentData> ULayeredLBStrategy::CreateStaticLoadBalancingD
 
 		uint32 LayerIndex = LayerData.FindChecked(LayerName).LayerIndex;
 
+		// Could use FUnrealObjectRef::IsUniqueActorClass here instead
+		if (Actor.IsA(AGameModeBase::StaticClass()))
+		{
+			LayerIndex = SpatialConstants::LAYER_TO_RUN_ON_WORKER_AUTH_OVER_SNAPSHOT_PARTITION;
+		}
+
 		SpatialGDK::ActorGroupMember MembershipComponent(LayerIndex);
 		ComponentData.Add(MembershipComponent.CreateComponentData());
 	}

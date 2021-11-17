@@ -367,6 +367,10 @@ const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 const Worker_ComponentId MIN_EXTERNAL_SCHEMA_ID = 1000;
 const Worker_ComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
 
+// TOOD: This is a hack to ensure the starting snapshot entities, and core Unreal objects are on
+// the same worker. This should be removed when we have better control over LBS.
+const int LAYER_TO_RUN_ON_WORKER_AUTH_OVER_SNAPSHOT_PARTITION = 1001;
+
 extern const FString SPATIALOS_METRICS_DYNAMIC_FPS;
 
 // URL that can be used to reconnect using the command line arguments.

@@ -288,6 +288,7 @@ void FLegacyLoadBalancing::Init(ISpatialOSWorker& Connection, FLoadBalancingShar
 			}
 
 			CommandsHandler.ClaimPartition(Connection, MinServerWorkerId, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+			WorkerWithAuthOverGSM = MinServerWorkerId;
 		},
 		FGenericStartupStep::TryFinishFn()));
 	StartupSteps.Emplace(MakeUnique<FGenericStartupStep>(
@@ -697,6 +698,25 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 				UE_LOG(LogSpatialLegacyLoadBalancing, Error,
 					   TEXT("Missing load balancing data for entity %llu. Has position : %s, Has group : %s"), EntityId,
 					   bHasGroup ? TEXT("true") : TEXT("false"), bHasPosition ? TEXT("true") : TEXT("false"));
+				continue;
+			}
+
+			if (Group->ActorGroupId == SpatialConstants::LAYER_TO_RUN_ON_WORKER_AUTH_OVER_SNAPSHOT_PARTITION)
+			{
+				bool bFound = false;
+				for (int idx = 0; idx < VirtualWorkerIdToHandle.Num(); ++idx)
+				{
+					Worker_EntityId Id = SharedData->PartitionManager.GetSystemWorkerEntityIdForWorker(VirtualWorkerIdToHandle[idx]);
+					if (Id == WorkerWithAuthOverGSM)
+					{
+						int32& CurAssignment = Assignment.FindOrAdd(EntityId, -1);
+						CurAssignment = idx;
+						Ctx.EntitiesToMigrate.Add(EntityId, Partitions[CurAssignment]);
+						bFound = true;
+						break;
+					}
+				}
+				ensureMsgf(bFound, TEXT("Failed to find partition on worker authoritive over snapshot partition"));
 				continue;
 			}
 

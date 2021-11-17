@@ -1836,6 +1836,13 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		return;
 	}
 
+	if (!bIsReadyToStart)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("RPC executed on %s before connection to Spatial established; RPC %s will be dropped"),
+			   *CallingObject->GetFullName(), *Function->GetName());
+		return;
+	}
+
 	const FRPCInfo& Info = ClassInfoManager->GetRPCInfo(CallingObject, Function);
 
 	if (Info.Type == ERPCType::ServerReliable || Info.Type == ERPCType::ServerUnreliable || Info.Type == ERPCType::ClientReliable
@@ -1892,6 +1899,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		return;
 	}
 
+	check(RPCService != nullptr);
 	RPCPayload Payload = RPCService->CreateRPCPayloadFromParams(CallingObject, CallingObjectRef, Function, Info.Type, Parameters);
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();

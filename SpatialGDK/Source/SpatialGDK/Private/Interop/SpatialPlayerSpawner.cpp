@@ -308,11 +308,18 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 	const FURL Url = PlayerSpawner::ExtractUrlFromPlayerSpawnParams(SpawnPlayerRequest);
 
 	// Find a PlayerStart Actor on this server.
-	AActor* PlayerStartActor = NetDriver->GetWorld()->GetAuthGameMode()->FindPlayerStart(nullptr, Url.Portal);
+	AGameModeBase* GameMode = NetDriver->GetWorld()->GetAuthGameMode();
+	AActor* PlayerStartActor = GameMode->FindPlayerStart(nullptr, Url.Portal);
+
+	if (USpatialStatics::IsStrategyWorkerEnabled())
+	{
+		ensureAlways(GameMode->HasAuthority());
+		PassSpawnRequestToNetDriver(SpawnPlayerRequest, PlayerStartActor);
+		return;
+	}
 
 	// If the PlayerStart is authoritative locally, spawn the player locally.
-	if (USpatialStatics::IsStrategyWorkerEnabled()
-		|| (PlayerStartActor != nullptr && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*PlayerStartActor)))
+	if (PlayerStartActor != nullptr && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*PlayerStartActor))
 	{
 		UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Handling SpawnPlayerRequest request locally. Client worker ID: %lld."),
 			   ClientWorkerId);
@@ -329,14 +336,6 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 	// forwarded worker knows to search for a PlayerStart.
 	if (PlayerStartActor == nullptr)
 	{
-		AGameModeBase* GameMode = UGameplayStatics::GetGameMode(GetWorld());
-		if (GameMode == nullptr)
-		{
-			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Gamemode not found. Client worker ID: %lld."), ClientWorkerId);
-			PassSpawnRequestToNetDriver(SpawnPlayerRequest, PlayerStartActor);
-			return;
-		}
-
 		VirtualWorkerToForwardTo = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*GameMode);
 		if (VirtualWorkerToForwardTo == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
