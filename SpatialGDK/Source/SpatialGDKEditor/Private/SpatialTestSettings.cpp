@@ -2,6 +2,7 @@
 
 #include "SpatialTestSettings.h"
 
+#include "SpatialConstants.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 
@@ -75,7 +76,7 @@ void FSpatialTestSettings::Override(const FString& MapName)
 	}
 
 	// Add special flag for Spatial functional tests to force load the SpatialGDKFunctionalTests module in new processes
-	GetMutableDefault<ULevelEditorPlaySettings>()->AdditionalLaunchParameters += " -SpatialTest ";
+	GetMutableDefault<ULevelEditorPlaySettings>()->AdditionalLaunchParameters += " " + SpatialConstants::SpatialTestFlag + " ";
 }
 
 template <typename T>
