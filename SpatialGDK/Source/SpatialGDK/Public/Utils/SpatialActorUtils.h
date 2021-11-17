@@ -86,9 +86,13 @@ inline FVector GetActorSpatialPosition(const AActor* InActor)
 	}
 	else if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
-		if (USceneComponent* RootComponent = PlayerController->GetRootComponent())
+		if (PlayerController->IsInState(NAME_Spectating))
 		{
-			Location = RootComponent->GetComponentLocation();
+			Location = PlayerController->LastSpectatorSyncLocation;
+		}
+		else
+		{
+			Location = PlayerController->GetFocalLocation();
 		}
 	}
 	else if (InActor->GetOwner() != nullptr && InActor->GetOwner()->GetIsReplicated())
