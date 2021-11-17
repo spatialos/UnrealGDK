@@ -13,13 +13,15 @@
 // Documentation for event tracing in the GDK can be found here: https://brevi.link/gdk-event-tracing-documentation
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
+class UEventTracingSamplingSettings;
+
 namespace SpatialGDK
 {
 // SpatialEventTracer wraps Trace_EventTracer related functionality
 class SPATIALGDK_API SpatialEventTracer
 {
 public:
-	explicit SpatialEventTracer(const FString& WorkerId);
+	explicit SpatialEventTracer(const FString& WorkerId, const UEventTracingSamplingSettings* SamplingSettings);
 	~SpatialEventTracer();
 
 	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; }

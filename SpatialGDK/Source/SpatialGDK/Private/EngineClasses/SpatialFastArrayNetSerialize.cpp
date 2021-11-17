@@ -4,13 +4,11 @@
 
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
-#include "Utils/GDKPropertyMacros.h"
 
 namespace SpatialGDK
 {
 bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDriver, FSpatialNetBitReader& Reader, UObject* Object,
-													   int32 ArrayIndex, GDK_PROPERTY(Property) * ParentProperty,
-													   UScriptStruct* NetDeltaStruct)
+													   int32 ArrayIndex, FProperty* ParentProperty, UScriptStruct* NetDeltaStruct)
 {
 	FSpatialNetDeltaSerializeInfo NetDeltaInfo;
 
@@ -21,7 +19,7 @@ bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDri
 	NetDeltaInfo.NetSerializeCB = &SerializeCB;
 	NetDeltaInfo.Object = Object;
 
-	GDK_PROPERTY(StructProperty)* ParentStruct = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(ParentProperty);
+	FStructProperty* ParentStruct = CastField<FStructProperty>(ParentProperty);
 	check(ParentStruct);
 	void* Destination = ParentStruct->ContainerPtrToValuePtr<void>(Object, ArrayIndex);
 
@@ -32,8 +30,7 @@ bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDri
 }
 
 bool FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(USpatialNetDriver* NetDriver, FSpatialNetBitWriter& Writer, UObject* Object,
-														int32 ArrayIndex, GDK_PROPERTY(Property) * ParentProperty,
-														UScriptStruct* NetDeltaStruct)
+														int32 ArrayIndex, FProperty* ParentProperty, UScriptStruct* NetDeltaStruct)
 {
 	FSpatialNetDeltaSerializeInfo NetDeltaInfo;
 
@@ -44,7 +41,7 @@ bool FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(USpatialNetDriver* NetDr
 	NetDeltaInfo.NetSerializeCB = &SerializeCB;
 	NetDeltaInfo.Object = Object;
 
-	GDK_PROPERTY(StructProperty)* ParentStruct = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(ParentProperty);
+	FStructProperty* ParentStruct = CastField<FStructProperty>(ParentProperty);
 	check(ParentStruct);
 	void* Source = ParentStruct->ContainerPtrToValuePtr<void>(Object, ArrayIndex);
 

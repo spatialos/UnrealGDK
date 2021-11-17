@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 #include "Misc/AutomationTest.h"
@@ -98,6 +98,78 @@ private:
 	public:                                                                                                                                \
 		TestName(const FString& InName, bool bInComplexTask, FString TestSourceFileName, uint32 TestSourceFileLine)                        \
 			: FGDKAutomationTestBase(InName, bInComplexTask, TestSourceFileName, TestSourceFileLine)                                       \
+		{                                                                                                                                  \
+		}                                                                                                                                  \
+		virtual bool RunGDKTest(const FString& Parameters) override;                                                                       \
+	};                                                                                                                                     \
+	namespace                                                                                                                              \
+	{                                                                                                                                      \
+	TestName TestName##__AutomationTestInstance(TEXT(PrettyName), false, __FILE__, __LINE__);                                              \
+	}                                                                                                                                      \
+	bool TestName::RunGDKTest(const FString& Parameters)
+
+/**
+ * This class is an alternative to FGDKAutomationTestBase for tests which need to open their own map.
+ * It ensures that any existing map is closed fully before the next call to AutomationOpenMap.
+ * This class is also offered through a macro, in a similar way to `IMPLEMENT_SIMPLE_AUTOMATION_TEST`.
+ *
+ * To use this test base, the GDK_AUTOMATION_MAP_TEST macro should be used, followed by the test body:
+ * ```
+ *	   GDK_AUTOMATION_MAP_TEST(MyModule, MyComponent, MyTestName)
+ *	   {
+ *			// do some testing here...
+ *
+ *			return true;
+ *	   }
+ * ```
+ *
+ * Returning `true` indicates a test pass and returning `false` indicates test failure.
+ */
+class FGDKAutomationMapTestBase : public FGDKAutomationTestBase
+{
+public:
+	FGDKAutomationMapTestBase(const FString& Name, bool bInComplexTask, FString TestSrcFileName, uint32 TestSrcFileLine)
+		: FGDKAutomationTestBase(Name, bInComplexTask, TestSrcFileName, TestSrcFileLine)
+	{
+	}
+
+protected:
+	/**
+	 * This SetUp method override is reserved for test classes which needs to open a new map.
+	 * To avoid errors we make sure that we stop the previous deployment synchronously instead of relying on latent commands.
+	 */
+	virtual void SetUp() override
+	{
+		FLocalDeploymentManager* LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
+		if (LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStarting())
+		{
+			UE_LOG(LogGDKTestBase, Log, TEXT("Deployment found! (Was this left over from another test?)"));
+			UE_LOG(LogGDKTestBase, Log, TEXT("Ending PIE session"));
+			GEditor->RequestEndPlayMap();
+
+			{
+				FStopDeployment StopDeployment;
+				ExecuteLatentCommandSynchronously(StopDeployment);
+			}
+
+			{
+				FWaitForDeployment WaitForStopDeployment(this, EDeploymentState::IsNotRunning);
+				ExecuteLatentCommandSynchronously(WaitForStopDeployment);
+
+			}
+		}
+	}
+};
+
+#define GDK_AUTOMATION_MAP_TEST(ModuleName, ComponentName, TestName)                                                                       \
+	IMPLEMENT_GDK_AUTOMATION_MAP_TEST(TestName, "SpatialGDK." #ModuleName "." #ComponentName "." #TestName)
+
+#define IMPLEMENT_GDK_AUTOMATION_MAP_TEST(TestName, PrettyName)                                                                            \
+	class TestName : public FGDKAutomationMapTestBase                                                                                      \
+	{                                                                                                                                      \
+	public:                                                                                                                                \
+		TestName(const FString& InName, bool bInComplexTask, FString TestSourceFileName, uint32 TestSourceFileLine)                        \
+			: FGDKAutomationMapTestBase(InName, bInComplexTask, TestSourceFileName, TestSourceFileLine)                                    \
 		{                                                                                                                                  \
 		}                                                                                                                                  \
 		virtual bool RunGDKTest(const FString& Parameters) override;                                                                       \

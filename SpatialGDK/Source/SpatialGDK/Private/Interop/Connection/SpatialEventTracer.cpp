@@ -72,7 +72,7 @@ SpatialScopedActiveSpanId::~SpatialScopedActiveSpanId()
 	}
 }
 
-SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
+SpatialEventTracer::SpatialEventTracer(const FString& WorkerId, const UEventTracingSamplingSettings* SamplingSettings)
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	MaxFileSize = Settings->bEnableEventTracingRotatingLogs ? 0 : Settings->EventTracingSingleLogMaxFileSizeBytes; // 0 indicates unbounded.
@@ -83,8 +83,6 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	Parameters.enabled = true;
 
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
-
-	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
 
 	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
 	// Storage for strings passed to the worker SDK Worker requires ansi const char*

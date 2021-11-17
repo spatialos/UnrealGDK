@@ -15,7 +15,6 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
-#include "CoreMinimal.h"
 #include "Interop/AsyncPackageLoadFilter.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
@@ -29,7 +28,6 @@ class FSpatialNetDriverRPC;
 class FSpatialNetDriverClientRPC;
 class FSpatialNetDriverServerRPC;
 class FSpatialOutputDevice;
-class SpatialDispatcher;
 class SpatialSnapshotManager;
 class SpatialVirtualWorkerTranslator;
 class SpatialVirtualWorkerTranslationManager;
@@ -283,10 +281,6 @@ public:
 
 	SpatialGDK::SpatialRPCService* GetRPCService() const { return RPCService.Get(); }
 
-#if ENGINE_MINOR_VERSION <= 24
-	float GetElapsedTime() { return Time; }
-#endif
-
 	// Check if we have already logged this actor / migration failure, if not update the log record
 	bool IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure);
 
@@ -306,7 +300,6 @@ public:
 	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
 
 private:
-	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 

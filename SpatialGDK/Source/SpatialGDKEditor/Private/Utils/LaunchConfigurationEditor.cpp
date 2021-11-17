@@ -79,15 +79,11 @@ namespace
 // Copied from FPropertyEditorModule::CreateFloatingDetailsView.
 bool ShouldShowProperty(const FPropertyAndParent& PropertyAndParent, bool bHaveTemplate)
 {
-	const GDK_PROPERTY(Property)& Property = PropertyAndParent.Property;
+	const FProperty& Property = PropertyAndParent.Property;
 
 	if (bHaveTemplate)
 	{
-#if ENGINE_MINOR_VERSION <= 24
-		const UClass* PropertyOwnerClass = Cast<const UClass>(Property.GetOuter());
-#else
 		const UClass* PropertyOwnerClass = Property.GetOwner<const UClass>();
-#endif
 		const bool bDisableEditOnTemplate =
 			PropertyOwnerClass && PropertyOwnerClass->IsNative() && Property.HasAnyPropertyFlags(CPF_DisableEditOnTemplate);
 		if (bDisableEditOnTemplate)
