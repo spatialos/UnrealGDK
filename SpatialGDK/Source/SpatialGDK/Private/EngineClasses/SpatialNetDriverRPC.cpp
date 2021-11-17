@@ -468,9 +468,9 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, const FRPCPayload&
 		});
 
 		UE_LOG(LogSpatialNetDriverRPC, Warning,
-			TEXT("Executed RPC %s::%s with unresolved references (%s) after %.3f seconds of queueing. Owner name: %s"),
-			*GetNameSafe(TargetObject), *GetNameSafe(Function), *UnresolvedEntityIds, TimeQueued,
-			*GetNameSafe(TargetObject->GetOuter()));
+			   TEXT("Executed RPC %s::%s with unresolved references (%s) after %.3f seconds of queueing. Owner name: %s"),
+			   *GetNameSafe(TargetObject), *GetNameSafe(Function), *UnresolvedEntityIds, TimeQueued,
+			   *GetNameSafe(TargetObject->GetOuter()));
 	}
 
 	const bool bUseEventTracer = EventTracer != nullptr;
