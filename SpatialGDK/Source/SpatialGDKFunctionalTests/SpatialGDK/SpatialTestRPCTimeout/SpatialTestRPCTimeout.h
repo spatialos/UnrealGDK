@@ -19,4 +19,7 @@ public:
 	virtual void PrepareTest() override;
 
 	virtual void CreateCustomContentForMap() override;
+
+private:
+	float Step1Timer = 0.f;
 };

@@ -43,6 +43,9 @@ void ASpatialTestRPCTimeout::PrepareTest()
 	AddStep(
 		TEXT("Check that the material was not initially loaded on non-editor clients"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
+
+			Step1Timer += DeltaTime;
+
 			if (!GIsEditor)
 			{
 				ACharacter* TestCharacter = Cast<ACharacter>(GetLocalFlowPawn());
@@ -53,8 +56,11 @@ void ASpatialTestRPCTimeout::PrepareTest()
 				{
 					UMaterial* Material = TestController->SoftMaterialPtr.Get();
 
-					RequireTrue(Material == nullptr, TEXT("The soft-pointed material must not be in memory at the start of the test."));
-					UE_LOG(LogTemp, Display, TEXT("A"));
+					AssertTrue(Material == nullptr, TEXT("The soft-pointed material found in memory at the start of the test."));
+
+					// While the PlayerController waits for 5 seconds before loading manually the material, there is a small latency between that timer and the start of
+					// this tick event. As a result, we need to give ~1 second tolerance for the test to pass consistently.
+					RequireTrue(Step1Timer > 4.f, TEXT("The soft-pointed material must not be in memory until synchronously loaded after 5 seconds"));
 
 					FinishStep();
 				}
@@ -64,10 +70,10 @@ void ASpatialTestRPCTimeout::PrepareTest()
 				FinishStep();
 			}
 		},
-		2.0f);
+		5.0f);
 
 	AddStep(
-		TEXT("Check that the material is correctly loaded after about 2 seconds delay. We should wait "), FWorkerDefinition::AllClients,
+		TEXT("Check that the material is correctly loaded after about 5 seconds delay. We should wait "), FWorkerDefinition::AllClients,
 		nullptr, nullptr,
 		[this](float DeltaTime) {
 			if (!GIsEditor)

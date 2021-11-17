@@ -36,7 +36,7 @@ void ASpatialTestRPCTimeoutPlayerController::OnPossess(APawn* InPawn)
 	CheckMaterialLoaded();
 
 	// Delay set material, let CheckMaterialLoaded() check if it's already loaded in memory
-	GetWorld()->GetTimerManager().SetTimer(MaterialSetDelay, this, &ASpatialTestRPCTimeoutPlayerController::SetMaterialAfterDelay, 2.f,
+	GetWorld()->GetTimerManager().SetTimer(MaterialSetDelay, this, &ASpatialTestRPCTimeoutPlayerController::SetMaterialAfterDelay, 5.f,
 										   false);
 }
 
