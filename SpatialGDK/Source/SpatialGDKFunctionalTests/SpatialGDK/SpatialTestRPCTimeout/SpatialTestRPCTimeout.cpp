@@ -74,7 +74,7 @@ void ASpatialTestRPCTimeout::PrepareTest()
 		5.0f);
 
 	AddStep(
-		TEXT("Check that the material is correctly loaded after about 5 seconds delay. We should wait "), FWorkerDefinition::AllClients,
+		TEXT("Check that the material is correctly loaded after about 5 seconds delay"), FWorkerDefinition::AllClients,
 		nullptr, nullptr,
 		[this](float DeltaTime) {
 			if (IsExternalProcessClient())
