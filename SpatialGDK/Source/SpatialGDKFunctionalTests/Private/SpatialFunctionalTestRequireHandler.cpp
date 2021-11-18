@@ -367,7 +367,7 @@ void SpatialFunctionalTestRequireHandler::LogAndClearStepRequires()
 	}
 	RequiresOrdered.Sort([](const FSpatialFunctionalTestRequire& A, const FSpatialFunctionalTestRequire& B) -> bool {
 		return A.Order < B.Order;
-		});
+	});
 
 	ASpatialFunctionalTestFlowController* FlowController = OwnerTest->GetLocalFlowController();
 	if (FlowController)
@@ -376,7 +376,8 @@ void SpatialFunctionalTestRequireHandler::LogAndClearStepRequires()
 
 		for (const auto& Require : RequiresOrdered)
 		{
-			const FString Msg = FString::Printf(TEXT("%s [%s] %s : %s"), *WorkerName, (Require.bPassed ? TEXT("Passed") : TEXT("Failed")), *Require.Msg, *Require.StatusMsg);
+			const FString Msg = FString::Printf(TEXT("%s [%s] %s : %s"), *WorkerName, (Require.bPassed ? TEXT("Passed") : TEXT("Failed")),
+												*Require.Msg, *Require.StatusMsg);
 
 			FlowController->ServerNotifyLogRequireMessages(*Msg, Require.bPassed);
 		}
