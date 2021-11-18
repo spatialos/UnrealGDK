@@ -21,7 +21,8 @@ public:
 	AWorkerRegion(const FObjectInitializer& ObjectInitializer);
 
 	void Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMaterial, UFont* InWorkerInfoFont, const FColor& Color,
-			  const float Opacity, const FBox2D& Extents, const float Height, const float VerticalScale, const FString& InWorkerInfo);
+			  const float Opacity, const FBox2D& Extents, const float Height, const float VerticalScale, const FString& InWorkerInfo,
+			  const int32 InWorkerInfoOffset);
 
 	UPROPERTY()
 	UStaticMeshComponent* Mesh;
@@ -53,8 +54,5 @@ private:
 	void SetPositionAndScale(const FBox2D& Extents, const float VerticalScale);
 	void SetColor(const FColor& Color);
 
-	UPROPERTY()
-	int WorkerInfoOffset;
-
-	static TMap<FVector2D, int> ExtentsTracking;
+	int32 WorkerInfoOffset;
 };

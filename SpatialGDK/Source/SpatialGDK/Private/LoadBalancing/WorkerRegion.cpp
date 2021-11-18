@@ -31,7 +31,7 @@ AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 
 void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMaterial, UFont* InWorkerInfoFont, const FColor& Color,
 						 const float Opacity, const FBox2D& Extents, const float Height, const float VerticalScale,
-						 const FString& InWorkerInfo)
+						 const FString& InWorkerInfo, const int32 InWorkerInfoOffset)
 {
 	// Background translucent coloured worker material
 	BackgroundMaterialInstance = UMaterialInstanceDynamic::Create(BackgroundMaterial, nullptr);
@@ -45,18 +45,7 @@ void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMat
 	CombinedMaterial = InCombinedMaterial;
 	WorkerInfoFont = InWorkerInfoFont;
 	WorkerInfo = InWorkerInfo;
-
-	WorkerInfoOffset = 0;
-	int* NumOverlapped = ExtentsTracking.Find(Extents.Min);
-	if (NumOverlapped == nullptr)
-	{
-		ExtentsTracking.Add(Extents.Min, 0);
-	}
-	else
-	{
-		*NumOverlapped = *NumOverlapped + 1;
-		WorkerInfoOffset = 80 * *NumOverlapped;
-	}
+	WorkerInfoOffset = InWorkerInfoOffset;
 
 	CanvasRenderTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), 1024, 1024);
 	CanvasRenderTarget->OnCanvasRenderTargetUpdate.AddDynamic(this, &AWorkerRegion::DrawToCanvasRenderTarget);

@@ -327,4 +327,6 @@ private:
 
 	// Select actor object types to query
 	FCollisionObjectQueryParams CollisionObjectParams;
+
+	TMap<FVector2D, int32> WorkerRegionExtentsTracking;
 };
