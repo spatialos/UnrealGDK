@@ -2,6 +2,7 @@
 
 #include "SpatialTestSettings.h"
 
+#include "SpatialConstants.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 
@@ -26,6 +27,11 @@ const FString FSpatialTestSettings::BaseOverridesFilename =
 const FString FSpatialTestSettings::GeneratedOverrideSettingsDirectory =
 	FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir() / TEXT("Config/") / OverrideSettingsFileDirectoryName);
 const FString FSpatialTestSettings::GeneratedOverrideSettingsBaseFilename = GeneratedOverrideSettingsDirectory / OverrideSettingsFilePrefix;
+
+/*static*/ FString FSpatialTestSettings::GenerateMapConfigurationFilename(const FString& MapName)
+{
+	return GeneratedOverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + OverrideSettingsFileExtension;
+}
 
 void FSpatialTestSettings::Override(const FString& MapName)
 {
@@ -62,13 +68,15 @@ void FSpatialTestSettings::Override(const FString& MapName)
 	}
 
 	// Generated config, applied to generated maps
-	FString GeneratedMapOverridesFilename =
-		GeneratedOverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
-	if (FPaths::FileExists(GeneratedMapOverridesFilename))
+	const FString GeneratedMapConfigurationFilename = GenerateMapConfigurationFilename(MapName);
+	if (FPaths::FileExists(GeneratedMapConfigurationFilename))
 	{
 		// Override the settings from the generated map specific config file
-		Load(GeneratedMapOverridesFilename);
+		Load(GeneratedMapConfigurationFilename);
 	}
+
+	// Add special flag for Spatial functional tests to force load the SpatialGDKFunctionalTests module in new processes
+	GetMutableDefault<ULevelEditorPlaySettings>()->AdditionalLaunchParameters += " " + SpatialConstants::SpatialTestFlag + " ";
 }
 
 template <typename T>
@@ -106,7 +114,7 @@ void FSpatialTestSettings::Restore(T*& OriginalSettings)
 	}
 }
 
-void FSpatialTestSettings::Load(const FString& TestSettingOverridesFilename)
+/*static*/ void FSpatialTestSettings::Load(const FString& TestSettingOverridesFilename)
 {
 	UE_LOG(LogSpatialTestSettings, Log, TEXT("Overriding settings from file %s."), *TestSettingOverridesFilename);
 	GetMutableDefault<ULevelEditorPlaySettings>()->LoadConfig(ULevelEditorPlaySettings::StaticClass(), *TestSettingOverridesFilename);

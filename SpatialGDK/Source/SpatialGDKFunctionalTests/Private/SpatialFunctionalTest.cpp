@@ -9,6 +9,7 @@
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialNetDriverGameplayDebuggerContext.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "FunctionalTestBase.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerController.h"
@@ -24,6 +25,7 @@
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestAutoDestroyComponent.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "SpatialGDKEditor/Public/SpatialTestSettings.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
 
 namespace
@@ -40,18 +42,23 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	bReplicates = true;
 	NetPriority = 3.0f;
 	NetUpdateFrequency = 100.0f;
-
 	bAlwaysRelevant = true;
-
 	PrimaryActorTick.TickInterval = 0.0f;
-
 	PreparationTimeLimit = 30.0f;
+
+	GeneratedTestMap = nullptr;
+	LocalFlowController = nullptr;
+	TimeRunningStep = 0.0f;
+	NumExpectedServers = 0;
+	CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_NOT_STARTED;
+	bFailedTest = false;
+	bNotifyObserversCalled = false;
+	bPreparedTest = false;
+	bFinishedTest = false;
+	bIsStandaloneTest = false;
+	bIsGeneratingMap = false;
 	bReadyToSpawnServerControllers = false;
 	CachedTestResult = EFunctionalTestResult::Default;
-
-	bIsStandaloneTest = false;
-	GeneratedTestMap = nullptr;
-	bIsGeneratingMap = false;
 }
 
 ASpatialFunctionalTest::ASpatialFunctionalTest(const EMapCategory MapCiCategory, const int32 NumberOfClients /*=1*/,
@@ -73,6 +80,7 @@ void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ASpatialFunctionalTest, FlowControllers);
 	DOREPLIFETIME(ASpatialFunctionalTest, CurrentStepIndex);
 	DOREPLIFETIME(ASpatialFunctionalTest, bPreparedTest);
+	DOREPLIFETIME(ASpatialFunctionalTest, bFailedTest);
 	DOREPLIFETIME(ASpatialFunctionalTest, bFinishedTest);
 }
 
@@ -171,7 +179,7 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 		if (bAllAcknowledgedFinishedTest)
 		{
 			GetWorld()->GetTimerManager().ClearTimer(FinishTestTimerHandle);
-			Super::FinishTest(CachedTestResult, CachedTestMessage);
+			FinishFunctionalTest(CachedTestResult, CachedTestMessage);
 
 			// This will call NotifyTestFinishedObserver on other workers.
 			bFinishedTest = true;
@@ -231,6 +239,27 @@ void ASpatialFunctionalTest::PrepareTest()
 	bFinishedTest = false; // Reset the test state
 
 	StepDefinitions.Empty();
+
+	/*
+	 * If running with multiple-processes, ensure that potential custom configuration files are correctly applied
+	 * to all newly-spawned processes before the test starts running.
+	 */
+	if (GIsEditor == false)
+	{
+		// Base config, applies to all maps if present
+		if (FPaths::FileExists(FSpatialTestSettings::BaseOverridesFilename))
+		{
+			// Override the settings from the base config file
+			FSpatialTestSettings::Load(FSpatialTestSettings::BaseOverridesFilename);
+		}
+
+		const FString GeneratedMapConfigurationFilename = FSpatialTestSettings::GenerateMapConfigurationFilename(GetWorld()->GetMapName());
+		if (FPaths::FileExists(GeneratedMapConfigurationFilename))
+		{
+			FSpatialTestSettings::Load(GeneratedMapConfigurationFilename);
+		}
+	}
+
 	Super::PrepareTest();
 
 	if (HasAuthority())
@@ -271,6 +300,52 @@ void ASpatialFunctionalTest::StartTest()
 	Super::StartTest();
 
 	StartStep(0);
+}
+
+void ASpatialFunctionalTest::MultiCastSetFunctionalTestRunning_Implementation()
+{
+	if (HasAuthority())
+	{
+		return;
+	}
+
+	FFunctionalTestBase* FunctionalTest = static_cast<FFunctionalTestBase*>(FAutomationTestFramework::Get().GetCurrentTest());
+
+	if (FunctionalTest)
+	{
+		FunctionalTest->SetFunctionalTestRunning(GetName());
+	}
+}
+
+/*
+ * Adds support for multiple processes testing, see SpatialFunctionalTest.h for more context.
+ */
+void ASpatialFunctionalTest::CallRunTest(const TArray<FString>& Params)
+{
+	if (HasAuthority() == false)
+	{
+		if (LocalFlowController != nullptr)
+		{
+			LocalFlowController->ServerNotifyRunTest(this, Params);
+		}
+		else
+		{
+			FTimerHandle RetriggerTestRunHandle;
+			GetWorldTimerManager().SetTimer(
+				RetriggerTestRunHandle,
+				[Params, WeakThis = TWeakObjectPtr<ASpatialFunctionalTest>(this)] {
+					if (WeakThis.IsValid())
+					{
+						WeakThis->CallRunTest(Params);
+					}
+				},
+				0.1f, false);
+		}
+
+		return;
+	}
+
+	Super::CallRunTest(Params);
 }
 
 void ASpatialFunctionalTest::FinishStep()
@@ -333,6 +408,15 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 {
 	if (HasAuthority())
 	{
+		/*
+		 * Currently the Editor process will always be a Client, therefore only multi-cast
+		 * the failure message if running with multiple processes.
+		 */
+		if (TestResult == EFunctionalTestResult::Failed && GIsEditor == false)
+		{
+			MulticastLogFailureMessage(Message);
+		}
+
 		// Make sure we don't FinishTest multiple times.
 		if (CurrentStepIndex != SPATIAL_FUNCTIONAL_TEST_FINISHED)
 		{
@@ -428,7 +512,7 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 							   TEXT("The following Workers failed to acknowledge FinishTest in time: %s"), *WorkersDidntAck);
 					}
 
-					Super::FinishTest(CachedTestResult, CachedTestMessage);
+					FinishFunctionalTest(CachedTestResult, CachedTestMessage);
 
 					FinishTestTimerHandle.Invalidate();
 
@@ -817,6 +901,41 @@ void ASpatialFunctionalTest::OnReplicated_bFinishedTest()
 	}
 }
 
+void ASpatialFunctionalTest::LogRequireMessages(const FString& Message, bool bPassed)
+{
+	if (bPassed)
+	{
+		UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Message);
+		UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s"), *Message);
+	}
+	else
+	{
+		UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Message);
+		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Message);
+	}
+}
+
+void ASpatialFunctionalTest::MulticastLogRequireMessages_Implementation(const FString& Message, bool bPassed)
+{
+	LogRequireMessages(Message, bPassed);
+}
+
+void ASpatialFunctionalTest::CrossServerLogRequireMessages_Implementation(const FString& Message, bool bPassed)
+{
+	/*
+	 * When running under one process, simply log the message,
+	 * if using multiple-processes, multicast the message so that the Editor process can correctly report a test pass/failure.
+	 */
+	if (HasAuthority() && GIsEditor)
+	{
+		LogRequireMessages(Message, bPassed);
+	}
+	else
+	{
+		MulticastLogRequireMessages(Message, bPassed);
+	}
+}
+
 void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 {
 	if (!bReadyToSpawnServerControllers)
@@ -825,6 +944,28 @@ void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 	}
 
 	FlowControllerSpawner.SpawnServerFlowController();
+}
+
+bool ASpatialFunctionalTest::IsRunningUnderOneProcess()
+{
+	bool bIsRunningUnderOneProcess;
+	GetDefault<ULevelEditorPlaySettings>()->GetRunUnderOneProcess(bIsRunningUnderOneProcess);
+	return bIsRunningUnderOneProcess;
+}
+
+void ASpatialFunctionalTest::CrossServerRunTest_Implementation(const TArray<FString>& Params)
+{
+	if (IsRunningUnderOneProcess() == false)
+	{
+		MultiCastSetFunctionalTestRunning();
+	}
+
+	Super::CrossServerRunTest_Implementation(Params);
+}
+
+void ASpatialFunctionalTest::MulticastLogFailureMessage_Implementation(const FString& Message)
+{
+	UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Spatial Functional Test failed! Error: %s"), *Message);
 }
 
 void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
@@ -844,6 +985,30 @@ void ASpatialFunctionalTest::EndPlay(const EEndPlayReason::Type Reason)
 	{
 		FGameModeEvents::GameModePostLoginEvent.Remove(PostLoginDelegate);
 		PostLoginDelegate.Reset();
+	}
+}
+
+void ASpatialFunctionalTest::FinishFunctionalTest(EFunctionalTestResult TestResult, const FString& Message)
+{
+	Super::FinishTest(TestResult, Message);
+
+	if (IsRunningUnderOneProcess() == false)
+	{
+		MultiCastSetFunctionalTestComplete();
+	}
+}
+
+void ASpatialFunctionalTest::MultiCastSetFunctionalTestComplete_Implementation()
+{
+	if (HasAuthority())
+	{
+		return;
+	}
+
+	FFunctionalTestBase* FunctionalTest = static_cast<FFunctionalTestBase*>(FAutomationTestFramework::Get().GetCurrentTest());
+	if (FunctionalTest)
+	{
+		FunctionalTest->SetFunctionalTestComplete(GetName());
 	}
 }
 

@@ -58,6 +58,9 @@ public:
 	// settings specifically for this test map
 	void SetCustomConfig(const FString& String) { CustomConfigString = String; }
 
+	// Use this to override default editor settings and run tests in multiple processes.
+	void EnableMultiProcess() { bEnableMultiProcess = true; }
+
 	UWorld* GetWorld() const override;
 
 	AActor* AddActorToLevel(ULevel* Level, UClass* Class, const FTransform& Transform);
@@ -82,9 +85,10 @@ private:
 	void GenerateBaseMap();
 	FString GetPathToSaveTheMap();
 
-	bool bIsValidForGeneration;
-	EMapCategory MapCategory;
 	FString MapName;
 	FString CustomConfigString;
+	bool bIsValidForGeneration;
+	bool bEnableMultiProcess;
+	EMapCategory MapCategory;
 	TOptional<int32> NumberOfClients;
 };

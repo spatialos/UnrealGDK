@@ -46,6 +46,12 @@ public:
 	// Generated map override config base filename for generated maps applied to specific map, if exists
 	static const FString GeneratedOverrideSettingsBaseFilename;
 
+	// Creates the configuration file pathname for the given MapName.
+	static FString GenerateMapConfigurationFilename(const FString& MapName);
+
+	// Load settings from config file which will override current settings
+	static void Load(const FString& TestSettingOverridesFilename);
+
 protected:
 	// Duplicate an original setting
 	template <typename T>
@@ -54,9 +60,6 @@ protected:
 	// Restore an original setting
 	template <typename T>
 	void Restore(T*& OriginalSettings);
-
-	// Load settings from config file which will override current settings
-	void Load(const FString& TestSettingOverridesFilename);
 
 	// Settings classes that can be overridden using config files
 	USpatialGDKSettings* OriginalSpatialGDKSettings;
