@@ -427,7 +427,7 @@ public:
 	void LogRequireMessages(const FString& Message, bool bPassed);
 
 	/*
-	 * Adds support for multiple processes testing by ensuring that when starting a test, the Editor process, which is a Client, 
+	 * Adds support for multiple processes testing by ensuring that when starting a test, the Editor process, which is a Client,
 	 * will send a Server RPC, by calling SpatialFunctionalTestFlowController::ServerNotifyRunTest, that will then call
 	 * AFunctionalTest::CrossServerRunTest, following the flow of starting a test when using a single process.
 	 */
@@ -437,20 +437,22 @@ public:
 	 * Adds support for multiple processes testing by propagating logs originating from Require statements to the Editor Client process.
 	 * Having a MultiCast allows the Editor process to correctly report a tests pass/failure.
 	 * Its implementation simply calls ASpatialFunctionalTest::LogRequireMessages.
-	*/
+	 */
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastLogRequireMessages(const FString& Message, bool bPassed);
-	
+
 	/*
-	 * Adds support for multiple processes testing by ensuring that logs originating from Require statements are correctly propagated to the Editor Client process.
-	 * When using multiple processes the logging flow is: Any Worker -> Server RPC -> CrossServer RPC -> MultiCast -> Editor Client process.
-	*/
+	 * Adds support for multiple processes testing by ensuring that logs originating from Require statements are correctly propagated to the
+	 * Editor Client process. When using multiple processes the logging flow is: Any Worker -> Server RPC -> CrossServer RPC -> MultiCast ->
+	 * Editor Client process.
+	 */
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerLogRequireMessages(const FString& Message, bool bPassed);
 
 	/*
-	 * Adds support for multiple processes testing by ensuring that the Editor process will correctly display the Failure message for a failing test.
-	*/
+	 * Adds support for multiple processes testing by ensuring that the Editor process will correctly display the Failure message for a
+	 * failing test.
+	 */
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastLogFailureMessage(const FString& Message);
 
@@ -574,7 +576,7 @@ private:
 	/*
 	 * Adds support for multiple processes testing by ensuring the static variables bIsFunctionalTestRunning and ActiveTestName
 	 * from FFunctionalTestBase have the correct values across multiple processes.
-	*/
+	 */
 	UFUNCTION(NetMulticast, Reliable)
 	void MultiCastSetFunctionalTestComplete();
 

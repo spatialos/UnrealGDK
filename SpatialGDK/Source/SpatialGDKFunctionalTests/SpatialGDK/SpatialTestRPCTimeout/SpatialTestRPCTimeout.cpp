@@ -43,9 +43,8 @@ void ASpatialTestRPCTimeout::PrepareTest()
 	AddStep(
 		TEXT("Check that the material was not initially loaded on non-editor clients"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-
 			Step1Timer += DeltaTime;
-			
+
 			if (IsExternalProcessClient())
 			{
 				ACharacter* TestCharacter = Cast<ACharacter>(GetLocalFlowPawn());
