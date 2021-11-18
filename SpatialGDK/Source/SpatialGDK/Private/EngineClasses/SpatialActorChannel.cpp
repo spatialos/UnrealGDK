@@ -684,7 +684,6 @@ int64 USpatialActorChannel::ReplicateActor()
 			CheckForClientEntityInterestUpdate();
 		}
 
-		// Classic interest flow
 		if (NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
 		{
 			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
@@ -1314,13 +1313,20 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	const UReplicationGraph* RepGraph = Cast<USpatialReplicationGraph>(NetDriver->GetReplicationDriver());
 	USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection());
+
+	if (RepGraph == nullptr || NetConnection == nullptr)
+	{
+		UE_LOG(LogSpatialActorChannel, Error,
+			   TEXT("Failed to handle client entity interest, invalid rep graph (0x%x) or net connection (0x%x)"), RepGraph, NetConnection);
+		return;
+	}
+
 	UNetReplicationGraphConnection* RepGraphConnection =
 		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
 
-	if (RepGraph == nullptr || RepGraphConnection == nullptr || NetConnection == nullptr)
+	if (RepGraphConnection == nullptr)
 	{
-		UE_LOG(LogSpatialActorChannel, Error,
-			   TEXT("Failed to handle client entity interest, some connection or setting was misconfigured"));
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to handle client entity interest, replication connection driver was nullptr"));
 		return;
 	}
 
@@ -1349,9 +1355,10 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 	if (UMetricsExport* MetricsExport = Actor->GetWorld()->GetGameInstance()->GetSubsystem<UMetricsExport>())
 	{
 		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
-		const float TimeSinceLastClientInterestUpdate = CurrentTime - NetConnection->TimeWhenClientInterestLastUpdated;
+		const float TimeSinceLastClientInterestUpdate =
+			static_cast<const float>(CurrentTime - NetConnection->TimeWhenClientInterestLastUpdated);
 		MetricsExport->WriteMetricsToProtocolBuffer(*ClientIdentifier, TEXT("interest_update_frequency"),
-													1 / TimeSinceLastClientInterestUpdate);
+													1.f / TimeSinceLastClientInterestUpdate);
 	}
 	NetConnection->TimeWhenClientInterestLastUpdated = CurrentTime;
 

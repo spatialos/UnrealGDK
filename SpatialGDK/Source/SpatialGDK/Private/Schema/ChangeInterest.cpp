@@ -87,32 +87,26 @@ Worker_CommandRequest ChangeInterestRequest::CreateRequest() const
 
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
 
-	if (QueriesToAdd.Num() > 0)
+	for (const ChangeInterestQuery& Query : QueriesToAdd)
 	{
-		for (const ChangeInterestQuery& Query : QueriesToAdd)
-		{
-			Schema_Object* QueriesToAddObject = Schema_AddObject(RequestObject, 1);
+		Schema_Object* QueriesToAddObject = Schema_AddObject(RequestObject, 1);
 
-			Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToAddObject, 1);
+		Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToAddObject, 1);
 
-			AddEntityListToSchema(QueriesToAddObject, 2, Query.Entities);
-			AddUint32ListToSchema(ResultTypeObject, 1, Query.Components);
-			AddUint32ListToSchema(ResultTypeObject, 2, Query.ComponentSets);
-		}
+		AddEntityListToSchema(QueriesToAddObject, 2, Query.Entities);
+		AddUint32ListToSchema(ResultTypeObject, 1, Query.Components);
+		AddUint32ListToSchema(ResultTypeObject, 2, Query.ComponentSets);
 	}
 
-	if (QueriesToRemove.Num() > 0)
+	for (const ChangeInterestQuery& Query : QueriesToRemove)
 	{
-		for (const ChangeInterestQuery& Query : QueriesToRemove)
-		{
-			Schema_Object* QueriesToRemoveObject = Schema_AddObject(RequestObject, 2);
+		Schema_Object* QueriesToRemoveObject = Schema_AddObject(RequestObject, 2);
 
-			Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToRemoveObject, 1);
+		Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToRemoveObject, 1);
 
-			AddEntityListToSchema(QueriesToRemoveObject, 2, Query.Entities);
-			AddUint32ListToSchema(ResultTypeObject, 1, Query.Components);
-			AddUint32ListToSchema(ResultTypeObject, 2, Query.ComponentSets);
-		}
+		AddEntityListToSchema(QueriesToRemoveObject, 2, Query.Entities);
+		AddUint32ListToSchema(ResultTypeObject, 1, Query.Components);
+		AddUint32ListToSchema(ResultTypeObject, 2, Query.ComponentSets);
 	}
 
 	Schema_AddBool(RequestObject, 3, bOverwrite);

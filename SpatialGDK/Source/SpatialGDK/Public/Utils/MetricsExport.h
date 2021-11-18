@@ -36,10 +36,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Influx Metrics", BlueprintReadWrite)
 	bool bPrintInfluxMetricsToLog = false;
 
-	void WriteMetricsToProtocolBuffer(const FString& Worker, FString Field, float Value);
+	void WriteMetricsToProtocolBuffer(const FString& Worker, const FString& Field, float Value);
 
 private:
-	UFUNCTION(BlueprintCallable, Category = "Influx Metrics")
+	UFUNCTION(Category = "Influx Metrics")
 	void PostLineProtocolToInfluxDBServer(const FString& Lines);
 
 	void FlushProtocolBufferToDatabase();

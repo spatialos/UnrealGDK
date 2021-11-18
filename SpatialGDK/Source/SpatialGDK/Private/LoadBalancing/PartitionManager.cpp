@@ -329,8 +329,7 @@ void FPartitionManager::Impl::Flush(ISpatialOSWorker& Connection)
 
 					PartitionState.RequestedAssignment = PartitionState.UserAssignment;
 					PartitionState.AssignmentRequest = CommandsHandler.ClaimPartition(
-						Connection, SystemWorkerEntityId, PartitionState.Id,
-						[this, PartitionEntry, &Connection, SystemWorkerEntityId](const Worker_CommandResponseOp& Op) {
+						Connection, SystemWorkerEntityId, PartitionState.Id, [this, PartitionEntry](const Worker_CommandResponseOp& Op) {
 							if (Partitions.Contains(PartitionEntry))
 							{
 								FPartitionInternalState& State = *PartitionEntry->State;

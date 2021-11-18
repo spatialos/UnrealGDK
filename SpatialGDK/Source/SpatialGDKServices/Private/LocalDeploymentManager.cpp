@@ -276,7 +276,10 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 
 	// Create the folder for storing the snapshots.
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	PlatformFile.CreateDirectoryTree(*CurrentSnapshotPath);
+	if (!PlatformFile.CreateDirectoryTree(*CurrentSnapshotPath))
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to create snapshot path."));
+	}
 
 	// Use the runtime start timestamp as the log directory, e.g. `<Project>/spatial/localdeployment/<timestamp>/`
 	FString LocalDeploymentLogsDir = FPaths::Combine(SpatialGDKServicesConstants::LocalDeploymentLogsDir, RuntimeStartTime.ToString());
@@ -302,10 +305,15 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	if (bEnableSessionLogRecording)
 	{
 		FString SessionLogsDir = FPaths::Combine(LocalDeploymentLogsDir, TEXT("session_logs"));
-		PlatformFile.CreateDirectoryTree(*SessionLogsDir);
-
-		FString AdditionRuntimeArgs = FString::Printf(TEXT(" --record-session --recording-directory=\"%s\""), *SessionLogsDir);
-		RuntimeArgs += AdditionRuntimeArgs;
+		if (!PlatformFile.CreateDirectoryTree(*SessionLogsDir))
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to create session logs path."));
+		}
+		else
+		{
+			FString AdditionRuntimeArgs = FString::Printf(TEXT(" --record-session --recording-directory=\"%s\""), *SessionLogsDir);
+			RuntimeArgs += AdditionRuntimeArgs;
+		}
 	}
 
 	if (!RuntimeIPToExpose.IsEmpty())

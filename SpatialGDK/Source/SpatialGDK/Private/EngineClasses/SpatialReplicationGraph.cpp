@@ -20,10 +20,6 @@ void USpatialReplicationGraph::InitForNetDriver(UNetDriver* InNetDriver)
 		if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(InNetDriver))
 		{
 			bStrategyWorkerEnabled = USpatialStatics::IsStrategyWorkerEnabled();
-			if (bStrategyWorkerEnabled && SpatialNetDriver->LoadBalanceStrategy)
-			{
-				bDirectAssignment = SpatialNetDriver->LoadBalanceStrategy->IsStrategyWorkerAware();
-			}
 			if (!bStrategyWorkerEnabled)
 			{
 				LoadBalancingHandler = MakeUnique<FSpatialLoadBalancingHandler>(SpatialNetDriver);
@@ -140,9 +136,9 @@ void USpatialReplicationGraph::PostReplicateActors(UNetReplicationGraphConnectio
 		LoadBalancingHandler->ProcessMigrations();
 	}
 
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
 	if (bStrategyWorkerEnabled)
 	{
+		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
 		FSpatialLoadBalancingHandler::UpdateActorsHandedOver(*SpatialNetDriver, EntitiesHandedOver, ActorsHandedOver);
 		ActorsHandedOver.Empty();
 		EntitiesHandedOver.Empty();
@@ -256,14 +252,11 @@ TArray<AActor*> USpatialReplicationGraph::ExtractClientInterestActorsFromGather(
 			{
 				QUICK_SCOPE_CYCLE_COUNTER(NET_ClientEntityInterest_NarrowPhaseDistanceCalculation);
 
-				float SmallestDistanceSq = TNumericLimits<float>::Max();
-
 				// Multiple viewers exists in native Unreal to accommodate local multiplayer.
 				int32 ViewersThatSkipActor = 0;
 				for (const FNetViewer& CurViewer : Viewers)
 				{
 					const float DistSq = (GlobalActorInfo.WorldLocation - CurViewer.ViewLocation).SizeSquared();
-					SmallestDistanceSq = FMath::Min<float>(DistSq, SmallestDistanceSq);
 					if (ConnectionActorInfo.GetCullDistanceSquared() > 0.f && DistSq > ConnectionActorInfo.GetCullDistanceSquared())
 					{
 						++ViewersThatSkipActor;

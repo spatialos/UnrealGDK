@@ -2013,7 +2013,7 @@ void ActorSystem::CleanUpTornOffChannels()
 
 void ActorSystem::ProcessClientInterestUpdates()
 {
-	for (auto Pair : ClientInterestDirty)
+	for (const auto& Pair : ClientInterestDirty)
 	{
 		const Worker_EntityId ControllerEntityId = Pair.Key;
 		const bool bFullInterestUpdate = Pair.Value;

@@ -317,7 +317,7 @@ void FSpatialLoadBalancingHandler::UpdateActorsHandedOver(USpatialNetDriver& InN
 			Actor->OnAuthorityLost();
 		}
 
-		for (auto EntityId : InNetDriver.HandoverManager->GetActorsToCheckForAuth())
+		for (const Worker_EntityId_Key EntityId : InNetDriver.HandoverManager->GetActorsToCheckForAuth())
 		{
 			TWeakObjectPtr<UObject> ObjectPtr = InNetDriver.PackageMap->GetObjectFromEntityId(EntityId);
 			AActor* Actor = Cast<AActor>(ObjectPtr.Get());
@@ -325,7 +325,7 @@ void FSpatialLoadBalancingHandler::UpdateActorsHandedOver(USpatialNetDriver& InN
 			{
 				continue;
 			}
-			else if (Actor != nullptr)
+			else
 			{
 				Actor->Role = ROLE_Authority;
 				Actor->RemoteRole = ROLE_SimulatedProxy;

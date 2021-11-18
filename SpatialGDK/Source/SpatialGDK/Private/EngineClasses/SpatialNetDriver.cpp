@@ -230,8 +230,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	if (!bInitAsClient && GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
 	{
-		UReplicationGraph* RepGraph = Cast<UReplicationGraph>(GetReplicationDriver());
-		if (RepGraph == nullptr)
+		if (!GetReplicationDriver()->IsA<UReplicationGraph>())
 		{
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Client entity interest setting was enabled BUT there was no rep graph set"));
 		}
@@ -1855,7 +1854,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		FSpatialGDKSpanId SpanId = RPCs->CreatePushRPCEvent(CallingObject, Function);
 
 #if !UE_BUILD_SHIPPING
-		if (SpatialMetrics != nullptr)
+		if (SpatialMetrics != nullptr && GetDefault<USpatialGDKSettings>()->bEnableMetrics)
 		{
 			SpatialMetrics->TrackSentRPC(Function, Info.Type, Payload.PayloadData.Num());
 		}
@@ -2268,6 +2267,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			if (bIsDefaultServerOrClientWorker)
 			{
+				// If running a standard Unreal server or client, broadcast the disconnect message.
 				Receiver->OnDisconnect(Connection->GetConnectionStatus(), Connection->GetDisconnectReason());
 			}
 			Connection = nullptr; // prevent worker from processing stale command retries - probably want a proper shutdown process here
@@ -2616,13 +2616,12 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 			}
 			LastUpdateCount = Updated;
 
-			if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
-			{
-				ActorSystem->ProcessPositionUpdates();
-			}
-
 			if (ActorSystem.IsValid())
 			{
+				if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
+				{
+					ActorSystem->ProcessPositionUpdates();
+				}
 				ActorSystem->Flush();
 			}
 

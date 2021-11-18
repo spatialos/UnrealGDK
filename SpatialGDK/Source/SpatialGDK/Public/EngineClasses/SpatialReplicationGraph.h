@@ -48,7 +48,6 @@ private:
 
 	bool bUseNarrowPhaseNCDInterestCulling = true;
 	bool bStrategyWorkerEnabled = false;
-	bool bDirectAssignment = false;
 
 	TSet<Worker_EntityId_Key> EntitiesHandedOver;
 	TSet<AActor*> ActorsHandedOver;

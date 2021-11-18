@@ -105,7 +105,7 @@ void UMetricsExport::SpatialConnected()
 	}
 }
 
-void UMetricsExport::WriteMetricsToProtocolBuffer(const FString& Worker, FString Field, float Value)
+void UMetricsExport::WriteMetricsToProtocolBuffer(const FString& Worker, const FString& Field, float Value)
 {
 	MetricsMap.FindOrAdd(Worker).FindOrAdd(Field) = Value;
 }
