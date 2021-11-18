@@ -416,7 +416,6 @@ void FPartitionManager::Impl::FlushInterestUpdates(ISpatialOSWorker& Connection)
 												 SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
 				Request.QueriesToAdd.Add(MoveTemp(ServerWorkerQuery));
 			}
-			Request.DebugOutput();
 			Request.SendRequest(Connection);
 
 			Worker->State->bInterestInitialized = true;
@@ -474,7 +473,6 @@ void FPartitionManager::Impl::FlushInterestUpdates(ISpatialOSWorker& Connection)
 				Request.QueriesToRemove.Add(MoveTemp(ServerWorkerQuery));
 			}
 
-			Request.DebugOutput();
 			Request.SendRequest(Connection);
 		}
 	}

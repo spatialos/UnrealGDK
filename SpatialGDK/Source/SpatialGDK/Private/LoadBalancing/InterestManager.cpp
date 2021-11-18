@@ -96,6 +96,38 @@ void FInterestManager::Advance(const TSet<Worker_EntityId_Key>& DeletedEntities)
 		}
 	}
 
+	for (Worker_EntityId Entity : AlwaysRelevant.GetModifiedEntities())
+	{
+		int32 Slot;
+		int32* SlotPtr = SlotMap.Find(Entity);
+		const FVector& Pos = Positions.GetPositions()[Entity];
+		if (SlotPtr != nullptr)
+		{
+			Slot = *SlotPtr;
+			EntityFlags[Slot] |= AlwaysRelevantFlag;
+			if (Broadphase)
+			{
+				Broadphase->Update(Slot, Pos);
+			}
+		}
+	}
+
+	for (Worker_EntityId Entity : ServerAlwaysRelevant.GetModifiedEntities())
+	{
+		int32 Slot;
+		int32* SlotPtr = SlotMap.Find(Entity);
+		const FVector& Pos = Positions.GetPositions()[Entity];
+		if (SlotPtr != nullptr)
+		{
+			Slot = *SlotPtr;
+			EntityFlags[Slot] |= ServerAlwaysRelevantFlag;
+			if (Broadphase)
+			{
+				Broadphase->Update(Slot, Pos);
+			}
+		}
+	}
+
 	for (Worker_EntityId Entity : Positions.GetModifiedEntities())
 	{
 		int32 Slot;
@@ -111,7 +143,6 @@ void FInterestManager::Advance(const TSet<Worker_EntityId_Key>& DeletedEntities)
 		}
 		else
 		{
-			// Assume these flags are available immediately and never change.
 			uint32 Flags = 0;
 			if (AlwaysRelevant.GetObjects().Contains(Entity))
 			{
@@ -607,6 +638,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 					Request.QueriesToRemove.Add(MoveTemp(QueryRemove));
 				}
 
+				Request.DebugOutput();
 				Request.SendRequest(Connection);
 			}
 		}
