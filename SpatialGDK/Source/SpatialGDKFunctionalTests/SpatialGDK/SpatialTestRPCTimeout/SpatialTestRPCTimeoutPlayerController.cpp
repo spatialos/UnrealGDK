@@ -10,8 +10,7 @@
 
 ASpatialTestRPCTimeoutPlayerController::ASpatialTestRPCTimeoutPlayerController()
 {
-	// Choose materials which belong to the Engine. This is in anticipation of the possibility of moving this test to the UnrealGDK plugin
-	// in the future.
+	// Choose materials which belong to the Engine, as the UnrealGDK plugin always has an engine dependency
 
 	const TCHAR* FailedMaterialPathString =
 		TEXT("Material'/Engine/EngineDebugMaterials/VertexColorViewMode_RedOnly.VertexColorViewMode_RedOnly'");
