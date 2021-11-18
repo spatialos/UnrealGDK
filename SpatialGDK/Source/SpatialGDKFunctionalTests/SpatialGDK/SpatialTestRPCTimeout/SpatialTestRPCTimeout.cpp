@@ -43,8 +43,10 @@ void ASpatialTestRPCTimeout::PrepareTest()
 	AddStep(
 		TEXT("Check that the material was not initially loaded on non-editor clients"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
+
 			Step1Timer += DeltaTime;
-			if (!GIsEditor)
+			
+			if (IsExternalProcessClient())
 			{
 				ACharacter* TestCharacter = Cast<ACharacter>(GetLocalFlowPawn());
 				ASpatialTestRPCTimeoutPlayerController* TestController =
@@ -76,7 +78,7 @@ void ASpatialTestRPCTimeout::PrepareTest()
 		TEXT("Check that the material is correctly loaded after about 5 seconds delay. We should wait "), FWorkerDefinition::AllClients,
 		nullptr, nullptr,
 		[this](float DeltaTime) {
-			if (!GIsEditor)
+			if (IsExternalProcessClient())
 			{
 				ACharacter* TestCharacter = Cast<ACharacter>(GetLocalFlowPawn());
 				ASpatialTestRPCTimeoutPlayerController* TestController =
