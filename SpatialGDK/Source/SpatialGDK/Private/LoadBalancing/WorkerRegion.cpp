@@ -18,8 +18,6 @@ const FName WORKER_TEXT_MATERIAL_TP2D_PARAM = TEXT("TP2D");
 const FString CUBE_MESH_PATH = TEXT("/Engine/BasicShapes/Cube.Cube");
 } // namespace
 
-TMap<FVector2D, int> AWorkerRegion::ExtentsTracking;
-
 AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
