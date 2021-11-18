@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Users can now change the `Server Port` under `Editor Settings -> Level Editor -> Play -> Multiplayer Options`, or alternatively under `Advanced Settings` in the `Play` dropdown menu and launch local deployments that use the new `Server Port` value
 - Add Only Authoritative Server replication type. Variables marked with this type will only replicate to subsequent servers that gain authority of this actor. Can be accessed on standard `Replicated` variables by adding `COND_OnlyAuthServer` replication condition in `GetLifetimeReplicatedProps`.
 - Added a warning for using a `NetDeltaSerialized` property with PushModel due to Spatial GDK differing from Native Unreal in how `NetDeltaSerialized` properties are replicated.
+- Add a flag to allow RPCs to not be queued even with unresolved parameters, similar to the existing AllowUnresolvedParameters flag.
+- Client IP addresses are now accessable using the SpatialStatics function: GetPlayerClientIP.
+- Spatial connection timeout can not be specified using the config parameter: ConnectionTimeoutMillis.
 
 ### Bug fixes:
 - Fix `A functional test is already running error` that would sometimes occur when re-running multi-server functional tests.
