@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/SchemaDatabase.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
@@ -26,7 +25,7 @@ FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(ESchemaComponentType)
 
 FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condition)
 {
-	static_assert(SCHEMA_Count == 4,
+	static_assert(SCHEMA_Count == 5,
 				  "Unexpected number of Schema type components, please make sure GetGroupFromCondition is still correct.");
 
 	switch (Condition)
@@ -39,6 +38,8 @@ FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condit
 		return SCHEMA_InitialOnly;
 	case COND_ServerOnly:
 		return SCHEMA_ServerOnly;
+	case COND_AuthServerOnly:
+		return SCHEMA_AuthServerOnly;
 	default:
 		return SCHEMA_Data;
 	}
@@ -52,7 +53,7 @@ struct FRPCInfo
 
 struct FInterestPropertyInfo
 {
-	GDK_PROPERTY(Property) * Property;
+	FProperty* Property;
 	int32 Offset;
 };
 

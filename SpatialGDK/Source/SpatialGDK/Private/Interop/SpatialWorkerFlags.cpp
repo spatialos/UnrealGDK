@@ -2,6 +2,28 @@
 
 #include "Interop/SpatialWorkerFlags.h"
 
+void USpatialWorkerFlags::ProcessFlagChanges(const TArray<Worker_Op>& Ops)
+{
+	for (const Worker_Op& Op : Ops)
+	{
+		switch (Op.op_type)
+		{
+		case WORKER_OP_TYPE_FLAG_UPDATE:
+			if (Op.op.flag_update.value == nullptr)
+			{
+				RemoveWorkerFlag(UTF8_TO_TCHAR(Op.op.flag_update.name));
+			}
+			else
+			{
+				SetWorkerFlag(UTF8_TO_TCHAR(Op.op.flag_update.name), UTF8_TO_TCHAR(Op.op.flag_update.value));
+			}
+			break;
+		default:
+			break;
+		}
+	}
+}
+
 bool USpatialWorkerFlags::GetWorkerFlag(const FString& InFlagName, FString& OutFlagValue) const
 {
 	if (const FString* ValuePtr = WorkerFlags.Find(InFlagName))

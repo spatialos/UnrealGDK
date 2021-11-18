@@ -24,7 +24,7 @@ void FSpatialGDKModule::StartupModule()
 	 * Since  the SpatialGDK is a Runtime module, it will get loaded through Native's flow in all processes, then we can force
 	 * load the 2 required Editor modules at this point, but only if we are currently executing a SpatialFunctionalTest.
 	*/
-	if (FString(FCommandLine::Get()).Contains(TEXT("-SpatialTest")))
+	if (FString(FCommandLine::Get()).Contains(SpatialConstants::SpatialTestFlag))
 	{
 		FModuleManager::Get().LoadModule("SpatialGDKServices");
 		FModuleManager::Get().LoadModule("SpatialGDKFunctionalTests");

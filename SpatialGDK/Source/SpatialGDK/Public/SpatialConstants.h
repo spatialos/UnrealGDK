@@ -38,6 +38,7 @@ enum ESchemaComponentType : int32
 	SCHEMA_OwnerOnly,
 	SCHEMA_ServerOnly,
 	SCHEMA_InitialOnly,
+	SCHEMA_AuthServerOnly,
 
 	SCHEMA_Count,
 
@@ -108,6 +109,7 @@ const Worker_ComponentSetId LB_DELEGATION_AUTH_COMPONENT_SET_ID = 9910;
 const Worker_ComponentSetId PARTITION_WORKER_AUTH_COMPONENT_SET_ID = 9911;
 const Worker_ComponentSetId PARTITION_METADATA_AUTH_COMPONENT_SET_ID = 9912;
 const Worker_ComponentSetId SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID = 9913;
+const Worker_ComponentSetId AUTH_SERVER_ONLY_COMPONENT_SET_ID = 9914;
 
 extern const FString SERVER_AUTH_COMPONENT_SET_NAME;
 extern const FString CLIENT_AUTH_COMPONENT_SET_NAME;
@@ -116,6 +118,7 @@ extern const FString OWNER_ONLY_COMPONENT_SET_NAME;
 extern const FString SERVER_ONLY_COMPONENT_SET_NAME;
 extern const FString ROUTING_WORKER_COMPONENT_SET_NAME;
 extern const FString INITIAL_ONLY_COMPONENT_SET_NAME;
+extern const FString AUTH_SERVER_ONLY_COMPONENT_SET_NAME;
 
 const Worker_ComponentId NOT_STREAMED_COMPONENT_ID = 9986;
 const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID = 9984;
@@ -357,9 +360,6 @@ inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 }
 
 const FString LOCAL_HOST = TEXT("127.0.0.1");
-const uint16 DEFAULT_PORT = 7777;
-
-const uint16 DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT = 7777;
 
 const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 
@@ -442,6 +442,9 @@ extern const TArray<Worker_ComponentId> KnownEntityAuthorityComponents;
 constexpr uint32 SPATIAL_SNAPSHOT_SCHEMA_HASH = 679237978;
 constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 5;
 constexpr uint64 SPATIAL_SNAPSHOT_VERSION = ((((uint64)SPATIAL_SNAPSHOT_SCHEMA_HASH) << 32) | SPATIAL_SNAPSHOT_VERSION_INC);
+
+// Flag used to force the loading of the SpatialGDK module when testing with multiple processes
+const FString SpatialTestFlag = FString("-SpatialTest");
 
 } // namespace SpatialConstants
 

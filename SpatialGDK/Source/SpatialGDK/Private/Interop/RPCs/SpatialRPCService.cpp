@@ -11,7 +11,6 @@
 #include "SpatialConstants.h"
 #include "Utils/ObjectAllocUtils.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/SpatialLatencyTracer.h"
 
 #include "Algo/AnyOf.h"
 #include "Net/NetworkProfiler.h"
@@ -23,10 +22,9 @@ DECLARE_CYCLE_STAT(TEXT("SpatialRPCService SendRPC"), STAT_SpatialRPCServiceSend
 namespace SpatialGDK
 {
 SpatialRPCService::SpatialRPCService(const FSubView& InActorAuthSubView, const FSubView& InActorNonAuthSubView,
-									 const FSubView& InWorkerEntitySubView, USpatialLatencyTracer* InSpatialLatencyTracer,
-									 SpatialEventTracer* InEventTracer, USpatialNetDriver* InNetDriver)
+									 const FSubView& InWorkerEntitySubView, SpatialEventTracer* InEventTracer,
+									 USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
-	, SpatialLatencyTracer(InSpatialLatencyTracer)
 	, EventTracer(InEventTracer)
 	, RPCStore(FRPCStore())
 	, ClientServerRPCs(ActorCanExtractRPCDelegate::CreateRaw(this, &SpatialRPCService::ActorCanExtractRPC),
@@ -656,7 +654,7 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 
 	// Destroy the parameters.
 	// warning: highly dependent on UObject::ProcessEvent freeing of parms!
-	for (TFieldIterator<GDK_PROPERTY(Property)> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+	for (TFieldIterator<FProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
 	{
 		It->DestroyValue_InContainer(Parms);
 	}

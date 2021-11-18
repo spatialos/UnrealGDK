@@ -6,7 +6,6 @@
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
 
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RPCContainer.h"
 
 #include "SpatialGDKSettings.generated.h"
@@ -299,6 +298,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Local Connection")
 	FString DefaultReceptionistHost;
 
+	UPROPERTY(EditAnywhere, Config, Category = "Replication",
+			  meta = (Tooltip = "Whether to warn on detecting NetDeltaSerialized properties marked as Push Model"))
+	bool bShouldWarnOnNetDeltaSerializedPushModel = true;
+
 private:
 	/** Will stop a non editor client auto connecting via command line args to a cloud deployment */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection")
@@ -318,10 +321,23 @@ private:
 	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
 	bool bEventTracingEnabledWithEditor;
 
+	/**
+	 * Default port value used for Worker connections, starting a deployment and the Inspector process,
+	 * has to coincide with the ULevelEditorPlaySettings default ServerPort value
+	 */
+	const uint16 DEFAULT_RECEPTIONIST_PORT = 7777;
+
 	friend class AEventTracingSettingsOverride;
 
 public:
 	bool GetPreventClientCloudDeploymentAutoConnect() const;
+
+	/**
+	 * Gets the correct port needed to create Worker connections
+	 * When compiled WITH_EDITOR, the port is given by the value of ServerPort in ULevelEditorPlaySettings
+	 * When not using editor, the class member DEFAULT_RECEPTIONIST_PORT is the correct value
+	 */
+	uint16 GetDefaultReceptionistPort() const;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Region settings",
 			  meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
@@ -371,7 +387,7 @@ public:
 
 private:
 #if WITH_EDITOR
-	bool CanEditChange(const GDK_PROPERTY(Property) * InProperty) const override;
+	bool CanEditChange(const FProperty* InProperty) const override;
 
 	void UpdateServicesRegionFile();
 #endif

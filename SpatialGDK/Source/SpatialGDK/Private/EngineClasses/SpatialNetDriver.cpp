@@ -3,7 +3,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 
 #include "Engine/ActorChannel.h"
-#include "Engine/Engine.h"
 #include "Engine/LevelScriptActor.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/NetworkObjectList.h"
@@ -16,7 +15,6 @@
 #include "UObject/UObjectIterator.h"
 #include "UObject/WeakObjectPtrTemplates.h"
 
-#include "Algo/AnyOf.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialHandoverManager.h"
@@ -48,7 +46,6 @@
 #include "Interop/SkeletonEntityManifestPublisher.h"
 #include "Interop/SkeletonEntityPopulator.h"
 #include "Interop/SpatialClassInfoManager.h"
-#include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialNetDriverLoadBalancingHandler.h"
 #include "Interop/SpatialOutputDevice.h"
 #include "Interop/SpatialPartitionSystemImpl.h"
@@ -76,17 +73,14 @@
 #include "SpatialGDKSettings.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/EntityComponentTypes.h"
-#include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 #include "SpatialView/SubView.h"
 #include "Templates/SharedPointer.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityPool.h"
 #include "Utils/ErrorCodeRemapping.h"
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialDebuggerSystem.h"
-#include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialLoadBalancingHandler.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
@@ -138,15 +132,13 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	// TODO: UNR-2375
 	bMaySendProperties = true;
 
-#if ENGINE_MINOR_VERSION >= 26
 	// Due to changes in 4.26, which remove almost all usages of InternalAck, we now need this
 	// flag to tell NetDriver to not replicate actors when we call our super UNetDriver::TickFlush.
 	bSkipServerReplicateActors = true;
-#endif
 
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
 
-#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST) && ENGINE_MINOR_VERSION >= 26
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	if (GetDefault<USpatialGDKSettings>()->bSpatialAuthorityDebugger)
 	{
 		AuthorityDebugger = NewObject<USpatialNetDriverAuthorityDebugger>();
@@ -455,7 +447,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	FName WorkerType = GameInstance->GetSpatialWorkerType();
 	if (WorkerType == SpatialConstants::DefaultServerWorkerType || WorkerType == SpatialConstants::DefaultClientWorkerType)
 	{
-		Dispatcher = MakeUnique<SpatialDispatcher>();
 		Sender = NewObject<USpatialSender>();
 		Receiver = NewObject<USpatialReceiver>();
 
@@ -471,7 +462,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		CreateAndInitializeLoadBalancingClasses();
 
-		Dispatcher->Init(SpatialWorkerFlags);
 		Sender->Init(this, &TimerManager, Connection->GetEventTracer());
 		Receiver->Init(this, Connection->GetEventTracer());
 		GlobalStateManager->Init(this);
@@ -600,9 +590,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClassesAfterStartup()
 		const SpatialGDK::FSubView& WorkerEntitySubView = Connection->GetCoordinator().CreateSubView(
 			SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-		RPCService =
-			MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, WorkerEntitySubView,
-													  USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
+		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, WorkerEntitySubView,
+															   Connection->GetEventTracer(), this);
 
 		if (IsServer())
 		{
@@ -2287,6 +2276,8 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (bIsDefaultServerOrClientWorker)
 		{
+			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
+
 			if (ManifestPublisher.IsValid())
 			{
 				ManifestPublisher->Advance(Connection->GetCoordinator());
@@ -2363,14 +2354,14 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				OwnershipCompletenessHandler->Advance();
 			}
 
+			if (SpatialWorkerFlags)
 			{
-				SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
-				Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
-				Dispatcher->ProcessOps(Connection->GetWorkerMessages());
-				if (CrossServerRPCHandler)
-				{
-					CrossServerRPCHandler->ProcessMessages(Connection->GetWorkerMessages(), DeltaTime);
-				}
+				SpatialWorkerFlags->ProcessFlagChanges(Connection->GetWorkerMessages());
+			}
+
+			if (CrossServerRPCHandler)
+			{
+				CrossServerRPCHandler->ProcessMessages(Connection->GetWorkerMessages(), DeltaTime);
 			}
 
 			if (RPCService.IsValid())
@@ -2528,7 +2519,7 @@ void USpatialNetDriver::ProcessRemoteFunction(AActor* Actor, UFunction* Function
 	{
 		// Look for CPF_OutParm's, we'll need to copy these into the local parameter memory manually
 		// The receiving side will pull these back out when needed
-		for (TFieldIterator<GDK_PROPERTY(Property)> It(Function); It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
+		for (TFieldIterator<FProperty> It(Function); It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
 		{
 			if (It->HasAnyPropertyFlags(CPF_OutParm))
 			{
@@ -2918,10 +2909,9 @@ bool USpatialNetDriver::HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOu
 
 				const FFieldNetCache* FieldCache = ClassCache->GetFromField(Function);
 
-				TArray<GDK_PROPERTY(Property)*> Parms;
+				TArray<FProperty*> Parms;
 
-				for (TFieldIterator<GDK_PROPERTY(Property)> It(Function);
-					 It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
+				for (TFieldIterator<FProperty> It(Function); It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
 				{
 					Parms.Add(*It);
 				}
@@ -2936,9 +2926,9 @@ bool USpatialNetDriver::HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOu
 
 				for (int32 j = 0; j < Parms.Num(); j++)
 				{
-					if (GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Parms[j]))
+					if (CastField<FStructProperty>(Parms[j]))
 					{
-						ParmString += GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(Parms[j])->Struct->GetName();
+						ParmString += CastField<FStructProperty>(Parms[j])->Struct->GetName();
 					}
 					else
 					{

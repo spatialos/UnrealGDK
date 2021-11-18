@@ -21,10 +21,11 @@ DEFINE_LOG_CATEGORY(LogLocalReceptionistProxyServerManager);
 
 FLocalReceptionistProxyServerManager::FLocalReceptionistProxyServerManager()
 	: RunningCloudDeploymentName(TEXT(""))
+	, RunningProxyReceptionistPort(0)
 {
 }
 
-bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FString& OutPID, FString& OutLogMsg)
+bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(uint16 Port, FString& OutPID, FString& OutLogMsg)
 {
 	FString State;
 	FString ProcessName;
@@ -39,7 +40,7 @@ bool FLocalReceptionistProxyServerManager::CheckIfPortIsBound(int32 Port, FStrin
 	return false;
 }
 
-bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChecks(int32 ReceptionistPort)
+bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChecks(uint16 ReceptionistPort)
 {
 	FString OutLogMessage;
 	FString PID;
@@ -77,7 +78,7 @@ bool FLocalReceptionistProxyServerManager::LocalReceptionistProxyServerPreRunChe
 	return false;
 }
 
-void FLocalReceptionistProxyServerManager::Init(int32 Port)
+void FLocalReceptionistProxyServerManager::Init(uint16 Port)
 {
 	if (!IsRunningCommandlet())
 	{
@@ -169,7 +170,7 @@ void FLocalReceptionistProxyServerManager::DeletePIDFile()
 }
 
 bool FLocalReceptionistProxyServerManager::TryStartReceptionistProxyServer(bool bIsRunningInChina, const FString& CloudDeploymentName,
-																		   const FString& ListeningAddress, const int32 ReceptionistPort)
+																		   const FString& ListeningAddress, const uint16 ReceptionistPort)
 {
 	FString StartResult;
 	int32 ExitCode;
