@@ -585,12 +585,14 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 
 	const bool bCannotWaitLongerThanQueueTime = !bIsReliableChannel || bMissingServerObject;
 	const bool bQueueTimeExpired = TimeQueued > SpatialSettings->QueuedIncomingRPCWaitTime;
-	const bool bMustExecuteRPC = UnresolvedRefCount == 0 || (bCannotWaitLongerThanQueueTime && bQueueTimeExpired);
+	const bool bMustExecuteRPC = UnresolvedRefCount == 0 || (bCannotWaitLongerThanQueueTime && bQueueTimeExpired)
+								 || (Function->SpatialFunctionFlags & SPATIALFUNC_NeverQueueForUnresolvedParameters) != 0;
 
 	if (bMustExecuteRPC)
 	{
 		if (UnresolvedRefCount > 0 && !SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(PendingRPCParams.Type)
-			&& (Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
+			&& (Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0
+			&& (Function->SpatialFunctionFlags & SPATIALFUNC_NeverQueueForUnresolvedParameters) == 0)
 		{
 			const FString UnresolvedEntityIds = FString::JoinBy(UnresolvedRefs, TEXT(", "), [](const FUnrealObjectRef& Ref) {
 				return Ref.ToString();

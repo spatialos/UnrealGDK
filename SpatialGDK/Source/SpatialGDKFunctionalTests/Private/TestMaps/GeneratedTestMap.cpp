@@ -42,6 +42,7 @@ void UGeneratedTestMap::Init(const EMapCategory InMapCategory, const FString& In
 	MapCategory = InMapCategory;
 	MapName = InMapName;
 	bIsValidForGeneration = true;
+	bEnableMultiProcess = false;
 }
 
 AActor* UGeneratedTestMap::AddActorToLevel(ULevel* Level, UClass* Class, const FTransform& Transform)
@@ -71,6 +72,19 @@ bool UGeneratedTestMap::GenerateCustomConfig()
 		// clang-format off
 		CustomConfigContent += FString::Printf(TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
 											   TEXT("PlayNumberOfClients=%d"), NumberOfClients.GetValue());
+		// clang-format on
+	}
+
+	// If true, disable the RunUnderOneProcess setting
+	if (bEnableMultiProcess == true)
+	{
+		if (!CustomConfigString.IsEmpty())
+		{
+			CustomConfigContent += LINE_TERMINATOR;
+		}
+		// clang-format off
+		CustomConfigContent += FString::Printf(TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
+			TEXT("RunUnderOneProcess=false"));
 		// clang-format on
 	}
 

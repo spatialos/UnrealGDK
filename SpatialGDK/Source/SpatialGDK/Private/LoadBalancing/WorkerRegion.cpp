@@ -29,7 +29,7 @@ AWorkerRegion::AWorkerRegion(const FObjectInitializer& ObjectInitializer)
 
 void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMaterial, UFont* InWorkerInfoFont, const FColor& Color,
 						 const float Opacity, const FBox2D& Extents, const float Height, const float VerticalScale,
-						 const FString& InWorkerInfo)
+						 const FString& InWorkerInfo, const int32 InWorkerInfoOffset)
 {
 	// Background translucent coloured worker material
 	BackgroundMaterialInstance = UMaterialInstanceDynamic::Create(BackgroundMaterial, nullptr);
@@ -43,6 +43,8 @@ void AWorkerRegion::Init(UMaterial* BackgroundMaterial, UMaterial* InCombinedMat
 	CombinedMaterial = InCombinedMaterial;
 	WorkerInfoFont = InWorkerInfoFont;
 	WorkerInfo = InWorkerInfo;
+	WorkerInfoOffset = InWorkerInfoOffset;
+
 	CanvasRenderTarget = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(this, UCanvasRenderTarget2D::StaticClass(), 1024, 1024);
 	CanvasRenderTarget->OnCanvasRenderTargetUpdate.AddDynamic(this, &AWorkerRegion::DrawToCanvasRenderTarget);
 	// Setup the boundary material to combine background and text - needs to be created before SetOpacity
@@ -68,7 +70,7 @@ void AWorkerRegion::DrawToCanvasRenderTarget(UCanvas* Canvas, int32 Width, int32
 
 	// Draw the worker information to the canvas
 	Canvas->SetDrawColor(FColor::White);
-	Canvas->DrawText(WorkerInfoFont, WorkerInfo, 100, 500, 1.0, 1.0);
+	Canvas->DrawText(WorkerInfoFont, WorkerInfo, 100, 500 + WorkerInfoOffset, 1.0, 1.0);
 
 	// Write the canvas data to the dynamic boundary material
 	CombinedMaterialInstance->SetTextureParameterValue(WORKER_TEXT_MATERIAL_TP2D_PARAM, CanvasRenderTarget);

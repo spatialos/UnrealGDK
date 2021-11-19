@@ -54,12 +54,6 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialFunctionalTest : public AFunctionalT
 protected:
 	TSubclassOf<ASpatialFunctionalTestFlowController> FlowControllerActorClass;
 
-private:
-	SpatialFunctionalTestFlowControllerSpawner FlowControllerSpawner;
-
-	UPROPERTY(ReplicatedUsing = StartServerFlowControllerSpawn)
-	uint8 bReadyToSpawnServerControllers : 1;
-
 public:
 	ASpatialFunctionalTest();
 
@@ -337,7 +331,6 @@ public:
 	template<typename EnumType>
 	bool RequireEqual_Enum(const EnumType Value, const EnumType Expected, const FString& Msg) { return RequireHandler.RequireEqual_Enum(Value, Expected, Msg); }
 
-
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Bool)"), Category = "Spatial Functional Test")
 	bool RequireNotEqual_Bool(bool bValue, bool bNotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(bValue, bNotExpected, Msg); }
 
@@ -430,6 +423,39 @@ public:
 
 	FString GetMapName() override;
 
+	// Logs messages originating from Require statements used in a test.
+	void LogRequireMessages(const FString& Message, bool bPassed);
+
+	/*
+	 * Adds support for multiple processes testing by ensuring that when starting a test, the Editor process, which is a Client,
+	 * will send a Server RPC, by calling SpatialFunctionalTestFlowController::ServerNotifyRunTest, that will then call
+	 * AFunctionalTest::CrossServerRunTest, following the flow of starting a test when using a single process.
+	 */
+	virtual void CallRunTest(const TArray<FString>& Params = TArray<FString>()) override;
+
+	/*
+	 * Adds support for multiple processes testing by propagating logs originating from Require statements to the Editor Client process.
+	 * Having a MultiCast allows the Editor process to correctly report a tests pass/failure.
+	 * Its implementation simply calls ASpatialFunctionalTest::LogRequireMessages.
+	 */
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastLogRequireMessages(const FString& Message, bool bPassed);
+
+	/*
+	 * Adds support for multiple processes testing by ensuring that logs originating from Require statements are correctly propagated to the
+	 * Editor Client process. When using multiple processes the logging flow is: Any Worker -> Server RPC -> CrossServer RPC -> MultiCast ->
+	 * Editor Client process.
+	 */
+	UFUNCTION(CrossServer, Reliable)
+	void CrossServerLogRequireMessages(const FString& Message, bool bPassed);
+
+	/*
+	 * Adds support for multiple processes testing by ensuring that the Editor process will correctly display the Failure message for a
+	 * failing test.
+	 */
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastLogFailureMessage(const FString& Message);
+
 protected:
 	// Derived tests can call this to set the string that will be printed into the .ini file to be used with this map to override
 	// settings specifically for this test map. Should be called during constructor.
@@ -437,18 +463,6 @@ protected:
 
 	ASpatialWorldSettings* GetWorldSettingsForMap();
 
-private:
-	bool bIsStandaloneTest;
-
-	UPROPERTY()
-	UGeneratedTestMap* GeneratedTestMap;
-
-	FVector TestPositionInWorld;
-
-	// Used to make sure tests don't try and call methods related to map generation when they're not supposed to.
-	bool bIsGeneratingMap;
-
-protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }
 	void DeleteActorsRegisteredForAutoDestroy();
 
@@ -480,23 +494,15 @@ protected:
 	void NotifyTestFinishedObserver() override;
 
 private:
-	bool bNotifyObserversCalled = false;
-
-	// Number of servers that should be running in the world.
-	int NumExpectedServers = 0;
-
 	// FlowController which is locally owned.
-	ASpatialFunctionalTestFlowController* LocalFlowController = nullptr;
+	ASpatialFunctionalTestFlowController* LocalFlowController;
 
 	TArray<FSpatialFunctionalTestStepDefinition> StepDefinitions;
 
 	TArray<ASpatialFunctionalTestFlowController*> FlowControllersExecutingStep;
 
-	// Time current step has been running for, used if Step Definition has TimeLimit >= 0.
-	float TimeRunningStep = 0.0f;
-
-	// Cached test result while we wait all Workers to acknowledge they finished the test.
-	EFunctionalTestResult CachedTestResult;
+	UPROPERTY()
+	UGeneratedTestMap* GeneratedTestMap;
 
 	// Cached test result message while we wait all Workers to acknowledge they finished the test.
 	FString CachedTestMessage;
@@ -504,39 +510,85 @@ private:
 	// Handle for waiting for acknowledgment from all workers that the test is finished.
 	FTimerHandle FinishTestTimerHandle;
 
+	UPROPERTY(Replicated, Transient)
+	TArray<ASpatialFunctionalTestFlowController*> FlowControllers;
+
+	SpatialFunctionalTestFlowControllerSpawner FlowControllerSpawner;
+
+	// Holds all the Requires calls / results for printing at the end of the step.
+	SpatialFunctionalTestRequireHandler RequireHandler;
+
+	FDelegateHandle PostLoginDelegate;
+
+	FVector TestPositionInWorld;
+
+	// Time current step has been running for, used if Step Definition has TimeLimit >= 0.
+	float TimeRunningStep;
+
+	// Number of servers that should be running in the world.
+	int NumExpectedServers;
+
 	// Current Step Index, < 0 if not executing any, check consts at the top.
 	UPROPERTY(ReplicatedUsing = OnReplicated_CurrentStepIndex, Transient)
-	int CurrentStepIndex = SPATIAL_FUNCTIONAL_TEST_NOT_STARTED;
+	int CurrentStepIndex;
+
+	UPROPERTY(Replicated)
+	bool bFailedTest;
+
+	bool bNotifyObserversCalled;
+
+	UPROPERTY(ReplicatedUsing = OnReplicated_bPreparedTest, Transient)
+	bool bPreparedTest;
+
+	UPROPERTY(ReplicatedUsing = OnReplicated_bFinishedTest, Transient)
+	bool bFinishedTest;
+
+	bool bIsStandaloneTest;
+
+	// Used to make sure tests don't try and call methods related to map generation when they're not supposed to.
+	bool bIsGeneratingMap;
+
+	UPROPERTY(ReplicatedUsing = StartServerFlowControllerSpawn)
+	uint8 bReadyToSpawnServerControllers : 1;
+
+	// Cached test result while we wait all Workers to acknowledge they finished the test.
+	EFunctionalTestResult CachedTestResult;
 
 	UFUNCTION()
 	void OnReplicated_CurrentStepIndex();
-
-	UPROPERTY(ReplicatedUsing = OnReplicated_bPreparedTest, Transient)
-	bool bPreparedTest = false;
 
 	UFUNCTION()
 	void OnReplicated_bPreparedTest();
 	void PrepareTestAfterBeginPlay();
 
-	UPROPERTY(ReplicatedUsing = OnReplicated_bFinishedTest, Transient)
-	bool bFinishedTest = false;
-
 	UFUNCTION()
 	void OnReplicated_bFinishedTest();
-
-	UPROPERTY(Replicated, Transient)
-	TArray<ASpatialFunctionalTestFlowController*> FlowControllers;
-
-	// Holds all the Requires calls / results for printing at the end of the step.
-	SpatialFunctionalTestRequireHandler RequireHandler;
 
 	UFUNCTION()
 	void StartServerFlowControllerSpawn();
 
+	void CrossServerRunTest_Implementation(const TArray<FString>& Params = TArray<FString>()) override;
+
+	bool IsRunningUnderOneProcess();
+
+	/*
+	 * Adds support for multiple processes testing by ensuring the static variables bIsFunctionalTestRunning and ActiveTestName
+	 * from FFunctionalTestBase have the correct values across multiple processes.
+	 */
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiCastSetFunctionalTestComplete();
+
+	/*
+	 * Adds support for multiple processes testing by ensuring the static variables bIsFunctionalTestRunning and ActiveTestName
+	 * from FFunctionalTestBase have the correct values across multiple processes.
+	 */
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiCastSetFunctionalTestRunning();
+
 	void SetupClientPlayerRegistrationFlow();
 	void EndPlay(const EEndPlayReason::Type Reason) override;
 
-	FDelegateHandle PostLoginDelegate;
+	void FinishFunctionalTest(EFunctionalTestResult TestResult, const FString& Message);
 
 	// Sets the snapshot for the map loaded by this world. When launching the test maps, the AutomationManager will
 	// check if there's a snapshot for that map and if so use it instead of the default snapshot. If PathToSnapshot

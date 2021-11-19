@@ -42,7 +42,7 @@ public:
 		return { SpatialConstants::DefaultLayer, { AActor::StaticClass() }, USingleWorkerStrategy::StaticClass() };
 	};
 
-	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Multi-Worker")
 	TArray<FLayerInfo> WorkerLayers;
 
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")

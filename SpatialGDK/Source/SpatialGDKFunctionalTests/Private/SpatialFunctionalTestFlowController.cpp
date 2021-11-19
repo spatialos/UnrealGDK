@@ -87,12 +87,15 @@ void ASpatialFunctionalTestFlowController::TrySetReadyToRunTest()
 		const bool bActorReady = IsActorReady();
 		const bool bOwningTestThere = OwningTest != nullptr;
 		const bool bOwningTestPrepared = bOwningTestThere ? OwningTest->HasPreparedTest() : false;
-		const bool bIsServerType = WorkerDefinition.Type != ESpatialFunctionalTestWorkerType::Client;
-		const bool bOwnedByClient = IsOwnedByClient();
-		if (bActorReady && bOwningTestPrepared && (bIsServerType || bOwnedByClient))
+
+		if (bActorReady == true)
 		{
 			OwningTest->SetLocalFlowController(this);
-			SetReadyToRunTest(true);
+
+			if (bOwningTestPrepared == true)
+			{
+				SetReadyToRunTest(true);
+			}
 		}
 		else
 		{
@@ -208,6 +211,7 @@ void ASpatialFunctionalTestFlowController::SetReadyToRunTest(bool bIsReady)
 	{
 		return;
 	}
+
 	if (IsLocalController())
 	{
 		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
@@ -224,6 +228,16 @@ void ASpatialFunctionalTestFlowController::SetReadyToRunTest(bool bIsReady)
 void ASpatialFunctionalTestFlowController::DeregisterFlowController()
 {
 	OwningTest->DeregisterFlowController(this);
+}
+
+void ASpatialFunctionalTestFlowController::ServerNotifyRunTest_Implementation(ASpatialFunctionalTest* Test, const TArray<FString>& Params)
+{
+	Test->CrossServerRunTest(Params);
+}
+
+void ASpatialFunctionalTestFlowController::ServerNotifyLogRequireMessages_Implementation(const FString& Message, bool bPassed)
+{
+	OwningTest->CrossServerLogRequireMessages(Message, bPassed);
 }
 
 void ASpatialFunctionalTestFlowController::ClientStartStep_Implementation(int StepIndex)
