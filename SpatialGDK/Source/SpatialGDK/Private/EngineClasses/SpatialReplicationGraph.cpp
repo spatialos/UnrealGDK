@@ -82,6 +82,7 @@ void USpatialReplicationGraph::PreReplicateActors(UNetReplicationGraphConnection
 		auto& HandoverManager = SpatialNetDriver->HandoverManager;
 		TSet<Worker_EntityId_Key> ActorsToHandover = HandoverManager->GetActorsToHandover();
 		TSet<AActor*> ActorsToConsider;
+		ActorsToConsider.Reserve(ActorsToHandover.Num());
 		for (Worker_EntityId EntityId : ActorsToHandover)
 		{
 			TWeakObjectPtr<UObject> ObjectPtr = SpatialNetDriver->PackageMap->GetObjectFromEntityId(EntityId);
@@ -101,16 +102,16 @@ void USpatialReplicationGraph::PreReplicateActors(UNetReplicationGraphConnection
 				EntitiesHandedOver.Add(EntityId);
 			}
 		}
-		for (auto ReplicatedActor : LoadBalancingCtx.GetActorsBeingReplicated())
+		for (const auto& ReplicatedActor : LoadBalancingCtx.GetActorsBeingReplicated())
 		{
-			AActor& ReplicatedThisFrame = *ReplicatedActor;
+			const AActor& ReplicatedThisFrame = *ReplicatedActor;
 			if (ActorsToConsider.Contains(&ReplicatedThisFrame))
 			{
 				ActorsToConsider.Remove(&ReplicatedThisFrame);
 			}
 		}
 
-		for (auto ActorToConsider : ActorsToConsider)
+		for (const auto& ActorToConsider : ActorsToConsider)
 		{
 			LoadBalancingCtx.AddActorToReplicate(ActorToConsider);
 		}
@@ -119,7 +120,7 @@ void USpatialReplicationGraph::PreReplicateActors(UNetReplicationGraphConnection
 	for (AActor* Actor : LoadBalancingCtx.AdditionalActorsToReplicate)
 	{
 		// Only add net owners to the list as they will visit their dependents when replicated.
-		AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
+		const AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 		if (NetOwner == Actor)
 		{
 			FConnectionReplicationActorInfo& ConnectionData = ConnectionManager->ActorInfoMap.FindOrAdd(Actor);
@@ -211,8 +212,9 @@ TArray<AActor*> USpatialReplicationGraph::ExtractClientInterestActorsFromGather(
 
 	FPerConnectionActorInfoMap& ConnectionActorInfoMap = ConnectionManager->ActorInfoMap;
 	const uint32 FrameNum = GetReplicationGraphFrame();
+	ensure(Viewers.Num() == 1); // Don't support multiple viewers on a single connection currently.
+	const FNetViewer& CurViewer = Viewers[0];
 
-	TArray<AActor*> SortingArray{};
 	// Should try and reserve accurately here - could sum gathered rep list lengths (although this wouldn't factor dependent Actors) or
 	// cache the last list size
 
@@ -250,21 +252,8 @@ TArray<AActor*> USpatialReplicationGraph::ExtractClientInterestActorsFromGather(
 			// Do we run explicit NCD calculations run per Actor?
 			if (bUseNarrowPhaseNCDInterestCulling)
 			{
-				QUICK_SCOPE_CYCLE_COUNTER(NET_ClientEntityInterest_NarrowPhaseDistanceCalculation);
-
-				// Multiple viewers exists in native Unreal to accommodate local multiplayer.
-				int32 ViewersThatSkipActor = 0;
-				for (const FNetViewer& CurViewer : Viewers)
-				{
-					const float DistSq = (GlobalActorInfo.WorldLocation - CurViewer.ViewLocation).SizeSquared();
-					if (ConnectionActorInfo.GetCullDistanceSquared() > 0.f && DistSq > ConnectionActorInfo.GetCullDistanceSquared())
-					{
-						++ViewersThatSkipActor;
-						break;
-					}
-				}
-
-				if (ViewersThatSkipActor >= Viewers.Num())
+				const float DistSq = (GlobalActorInfo.WorldLocation - CurViewer.ViewLocation).SizeSquared();
+				if (ConnectionActorInfo.GetCullDistanceSquared() > 0.f && DistSq > ConnectionActorInfo.GetCullDistanceSquared())
 				{
 					continue;
 				}

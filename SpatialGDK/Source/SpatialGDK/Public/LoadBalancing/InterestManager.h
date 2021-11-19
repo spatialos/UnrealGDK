@@ -16,7 +16,7 @@ public:
 
 protected:
 	TSet<Worker_EntityId_Key> TaggedObjects;
-	Worker_ComponentId TagComponentId;
+	const Worker_ComponentId TagComponentId;
 };
 
 class FAlwaysRelevantStorage : public FTagComponentStorage
@@ -46,15 +46,15 @@ class FInterestManager
 	struct FBroadphaseImpl;
 
 public:
-	FInterestManager(InterestFactory& InterestF, FSpatialPositionStorage& Positions, FAlwaysRelevantStorage& AlwaysRelevant,
-					 FServerAlwaysRelevantStorage& ServerAlwaysRelevant);
+	FInterestManager(const InterestFactory& InterestF, const FSpatialPositionStorage& Positions,
+					 const FAlwaysRelevantStorage& AlwaysRelevant, const FServerAlwaysRelevantStorage& ServerAlwaysRelevant);
 	~FInterestManager();
 
 	void Advance(const TSet<Worker_EntityId_Key>& DeletedEntities);
 
 	void ComputeInterest(ISpatialOSWorker& Connection, const TArray<Worker_EntityId> Workers, const TArray<FBox2D>& Regions);
 
-	FSpatialPositionStorage& GetPositions() { return Positions; }
+	const FSpatialPositionStorage& GetPositions() { return Positions; }
 
 protected:
 	int32 Allocate();
@@ -63,11 +63,11 @@ protected:
 	void SwapEntries(int32 Slot1, int32 Slot2);
 	void MoveEntry(int32 SlotSrc, int32 SlotDest);
 
-	InterestFactory& InterestF;
+	const InterestFactory& InterestF;
 
-	FSpatialPositionStorage& Positions;
-	FAlwaysRelevantStorage& AlwaysRelevant;
-	FServerAlwaysRelevantStorage& ServerAlwaysRelevant;
+	const FSpatialPositionStorage& Positions;
+	const FAlwaysRelevantStorage& AlwaysRelevant;
+	const FServerAlwaysRelevantStorage& ServerAlwaysRelevant;
 
 	TMap<Worker_EntityId_Key, int32> SlotMap;
 
@@ -82,6 +82,7 @@ protected:
 
 	TUniquePtr<FBroadphaseImpl> Broadphase;
 
+	// 3 buckets - Curr Visible, Prev Visible, Newly Added
 	TArray<TArray<Worker_EntityId_Key>> CachedServerInterest[3];
 };
 } // namespace SpatialGDK

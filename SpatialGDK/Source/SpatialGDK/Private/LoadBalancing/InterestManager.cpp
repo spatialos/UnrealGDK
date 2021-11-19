@@ -66,8 +66,9 @@ struct FInterestManager::FBroadphaseImpl
 
 FInterestManager::~FInterestManager() = default;
 
-FInterestManager::FInterestManager(InterestFactory& InInterestF, FSpatialPositionStorage& InPositions,
-								   FAlwaysRelevantStorage& InAlwaysRelevant, FServerAlwaysRelevantStorage& InServerAlwaysRelevant)
+FInterestManager::FInterestManager(const InterestFactory& InInterestF, const FSpatialPositionStorage& InPositions,
+								   const FAlwaysRelevantStorage& InAlwaysRelevant,
+								   const FServerAlwaysRelevantStorage& InServerAlwaysRelevant)
 	: InterestF(InInterestF)
 	, Positions(InPositions)
 	, AlwaysRelevant(InAlwaysRelevant)
@@ -187,6 +188,7 @@ int32 FInterestManager::Allocate()
 
 	++ActiveEntities;
 
+	// Ensure active entities are stored contiguously within the data sets
 	int32 NumEntities = Entities.Num();
 	if (ActiveEntities != NumEntities)
 	{
@@ -269,7 +271,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 	// This assumes that the bits allocation against workers remains constant, which is not valid anymore when changing/reassigning regions.
 	const double InactiveTime = 5.0;
 	const uint64 TimeToConsiderInactive = FPlatformTime::Cycles64() - (InactiveTime / FPlatformTime::GetSecondsPerCycle64());
-	for (int32 i = 0; i < (int32)ActiveEntities; ++i)
+	for (int32 i = 0; i < static_cast<int32>(ActiveEntities); ++i)
 	{
 		if (ActiveTimestamp[i] < TimeToConsiderInactive)
 		{
@@ -284,7 +286,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 	const uint32 NumRegions = Regions.Num();
 	const uint32 NumEntities = Entities.Num();
 
-	if (CachedServerInterest[0].Num() < (int32)NumRegions)
+	if (CachedServerInterest[0].Num() < static_cast<int32>(NumRegions))
 	{
 		CachedServerInterest[0].SetNum(NumRegions);
 		CachedServerInterest[1].SetNum(NumRegions);
@@ -310,7 +312,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 		const uint32* Flags = EntityFlags.GetData();
 		for (uint32 i = 0; i < NumActiveEntities; ++i)
 		{
-			const uint64 Mask = UINT64_MAX;
+			constexpr uint64 Mask = UINT64_MAX;
 			*VisibilityPtr = ((uint64)(*Flags != 0)) * Mask;
 			++VisibilityPtr;
 			++Flags;
@@ -335,7 +337,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 
 		for (uint32 i = 0; i < NumActiveEntities; ++i)
 		{
-			const uint64 AllRegionsMask = UINT64_MAX;
+			constexpr uint64 AllRegionsMask = UINT64_MAX;
 			*VisibilityPtr = ((uint64)(*Flags != 0)) * AllRegionsMask;
 
 			// Avoid using operator[] as the range-check could expand to a sizable chunk of code.
@@ -398,6 +400,8 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 		const FVector2D* Pos = EntityPosition.GetData();
 		for (uint32 i = 0; i < NumEntities; ++i)
 		{
+			// Flags are currently used to control visibility of entity in all regions (eg. AlwaysRelevant), so if set, ensure visible to
+			// all regions.
 			*VisibilityPtr = ((uint64)(*Flags != 0)) * AllRegionsMask;
 
 			const float* BoxesMinXPtr = BoxesMinX.GetData();
@@ -638,7 +642,6 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 					Request.QueriesToRemove.Add(MoveTemp(QueryRemove));
 				}
 
-				Request.DebugOutput();
 				Request.SendRequest(Connection);
 			}
 		}

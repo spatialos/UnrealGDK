@@ -837,7 +837,7 @@ void ActorSystem::MarkClientInterestDirty(Worker_EntityId EntityId, bool bFullIn
 
 bool ActorSystem::IsClientInterestDirty(Worker_EntityId EntityId) const
 {
-	return ClientInterestDirty.Find(EntityId) != nullptr;
+	return ClientInterestDirty.Contains(EntityId);
 }
 
 void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
@@ -2368,12 +2368,10 @@ void ActorSystem::UpdateClientInterest(AActor* Actor, const Worker_EntityId Cont
 		if (bRequestValid)
 		{
 			Worker_CommandRequest CommandRequest = Request.CreateRequest();
-			// Request.DebugOutput();
 
 			const Worker_EntityId SystemEntityId = Request.SystemEntityId;
 
-			const FRetryData RetryData = { 0, 0, 0.f, 0.f, 60000 };
-			Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(SystemEntityId, &CommandRequest, RetryData, {});
+			Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(SystemEntityId, &CommandRequest, NO_RETRIES, {});
 			InFlightInterestRequests.Emplace(RequestId, ControllerEntityId);
 
 			UE_LOG(LogActorSystem, Verbose, TEXT("Interest diff: worker entity id %lld"), SystemEntityId);
