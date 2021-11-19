@@ -51,5 +51,6 @@ private:
 	TSubclassOf<USpatialMultiWorkerSettings> EditorMultiWorkerSettingsOverride;
 
 	/** Gets MultiWorkerSettingsClass if set, otherwise returns a single worker behaviour. */
+	UFUNCTION(BlueprintCallable, Category = "Multi-Worker")
 	TSubclassOf<USpatialMultiWorkerSettings> GetValidWorkerSettings() const;
 };

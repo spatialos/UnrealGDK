@@ -2,9 +2,9 @@
 
 #include "SpatialTestSettings.h"
 
-#include "SpatialConstants.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "SpatialConstants.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialTestSettings);
 

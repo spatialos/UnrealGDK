@@ -138,10 +138,10 @@ struct ConfigureConnection
 		UnrealGDKVersionPair.name = "gdk_version";
 		UnrealGDKVersionPair.version = GDKVersion.Get();
 		Params.versions = &UnrealGDKVersionPair;
+		Params.network.connection_timeout_millis = Settings->ConnectionTimeoutMillis;
 
 		// Override the security type to be secure only if the user has requested it and we are not using an editor build.
-		if ((!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection)
-			|| (bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureClientConnection))
+		if ((!bConnectAsClient && Settings->bUseSecureServerConnection) || (bConnectAsClient && Settings->bUseSecureClientConnection))
 		{
 #if WITH_EDITOR
 			UE_LOG(LogSpatialWorkerConnection, Warning,
@@ -465,8 +465,8 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 void USpatialConnectionManager::FinishConnecting()
 {
 	/*
-	 * This function is now guaranteed to be called one frame after the object initialization linked to Server Travel happens (related to UNR-2287)
-	 * therefore an AsyncTask is no longer needed.
+	 * This function is now guaranteed to be called one frame after the object initialization linked to Server Travel happens (related to
+	 * UNR-2287) therefore an AsyncTask is no longer needed.
 	 */
 
 	const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
@@ -635,8 +635,8 @@ void USpatialConnectionManager::OnWorldTickStart(UWorld* World, ELevelTick TickT
 	else
 	{
 		/* Note that the if-else statement purposely adds a one frame delay between obtaining the worker connection
-		 * and the call to FinishConnecting(). See the function definition for details on why this is needed. 
-		*/
+		 * and the call to FinishConnecting(). See the function definition for details on why this is needed.
+		 */
 
 		FinishConnecting();
 		StopPollingForConnection();

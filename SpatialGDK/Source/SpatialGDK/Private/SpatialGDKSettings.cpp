@@ -214,6 +214,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, ClientUpstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_UPSTREAM_WINDOW_SIZE_BYTES)
 	, ServerDownstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_DOWNSTREAM_WINDOW_SIZE_BYTES)
 	, ServerUpstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_UPSTREAM_WINDOW_SIZE_BYTES)
+	, ConnectionTimeoutMillis(600000)
 	, bWorkerFlushAfterOutgoingNetworkOp(true)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)

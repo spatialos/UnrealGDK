@@ -240,8 +240,21 @@ void ASpatialDebugger::CreateWorkerRegions()
 		AWorkerRegion* WorkerRegion = World->SpawnActor<AWorkerRegion>(SpawnParams);
 		FString WorkerInfo = FString::Printf(TEXT("You are looking at virtual worker number %d\n%s"), WorkerRegionData.VirtualWorkerID,
 											 *WorkerRegionData.WorkerName);
+
+		int32 WorkerInfoOffset = 0;
+		int32* NumOverlapped = WorkerRegionExtentsTracking.Find(WorkerRegionData.Extents.Min);
+		if (NumOverlapped == nullptr)
+		{
+			WorkerRegionExtentsTracking.Add(WorkerRegionData.Extents.Min, 0);
+		}
+		else
+		{
+			*NumOverlapped = *NumOverlapped + 1;
+			WorkerInfoOffset = 80 * *NumOverlapped;
+		}
+
 		WorkerRegion->Init(WorkerRegionMaterial, WorkerCombinedMaterial, WorkerInfoFont, WorkerRegionData.Color, WorkerRegionOpacity,
-						   WorkerRegionData.Extents, WorkerRegionHeight, WorkerRegionVerticalScale, WorkerInfo);
+						   WorkerRegionData.Extents, WorkerRegionHeight, WorkerRegionVerticalScale, WorkerInfo, WorkerInfoOffset);
 		WorkerRegion->SetActorEnableCollision(false);
 	}
 }
@@ -637,6 +650,16 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 			FVector2D ScreenLocation;
 			if (Actor != nullptr && ProjectActorToScreen(Actor->GetActorLocation(), PlayerLocation, ScreenLocation, Canvas))
 			{
+				if (Actor->IsOwnedByClient())
+				{
+					continue;
+				}
+
+				if (ScreenLocation.IsZero())
+				{
+					continue;
+				}
+
 				DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName(), true /*bCentre*/);
 			}
 		}
@@ -968,7 +991,7 @@ void ASpatialDebugger::EditorInitialiseWorkerRegions()
 		return;
 	}
 
-	const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
+	UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
 		USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
 
 	ULayeredLBStrategy* LoadBalanceStrategy = NewObject<ULayeredLBStrategy>();

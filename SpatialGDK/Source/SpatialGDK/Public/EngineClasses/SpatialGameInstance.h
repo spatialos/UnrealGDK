@@ -77,7 +77,7 @@ public:
 	FOnPrepareShutdownEvent OnPrepareShutdown;
 
 	void DisableShouldConnectUsingCommandLineArgs() { bShouldConnectUsingCommandLineArgs = false; }
-	bool GetShouldConnectUsingCommandLineArgs() const { return bShouldConnectUsingCommandLineArgs; }
+	virtual bool GetShouldConnectUsingCommandLineArgs() const { return bShouldConnectUsingCommandLineArgs; }
 
 	void TryInjectSpatialLocatorIntoCommandLine();
 

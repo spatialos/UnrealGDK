@@ -63,7 +63,11 @@ public:
 
 	uint32 GetRows() const { return Rows; }
 	uint32 GetCols() const { return Cols; }
+
+	UFUNCTION(BlueprintPure, Category = "Grid Based Load Balancing")
 	float GetWorldWidth() const { return WorldWidth; }
+
+	UFUNCTION(BlueprintPure, Category = "Grid Based Load Balancing")
 	float GetWorldHeight() const { return WorldHeight; }
 
 	virtual bool IsStrategyWorkerAware() const override;
@@ -80,16 +84,16 @@ protected:
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")
 	uint32 Cols;
 
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing", BlueprintGetter = GetWorldWidth)
 	float WorldWidth;
 
-	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")
+	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing", BlueprintGetter = GetWorldHeight)
 	float WorldHeight;
 
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "0"), Category = "Grid Based Load Balancing")
 	float InterestBorder;
 
-private:
+protected:
 	TArray<VirtualWorkerId> VirtualWorkerIds;
 
 	TArray<FBox2D> WorkerCells;

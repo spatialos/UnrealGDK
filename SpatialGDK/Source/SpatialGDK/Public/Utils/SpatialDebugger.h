@@ -94,6 +94,8 @@ public:
 	UFUNCTION(Category = "SpatialGDK", BlueprintCallable, BlueprintPure)
 	bool IsEnabled();
 
+	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI,
 			  meta = (ToolTip = "Key to open configuration UI for the debugger at runtime"))
 	FKey ConfigUIToggleKey = EKeys::F9;
@@ -234,11 +236,20 @@ public:
 	void EditorSpatialToggleDebugger(bool bEnabled);
 #endif
 
+protected:
+	virtual void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
+	virtual void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
+						 const bool bCentre);
+	virtual void DrawDebugLocalPlayer(UCanvas* Canvas);
+
+	USpatialNetDriver* NetDriver;
+
+	TWeakObjectPtr<APawn> LocalPawn;
+	TWeakObjectPtr<APlayerController> LocalPlayerController;
+	TWeakObjectPtr<APlayerState> LocalPlayerState;
+
 private:
 	void LoadIcons();
-
-	// FDebugDrawDelegate
-	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
 
 	bool ProjectActorToScreen(const FVector& ActorLocation, const FVector& PlayerLocation, FVector2D& OutLocation, const UCanvas* Canvas);
 
@@ -258,10 +269,6 @@ private:
 
 	void RevertHoverMaterials();
 
-	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
-				 const bool bCentre);
-	void DrawDebugLocalPlayer(UCanvas* Canvas);
-
 	void CreateWorkerRegions();
 	void DestroyWorkerRegions();
 
@@ -273,8 +280,6 @@ private:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
-	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;
-
 	enum EIcon
 	{
 		ICON_AUTH,
@@ -285,15 +290,10 @@ private:
 		ICON_MAX
 	};
 
-	USpatialNetDriver* NetDriver;
-
 	SpatialGDK::SpatialDebuggerSystem* GetDebuggerSystem() const;
 
 	FDelegateHandle DrawDebugDelegateHandle;
 
-	TWeakObjectPtr<APawn> LocalPawn;
-	TWeakObjectPtr<APlayerController> LocalPlayerController;
-	TWeakObjectPtr<APlayerState> LocalPlayerState;
 	UFont* RenderFont;
 
 	FFontRenderInfo FontRenderInfo;
@@ -327,4 +327,6 @@ private:
 
 	// Select actor object types to query
 	FCollisionObjectQueryParams CollisionObjectParams;
+
+	TMap<FVector2D, int32> WorkerRegionExtentsTracking;
 };
