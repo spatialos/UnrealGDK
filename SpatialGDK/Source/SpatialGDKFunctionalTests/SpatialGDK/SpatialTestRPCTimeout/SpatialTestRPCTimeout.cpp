@@ -7,6 +7,7 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialTestRPCTimeoutGameMode.h"
 #include "SpatialTestRPCTimeoutPlayerController.h"
+#include "GameFramework/PlayerStart.h"
 
 /**
  * This test ensures that RPC calls with unresolved parameters are queued until their parameters are correctly resolved.
@@ -29,11 +30,6 @@ ASpatialTestRPCTimeout::ASpatialTestRPCTimeout()
 	Description = TEXT(
 		"This test calls an RPC with an asset that was softly referenced and check that it will be asynchronously loaded with a timeout of "
 		"0.");
-}
-
-void ASpatialTestRPCTimeout::CreateCustomContentForMap()
-{
-	GetWorldSettingsForMap()->DefaultGameMode = ASpatialTestRPCTimeoutGameMode::StaticClass();
 }
 
 void ASpatialTestRPCTimeout::PrepareTest()
@@ -93,4 +89,31 @@ void ASpatialTestRPCTimeout::PrepareTest()
 			}
 		},
 		5.0f);
+}
+
+USpatialRPCTimeoutMap::USpatialRPCTimeoutMap()
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialRPCTimeoutMap"))
+{
+	// clang-format off
+	SetCustomConfig(TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR
+		TEXT("QueuedIncomingRPCWaitTime=0"));
+	// clang-format on
+
+	SetNumberOfClients(2);
+
+	EnableMultiProcess();
+}
+
+void USpatialRPCTimeoutMap::CreateCustomContentForMap()
+{
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
+	WorldSettings->DefaultGameMode = ASpatialTestRPCTimeoutGameMode::StaticClass();
+
+	FTransform Transform1 = FTransform::Identity;
+	Transform1.SetLocation(FVector(-300.f, -500.f, 200.f));
+
+	// Added a second player start actor to ensure both characters are visible from the game window for debugging
+	AddActorToLevel<APlayerStart>(CurrentLevel, Transform1);
+	AddActorToLevel<ASpatialTestRPCTimeout>(CurrentLevel, FTransform::Identity);
 }
