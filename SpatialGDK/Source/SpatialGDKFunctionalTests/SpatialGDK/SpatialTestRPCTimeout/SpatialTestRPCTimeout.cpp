@@ -4,10 +4,10 @@
 #include "Components/BoxComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerStart.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialTestRPCTimeoutGameMode.h"
 #include "SpatialTestRPCTimeoutPlayerController.h"
-#include "GameFramework/PlayerStart.h"
 
 /**
  * This test ensures that RPC calls with unresolved parameters are queued until their parameters are correctly resolved.
@@ -70,8 +70,7 @@ void ASpatialTestRPCTimeout::PrepareTest()
 		5.0f);
 
 	AddStep(
-		TEXT("Check that the material is correctly loaded after about 5 seconds delay"), FWorkerDefinition::AllClients,
-		nullptr, nullptr,
+		TEXT("Check that the material is correctly loaded after about 5 seconds delay"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
 			if (IsExternalProcessClient())
 			{

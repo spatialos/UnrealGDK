@@ -26,8 +26,8 @@ private:
 /**
  * This map is for use with SpatialTestRPCTimeout
  */
-	UCLASS()
-	class SPATIALGDKFUNCTIONALTESTS_API USpatialRPCTimeoutMap : public UGeneratedTestMap
+UCLASS()
+class SPATIALGDKFUNCTIONALTESTS_API USpatialRPCTimeoutMap : public UGeneratedTestMap
 {
 	GENERATED_BODY()
 
