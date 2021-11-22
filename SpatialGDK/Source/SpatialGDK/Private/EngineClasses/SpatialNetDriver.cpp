@@ -61,6 +61,7 @@
 #include "Interop/Startup/SpatialClientWorkerStartupHandler.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "Interop/WorkingSetsCommon.h"
+#include "Interop/WorkingSetsHandler.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/LBDataStorage.h"
@@ -583,8 +584,13 @@ void USpatialNetDriver::CreateAndInitializeCoreClassesAfterStartup()
 		{
 			using namespace SpatialGDK;
 
-			WorkingSetMarkerSubview = &CreateWorkingSetMarkersSubview(Connection->GetCoordinator());
+			ViewCoordinator& Coordinator = Connection->GetCoordinator();
+
+			WorkingSetMarkerSubview = &CreateWorkingSetMarkersSubview(Coordinator);
 			WorkingSetData = MakeUnique<FWorkingSetDataStorage>();
+
+			FSubView& BaseAuthoritativeActorSubview = ActorSubviews::CreateBaseAuthoritySubView(*this);
+			WorkingSetHandler = MakeUnique<FWorkingSetCompletenessHandler>(*WorkingSetData, BaseAuthoritativeActorSubview);
 		}
 
 		const SpatialGDK::FSubView& ActorSubview = SpatialGDK::ActorSubviews::CreateActorSubView(*this);
@@ -2325,6 +2331,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			if (WorkingSetData.IsValid())
 			{
 				WorkingSetData->Advance(*WorkingSetMarkerSubview);
+				WorkingSetHandler->Advance(Connection->GetCoordinator());
 			}
 
 			if (HandoverManager.IsValid())
