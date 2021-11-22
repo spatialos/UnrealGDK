@@ -3361,8 +3361,10 @@ void USpatialNetDriver::TryFinishStartup()
 			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy =
 				MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy, *VirtualWorkerTranslator);
 
+			SpatialGDK::FSubView& WorkingSetsMarkerSubview = SpatialGDK::CreateWorkingSetMarkersSubview(Connection->GetCoordinator());
+
 			SpatialGDK::FStrategySystemViews Views(
-				{ LBView, ServerWorkerView, LocallyAuthSkeletonEntityManifestsSubview, FilledManifestSubView });
+				{ LBView, ServerWorkerView, LocallyAuthSkeletonEntityManifestsSubview, FilledManifestSubView, WorkingSetsMarkerSubview });
 
 			StrategySystem = MakeUnique<SpatialGDK::FSpatialStrategySystem>(Views, MoveTemp(Strategy),
 																			MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));

@@ -9,6 +9,7 @@
 #include "LoadBalancing/ActorSetSystem.h"
 #include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/LoadBalancingTypes.h"
+#include "LoadBalancing/WorkingSetSystem.h"
 #include "Schema/ActorSetMember.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/CrossServerEndpoint.h"
@@ -34,6 +35,7 @@ struct FStrategySystemViews
 	const FSubView& ServerWorkerView;
 	const FSubView& SkeletonManifestView;
 	const FSubView& FilledManifestSubView;
+	const FSubView& WorkingSetMarkersSubview;
 };
 
 class FSpatialStrategySystem
@@ -51,6 +53,10 @@ public:
 	void Destroy(ISpatialOSWorker& Connection);
 
 private:
+	TSet<Worker_EntityId_Key> GatherModifiedEntities() const;
+	void AugmentMigrations(FMigrationContext& Ctx) const;
+	void ApplyMigrations(ISpatialOSWorker& Connection, const FMigrationContext& Ctx);
+
 	FStrategySystemViews Views;
 
 	TUniquePtr<FPartitionManager> PartitionsMgr;
@@ -61,6 +67,7 @@ private:
 	TLBDataStorage<NetOwningClientWorker> NetOwningClientView;
 	TLBDataStorage<ActorSetMember> SetMemberView;
 	FActorSetSystem ActorSetSystem;
+	TUniquePtr<FWorkingSetSystem> WorkingSetSystem;
 	FSkeletonManifestPublisher ManifestPublisher;
 	FLBDataCollection DataStorages;
 	FLBDataCollection UserDataStorages;
