@@ -43,7 +43,7 @@ PartitionInterestUpdate::PartitionInterestUpdate()
 	{
 		USpatialPartitionSystem* PartitionSystem = Cast<USpatialPartitionSystem>(Settings->PartitionSystemClass->GetDefaultObject());
 		TArray<FLBDataStorage*> DataStores = PartitionSystem->GetData();
-		for (auto Store : DataStores)
+		for (const auto& Store : DataStores)
 		{
 			PartitionMetaData.Append(Store->GetComponentsToWatch().Array());
 		}
@@ -410,7 +410,7 @@ void FPartitionManager::Impl::FlushInterestUpdates(ISpatialOSWorker& Connection)
 				ServerWorkerQuery.Entities.Append(WorkersDispatcher.SubView.GetCompleteEntities());
 				for (auto Entity : ServerWorkerQuery.Entities)
 				{
-					UE_LOG(LogTemp, Log, TEXT("Make worker %llu interested in %llu"), Request.SystemEntityId, Entity);
+					UE_LOG(LogSpatialPartitionManager, Log, TEXT("Make worker %llu interested in %llu"), Request.SystemEntityId, Entity);
 				}
 				ServerWorkerQuery.Components = { SpatialConstants::SERVER_WORKER_COMPONENT_ID,
 												 SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };

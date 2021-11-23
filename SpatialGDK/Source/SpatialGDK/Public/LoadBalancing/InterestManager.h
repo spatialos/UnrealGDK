@@ -83,6 +83,13 @@ protected:
 	TUniquePtr<FBroadphaseImpl> Broadphase;
 
 	// 3 buckets - Curr Visible, Prev Visible, Newly Added
-	TArray<TArray<Worker_EntityId_Key>> CachedServerInterest[3];
+	enum EntityVisibilityBuckets
+	{
+		EVB_CurrVisible,
+		EVB_NewlyAdded,
+		EVB_PrevVisible,
+		EVB_Count
+	};
+	TArray<TArray<Worker_EntityId_Key>> CachedServerInterest[EVB_Count];
 };
 } // namespace SpatialGDK

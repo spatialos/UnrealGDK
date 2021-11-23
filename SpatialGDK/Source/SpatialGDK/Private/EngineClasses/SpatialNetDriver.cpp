@@ -230,7 +230,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	if (!bInitAsClient && GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
 	{
-		if (!GetReplicationDriver()->IsA<UReplicationGraph>())
+		UReplicationDriver* RepDriver = GetReplicationDriver();
+		if (RepDriver == nullptr || !RepDriver->IsA<UReplicationGraph>())
 		{
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Client entity interest setting was enabled BUT there was no rep graph set"));
 		}
@@ -795,7 +796,7 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 		   TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
 }
 
-void USpatialNetDriver::OnActorSpawned(AActor* Actor)
+void USpatialNetDriver::OnActorSpawned(AActor* Actor) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 

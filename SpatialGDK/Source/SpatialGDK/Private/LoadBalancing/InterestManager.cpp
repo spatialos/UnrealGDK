@@ -15,6 +15,13 @@ DECLARE_CYCLE_STAT(TEXT("InterestManagerComputeBox"), STAT_InterestManagerComput
 DECLARE_CYCLE_STAT(TEXT("InterestManagerComputeBoxSSE"), STAT_InterestManagerComputationBoxSSE, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("InterestManagerComputeSort"), STAT_InterestManagerComputationSort, STATGROUP_SpatialNet);
 
+inline uint64 ApplyVisibilityFlags(const uint32 Flags, const uint64 AllRegionsMask)
+{
+	// Flags are currently used to control visibility of entity in all regions (eg. AlwaysRelevant), so if set, ensure visible to all
+	// regions.
+	return ((uint64)(Flags != 0)) * AllRegionsMask;
+}
+
 namespace SpatialGDK
 {
 FTagComponentStorage::FTagComponentStorage(Worker_ComponentId InComponentId)
@@ -288,9 +295,10 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 
 	if (CachedServerInterest[0].Num() < static_cast<int32>(NumRegions))
 	{
-		CachedServerInterest[0].SetNum(NumRegions);
-		CachedServerInterest[1].SetNum(NumRegions);
-		CachedServerInterest[2].SetNum(NumRegions);
+		for (int i = 0; i < EVB_Count; ++i)
+		{
+			CachedServerInterest[i].SetNum(NumRegions);
+		}
 	}
 
 	constexpr bool bUseBroadphaseForRegions = false;
@@ -338,7 +346,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 		for (uint32 i = 0; i < NumActiveEntities; ++i)
 		{
 			constexpr uint64 AllRegionsMask = UINT64_MAX;
-			*VisibilityPtr = ((uint64)(*Flags != 0)) * AllRegionsMask;
+			*VisibilityPtr = ApplyVisibilityFlags(*Flags, AllRegionsMask);
 
 			// Avoid using operator[] as the range-check could expand to a sizable chunk of code.
 			const FBox2D* RegionBox = Regions.GetData();
@@ -400,9 +408,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 		const FVector2D* Pos = EntityPosition.GetData();
 		for (uint32 i = 0; i < NumEntities; ++i)
 		{
-			// Flags are currently used to control visibility of entity in all regions (eg. AlwaysRelevant), so if set, ensure visible to
-			// all regions.
-			*VisibilityPtr = ((uint64)(*Flags != 0)) * AllRegionsMask;
+			*VisibilityPtr = ApplyVisibilityFlags(*Flags, AllRegionsMask);
 
 			const float* BoxesMinXPtr = BoxesMinX.GetData();
 			const float* BoxesMinYPtr = BoxesMinY.GetData();
@@ -439,7 +445,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			++VisibilityPtr;
 		}
 	}
-// Disabled until we find how to make it work on linux.
+// Disabled until we find how to make AVX intrinsics work on linux.
 #if 0
 	if (bVectorizeEntities)
 	{
@@ -524,7 +530,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 		const FVector2D* Pos = EntityPosition.GetData() + 8 * Num8Entities;
 		for (uint32 i = 0; i < Rem8Entities; ++i)
 		{
-			*VisibilityPtr = ((uint64)(*Flags != 0)) * AllRegionsMask;
+			*VisibilityPtr = ApplyVisibilityFlags(*Flags, AllRegionsMask);
 
 			const FBox2D* RegionBox = Regions.GetData();
 
@@ -550,8 +556,8 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 		// Reset region visibility.
 		for (uint32 j = 0; j < NumRegions; ++j)
 		{
-			Swap(CachedServerInterest[2][j], CachedServerInterest[0][j]);
-			CachedServerInterest[0][j].SetNum(0, false);
+			Swap(CachedServerInterest[EVB_PrevVisible][j], CachedServerInterest[EVB_CurrVisible][j]);
+			CachedServerInterest[EVB_CurrVisible][j].SetNum(0, false);
 		}
 		for (uint32 i = 0; i < NumEntities; ++i)
 		{
@@ -561,7 +567,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 				// _tzcnt_u64 -> Count trailing zeros, <==> position of the first set bit
 				// equivalent of peeling one set region at a time
 				const uint32 j = _tzcnt_u64(VisMask);
-				CachedServerInterest[0][j].Add(Entities[i]);
+				CachedServerInterest[EVB_CurrVisible][j].Add(Entities[i]);
 				VisMask &= ~(1ull << j);
 			}
 			++VisibilityPtr;
@@ -572,9 +578,9 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			// If several regions are assigned to a single worker, the lists need to be merged and
 			// duplicates eliminated before computing the add/remove lists.
 
-			auto& CurVisible = CachedServerInterest[0][j];
-			auto& PrevVisible = CachedServerInterest[2][j];
-			auto& Added = CachedServerInterest[1][j];
+			auto& CurVisible = CachedServerInterest[EVB_CurrVisible][j];
+			auto& PrevVisible = CachedServerInterest[EVB_PrevVisible][j];
+			auto& Added = CachedServerInterest[EVB_NewlyAdded][j];
 			Added.SetNum(0, false);
 			CurVisible.Sort();
 			int32 Removed = 0;
@@ -612,8 +618,8 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 	{
 		for (uint32 j = 0; j < NumRegions; ++j)
 		{
-			auto& Added = CachedServerInterest[1][j];
-			auto& Removed = CachedServerInterest[2][j];
+			auto& Added = CachedServerInterest[EVB_NewlyAdded][j];
+			auto& Removed = CachedServerInterest[EVB_PrevVisible][j];
 
 			const int32 NumAdded = Added.Num();
 			const int32 NumRemoved = Removed.Num();

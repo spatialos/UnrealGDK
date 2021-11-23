@@ -69,14 +69,15 @@ class FCustomWorkerAssignmentStorage : public TLBDataStorage<LegacyLB_CustomWork
 {
 };
 
+// Extend position storage to add debug functionality used when running local benchmarks (BENCH_INTEREST_PERF)
 class DbgPositionStorage : public FSpatialPositionStorage
 {
 public:
 	DbgPositionStorage(FBox2D InRegion, uint32 Num)
 		: Region(InRegion)
 	{
-		FVector2D Offset = Region.Min;
-		FVector2D Size = Region.GetSize();
+		const FVector2D Offset = Region.Min;
+		const FVector2D Size = Region.GetSize();
 		for (uint32 i = 0; i < Num; ++i)
 		{
 			Modified.Add(i + 1);
@@ -89,9 +90,9 @@ public:
 
 	void MoveStuff(uint32 NumToMove)
 	{
-		uint32 NumEntities = Positions.Num();
-		FVector2D Offset = Region.Min;
-		FVector2D Size = Region.GetSize();
+		const uint32 NumEntities = Positions.Num();
+		const FVector2D Offset = Region.Min;
+		const FVector2D Size = Region.GetSize();
 
 		for (uint32 i = 0; i < NumToMove; ++i)
 		{
@@ -651,10 +652,10 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 		TSet<Worker_EntityId_Key> NotChecked;
 		ToRefresh = ToRefresh.Union(Ctx.ModifiedEntities);
 		ToRefresh = ToRefresh.Difference(Ctx.DeletedEntities);
-		for (auto DeletedEntity : Ctx.DeletedEntities)
+		for (Worker_EntityId DeletedEntity : Ctx.DeletedEntities)
 		{
 			Assignment.Remove(DeletedEntity);
-			UE_LOG(LogSpatialLegacyLoadBalancing, Log, TEXT("Entity deleted : %llu"), DeletedEntity);
+			UE_LOG(LogSpatialLegacyLoadBalancing, Verbose, TEXT("Entity deleted : %llu"), DeletedEntity);
 		}
 #if !UE_BUILD_SHIPPING
 		if (ServerWorkerCustomAssignment->GetModifiedEntities().Contains(WorkerForCustomAssignment))

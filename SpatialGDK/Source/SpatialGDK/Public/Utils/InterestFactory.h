@@ -127,7 +127,7 @@ public:
 	// Returns false if we could not get an owner's entityId in the Actor's owner chain.
 	bool DoOwnersHaveEntityId(const AActor* Actor) const;
 
-	bool CreateClientInterestDiff(const APlayerController* PlayerController, ChangeInterestRequest& Request, const bool bOverwrite) const;
+	bool CreateClientInterestDiff(APlayerController* PlayerController, ChangeInterestRequest& Request, const bool bOverwrite) const;
 
 private:
 	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;

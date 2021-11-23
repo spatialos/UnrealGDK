@@ -375,7 +375,7 @@ void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(I
 }
 #endif
 
-bool UnrealServerInterestFactory::CreateClientInterestDiff(const APlayerController* PlayerController,
+bool UnrealServerInterestFactory::CreateClientInterestDiff(APlayerController* PlayerController,
 														   ChangeInterestRequest& ChangeInterestRequestData, const bool bOverwrite) const
 {
 	USpatialNetConnection* NetConnection =
@@ -391,7 +391,7 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(const APlayerControll
 	AActor* Pawn = PlayerController->GetPawn();
 	if (Pawn != nullptr && Pawn != PlayerController->GetViewTarget())
 	{
-		const_cast<APlayerController*>(PlayerController)->SetViewTarget(Pawn);
+		PlayerController->SetViewTarget(Pawn);
 	}
 	if (NetConnection->ViewTarget == nullptr)
 	{

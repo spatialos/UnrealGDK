@@ -346,7 +346,7 @@ private:
 
 	void OnAsyncPackageLoadFilterComplete(Worker_EntityId EntityId);
 
-	void OnActorSpawned(AActor* Actor);
+	void OnActorSpawned(AActor* Actor) const;
 
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 
