@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Users can now change the `Server Port` under `Editor Settings -> Level Editor -> Play -> Multiplayer Options`, or alternatively under `Advanced Settings` in the `Play` dropdown menu and launch local deployments that use the new `Server Port` value
 - Add Only Authoritative Server replication type. Variables marked with this type will only replicate to subsequent servers that gain authority of this actor. Can be accessed on standard `Replicated` variables by adding `COND_OnlyAuthServer` replication condition in `GetLifetimeReplicatedProps`.
 - Added a warning for using a `NetDeltaSerialized` property with PushModel due to Spatial GDK differing from Native Unreal in how `NetDeltaSerialized` properties are replicated.
+- Add a function flag (SPATIALFUNC_NeverQueueForUnresolvedParameters) to allow RPCs to never queue even with unresolved parameters.
+- Client IP addresses are now accessable using the SpatialStatics function: GetPlayerClientIP.
+- Spatial connection timeout can not be specified using the config parameter: ConnectionTimeoutMillis.
 
 ### Bug fixes:
 - Fix `A functional test is already running error` that would sometimes occur when re-running multi-server functional tests.
@@ -43,6 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add helpers to the test framework - `SpawnActor`, `RequireValid`, `GetFlowPlayerController`, `RequireEqual_Enum`, and `RequireNotEqual_Enum`.
 - Refactored startup to be all in a couple classes, `FSpatialServerStartupHandler` and `FSpatialClientStartupHandler`.
 - Newly torn off channels are now conditionally closed after all updates in a given tick have been applied.
+- Added multiprocess support for the Spatial functional test framework.
+- Modified the functional test startup flow in engine and GDK to accomodate both single and multiprocess tests.
 
 ## [`0.14.0`] - 2021-08-16
 

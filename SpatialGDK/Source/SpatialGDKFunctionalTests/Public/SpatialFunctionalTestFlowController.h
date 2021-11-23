@@ -82,6 +82,22 @@ public:
 	UFUNCTION()
 	void DeregisterFlowController();
 
+	/*
+	 * Adds support for multiple processes testing by ensuring that when starting a test, the Editor process, which is a Client,
+	 * will call AFunctionalTest::CrossServerRunTest from a Server process, following the flow of starting a test when using a single
+	 * process.
+	 */
+	UFUNCTION(Server, Reliable)
+	void ServerNotifyRunTest(ASpatialFunctionalTest* Test, const TArray<FString>& Params = TArray<FString>());
+
+	/*
+	 * Adds support for multiple processes testing, by ensuring that Require messages are correctly logged to the Editor process, which is a
+	 * Client, even when another Client process logs the message. The current flow of logging a message is: Any Client process -> Server RPC
+	 * -> CrossServer RPC -> MultiCast -> Editor Client process.
+	 */
+	UFUNCTION(Server, Reliable)
+	void ServerNotifyLogRequireMessages(const FString& Message, bool bPassed);
+
 private:
 	// Current Step being executed
 	SpatialFunctionalTestStep CurrentStep;

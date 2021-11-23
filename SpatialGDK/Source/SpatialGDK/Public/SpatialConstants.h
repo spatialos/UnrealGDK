@@ -448,6 +448,9 @@ constexpr uint32 SPATIAL_SNAPSHOT_SCHEMA_HASH = 679237978;
 constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 5;
 constexpr uint64 SPATIAL_SNAPSHOT_VERSION = ((((uint64)SPATIAL_SNAPSHOT_SCHEMA_HASH) << 32) | SPATIAL_SNAPSHOT_VERSION_INC);
 
+// Flag used to force the loading of the SpatialGDK module when testing with multiple processes
+const FString SpatialTestFlag = FString("-SpatialTest");
+
 } // namespace SpatialConstants
 
 DECLARE_STATS_GROUP(TEXT("SpatialNet"), STATGROUP_SpatialNet, STATCAT_Advanced);

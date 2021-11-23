@@ -12,7 +12,7 @@
 class UAbstractLBStrategy;
 class UAbstractLockingPolicy;
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FLayerInfo
 {
 	GENERATED_BODY()
@@ -39,6 +39,6 @@ struct FLayerInfo
 	UPROPERTY(EditAnywhere, Category = "Load Balancing")
 	TSet<TSoftClassPtr<AActor>> ActorClasses;
 
-	UPROPERTY(EditAnywhere, Category = "Load Balancing")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Load Balancing")
 	TSubclassOf<UAbstractLBStrategy> LoadBalanceStrategy;
 };

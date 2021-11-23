@@ -34,7 +34,7 @@ public:
 	ULayeredLBStrategy(FVTableHelper& Helper);
 	~ULayeredLBStrategy();
 
-	void SetLayers(const TArray<FLayerInfo>& WorkerLayers);
+	void SetLayers(TArray<FLayerInfo>& WorkerLayers);
 
 	/* UAbstractLBStrategy Interface */
 	virtual void Init() override{};
@@ -57,6 +57,8 @@ public:
 
 	virtual uint32 GetMinimumRequiredWorkers() const override;
 	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId) override;
+
+	UAbstractLBStrategy* GetDefaultStrategy() const;
 
 	// This returns the LBStrategy which should be rendered in the SpatialDebugger.
 	// Currently, this is just the default strategy.

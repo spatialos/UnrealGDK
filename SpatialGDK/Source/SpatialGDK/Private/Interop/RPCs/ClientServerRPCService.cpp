@@ -127,7 +127,6 @@ uint64 ClientServerRPCService::GetAckFromView(const Worker_EntityId EntityId, co
 	case ERPCType::ServerAlwaysWrite:
 		return ClientServerDataStore[EntityId].Server.AlwaysWriteRPCAck;
 	default:
-		checkNoEntry();
 		return 0;
 	}
 }
@@ -226,7 +225,6 @@ void ClientServerRPCService::OnEndpointAuthorityLost(const Worker_EntityId Entit
 		break;
 	}
 	default:
-		checkNoEntry();
 		break;
 	}
 }
@@ -266,7 +264,6 @@ void ClientServerRPCService::ExtractRPCsForEntity(const Worker_EntityId EntityId
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 		break;
 	default:
-		checkNoEntry();
 		break;
 	}
 }
@@ -345,7 +342,6 @@ const RPCRingBuffer& ClientServerRPCService::GetBufferFromView(const Worker_Enti
 	case ERPCType::ServerAlwaysWrite:
 		return ClientServerDataStore[EntityId].Client.AlwaysWriteRPCBuffer;
 	default:
-		checkNoEntry();
 		static const RPCRingBuffer DummyBuffer(ERPCType::Invalid);
 		return DummyBuffer;
 	}

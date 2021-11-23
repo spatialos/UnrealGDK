@@ -7,6 +7,8 @@
 #include "SpatialView/OpList/OpList.h"
 #include "SpatialView/ViewDelta/ViewDelta.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerView, Log, All);
+
 namespace SpatialGDK
 {
 class WorkerView

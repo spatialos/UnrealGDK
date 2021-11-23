@@ -441,6 +441,10 @@ public:
 	UPROPERTY(Config)
 	uint32 ServerUpstreamWindowSizeBytes;
 
+	/** Specifies the connection timeout milliseconds - see c_worker.h */
+	UPROPERTY(Config)
+	uint32 ConnectionTimeoutMillis;
+
 	/** Will flush worker messages immediately after every RPC. Higher bandwidth but lower latency on RPC calls. */
 	UPROPERTY(Config)
 	bool bWorkerFlushAfterOutgoingNetworkOp;
