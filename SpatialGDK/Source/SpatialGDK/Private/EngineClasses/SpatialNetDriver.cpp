@@ -60,6 +60,7 @@
 #include "Interop/Startup/DefaultServerWorkerStartupHandler.h"
 #include "Interop/Startup/SpatialClientWorkerStartupHandler.h"
 #include "Interop/WellKnownEntitySystem.h"
+#include "Interop/WorkingSetsCommon.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/LBDataStorage.h"
@@ -577,6 +578,13 @@ void USpatialNetDriver::CreateAndInitializeCoreClassesAfterStartup()
 		if (SpatialSettings->bEnableInitialOnlyReplicationCondition && !IsServer())
 		{
 			InitialOnlyFilter = MakeUnique<SpatialGDK::InitialOnlyFilter>(*Connection);
+		}
+
+		{
+			using namespace SpatialGDK;
+
+			WorkingSetMarkerSubview = &CreateWorkingSetMarkersSubview(Connection->GetCoordinator());
+			WorkingSetData = MakeUnique<FWorkingSetDataStorage>();
 		}
 
 		const SpatialGDK::FSubView& ActorSubview = SpatialGDK::ActorSubviews::CreateActorSubView(*this);
@@ -2312,6 +2320,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				// Immediately flush. The messages to spatial created by the load balance enforcer in response
 				// to other workers should be looped back as quick as possible.
 				Connection->Flush();
+			}
+
+			if (WorkingSetData.IsValid())
+			{
+				WorkingSetData->Advance(*WorkingSetMarkerSubview);
 			}
 
 			if (HandoverManager.IsValid())
