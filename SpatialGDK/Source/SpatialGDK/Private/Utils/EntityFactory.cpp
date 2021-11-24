@@ -31,6 +31,7 @@
 
 #include "Engine/Engine.h"
 #include "Engine/LevelScriptActor.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
 #include "Runtime/Launch/Resources/Version.h"
@@ -90,6 +91,12 @@ TArray<FWorkerComponentData> EntityFactory::CreateMinimalEntityComponents(AActor
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID));
+
+	// if (Class->IsLightweightActor())
+	if (Class->IsChildOf<ACharacter>()) // TODO: Add a way to mark classes as lightweight
+	{
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LIGHTWEIGHT_ENTITY_COMPONENT_ID);
+	}
 
 #if WITH_GAMEPLAY_DEBUGGER
 	if (Actor->IsA<AGameplayDebuggerCategoryReplicator>())

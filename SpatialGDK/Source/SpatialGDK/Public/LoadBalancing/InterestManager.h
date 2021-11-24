@@ -37,6 +37,15 @@ public:
 	}
 };
 
+class FLightweightEntityStorage : public FTagComponentStorage
+{
+public:
+	FLightweightEntityStorage()
+		: FTagComponentStorage(SpatialConstants::LIGHTWEIGHT_ENTITY_COMPONENT_ID)
+	{
+	}
+};
+
 class FInterestManager
 {
 	static constexpr uint32 AlwaysRelevantFlag = 1 << 0;
@@ -47,7 +56,8 @@ class FInterestManager
 
 public:
 	FInterestManager(const InterestFactory& InterestF, const FSpatialPositionStorage& Positions,
-					 const FAlwaysRelevantStorage& AlwaysRelevant, const FServerAlwaysRelevantStorage& ServerAlwaysRelevant);
+					 const FAlwaysRelevantStorage& AlwaysRelevant, const FServerAlwaysRelevantStorage& ServerAlwaysRelevant,
+					 const FLightweightEntityStorage& LightweightEntities);
 	~FInterestManager();
 
 	void Advance(const TSet<Worker_EntityId_Key>& DeletedEntities);
@@ -68,6 +78,7 @@ protected:
 	const FSpatialPositionStorage& Positions;
 	const FAlwaysRelevantStorage& AlwaysRelevant;
 	const FServerAlwaysRelevantStorage& ServerAlwaysRelevant;
+	const FLightweightEntityStorage& LightweightEntities;
 
 	TMap<Worker_EntityId_Key, int32> SlotMap;
 

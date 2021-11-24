@@ -75,11 +75,13 @@ FInterestManager::~FInterestManager() = default;
 
 FInterestManager::FInterestManager(const InterestFactory& InInterestF, const FSpatialPositionStorage& InPositions,
 								   const FAlwaysRelevantStorage& InAlwaysRelevant,
-								   const FServerAlwaysRelevantStorage& InServerAlwaysRelevant)
+								   const FServerAlwaysRelevantStorage& InServerAlwaysRelevant,
+								   const FLightweightEntityStorage& InLightweightEntities)
 	: InterestF(InInterestF)
 	, Positions(InPositions)
 	, AlwaysRelevant(InAlwaysRelevant)
 	, ServerAlwaysRelevant(InServerAlwaysRelevant)
+	, LightweightEntities(InLightweightEntities)
 {
 	SlotMap.Reserve(1 << 16);
 	Entities.Reserve(1 << 16);
