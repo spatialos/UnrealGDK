@@ -2,6 +2,8 @@
 
 #include "EngineClasses/SpatialReplicationGraph.h"
 
+#include "Misc/EngineVersionComparison.h"
+
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialHandoverManager.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -218,7 +220,7 @@ TArray<AActor*> USpatialReplicationGraph::ExtractClientInterestActorsFromGather(
 	// Should try and reserve accurately here - could sum gathered rep list lengths (although this wouldn't factor dependent Actors) or
 	// cache the last list size
 
-#if UE_VERSION_OLDER_THAN(4, 27, 0)
+#if UE_VERSION_NEWER_THAN(4, 27, -1)
 	for (const FActorRepListConstView& List : GatheredReplicationListsForConnection.GetLists(EActorRepListTypeFlags::Default))
 #else
 	for (const FActorRepListRawView& List : GatheredReplicationListsForConnection.GetLists(EActorRepListTypeFlags::Default))
