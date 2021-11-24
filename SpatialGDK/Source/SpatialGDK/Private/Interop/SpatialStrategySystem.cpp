@@ -184,6 +184,23 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	FMigrationContext Ctx(MigratingEntities, ModifiedEntities, DataStorages.EntitiesRemoved);
 	Strategy->CollectEntitiesToMigrate(Ctx);
 
+	for (const auto& StrategyMigration : Ctx.EntitiesToMigrate)
+	{
+		StrategyAssignments.Emplace(StrategyMigration.Key, StrategyMigration.Value);
+	}
+	for (const Worker_EntityId_Key DeletedEntity : Ctx.DeletedEntities)
+	{
+		StrategyAssignments.Remove(DeletedEntity);
+	}
+	for (const Worker_EntityId_Key ReleasedEntityId : ActorSetSystem.GetReleasedEntities())
+	{
+		if (!Ctx.EntitiesToMigrate.Contains(ReleasedEntityId))
+		{
+			check(StrategyAssignments.Contains(ReleasedEntityId));
+			Ctx.EntitiesToMigrate.Emplace(ReleasedEntityId, StrategyAssignments[ReleasedEntityId]);
+		}
+	}
+
 	// If there were pending migrations, meld them with the migration requests
 	for (auto PendingMigration : PendingMigrations)
 	{

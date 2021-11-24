@@ -75,6 +75,7 @@ private:
 
 	// +++ Migration data +++
 	TUniquePtr<FLoadBalancingStrategy> Strategy;
+	TMap<Worker_EntityId_Key, FPartitionHandle> StrategyAssignments;
 	TSet<Worker_EntityId_Key> MigratingEntities;
 	TMap<Worker_EntityId_Key, FPartitionHandle> PendingMigrations;
 	TMap<Worker_EntityId_Key, FPartitionHandle> EntityAssignment;
