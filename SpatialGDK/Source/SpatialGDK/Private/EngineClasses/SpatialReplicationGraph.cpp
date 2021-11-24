@@ -231,7 +231,7 @@ TArray<AActor*> USpatialReplicationGraph::ExtractClientInterestActorsFromGather(
 			if (!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
 			{
 				UE_LOG(LogSpatialReplicationGraph, Error,
-					   TEXT("Attempting to add client interest in non-spatial actor (%s), fix class routing"), *Actor->GetName());
+					   TEXT("Attempting to add client interest in non-spatial actor (%s); fix class routing"), *Actor->GetName());
 				continue;
 			}
 
