@@ -57,6 +57,7 @@
 #include "Interop/SpatialSnapshotManager.h"
 #include "Interop/SpatialStrategySystem.h"
 #include "Interop/SpatialWorkerFlags.h"
+#include "Interop/SpatialWorkingSetSubsystem.h"
 #include "Interop/Startup/DefaultServerWorkerStartupHandler.h"
 #include "Interop/Startup/SpatialClientWorkerStartupHandler.h"
 #include "Interop/WellKnownEntitySystem.h"
@@ -591,6 +592,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClassesAfterStartup()
 
 			FSubView& BaseAuthoritativeActorSubview = ActorSubviews::CreateBaseAuthoritySubView(*this);
 			WorkingSetHandler = MakeUnique<FWorkingSetCompletenessHandler>(*WorkingSetData, BaseAuthoritativeActorSubview);
+			WorkingSetChangesHandler =
+				MakeUnique<FWorkingSetChangesHandler>(StagingPartitionId, Connection->GetCoordinator(), *WorkingSetData);
 		}
 
 		const SpatialGDK::FSubView& ActorSubview = SpatialGDK::ActorSubviews::CreateActorSubView(*this);
@@ -2332,6 +2335,9 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			{
 				WorkingSetData->Advance(*WorkingSetMarkerSubview);
 				WorkingSetHandler->Advance(Connection->GetCoordinator());
+				GetGameInstance()->GetSubsystem<USpatialActorSetSubsystem>()->Advance(*WorkingSetMarkerSubview);
+
+				WorkingSetChangesHandler->Advance();
 			}
 
 			if (HandoverManager.IsValid())

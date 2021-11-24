@@ -15,7 +15,46 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkingSetsHandler, Log, All);
 namespace SpatialGDK
 {
 class FSubView;
+class ISpatialOSWorker;
 class ViewCoordinator;
+
+class FWorkingSetChangesHandler
+{
+public:
+	DECLARE_DELEGATE_OneParam(FOnWorkingSetEvent, bool);
+
+	FWorkingSetChangesHandler(Worker_PartitionId InWorkerStagingPartitionId, ISpatialOSWorker& InConnection,
+							  FWorkingSetDataStorage& InDataStorage)
+		: Connection(&InConnection)
+		, DataStorage(&InDataStorage)
+		, WorkerStagingPartitionId(InWorkerStagingPartitionId)
+	{
+	}
+	void Advance();
+
+	void ApplyLocalWorkingSetUpdateRequest(Worker_EntityId WorkingSetEntityId, const FWorkingSetMarkerRequest& Request,
+										   FOnWorkingSetEvent Callback);
+	void ApplyLocalWorkingSetCreationRequest(Worker_EntityId WorkingSetEntityId, const FWorkingSetMarkerRequest& Request,
+											 FOnWorkingSetEvent Callback);
+
+private:
+	struct FLocalWorkingSetRequest
+	{
+		FWorkingSetMarkerRequest Request;
+		FOnWorkingSetEvent Callback;
+	};
+	struct FLocalWorkingSetData
+	{
+		TArray<FLocalWorkingSetRequest> SetData;
+		bool bWasSetCreationLocallyRequested = false;
+	};
+	TMap<Worker_EntityId_Key, FLocalWorkingSetData> LocalWorkingSetRequests;
+
+	ISpatialOSWorker* Connection;
+	FWorkingSetDataStorage* DataStorage;
+
+	Worker_PartitionId WorkerStagingPartitionId;
+};
 
 class FWorkingSetCompletenessHandler
 {

@@ -12,6 +12,116 @@ DEFINE_LOG_CATEGORY(LogSpatialWorkingSetsHandler);
 
 namespace SpatialGDK
 {
+void FWorkingSetChangesHandler::Advance()
+{
+	for (const Worker_EntityId_Key UpdatedWorkingSetEntityId : DataStorage->GetUpdatedWorkingSets())
+	{
+		FLocalWorkingSetData& WorkingSetRequest = LocalWorkingSetRequests.FindOrAdd(UpdatedWorkingSetEntityId);
+		if (WorkingSetRequest.bWasSetCreationLocallyRequested)
+		{
+			WorkingSetRequest.bWasSetCreationLocallyRequested = false;
+
+			// Skipping over the first request as it's the initial set create.
+			for (int32 PendingUpdateIndex = 1; PendingUpdateIndex < WorkingSetRequest.SetData.Num(); ++PendingUpdateIndex)
+			{
+				const FLocalWorkingSetRequest& PendingRequest = WorkingSetRequest.SetData[PendingUpdateIndex];
+				Connection->SendComponentUpdate(UpdatedWorkingSetEntityId, PendingRequest.Request.CreateComponentUpdate(), {});
+			}
+		}
+	}
+
+	for (const Worker_EntityId RemovedWorkingSetEntityId : DataStorage->GetRemovedWorkingSets())
+	{
+		FLocalWorkingSetData& WorkingSetRequest = LocalWorkingSetRequests.FindChecked(RemovedWorkingSetEntityId);
+		for (const FLocalWorkingSetRequest& PendingRequest : WorkingSetRequest.SetData)
+		{
+			PendingRequest.Callback.ExecuteIfBound(/*bWasSuccessful =*/false);
+		}
+		LocalWorkingSetRequests.Remove(RemovedWorkingSetEntityId);
+	}
+
+	for (auto& WorkingSetRequests : LocalWorkingSetRequests)
+	{
+		const Worker_EntityId MarkerEntityId = WorkingSetRequests.Key;
+
+		const FWorkingSetCommonData* WorkingSet = DataStorage->GetWorkingSets().Find(MarkerEntityId);
+		if (WorkingSet == nullptr)
+		{
+			// We didn't receive this working set yet.
+			continue;
+		}
+		for (auto PendingLocalChangeIterator = WorkingSetRequests.Value.SetData.CreateIterator(); PendingLocalChangeIterator;
+			 ++PendingLocalChangeIterator)
+		{
+			const FWorkingSetMarkerRequest& PendingRequest = PendingLocalChangeIterator->Request;
+			const FWorkingSetState& Response = WorkingSet->ConfirmedState;
+			if (PendingRequest.RequestedState.Epoch > Response.Epoch)
+			{
+				// The request is yet to be confirmed by the server.
+				continue;
+			}
+			auto IsRequestFulfilled = [&PendingRequest, &Response] {
+				return PendingRequest.RequestedState.MemberEntities.Num() == Response.MemberEntities.Num()
+					   && PendingRequest.RequestedState.MemberEntities.Intersect(Response.MemberEntities).Num()
+							  == PendingRequest.RequestedState.MemberEntities.Num();
+			};
+			const bool bWasRequestFulfilled = Response.Epoch == PendingRequest.RequestedState.Epoch && IsRequestFulfilled();
+
+			// The request is complete.
+			PendingLocalChangeIterator->Callback.ExecuteIfBound(bWasRequestFulfilled);
+			PendingLocalChangeIterator.RemoveCurrent();
+		}
+	}
+}
+
+void FWorkingSetChangesHandler::ApplyLocalWorkingSetUpdateRequest(Worker_EntityId WorkingSetEntityId,
+																  const FWorkingSetMarkerRequest& Request, FOnWorkingSetEvent Callback)
+{
+	FWorkingSetCommonData* WorkingSet = DataStorage->GetWorkingSets().Find(WorkingSetEntityId);
+	if (WorkingSet == nullptr)
+	{
+		UE_LOG(LogSpatialWorkingSetsHandler, Warning, TEXT("Trying to update a non-existent working set. MarkerEntityId: %lld"),
+			   WorkingSetEntityId);
+		return;
+	}
+	auto* PendingLocalRequests = LocalWorkingSetRequests.Find(WorkingSetEntityId);
+	if (!ensureMsgf(PendingLocalRequests != nullptr,
+					TEXT("ChangesHandler's internal state should contain all working sets in view! MarkerEntityId: %lld"),
+					WorkingSetEntityId))
+	{
+		return;
+	}
+	WorkingSet->RequestedState = Request.RequestedState;
+	PendingLocalRequests->SetData.Emplace(FLocalWorkingSetRequest{ Request, Callback });
+	if (!PendingLocalRequests->bWasSetCreationLocallyRequested)
+	{
+		Connection->SendComponentUpdate(WorkingSetEntityId, Request.CreateComponentUpdate());
+	}
+}
+
+void FWorkingSetChangesHandler::ApplyLocalWorkingSetCreationRequest(Worker_EntityId WorkingSetEntityId,
+																	const FWorkingSetMarkerRequest& Request, FOnWorkingSetEvent Callback)
+{
+	const FWorkingSetCommonData* WorkingSet = DataStorage->GetWorkingSets().Find(WorkingSetEntityId);
+
+	if (!ensure(WorkingSet == nullptr))
+	{
+		return;
+	}
+
+	FLocalWorkingSetRequest PendingRequest;
+	PendingRequest.Callback = Callback;
+	PendingRequest.Request = Request;
+
+	FLocalWorkingSetData PendingCreationWorkingSetData;
+	PendingCreationWorkingSetData.SetData = { PendingRequest };
+	PendingCreationWorkingSetData.bWasSetCreationLocallyRequested = true;
+
+	LocalWorkingSetRequests.Add(WorkingSetEntityId, PendingCreationWorkingSetData);
+
+	Connection->SendCreateEntityRequest(CreateWorkingSetComponents(WorkerStagingPartitionId, Request), WorkingSetEntityId);
+}
+
 bool FWorkingSetCompletenessHandler::IsWorkingSetComplete(const FWorkingSetCommonData& WorkingSet) const
 {
 	const TSet<Worker_EntityId_Key>& ConfirmedSetMembers = WorkingSet.ConfirmedState.MemberEntities;

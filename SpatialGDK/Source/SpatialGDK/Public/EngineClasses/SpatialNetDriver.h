@@ -83,6 +83,7 @@ class SpatialRPCService;
 class SpatialRoutingSystem;
 class FWorkingSetDataStorage;
 class FWorkingSetCompletenessHandler;
+class FWorkingSetChangesHandler;
 class FSpatialHandoverManager;
 class SpatialLoadBalanceEnforcer;
 class UnrealServerInterestFactory;
@@ -238,6 +239,7 @@ public:
 	TOptional<SpatialGDK::FOwnershipCompletenessHandler> OwnershipCompletenessHandler;
 	TUniquePtr<SpatialGDK::FWorkingSetDataStorage> WorkingSetData;
 	TUniquePtr<SpatialGDK::FWorkingSetCompletenessHandler> WorkingSetHandler;
+	TUniquePtr<SpatialGDK::FWorkingSetChangesHandler> WorkingSetChangesHandler;
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 	TUniquePtr<FSpatialNetDriverRPC> RPCs;
