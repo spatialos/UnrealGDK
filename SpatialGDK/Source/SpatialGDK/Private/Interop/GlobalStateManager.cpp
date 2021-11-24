@@ -262,7 +262,7 @@ void UGlobalStateManager::BeginDestroy()
 
 void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 {
-	if (Actor == nullptr || Actor->IsPendingKill())
+	if (!IsValid(Actor))
 	{
 		return;
 	}
