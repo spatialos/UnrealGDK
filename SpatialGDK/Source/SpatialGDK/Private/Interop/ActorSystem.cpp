@@ -1882,7 +1882,7 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 
 bool ActorSystem::InvokePreNetReceive(UObject& Object)
 {
-	if (Object.IsPendingKill())
+	if (!IsValid(&Object))
 	{
 		UE_LOG(LogActorSystem, Log, TEXT("InvokePreNetReceive: Did not invoke PreNetReceive for object %s, as object is pending kill."),
 			   *Object.GetName());
@@ -2052,7 +2052,7 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 	AActor* Actor = Cast<AActor>(WeakActor.Get());
 
 	UE_LOG(LogActorSystem, Verbose, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(),
-		   Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
+		   IsValid(Actor) ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
 	// Cleanup pending add components if any exist.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
@@ -2065,7 +2065,7 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 	}
 
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
-	if (Actor == nullptr || Actor->IsPendingKill())
+	if (!IsValid(Actor))
 	{
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
@@ -2572,7 +2572,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 
 	check(NetDriver->GetNetMode() < NM_Client);
 
-	if (Actor == nullptr || Actor->IsPendingKill())
+	if (!IsValid(Actor))
 	{
 		UE_LOG(LogActorSystem, Log, TEXT("Actor is invalid after trying to create entity"));
 		return;

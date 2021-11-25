@@ -79,7 +79,7 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 {
 	FUnrealObjectRef ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
 
-	if (ObjectValue != nullptr && !ObjectValue->IsPendingKill())
+	if (::IsValid(ObjectValue))
 	{
 		FNetworkGUID NetGUID;
 		if (ObjectValue->IsSupportedForNetworking())

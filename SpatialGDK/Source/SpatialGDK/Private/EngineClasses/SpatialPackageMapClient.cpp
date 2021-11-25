@@ -50,7 +50,7 @@ void GetSubobjects(UObject* ParentObject, TArray<UObject*>& InSubobjects)
 		ParentObject,
 		[&InSubobjects](UObject* Object) {
 			// Objects can only be allocated NetGUIDs if this is true.
-			if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+			if (IsValid(Object) && Object->IsSupportedForNetworking() && !Object->IsEditorOnly())
 			{
 				// Walk up the outer chain and ensure that no object is PendingKill. This is required because although
 				// EInternalObjectFlags::PendingKill prevents objects that are PendingKill themselves from getting added
@@ -60,7 +60,7 @@ void GetSubobjects(UObject* ParentObject, TArray<UObject*>& InSubobjects)
 				UObject* Outer = Object->GetOuter();
 				while (Outer != nullptr)
 				{
-					if (Outer->IsPendingKill())
+					if (!IsValid(Outer))
 					{
 						return;
 					}

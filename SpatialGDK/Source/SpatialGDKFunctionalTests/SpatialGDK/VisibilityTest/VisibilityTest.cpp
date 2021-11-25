@@ -182,8 +182,7 @@ void AVisibilityTest::PrepareTest()
 			},
 			[this, bRunningWithReplicationGraph](float DeltaTime) {
 				if (bRunningWithReplicationGraph()
-					&& GetLocalFlowController() != GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)
-					&& !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+					&& GetLocalFlowController() != GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1))
 				{
 					// Replication graph in native has different semantics for bHidden actors, specifically that it does NOT stop
 					// replicating them. This makes this test almost worthless for running with replication graph in native, but we at least
@@ -243,7 +242,7 @@ void AVisibilityTest::PrepareTest()
 		AddStep(
 			TEXT("VisibilityTestClientCheckFinalReplicatedActors"), FWorkerDefinition::AllClients, nullptr, nullptr,
 			[this, bRunningWithReplicationGraph](float DeltaTime) {
-				if (bRunningWithReplicationGraph() && !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+				if (bRunningWithReplicationGraph())
 				{
 					// Replication graph in native has different semantics for bHidden actors, specifically that it does NOT stop
 					// replicating them. This makes this test almost worthless for running with replication graph in native, but we at least

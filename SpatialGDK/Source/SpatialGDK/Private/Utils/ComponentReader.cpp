@@ -105,7 +105,7 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 										 USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut,
 										 bool& bOutReferencesChanged)
 {
-	if (Object.IsPendingKill())
+	if (!IsValid(&Object))
 	{
 		return;
 	}
@@ -140,7 +140,7 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId,
 										   USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut,
 										   bool& bOutReferencesChanged)
 {
-	if (Object.IsPendingKill())
+	if (!IsValid(&Object))
 	{
 		return;
 	}

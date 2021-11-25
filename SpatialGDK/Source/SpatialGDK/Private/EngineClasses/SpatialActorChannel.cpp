@@ -417,10 +417,8 @@ void USpatialActorChannel::UpdateShadowData()
 
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
 {
-	checkf(Object != nullptr, TEXT("Attempted to create initial rep change state on an object which is null."));
-	checkf(!Object->IsPendingKill(),
-		   TEXT("Attempted to create initial rep change state on an object which is pending kill. This will fail to create a RepLayout: "),
-		   *Object->GetName());
+	checkf(Object.IsValid(), TEXT("Attempted to create initial rep change state on an object which was invalid: %s."),
+		   *GetNameSafe(Object.Get()));
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object.Get()).Get();
 
@@ -1073,7 +1071,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelUpdateSpatialPosition);
 
 	// Additional check to validate Actor is still present
-	if (Actor == nullptr || Actor->IsPendingKill())
+	if (!IsValid(Actor))
 	{
 		return;
 	}

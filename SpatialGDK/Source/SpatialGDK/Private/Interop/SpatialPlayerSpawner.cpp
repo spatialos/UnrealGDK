@@ -525,7 +525,7 @@ void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const Worker_EntityId
 	const FUnrealObjectRef PlayerStartRef =
 		GetObjectRefFromSchema(OldRequestPayload, SpatialConstants::FORWARD_SPAWN_PLAYER_START_ACTOR_ID);
 	const TWeakObjectPtr<UObject> PlayerStart = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(PlayerStartRef);
-	if (bShouldTryDifferentPlayerStart || !PlayerStart.IsValid() || PlayerStart->IsPendingKill())
+	if (bShouldTryDifferentPlayerStart || !PlayerStart.IsValid())
 	{
 		UE_LOG(LogSpatialPlayerSpawner, Warning,
 			   TEXT("Target PlayerStart to spawn player was no longer valid after forwarding failed. Finding another PlayerStart."));
