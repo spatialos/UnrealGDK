@@ -95,7 +95,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateMinimalEntityComponents(AActor
 	// if (Class->IsLightweightActor())
 	if (Class->IsChildOf<ACharacter>()) // TODO: Add a way to mark classes as lightweight
 	{
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LIGHTWEIGHT_ENTITY_COMPONENT_ID);
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LIGHTWEIGHT_ENTITY_COMPONENT_ID));
 	}
 
 #if WITH_GAMEPLAY_DEBUGGER

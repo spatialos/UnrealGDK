@@ -134,6 +134,7 @@ FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, S
 
 	AlwaysRelevantStorage = MakeUnique<FAlwaysRelevantStorage>();
 	ServerAlwaysRelevantStorage = MakeUnique<FServerAlwaysRelevantStorage>();
+	LightweightEntityStorage = MakeUnique<FLightweightEntityStorage>();
 }
 
 FLegacyLoadBalancing::~FLegacyLoadBalancing() {}
@@ -327,17 +328,19 @@ void FLegacyLoadBalancing::Init(ISpatialOSWorker& Connection, FLoadBalancingShar
 
 	OutLoadBalancingData.Add(AlwaysRelevantStorage.Get());
 	OutLoadBalancingData.Add(ServerAlwaysRelevantStorage.Get());
+	OutLoadBalancingData.Add(LightweightEntityStorage.Get());
 
 #ifndef BENCH_INTEREST_PERF
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	if (Settings->bUserSpaceServerInterest)
 	{
-		InterestManager =
-			MakeUnique<FInterestManager>(SharedData->InterestF, *PositionStorage, *AlwaysRelevantStorage, *ServerAlwaysRelevantStorage);
+		InterestManager = MakeUnique<FInterestManager>(SharedData->InterestF, *PositionStorage, *AlwaysRelevantStorage,
+													   *ServerAlwaysRelevantStorage, *LightweightEntityStorage);
 	}
 #else
-	InterestManager = MakeUnique<FInterestManager>(SharedData->InterestF, *new DbgPositionStorage(TestBox, 210000),
-												   *new FAlwaysRelevantStorage, *new FServerAlwaysRelevantStorage);
+	InterestManager =
+		MakeUnique<FInterestManager>(SharedData->InterestF, *new DbgPositionStorage(TestBox, 210000), *new FAlwaysRelevantStorage,
+									 *new FServerAlwaysRelevantStorage, *new FLightweightEntityStorage);
 #endif
 }
 

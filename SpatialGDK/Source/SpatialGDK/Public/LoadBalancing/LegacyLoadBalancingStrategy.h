@@ -20,6 +20,7 @@ class FCustomWorkerAssignmentStorage;
 class FActorSetSystem;
 class FAlwaysRelevantStorage;
 class FServerAlwaysRelevantStorage;
+class FLightweightEntityStorage;
 class FInterestManager;
 
 class FLegacyLoadBalancing : public FLoadBalancingStrategy
@@ -92,6 +93,7 @@ protected:
 	// +++ EXPERIMENTAL Interest computations
 	TUniquePtr<FAlwaysRelevantStorage> AlwaysRelevantStorage;
 	TUniquePtr<FServerAlwaysRelevantStorage> ServerAlwaysRelevantStorage;
+	TUniquePtr<FLightweightEntityStorage> LightweightEntityStorage;
 	TUniquePtr<FInterestManager> InterestManager;
 	// --- EXPERIMENTAL Interest computations
 };
