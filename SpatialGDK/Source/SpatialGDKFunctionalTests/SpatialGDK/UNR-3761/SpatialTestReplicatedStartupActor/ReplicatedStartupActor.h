@@ -12,7 +12,7 @@ struct FTestStruct
 	GENERATED_BODY()
 
 	UPROPERTY()
-	int Int;
+	int Int = 0;
 };
 
 /**

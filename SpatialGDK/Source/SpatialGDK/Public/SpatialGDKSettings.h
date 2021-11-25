@@ -61,10 +61,10 @@ struct FDistanceFrequencyPair
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "SpatialGDK")
-	float DistanceRatio;
+	float DistanceRatio = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "SpatialGDK")
-	float Frequency;
+	float Frequency = 0.0f;
 };
 
 UCLASS(Blueprintable)
