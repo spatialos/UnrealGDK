@@ -110,6 +110,7 @@ const Worker_ComponentSetId PARTITION_WORKER_AUTH_COMPONENT_SET_ID = 9911;
 const Worker_ComponentSetId PARTITION_METADATA_AUTH_COMPONENT_SET_ID = 9912;
 const Worker_ComponentSetId SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID = 9913;
 const Worker_ComponentSetId AUTH_SERVER_ONLY_COMPONENT_SET_ID = 9914;
+const Worker_ComponentSetId SERVER_LIGHTWEIGHT_COMPONENT_SET_ID = 9915;
 
 extern const FString SERVER_AUTH_COMPONENT_SET_NAME;
 extern const FString CLIENT_AUTH_COMPONENT_SET_NAME;
@@ -412,6 +413,9 @@ extern const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest
 // query.
 extern const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST;
+
+// A list of something something lightweight interest. // TODO: explain
+extern const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_LIGHTWEIGHT_SERVER_INTEREST;
 
 inline bool IsEntityCompletenessComponent(Worker_ComponentId ComponentId)
 {

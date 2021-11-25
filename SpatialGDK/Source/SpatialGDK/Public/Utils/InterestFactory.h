@@ -55,6 +55,7 @@ public:
 	const SchemaResultType& GetClientAuthInterestResultType() const { return ClientAuthInterestResultType; }
 	const SchemaResultType& GetServerNonAuthInterestResultType() const { return ServerNonAuthInterestResultType; }
 	const SchemaResultType& GetServerAuthInterestResultType() const { return ServerAuthInterestResultType; }
+	const SchemaResultType& GetServerLightweightInterestResultType() const { return ServerLightweightInterestResultType; }
 
 protected:
 	// Shared constraints and result types are created at initialization and reused throughout the lifetime of the factory.
@@ -66,6 +67,7 @@ protected:
 	SchemaResultType CreateClientAuthInterestResultType();
 	SchemaResultType CreateServerNonAuthInterestResultType();
 	SchemaResultType CreateServerAuthInterestResultType();
+	SchemaResultType CreateServerLightweightInterestResultType();
 
 	// Defined Constraint AND Level Constraint
 	void AddClientPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const;
@@ -114,6 +116,7 @@ protected:
 	SchemaResultType ClientAuthInterestResultType;
 	SchemaResultType ServerNonAuthInterestResultType;
 	SchemaResultType ServerAuthInterestResultType;
+	SchemaResultType ServerLightweightInterestResultType;
 };
 
 class SPATIALGDK_API UnrealServerInterestFactory : public InterestFactory

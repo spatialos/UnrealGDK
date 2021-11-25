@@ -50,6 +50,7 @@ void InterestFactory::CreateAndCacheInterestState()
 	ClientAuthInterestResultType = CreateClientAuthInterestResultType();
 	ServerNonAuthInterestResultType = CreateServerNonAuthInterestResultType();
 	ServerAuthInterestResultType = CreateServerAuthInterestResultType();
+	ServerLightweightInterestResultType = CreateServerLightweightInterestResultType();
 }
 
 SchemaResultType InterestFactory::CreateClientNonAuthInterestResultType()
@@ -115,6 +116,16 @@ SchemaResultType InterestFactory::CreateServerAuthInterestResultType()
 	ServerAuthResultType.ComponentIds.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST);
 	ServerAuthResultType.ComponentSetsIds.Push(SpatialConstants::AUTH_SERVER_ONLY_COMPONENT_SET_ID);
 	return ServerAuthResultType;
+}
+
+SchemaResultType InterestFactory::CreateServerLightweightInterestResultType()
+{
+	SchemaResultType ServerLightweightResultType{};
+
+	ServerLightweightResultType.ComponentIds.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_LIGHTWEIGHT_SERVER_INTEREST);
+	ServerLightweightResultType.ComponentSetsIds.Push(SpatialConstants::SERVER_LIGHTWEIGHT_COMPONENT_SET_ID);
+
+	return ServerLightweightResultType;
 }
 
 Worker_ComponentData UnrealServerInterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo,

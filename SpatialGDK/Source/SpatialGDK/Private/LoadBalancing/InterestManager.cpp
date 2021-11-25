@@ -2,6 +2,8 @@
 #include "Schema/ChangeInterest.h"
 #include "Utils/InterestFactory.h"
 
+#include "Algo/Count.h"
+
 // Try to grab improbable's phTree thingy
 
 #include <algorithm>
@@ -622,6 +624,14 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 		{
 			auto& Added = CachedServerInterest[EVB_NewlyAdded][j];
 			auto& Removed = CachedServerInterest[EVB_PrevVisible][j];
+
+			int NumLightweightAdded = Algo::CountIf(Added, [this](auto Entity) {
+				return LightweightEntities.GetObjects().Contains(Entity);
+			});
+			if (NumLightweightAdded > 0)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("!!! Lightweight entities added: %d"), NumLightweightAdded);
+			}
 
 			const int32 NumAdded = Added.Num();
 			const int32 NumRemoved = Removed.Num();

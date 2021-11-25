@@ -94,6 +94,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateMinimalEntityComponents(AActor
 
 	// if (Class->IsLightweightActor())
 	if (Class->IsChildOf<ACharacter>()) // TODO: Add a way to mark classes as lightweight
+										// Alternatively could move this to WriteUnrealComponents after checking for lightweight comps.
 	{
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LIGHTWEIGHT_ENTITY_COMPONENT_ID));
 	}
@@ -375,6 +376,24 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 			ComponentDatas.Append(ActorSubobjectDatas);
 		}
 	}
+
+#if 0
+	// Iterate over lightweight components
+	TArray<ULightweightComponent*> LightweightComponents;
+	Actor->GetComponents<ULightweightComponent>(LightweightComponents);
+	for (auto Component : LightweightComponents)
+	{
+		const FLightweightComponentInfo& ComponentInfo = ClassInfoManager->GetOrCreateLightweightComponentInfoByObject(Component);
+
+		// TODO: What do about rep changes?
+		// Probably want to avoid actually having these components replicated in the usual sense,
+		// but then need to track changes manually?
+		FRepChangeState ComponentRepChanges = Channel->CreateInitialLightweightChangeState(Component);
+
+		FWorkerComponentData ComponentData = DataFactory.CreateLightweightComponentData(Component, ComponentInfo, OutBytesWritten);
+		ComponentDatas.Add(ComponentData);
+	}
+#endif
 
 	if (DataFactory.WasInitialOnlyDataWritten())
 	{
