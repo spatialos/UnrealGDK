@@ -25,6 +25,7 @@
 #include "Interfaces/IProjectManager.h"
 #include "Internationalization/Regex.h"
 #include "LevelEditor.h"
+#include "Misc/EngineVersionComparison.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Runtime/Launch/Resources/Version.h"
@@ -338,7 +339,12 @@ void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandLis
 	{
 		TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
 		ToolbarExtender->AddToolBarExtension(
-			"Play", EExtensionHook::After, InPluginCommands,
+#if UE_VERSION_OLDER_THAN(5, 0, 0)
+			"Game",
+#else
+			"Play",
+#endif
+			EExtensionHook::After, InPluginCommands,
 			FToolBarExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddToolbarExtension));
 
 		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);

@@ -33,7 +33,7 @@ TSharedRef<SDockTab> SpawnSpatialOutputLog(const FSpawnTabArgs& Args)
 	SpatialOutputLog = TWeakPtr<SSpatialOutputLog>(SpatialOutputLogRef);
 
 	return SNew(SDockTab)
-#if UE_VERSION_OLDER_THAN(5, 0, -1)
+#if UE_VERSION_OLDER_THAN(5, 0, 0)
 		.Icon(FEditorStyle::GetBrush("Log.TabIcon"))
 #endif
 		.TabRole(ETabRole::NomadTab)
