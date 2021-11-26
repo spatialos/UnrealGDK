@@ -93,6 +93,7 @@ void UMetricsExport::SpatialConnected()
 
 	if (NetDriver == nullptr)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to retrieve NetDriver for Metrics Export, metrics will not be sent."));
 		return;
 	}
 

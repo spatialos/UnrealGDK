@@ -149,7 +149,7 @@ void FLegacyLoadBalancing::Advance(ISpatialOSWorker& Connection, const TSet<Work
 		}
 		StartupExecutor.Reset();
 	}
-	if (InterestManager)
+	if (InterestManager != nullptr)
 	{
 #ifndef BENCH_INTEREST_PERF
 		InterestManager->Advance(DeletedEntities);

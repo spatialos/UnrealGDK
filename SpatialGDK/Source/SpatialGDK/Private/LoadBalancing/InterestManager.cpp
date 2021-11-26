@@ -96,7 +96,7 @@ void FInterestManager::Advance(const TSet<Worker_EntityId_Key>& DeletedEntities)
 		if (int32* SlotPtr = SlotMap.Find(Entity))
 		{
 			Remove(*SlotPtr);
-			if (Broadphase)
+			if (Broadphase != nullptr)
 			{
 				Broadphase->Remove(*SlotPtr);
 			}
@@ -113,7 +113,7 @@ void FInterestManager::Advance(const TSet<Worker_EntityId_Key>& DeletedEntities)
 		{
 			Slot = *SlotPtr;
 			EntityFlags[Slot] |= AlwaysRelevantFlag;
-			if (Broadphase)
+			if (Broadphase != nullptr)
 			{
 				Broadphase->Update(Slot, Pos);
 			}
@@ -129,7 +129,7 @@ void FInterestManager::Advance(const TSet<Worker_EntityId_Key>& DeletedEntities)
 		{
 			Slot = *SlotPtr;
 			EntityFlags[Slot] |= ServerAlwaysRelevantFlag;
-			if (Broadphase)
+			if (Broadphase != nullptr)
 			{
 				Broadphase->Update(Slot, Pos);
 			}
@@ -144,7 +144,7 @@ void FInterestManager::Advance(const TSet<Worker_EntityId_Key>& DeletedEntities)
 		if (SlotPtr != nullptr)
 		{
 			Slot = *SlotPtr;
-			if (Broadphase)
+			if (Broadphase != nullptr)
 			{
 				Broadphase->Update(Slot, Pos);
 			}
@@ -164,7 +164,7 @@ void FInterestManager::Advance(const TSet<Worker_EntityId_Key>& DeletedEntities)
 			SlotMap.Add(Entity, Slot);
 			Entities[Slot] = Entity;
 			EntityFlags[Slot] = Flags;
-			if (Broadphase)
+			if (Broadphase != nullptr)
 			{
 				Broadphase->Add(Slot, Pos);
 			}
@@ -255,7 +255,7 @@ void FInterestManager::SwapEntries(int32 Slot1, int32 Slot2)
 	Swap(ActiveTimestamp[Slot1], ActiveTimestamp[Slot2]);
 	Swap(Visibility[Slot1], Visibility[Slot2]);
 
-	if (Broadphase)
+	if (Broadphase != nullptr)
 	{
 		Broadphase->SwapEntries(Slot1, Slot2);
 	}
@@ -303,7 +303,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 
 	constexpr bool bUseBroadphaseForRegions = false;
 
-	if (Broadphase && bUseBroadphaseForRegions)
+	if (Broadphase != nullptr && bUseBroadphaseForRegions)
 	{
 		// 60ms, 200k entities, 64 regions, 5% overlap
 		// Worse than the non-spatialized version, which is not surprising, since we are visiting all the entities anyway,

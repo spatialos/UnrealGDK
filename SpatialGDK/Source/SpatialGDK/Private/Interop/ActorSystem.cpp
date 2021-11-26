@@ -2383,7 +2383,7 @@ void ActorSystem::UpdateClientInterest(AActor* Actor, const Worker_EntityId Cont
 	}
 	else
 	{
-		UE_LOG(LogActorSystem, Warning, TEXT("Called UpdateClientInterst on non-PlayerController (%s)"), *Actor->GetName());
+		UE_LOG(LogActorSystem, Error, TEXT("Called UpdateClientInterst on non-PlayerController (%s)"), *Actor->GetName());
 	}
 }
 
