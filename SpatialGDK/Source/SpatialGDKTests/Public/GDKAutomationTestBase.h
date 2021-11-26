@@ -155,7 +155,6 @@ protected:
 			{
 				FWaitForDeployment WaitForStopDeployment(this, EDeploymentState::IsNotRunning);
 				ExecuteLatentCommandSynchronously(WaitForStopDeployment);
-
 			}
 		}
 	}

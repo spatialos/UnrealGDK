@@ -17,10 +17,10 @@ DEFINE_LOG_CATEGORY(LogSpatialStrategySystem);
 
 namespace SpatialGDK
 {
-FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionsMgr, FStrategySystemViews InViews,
-											   TUniquePtr<FLoadBalancingStrategy> InStrategy)
+FSpatialStrategySystem::FSpatialStrategySystem(FStrategySystemViews InViews, TUniquePtr<FLoadBalancingStrategy> InStrategy,
+											   TUniquePtr<InterestFactory> InInterestF)
 	: Views(InViews)
-	, PartitionsMgr(MoveTemp(InPartitionsMgr))
+	, InterestF(MoveTemp(InInterestF))
 	, ManifestPublisher(InViews.FilledManifestSubView)
 	, DataStorages(InViews.LBView)
 	, UserDataStorages(InViews.LBView)
@@ -29,10 +29,13 @@ FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InP
 {
 }
 
-void FSpatialStrategySystem::Init(ISpatialOSWorker& Connection)
+void FSpatialStrategySystem::Init(ViewCoordinator& Coordinator)
 {
-	FLoadBalancingSharedData SharedData(*PartitionsMgr, ActorSetSystem, ManifestPublisher);
-	Strategy->Init(Connection, SharedData, UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
+	PartitionsMgr = MakeUnique<SpatialGDK::FPartitionManager>(Views.ServerWorkerView, Coordinator, *InterestF);
+	PartitionsMgr->Init(Coordinator);
+
+	FLoadBalancingSharedData SharedData(*PartitionsMgr, ActorSetSystem, ManifestPublisher, *InterestF);
+	Strategy->Init(Coordinator, SharedData, UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
 	DataStorages.DataStorages.Add(&AuthACKView);
 	DataStorages.DataStorages.Add(&NetOwningClientView);
 	DataStorages.DataStorages.Add(&SetMemberView);
@@ -86,7 +89,7 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 		}
 	}
 
-	Strategy->Advance(Connection);
+	Strategy->Advance(Connection, DataStorages.EntitiesRemoved);
 	if (!Strategy->IsReady())
 	{
 		return;
@@ -181,7 +184,7 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	// If there were pending migrations, meld them with the migration requests
 	for (auto PendingMigration : PendingMigrations)
 	{
-		if (!Ctx.EntitiesToMigrate.Contains(PendingMigration.Key))
+		if (!Ctx.EntitiesToMigrate.Contains(PendingMigration.Key) && !DataStorages.EntitiesRemoved.Contains(PendingMigration.Key))
 		{
 			Ctx.EntitiesToMigrate.Add(PendingMigration);
 		}

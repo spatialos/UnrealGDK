@@ -7,6 +7,7 @@
 #include "Interop/SkeletonEntityManifestPublisher.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/ActorSetSystem.h"
+#include "LoadBalancing/InterestManager.h"
 #include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/LegacyLoadBalancingCommon.h"
 #include "LoadBalancing/LegacyLoadbalancingComponents.h"
@@ -14,6 +15,8 @@
 #include "Schema/DebugComponent.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLegacyLoadBalancing)
+
+//#define BENCH_INTEREST_PERF
 
 namespace SpatialGDK
 {
@@ -66,6 +69,46 @@ class FCustomWorkerAssignmentStorage : public TLBDataStorage<LegacyLB_CustomWork
 {
 };
 
+// Extend position storage to add debug functionality used when running local benchmarks (BENCH_INTEREST_PERF)
+class DbgPositionStorage : public FSpatialPositionStorage
+{
+public:
+	DbgPositionStorage(FBox2D InRegion, uint32 Num)
+		: Region(InRegion)
+	{
+		const FVector2D Offset = Region.Min;
+		const FVector2D Size = Region.GetSize();
+		for (uint32 i = 0; i < Num; ++i)
+		{
+			Modified.Add(i + 1);
+
+			FVector Pos(Rand.FRandRange(0.0f, Size.X) + Offset.X, Rand.FRandRange(0.0f, Size.Y) + Offset.Y, 0);
+
+			Positions.Add(i + 1, Pos);
+		}
+	}
+
+	void MoveStuff(uint32 NumToMove)
+	{
+		const uint32 NumEntities = Positions.Num();
+		const FVector2D Offset = Region.Min;
+		const FVector2D Size = Region.GetSize();
+
+		for (uint32 i = 0; i < NumToMove; ++i)
+		{
+			uint32 ToMove = (Rand.GetUnsignedInt() % NumEntities) + 1;
+			FVector Pos(Rand.FRandRange(0.0f, Size.X) + Offset.X, Rand.FRandRange(0.0f, Size.Y) + Offset.Y, 0);
+			Positions.Add(ToMove, Pos);
+			Modified.Add(ToMove);
+		}
+	}
+
+	FBox2D Region;
+	FRandomStream Rand;
+};
+
+static const FBox2D TestBox = FBox2D(FVector2D(-100000, -100000), FVector2D(100000, 100000));
+
 FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, SpatialVirtualWorkerTranslator& InTranslator)
 {
 	ExpectedWorkers = LegacyLBStrat.GetMinimumRequiredWorkers();
@@ -88,11 +131,14 @@ FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, S
 
 		LegacyLBStrat.GetLegacyLBInformation(LBContext);
 	}
+
+	AlwaysRelevantStorage = MakeUnique<FAlwaysRelevantStorage>();
+	ServerAlwaysRelevantStorage = MakeUnique<FServerAlwaysRelevantStorage>();
 }
 
 FLegacyLoadBalancing::~FLegacyLoadBalancing() {}
 
-void FLegacyLoadBalancing::Advance(ISpatialOSWorker& Connection)
+void FLegacyLoadBalancing::Advance(ISpatialOSWorker& Connection, const TSet<Worker_EntityId_Key>& DeletedEntities)
 {
 	CommandsHandler.ProcessOps(Connection.GetWorkerMessages());
 	if (StartupExecutor)
@@ -102,6 +148,15 @@ void FLegacyLoadBalancing::Advance(ISpatialOSWorker& Connection)
 			return;
 		}
 		StartupExecutor.Reset();
+	}
+	if (InterestManager != nullptr)
+	{
+#ifndef BENCH_INTEREST_PERF
+		InterestManager->Advance(DeletedEntities);
+#else
+		static_cast<DbgPositionStorage&>(InterestManager->GetPositions()).MoveStuff(2000);
+		InterestManager->Advance(TSet<Worker_EntityId_Key>());
+#endif
 	}
 }
 
@@ -163,6 +218,47 @@ void FLegacyLoadBalancing::Flush(ISpatialOSWorker& Connection)
 			}
 		}
 	}
+
+	if (InterestManager)
+	{
+		TArray<Worker_EntityId> Workers;
+		TArray<FBox2D> Regions;
+
+#ifdef BENCH_INTEREST_PERF
+		const uint32 div = 8;
+		FVector2D Increment = (TestBox.GetSize() / div);
+		FVector2D Min = TestBox.Min;
+		for (uint32 x = 0; x < div; ++x)
+		{
+			for (uint32 y = 0; y < div; ++y)
+			{
+				Regions.Add(FBox2D(Min - Increment * 0.05, Min + Increment * 1.05));
+				Workers.Add(Workers.Num());
+				Min.Y += Increment.Y;
+			}
+			Min.Y = TestBox.Min.Y;
+			Min.X += Increment.X;
+		}
+#else
+		for (const auto& Layer : LBContext.Layers)
+		{
+			for (const auto& Cell : Layer.Cells)
+			{
+				Worker_EntityId SystemEntity =
+					SharedData->PartitionManager.GetSystemWorkerEntityIdForWorker(VirtualWorkerIdToHandle[Cell.WorkerId - 1]);
+
+				Workers.Add(SystemEntity);
+				Regions.Add(Cell.Region);
+				Regions.Last().Min.X -= Cell.Border;
+				Regions.Last().Min.Y -= Cell.Border;
+				Regions.Last().Max.X += Cell.Border;
+				Regions.Last().Max.Y += Cell.Border;
+			}
+		}
+#endif
+
+		InterestManager->ComputeInterest(Connection, Workers, Regions);
+	}
 }
 
 void FLegacyLoadBalancing::Init(ISpatialOSWorker& Connection, FLoadBalancingSharedData InSharedData,
@@ -193,6 +289,7 @@ void FLegacyLoadBalancing::Init(ISpatialOSWorker& Connection, FLoadBalancingShar
 			}
 
 			CommandsHandler.ClaimPartition(Connection, MinServerWorkerId, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+			WorkerWithAuthOverGSM = MinServerWorkerId;
 		},
 		FGenericStartupStep::TryFinishFn()));
 	StartupSteps.Emplace(MakeUnique<FGenericStartupStep>(
@@ -227,6 +324,21 @@ void FLegacyLoadBalancing::Init(ISpatialOSWorker& Connection, FLoadBalancingShar
 		OutServerWorkerData.Add(ServerWorkerCustomAssignment.Get());
 	}
 #endif //! UE_BUILD_SHIPPING
+
+	OutLoadBalancingData.Add(AlwaysRelevantStorage.Get());
+	OutLoadBalancingData.Add(ServerAlwaysRelevantStorage.Get());
+
+#ifndef BENCH_INTEREST_PERF
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	if (Settings->bUserSpaceServerInterest)
+	{
+		InterestManager =
+			MakeUnique<FInterestManager>(SharedData->InterestF, *PositionStorage, *AlwaysRelevantStorage, *ServerAlwaysRelevantStorage);
+	}
+#else
+	InterestManager = MakeUnique<FInterestManager>(SharedData->InterestF, *new DbgPositionStorage(TestBox, 210000),
+												   *new FAlwaysRelevantStorage, *new FServerAlwaysRelevantStorage);
+#endif
 }
 
 void FLegacyLoadBalancing::OnWorkersConnected(TArrayView<FLBWorkerHandle> InConnectedWorkers)
@@ -540,6 +652,11 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 		TSet<Worker_EntityId_Key> NotChecked;
 		ToRefresh = ToRefresh.Union(Ctx.ModifiedEntities);
 		ToRefresh = ToRefresh.Difference(Ctx.DeletedEntities);
+		for (Worker_EntityId DeletedEntity : Ctx.DeletedEntities)
+		{
+			Assignment.Remove(DeletedEntity);
+			UE_LOG(LogSpatialLegacyLoadBalancing, Verbose, TEXT("Entity deleted : %llu"), DeletedEntity);
+		}
 #if !UE_BUILD_SHIPPING
 		if (ServerWorkerCustomAssignment->GetModifiedEntities().Contains(WorkerForCustomAssignment))
 		{
@@ -570,11 +687,42 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 				continue;
 			}
 
-			const ActorGroupMember& Group = GroupStorage->GetObjects().FindChecked(EntityId);
-			FLegacyLBContext::Layer& Layer = LBContext.Layers[Group.ActorGroupId];
+			const ActorGroupMember* Group = GroupStorage->GetObjects().Find(EntityId);
+			const FVector* Position = PositionStorage->GetPositions().Find(EntityId);
+			const bool bHasGroup = Group != nullptr;
+			const bool bHasPosition = Position != nullptr;
+			if (!(bHasGroup && bHasPosition))
+			{
+				// TODO : Most likely cause is that when an entity with a set leader is received, it schedules its leader
+				// for load balancing. If we have not yet received the leader, then this happens. This is an interest race.
+				// Need to revisit the ActorSetSystem eventually anyway, in the meantime this is the fastest fix to apply.
+				UE_LOG(LogSpatialLegacyLoadBalancing, Error,
+					   TEXT("Missing load balancing data for entity %llu. Has position : %s, Has group : %s"), EntityId,
+					   bHasGroup ? TEXT("true") : TEXT("false"), bHasPosition ? TEXT("true") : TEXT("false"));
+				continue;
+			}
 
-			const FVector& Position = PositionStorage->GetPositions().FindChecked(EntityId);
-			const FVector2D Actor2DLocation(Position);
+			if (Group->ActorGroupId == SpatialConstants::LAYER_TO_RUN_ON_WORKER_AUTH_OVER_SNAPSHOT_PARTITION)
+			{
+				bool bFound = false;
+				for (int idx = 0; idx < VirtualWorkerIdToHandle.Num(); ++idx)
+				{
+					Worker_EntityId Id = SharedData->PartitionManager.GetSystemWorkerEntityIdForWorker(VirtualWorkerIdToHandle[idx]);
+					if (Id == WorkerWithAuthOverGSM)
+					{
+						int32& CurAssignment = Assignment.FindOrAdd(EntityId, -1);
+						CurAssignment = idx;
+						Ctx.EntitiesToMigrate.Add(EntityId, Partitions[CurAssignment]);
+						bFound = true;
+						break;
+					}
+				}
+				ensureMsgf(bFound, TEXT("Failed to find partition on worker authoritive over snapshot partition"));
+				continue;
+			}
+
+			FLegacyLBContext::Layer& Layer = LBContext.Layers[Group->ActorGroupId];
+			const FVector2D Actor2DLocation(*Position);
 
 			int32& CurAssignment = Assignment.FindOrAdd(EntityId, -1);
 

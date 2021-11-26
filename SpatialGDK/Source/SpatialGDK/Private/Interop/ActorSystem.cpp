@@ -23,6 +23,8 @@
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialActorUtils.h"
 
+#include "ReplicationGraph.h"
+
 DEFINE_LOG_CATEGORY(LogActorSystem);
 
 DECLARE_CYCLE_STAT(TEXT("Actor System SendComponentUpdates"), STAT_ActorSystemSendComponentUpdates, STATGROUP_SpatialNet);
@@ -393,6 +395,24 @@ void ActorSystem::Advance()
 
 	CommandsHandler.ProcessOps(*ActorSubView->GetViewDelta().WorkerMessages);
 
+	for (const Worker_Op& Op : *ActorSubView->GetViewDelta().WorkerMessages)
+	{
+		if (Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE)
+		{
+			const Worker_CommandResponseOp& CommandResponse = Op.op.command_response;
+			Worker_EntityId_Key EntityId = SpatialConstants::INVALID_ENTITY_ID;
+			if (InFlightInterestRequests.RemoveAndCopyValue(CommandResponse.request_id, EntityId))
+			{
+				if (CommandResponse.status_code == WORKER_STATUS_CODE_TIMEOUT)
+				{
+					UE_LOG(LogActorSystem, Warning, TEXT("Update client interest timed out, sending full interest update: entity id %lld"),
+						   EntityId);
+					MarkClientInterestDirty(EntityId, true);
+				}
+			}
+		}
+	}
+
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	for (const EntityDelta& Delta : ActorSubView->GetViewDelta().EntityDeltas)
 	{
@@ -413,6 +433,11 @@ void ActorSystem::Advance()
 		}
 	}
 #endif
+}
+
+void ActorSystem::Flush()
+{
+	ProcessClientInterestUpdates();
 }
 
 UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)
@@ -535,6 +560,22 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 					if (Channel != nullptr && Channel->IsAutonomousProxyOnAuthority())
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
+
+						// Flush PC interest on handover
+						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries && Actor->IsA<APlayerController>())
+						{
+							const Worker_EntityId ControllerEntityId =
+								NetDriver->PackageMap->GetEntityIdFromObject(Actor->GetNetConnection()->PlayerController);
+							if (ensure(ControllerEntityId == EntityId))
+							{
+								MarkClientInterestDirty(ControllerEntityId, /*bOVerwrite*/ true);
+							}
+							else
+							{
+								UE_LOG(LogActorSystem, Error, TEXT("Failed to get player controller to update client interest (%s)"),
+									   *Actor->GetName());
+							}
+						}
 					}
 
 					if (!bDormantActor)
@@ -789,6 +830,16 @@ void ActorSystem::DestroySubObject(const FUnrealObjectRef& ObjectRef, UObject& O
 	}
 }
 
+void ActorSystem::MarkClientInterestDirty(Worker_EntityId EntityId, bool bFullInterestUpdate)
+{
+	ClientInterestDirty.FindOrAdd(EntityId) |= bFullInterestUpdate;
+}
+
+bool ActorSystem::IsClientInterestDirty(Worker_EntityId EntityId) const
+{
+	return ClientInterestDirty.Contains(EntityId);
+}
+
 void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
 {
 	PopulateDataStore(EntityId);
@@ -933,7 +984,6 @@ void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, c
 	const bool bIsAuthClient = NetDriver->HasClientAuthority(EntityId);
 	const bool bInitialOnlyExpected = !GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition;
 	const bool bIsAuthServer = bIsServer && NetDriver->HasServerAuthority(EntityId);
-
 
 	Worker_ComponentId ComponentFilter[SCHEMA_Count];
 	ComponentFilter[SCHEMA_Data] = true;
@@ -1961,6 +2011,25 @@ void ActorSystem::CleanUpTornOffChannels()
 	EntityChannelsToSetTornOff.Empty();
 }
 
+void ActorSystem::ProcessClientInterestUpdates()
+{
+	for (const auto& Pair : ClientInterestDirty)
+	{
+		const Worker_EntityId ControllerEntityId = Pair.Key;
+		const bool bFullInterestUpdate = Pair.Value;
+
+		if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(ControllerEntityId)))
+		{
+			UpdateClientInterest(Actor, ControllerEntityId, bFullInterestUpdate);
+		}
+		else
+		{
+			UE_LOG(LogActorSystem, Warning, TEXT("Failed to get actor for entity id to update client interest (%lld)"), ControllerEntityId);
+		}
+	}
+	ClientInterestDirty.Empty();
+}
+
 void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ActorSystemRemoveActor);
@@ -2282,6 +2351,40 @@ void ActorSystem::UpdateInterestComponent(AActor* Actor)
 		NetDriver->InterestFactory->CreateInterestUpdate(Actor, NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Actor), EntityId);
 
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+}
+
+void ActorSystem::UpdateClientInterest(AActor* Actor, const Worker_EntityId ControllerEntityId, const bool bOverwrite)
+{
+	if (!ensure(GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries))
+	{
+		return;
+	}
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
+	{
+		SpatialGDK::ChangeInterestRequest Request;
+		const bool bRequestValid = NetDriver->InterestFactory->CreateClientInterestDiff(PlayerController, Request, bOverwrite);
+
+		if (bRequestValid)
+		{
+			Worker_CommandRequest CommandRequest = Request.CreateRequest();
+
+			const Worker_EntityId SystemEntityId = Request.SystemEntityId;
+
+			Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(SystemEntityId, &CommandRequest, NO_RETRIES, {});
+			InFlightInterestRequests.Emplace(RequestId, ControllerEntityId);
+
+			UE_LOG(LogActorSystem, Verbose, TEXT("Interest diff: worker entity id %lld"), SystemEntityId);
+		}
+		else
+		{
+			UE_LOG(LogActorSystem, Verbose, TEXT("Interest diff: refresh request but no diff detected (%s)"), *Actor->GetName());
+		}
+	}
+	else
+	{
+		UE_LOG(LogActorSystem, Error, TEXT("Called UpdateClientInterst on non-PlayerController (%s)"), *Actor->GetName());
+	}
 }
 
 void ActorSystem::SendInterestBucketComponentChange(Worker_EntityId EntityId, Worker_ComponentId OldComponent,

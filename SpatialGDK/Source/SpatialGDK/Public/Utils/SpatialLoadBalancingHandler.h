@@ -8,6 +8,11 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalancingHandler, Log, All);
 
+namespace SpatialGDK
+{
+class FSpatialHandoverManager;
+}
+
 class FSpatialLoadBalancingHandler
 {
 public:
@@ -62,6 +67,9 @@ public:
 	};
 
 	EvaluateActorResult EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner, VirtualWorkerId& OutWorkerId);
+
+	static void UpdateActorsHandedOver(USpatialNetDriver& InNetDriver, const TSet<Worker_EntityId_Key>& EntitiesHandedOver,
+									   const TSet<AActor*>& ActorsHandedOver);
 
 protected:
 	uint64 GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor) const;
