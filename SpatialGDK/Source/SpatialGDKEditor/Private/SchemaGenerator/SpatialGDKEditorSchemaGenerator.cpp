@@ -15,6 +15,7 @@
 #include "HAL/PlatformFilemanager.h"
 #include "Hash/CityHash.h"
 #include "Misc/ConfigCacheIni.h"
+#include "Misc/EngineVersionComparison.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
@@ -987,6 +988,16 @@ bool IsSupportedClass(const UClass* SupportedClass)
 
 		return false;
 	}
+
+#if UE_VERSION_OLDER_THAN(5, 0, 0)
+	if (SupportedClass->HasAnyClassFlags(CLASS_LayoutChanging))
+	{
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Layout changing, not supported"), *GetPathNameSafe(SupportedClass));
+		// clang-format on
+		return false;
+	}
+#endif
 
 	// Ensure we don't process transient generated classes for BP
 	if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)

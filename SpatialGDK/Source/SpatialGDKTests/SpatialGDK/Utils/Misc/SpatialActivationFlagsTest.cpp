@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 
+#include "Misc/EngineVersionComparison.h"
 #include "Runtime/EngineSettings/Classes/GeneralProjectSettings.h"
 #include "Tests/AutomationCommon.h"
 #include "Tests/TestDefinitions.h"
@@ -45,7 +46,11 @@ ReportedFlags RunSubProcessAndExtractFlags(FAutomationTestBase& Test, const FStr
 	FString StdOut;
 	FString StdErr;
 
+#if UE_VERSION_OLDER_THAN(5, 0, 0)
+	FPlatformProcess::ExecProcess(TEXT("UE4Editor"), *CommandLineArgs, &ReturnCode, &StdOut, &StdErr);
+#else
 	FPlatformProcess::ExecProcess(TEXT("UnrealEditor"), *CommandLineArgs, &ReturnCode, &StdOut, &StdErr);
+#endif
 
 	Test.TestTrue("Successful run", ReturnCode == 0);
 

@@ -102,7 +102,11 @@ void UMetricsExport::SpatialConnected()
 
 	if (!TickerHandle.IsValid())
 	{
+#if UE_VERSION_OLDER_THAN(5, 0, 0)
 		TickerHandle = FTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateUObject(this, &UMetricsExport::Tick));
+#else
+		TickerHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateUObject(this, &UMetricsExport::Tick));
+#endif
 	}
 }
 

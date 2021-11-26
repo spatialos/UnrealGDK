@@ -175,7 +175,11 @@ exit /b !ERRORLEVEL!";
                     additionalUATArgs
                 });
 
+#if UE_5_0_OR_NEWER
                 var windowsTargetPath = Path.Combine(stagingDir, noServer ? "WindowsClient" : "Windows");
+#else
+                var windowsTargetPath = Path.Combine(stagingDir, noServer ? "WindowsClient" : "WindowsNoEditor");
+#endif
 
                 ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, windowsTargetPath, baseGameName);
 
@@ -214,7 +218,11 @@ exit /b !ERRORLEVEL!";
                     additionalUATArgs
                 });
 
+#if UE_5_0_OR_NEWER
                 var linuxSimulatedPlayerPath = Path.Combine(stagingDir, noServer ? "LinuxClient" : "Linux");
+#else
+                var linuxSimulatedPlayerPath = Path.Combine(stagingDir, noServer ? "LinuxClient" : "LinuxNoEditor");
+#endif
 
                 ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, linuxSimulatedPlayerPath, baseGameName);
 
