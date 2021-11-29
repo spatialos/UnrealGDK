@@ -266,7 +266,6 @@ void FInterestManager::SwapEntries(int32 Slot1, int32 Slot2)
 
 void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArray<Worker_EntityId> Workers, const TArray<FBox2D>& Regions)
 {
-#if WITH_SERVER_CODE
 	SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputation);
 
 	if (Entities.Num() == 0)
@@ -568,11 +567,15 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			uint64 VisMask = *VisibilityPtr;
 			while (VisMask != 0)
 			{
+#if !PLATFORM_ANDROID
 				// _tzcnt_u64 -> Count trailing zeros, <==> position of the first set bit
 				// equivalent of peeling one set region at a time
 				const uint32 j = _tzcnt_u64(VisMask);
 				CachedServerInterest[EVB_CurrVisible][j].Add(Entities[i]);
 				VisMask &= ~(1ull << j);
+#else
+				ensureMsgf(false, TEXT("Interest manager should only be run on servers"));
+#endif
 			}
 			++VisibilityPtr;
 		}
@@ -656,8 +659,5 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			}
 		}
 	}
-#else
-	ensureMsgf(false, TEXT("Interest manager should only be run on servers"));
-#endif
 }
 } // namespace SpatialGDK
