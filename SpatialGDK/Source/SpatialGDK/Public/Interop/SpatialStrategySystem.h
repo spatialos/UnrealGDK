@@ -82,5 +82,7 @@ private:
 
 	void UpdateStrategySystemInterest(ISpatialOSWorker& Connection);
 	bool bStrategySystemInterestDirty = false;
+
+	void CreateUSIQuery(ISpatialOSWorker& Connection);
 };
 } // namespace SpatialGDK

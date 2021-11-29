@@ -110,6 +110,7 @@ const Worker_ComponentSetId PARTITION_WORKER_AUTH_COMPONENT_SET_ID = 9911;
 const Worker_ComponentSetId PARTITION_METADATA_AUTH_COMPONENT_SET_ID = 9912;
 const Worker_ComponentSetId SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID = 9913;
 const Worker_ComponentSetId AUTH_SERVER_ONLY_COMPONENT_SET_ID = 9914;
+const Worker_ComponentSetId SKELETON_ENTITY_MANIFEST_GSM_AUTH_COMPONENT_SET_ID = 9915;
 
 extern const FString SERVER_AUTH_COMPONENT_SET_NAME;
 extern const FString CLIENT_AUTH_COMPONENT_SET_NAME;
@@ -173,8 +174,9 @@ const Worker_ComponentId SKELETON_ENTITY_POPULATION_AUTH_TAG_COMPONENT_ID = 2014
 const Worker_ComponentId SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID = 2015;
 const Worker_ComponentId WORKER_PARTITION_TAG_COMPONENT_ID = 2016;
 const Worker_ComponentId LOADBALANCER_PARTITION_TAG_COMPONENT_ID = 2017;
+const Worker_ComponentId SKELETON_ENTITY_MANIFEST_GSM_TAG_COMPONENT_ID = 2018;
 // Add component ids above here, this should always be last and be equal to the previous component id
-const Worker_ComponentId LAST_EC_COMPONENT_ID = 2017;
+const Worker_ComponentId LAST_EC_COMPONENT_ID = 2018;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;

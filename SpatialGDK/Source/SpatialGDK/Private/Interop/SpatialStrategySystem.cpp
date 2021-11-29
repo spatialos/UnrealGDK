@@ -4,6 +4,7 @@
 
 #include "LoadBalancing/LoadBalancingStrategy.h"
 #include "Schema/AuthorityIntent.h"
+#include "Schema/ChangeInterest.h"
 #include "Schema/SkeletonEntityManifest.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/SpatialOSWorker.h"
@@ -43,6 +44,8 @@ void FSpatialStrategySystem::Init(ViewCoordinator& Coordinator)
 	UpdatesToConsider = DataStorages.GetComponentsToWatch();
 	UpdatesToConsider = UpdatesToConsider.Union(UserDataStorages.GetComponentsToWatch());
 	bStrategySystemInterestDirty = true;
+
+	UpdateStrategySystemInterest(Coordinator);
 }
 
 FSpatialStrategySystem::~FSpatialStrategySystem() = default;
@@ -322,6 +325,12 @@ void FSpatialStrategySystem::Destroy(ISpatialOSWorker& Connection) {}
 
 void FSpatialStrategySystem::UpdateStrategySystemInterest(ISpatialOSWorker& Connection)
 {
+	if (GetDefault<USpatialGDKSettings>()->bUserSpaceServerInterest)
+	{
+		CreateUSIQuery(Connection);
+		return;
+	}
+
 	if (!PartitionsMgr->IsReady())
 	{
 		return;
@@ -333,7 +342,7 @@ void FSpatialStrategySystem::UpdateStrategySystemInterest(ISpatialOSWorker& Conn
 	{
 		Query ServerQuery = {};
 		ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID };
-		for (auto& Component : UpdatesToConsider)
+		for (const Worker_ComponentId& Component  : UpdatesToConsider)
 		{
 			ServerQuery.ResultComponentIds.Add(Component);
 		}
@@ -345,7 +354,7 @@ void FSpatialStrategySystem::UpdateStrategySystemInterest(ISpatialOSWorker& Conn
 	{
 		Query ServerQuery = {};
 		ServerQuery.ResultComponentIds = { SpatialConstants::SERVER_WORKER_COMPONENT_ID };
-		for (auto& Component : ServerWorkerDataStorages.GetComponentsToWatch())
+		for (const Worker_ComponentId& Component : ServerWorkerDataStorages.GetComponentsToWatch())
 		{
 			ServerQuery.ResultComponentIds.Add(Component);
 		}
@@ -376,6 +385,39 @@ void FSpatialStrategySystem::UpdateStrategySystemInterest(ISpatialOSWorker& Conn
 
 	ComponentUpdate Update(OwningComponentUpdatePtr(ServerInterest.CreateInterestUpdate().schema_type), Interest::ComponentId);
 	Connection.SendComponentUpdate(SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID, MoveTemp(Update), {});
+
+	bStrategySystemInterestDirty = false;
+}
+
+void FSpatialStrategySystem::CreateUSIQuery(ISpatialOSWorker& Connection)
+{
+	ChangeInterestRequest Request;
+	Request.SystemEntityId = Connection.GetWorkerSystemEntityId();
+	Request.bOverwrite = true;
+
+	{
+		ChangeInterestQuery StrategyQuery;
+		StrategyQuery.TrueConstraint = true;
+		StrategyQuery.Components.Add(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID);
+		for (const Worker_ComponentId& Component : UpdatesToConsider)
+		{
+			StrategyQuery.Components.Add(Component);
+		}
+
+		StrategyQuery.Components.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID);
+		for (const Worker_ComponentId& Component : ServerWorkerDataStorages.GetComponentsToWatch())
+		{
+			StrategyQuery.Components.Add(Component);
+		}
+
+		StrategyQuery.Components.Add(SpatialConstants::WORKER_COMPONENT_ID);
+		StrategyQuery.Components.Add(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
+		StrategyQuery.Components.Add(SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID);
+
+		Request.QueriesToAdd.Add(MoveTemp(StrategyQuery));
+	}
+
+	Request.SendRequest(Connection);
 
 	bStrategySystemInterestDirty = false;
 }

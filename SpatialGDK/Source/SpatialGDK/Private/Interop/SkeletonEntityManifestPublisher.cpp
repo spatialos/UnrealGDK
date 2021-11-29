@@ -49,23 +49,24 @@ FManifestCreationHandle FSkeletonManifestPublisher::CreateManifestForPartition(I
 	{
 		AuthorityDelegation Authority;
 		Authority.Delegations.Emplace(SpatialConstants::SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID, Partition);
+		Authority.Delegations.Emplace(SpatialConstants::SKELETON_ENTITY_MANIFEST_GSM_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 
 		SkeletonEntityManifestComponents.Emplace(
 			ComponentData(OwningComponentDataPtr(Authority.CreateComponentData().schema_type), AuthorityDelegation::ComponentId));
 	}
 
 	{
+		// Give GSM worker interest in this entity
+		SkeletonEntityManifestComponents.Emplace(ComponentData(SpatialConstants::SKELETON_ENTITY_MANIFEST_GSM_TAG_COMPONENT_ID));
+
 		Query ManifestQuery;
 		ManifestQuery.Constraint.bSelfConstraint = true;
 		ManifestQuery.ResultComponentIds.Append({ SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID });
 
-		// Give the server that's auth over the manifest interest in it.
-		Interest ManifestAuthWorkerSelfInterest;
-		ManifestAuthWorkerSelfInterest.ComponentInterestMap.Emplace(SpatialConstants::SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID,
-																	ComponentSetInterest{ { ManifestQuery } });
+		Interest ManifestGSMWorkerSelfInterest;
+		ManifestGSMWorkerSelfInterest.ComponentInterestMap.Emplace(SpatialConstants::SKELETON_ENTITY_MANIFEST_GSM_AUTH_COMPONENT_SET_ID, ComponentSetInterest{ { ManifestQuery } });
 
-		SkeletonEntityManifestComponents.Emplace(
-			ComponentData(OwningComponentDataPtr(ManifestAuthWorkerSelfInterest.CreateComponentData().schema_type), Interest::ComponentId));
+		SkeletonEntityManifestComponents.Emplace(ComponentData(OwningComponentDataPtr(ManifestGSMWorkerSelfInterest.CreateComponentData().schema_type), Interest::ComponentId));
 	}
 
 	// Required SpatialOS component.
