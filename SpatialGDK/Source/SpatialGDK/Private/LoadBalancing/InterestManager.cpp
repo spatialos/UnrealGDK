@@ -9,7 +9,10 @@
 #include <algorithm>
 #include <cmath>
 
+// Workaround for compatibility mismatch including immintrin.h using NDK r21d
+#if !PLATFORM_ANDROID
 #include <immintrin.h>
+#endif
 
 DECLARE_CYCLE_STAT(TEXT("InterestManagerCompute"), STAT_InterestManagerComputation, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("InterestManagerComputeBroadphase"), STAT_InterestManagerComputationBroadphase, STATGROUP_SpatialNet);
@@ -568,11 +571,15 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			uint64 VisMask = *VisibilityPtr;
 			while (VisMask != 0)
 			{
+#if !PLATFORM_ANDROID
 				// _tzcnt_u64 -> Count trailing zeros, <==> position of the first set bit
 				// equivalent of peeling one set region at a time
 				const uint32 j = _tzcnt_u64(VisMask);
 				CachedServerInterest[EVB_CurrVisible][j].Add(Entities[i]);
 				VisMask &= ~(1ull << j);
+#else
+				ensureMsgf(false, TEXT("Interest manager should only be run on servers"));
+#endif
 			}
 			++VisibilityPtr;
 		}
