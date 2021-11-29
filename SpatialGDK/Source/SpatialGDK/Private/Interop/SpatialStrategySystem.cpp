@@ -342,7 +342,7 @@ void FSpatialStrategySystem::UpdateStrategySystemInterest(ISpatialOSWorker& Conn
 	{
 		Query ServerQuery = {};
 		ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID };
-		for (const Worker_ComponentId& Component  : UpdatesToConsider)
+		for (const Worker_ComponentId& Component : UpdatesToConsider)
 		{
 			ServerQuery.ResultComponentIds.Add(Component);
 		}

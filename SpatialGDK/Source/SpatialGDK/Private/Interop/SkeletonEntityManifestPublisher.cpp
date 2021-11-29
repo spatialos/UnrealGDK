@@ -49,7 +49,8 @@ FManifestCreationHandle FSkeletonManifestPublisher::CreateManifestForPartition(I
 	{
 		AuthorityDelegation Authority;
 		Authority.Delegations.Emplace(SpatialConstants::SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID, Partition);
-		Authority.Delegations.Emplace(SpatialConstants::SKELETON_ENTITY_MANIFEST_GSM_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+		Authority.Delegations.Emplace(SpatialConstants::SKELETON_ENTITY_MANIFEST_GSM_AUTH_COMPONENT_SET_ID,
+									  SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 
 		SkeletonEntityManifestComponents.Emplace(
 			ComponentData(OwningComponentDataPtr(Authority.CreateComponentData().schema_type), AuthorityDelegation::ComponentId));
@@ -64,9 +65,11 @@ FManifestCreationHandle FSkeletonManifestPublisher::CreateManifestForPartition(I
 		ManifestQuery.ResultComponentIds.Append({ SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID });
 
 		Interest ManifestGSMWorkerSelfInterest;
-		ManifestGSMWorkerSelfInterest.ComponentInterestMap.Emplace(SpatialConstants::SKELETON_ENTITY_MANIFEST_GSM_AUTH_COMPONENT_SET_ID, ComponentSetInterest{ { ManifestQuery } });
+		ManifestGSMWorkerSelfInterest.ComponentInterestMap.Emplace(SpatialConstants::SKELETON_ENTITY_MANIFEST_GSM_AUTH_COMPONENT_SET_ID,
+																   ComponentSetInterest{ { ManifestQuery } });
 
-		SkeletonEntityManifestComponents.Emplace(ComponentData(OwningComponentDataPtr(ManifestGSMWorkerSelfInterest.CreateComponentData().schema_type), Interest::ComponentId));
+		SkeletonEntityManifestComponents.Emplace(
+			ComponentData(OwningComponentDataPtr(ManifestGSMWorkerSelfInterest.CreateComponentData().schema_type), Interest::ComponentId));
 	}
 
 	// Required SpatialOS component.
