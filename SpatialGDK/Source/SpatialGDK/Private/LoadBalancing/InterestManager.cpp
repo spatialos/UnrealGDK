@@ -7,10 +7,8 @@
 #include <algorithm>
 #include <cmath>
 
-// Disabled until we find how to make AVX intrinsics work on linux + android.
-#define ENABLE_AVX 0
-
-#if ENABLE_AVX
+// Workaround for compatibility mismatch including immintrin.h using NDK r21d
+#if !PLATFORM_ANDROID
 #include <immintrin.h>
 #endif
 
@@ -268,6 +266,7 @@ void FInterestManager::SwapEntries(int32 Slot1, int32 Slot2)
 
 void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArray<Worker_EntityId> Workers, const TArray<FBox2D>& Regions)
 {
+#if WITH_SERVER_CODE
 	SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputation);
 
 	if (Entities.Num() == 0)
@@ -450,7 +449,8 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			++VisibilityPtr;
 		}
 	}
-#if ENABLE_AVX
+// Disabled until we find how to make AVX intrinsics work on linux.
+#if 0
 	if (bVectorizeEntities)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputationBoxSSE);
@@ -656,5 +656,8 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			}
 		}
 	}
+#else
+	ensureMsgf(false, TEXT("Interest manager should only be run on servers"));
+#endif
 }
 } // namespace SpatialGDK
