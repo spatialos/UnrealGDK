@@ -437,12 +437,15 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 
 			// UNR-5843 TODO: fix this so we no longer need this special handling, for instance by replicating bRepPhysics as a separate
 			// always replicated field.
-			const FRepChangedParent& Parent =
-				Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
-			const bool bRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
-			if (!Parent.Active && !bRepActorMovement)
+			if (ensure(Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents.IsValidIndex(Cmd.ParentIndex)))
 			{
-				continue;
+				const FRepChangedParent& Parent =
+					Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
+				const bool bRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
+				if (!Parent.Active && !bRepActorMovement)
+				{
+					continue;
+				}
 			}
 		}
 
