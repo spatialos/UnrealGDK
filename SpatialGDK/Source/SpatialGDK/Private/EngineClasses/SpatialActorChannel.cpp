@@ -429,18 +429,24 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 	for (uint16 CmdIdx = 0; CmdIdx < CmdCount; ++CmdIdx)
 	{
 		const FRepLayoutCmd& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
-		const FRepChangedParent& Parent = Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
 
-		// HACK: Need special case here because the gdk relies on the whole of the RepMovement struct being replicated to the client to
-		// decide whether to replicate physics. see: ComponentReader::ApplySchemaObject
-
-		// UNR-5843 TODO: fix this so we no longer need this special handling, for instance by replicating bRepPhysics as a separate always
-		// replicated field.
-		const bool bRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
-
-		if (!Parent.Active && !bRepActorMovement)
+		if (Cmd.Type != ERepLayoutCmdType::Return)
 		{
-			continue;
+			// HACK: Need special case here because the gdk relies on the whole of the RepMovement struct being replicated to the client to
+			// decide whether to replicate physics. see: ComponentReader::ApplySchemaObject
+
+			// UNR-5843 TODO: fix this so we no longer need this special handling, for instance by replicating bRepPhysics as a separate
+			// always replicated field.
+			if (ensure(Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents.IsValidIndex(Cmd.ParentIndex)))
+			{
+				const FRepChangedParent& Parent =
+					Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
+				const bool bRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
+				if (!Parent.Active && !bRepActorMovement)
+				{
+					continue;
+				}
+			}
 		}
 
 		InitialRepChanged.Add(Cmd.RelativeHandle);
