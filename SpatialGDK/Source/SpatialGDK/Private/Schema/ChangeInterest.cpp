@@ -94,6 +94,7 @@ Worker_CommandRequest ChangeInterestRequest::CreateRequest() const
 		Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToAddObject, 1);
 
 		AddEntityListToSchema(QueriesToAddObject, 2, Query.Entities);
+		Schema_AddBool(QueriesToAddObject, 3, Query.TrueConstraint);
 		AddUint32ListToSchema(ResultTypeObject, 1, Query.Components);
 		AddUint32ListToSchema(ResultTypeObject, 2, Query.ComponentSets);
 	}
@@ -105,6 +106,7 @@ Worker_CommandRequest ChangeInterestRequest::CreateRequest() const
 		Schema_Object* ResultTypeObject = Schema_AddObject(QueriesToRemoveObject, 1);
 
 		AddEntityListToSchema(QueriesToRemoveObject, 2, Query.Entities);
+		Schema_AddBool(QueriesToRemoveObject, 3, Query.TrueConstraint);
 		AddUint32ListToSchema(ResultTypeObject, 1, Query.Components);
 		AddUint32ListToSchema(ResultTypeObject, 2, Query.ComponentSets);
 	}

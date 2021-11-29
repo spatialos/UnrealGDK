@@ -15,6 +15,7 @@ struct ChangeInterestQuery
 	TArray<Worker_ComponentId> Components;
 	TArray<Worker_ComponentSetId> ComponentSets;
 	TArray<Worker_EntityId_Key> Entities;
+	bool TrueConstraint = false;
 
 	void DebugOutput(const FString& DiffType) const;
 };
