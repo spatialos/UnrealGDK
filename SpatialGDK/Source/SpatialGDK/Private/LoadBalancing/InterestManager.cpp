@@ -7,7 +7,12 @@
 #include <algorithm>
 #include <cmath>
 
+// Disabled until we find how to make AVX intrinsics work on linux + android.
+#define ENABLE_AVX 0
+
+#if ENABLE_AVX
 #include <immintrin.h>
+#endif
 
 DECLARE_CYCLE_STAT(TEXT("InterestManagerCompute"), STAT_InterestManagerComputation, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("InterestManagerComputeBroadphase"), STAT_InterestManagerComputationBroadphase, STATGROUP_SpatialNet);
@@ -445,8 +450,7 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			++VisibilityPtr;
 		}
 	}
-// Disabled until we find how to make AVX intrinsics work on linux.
-#if 0
+#if ENABLE_AVX
 	if (bVectorizeEntities)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputationBoxSSE);
