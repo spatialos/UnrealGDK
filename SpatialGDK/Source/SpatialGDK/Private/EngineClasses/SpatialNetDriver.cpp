@@ -1382,27 +1382,25 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 		if ((SpatialConnection->bReliableSpatialConnection || OwningActor != NULL) && SpatialConnection->GetConnectionState() == USOCK_Open
 			&& (GetElapsedTime() - SpatialConnection->LastReceiveTime < 1.5f))
 #endif
-		{
-			check(SpatialConnection->bReliableSpatialConnection || World == OwningActor->GetWorld());
+			{
+				check(SpatialConnection->bReliableSpatialConnection || World == OwningActor->GetWorld());
 
-			bFoundReadyConnection = true;
+				bFoundReadyConnection = true;
 
-			// the view target is what the player controller is looking at OR the owning actor itself when using beacons
-			SpatialConnection->ViewTarget =
-				SpatialConnection->PlayerController ? SpatialConnection->PlayerController->GetViewTarget() : OwningActor;
-		}
-		else
-		{
-			SpatialConnection->ViewTarget = NULL;
-		}
+				// the view target is what the player controller is looking at OR the owning actor itself when using beacons
+				SpatialConnection->ViewTarget =
+					SpatialConnection->PlayerController ? SpatialConnection->PlayerController->GetViewTarget() : OwningActor;
+			}
+			else { SpatialConnection->ViewTarget = NULL; }
 
-		if (SpatialConnection->Children.Num() > 0)
-		{
-			UE_LOG(LogSpatialOSNetDriver, Error,
-				   TEXT("Child connections present on Spatial connection %s! We don't support splitscreen yet, so this will not function "
-						"correctly."),
-				   *SpatialConnection->GetName());
-		}
+			if (SpatialConnection->Children.Num() > 0)
+			{
+				UE_LOG(
+					LogSpatialOSNetDriver, Error,
+					TEXT("Child connections present on Spatial connection %s! We don't support splitscreen yet, so this will not function "
+						 "correctly."),
+					*SpatialConnection->GetName());
+			}
 	}
 
 	return bFoundReadyConnection ? NumClientsToTick : 0;
