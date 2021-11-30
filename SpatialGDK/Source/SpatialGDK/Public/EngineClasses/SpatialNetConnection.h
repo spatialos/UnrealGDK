@@ -54,9 +54,10 @@ public:
 	Worker_EntityId ConnectionClientWorkerSystemEntityId;
 
 	double TimeWhenClientInterestLastUpdated;
-  
-	TSet<Worker_EntityId_Key> EntityInterestCache;
-  
+
+	TSet<Worker_EntityId_Key> FullEntityInterestCache;
+	TSet<Worker_EntityId_Key> LightweightEntityInterestCache;
+
 	// Store the IP address that the client used to authenticate with the locator.
 	FString ClientIP;
 };

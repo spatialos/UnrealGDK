@@ -48,6 +48,7 @@ void InterestFactory::CreateAndCacheInterestState()
 	ClientCheckoutRadiusConstraint = NetCullDistanceInterest::CreateCheckoutRadiusConstraints(ClassInfoManager);
 	ClientNonAuthInterestResultType = CreateClientNonAuthInterestResultType();
 	ClientAuthInterestResultType = CreateClientAuthInterestResultType();
+	ClientLightweightInterestResultType = CreateClientLightweightInterestResultType();
 	ServerNonAuthInterestResultType = CreateServerNonAuthInterestResultType();
 	ServerAuthInterestResultType = CreateServerAuthInterestResultType();
 }
@@ -90,6 +91,16 @@ SchemaResultType InterestFactory::CreateClientAuthInterestResultType()
 	}
 
 	return ClientAuthResultType;
+}
+
+SchemaResultType InterestFactory::CreateClientLightweightInterestResultType()
+{
+	SchemaResultType ClientLightweightResultType{};
+
+	ClientLightweightResultType.ComponentIds.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_LIGHTWEIGHT_CLIENT_INTEREST);
+	ClientLightweightResultType.ComponentSetsIds.Push(SpatialConstants::CLIENT_LIGHTWEIGHT_COMPONENT_SET_ID);
+
+	return ClientLightweightResultType;
 }
 
 SchemaResultType InterestFactory::CreateServerNonAuthInterestResultType()
@@ -411,47 +422,17 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(APlayerController* Pl
 
 	{
 		// Add non-auth interest
-		TSet<Worker_EntityId_Key> FullInterested;
-		FullInterested.Reserve(ClientInterestedEntities.Num());
-		for (auto EntityId : ClientInterestedEntities)
-		{
-			FullInterested.Add(EntityId);
-		}
+		TSet<Worker_EntityId_Key> FullInterested(ClientInterestedEntities);
+		TSet<Worker_EntityId_Key> LightweightInterested;
 
-		TSet<Worker_EntityId_Key> Add, Remove;
-		if (bOverwrite)
-		{
-			Add = FullInterested;
-			Remove.Empty();
-		}
-		else
-		{
-			Add = FullInterested.Difference(NetConnection->EntityInterestCache);
-			Remove = NetConnection->EntityInterestCache.Difference(FullInterested);
-		}
-		NetConnection->EntityInterestCache = FullInterested;
+		InterestQueryEntityDiff FullEntityDiff = GetEntityDiff(FullInterested, NetConnection->FullEntityInterestCache, bOverwrite);
+		InterestQueryEntityDiff LightweightEntityDiff =
+			GetEntityDiff(LightweightInterested, NetConnection->LightweightEntityInterestCache, bOverwrite);
 
 		ChangeInterestRequestData.SystemEntityId = NetConnection->ConnectionClientWorkerSystemEntityId;
 
-		if (Add.Num() > 0)
-		{
-			ChangeInterestQuery Query{};
-			Query.Components = ClientNonAuthInterestResultType.ComponentIds;
-			Query.ComponentSets = ClientNonAuthInterestResultType.ComponentSetsIds;
-			Query.Entities = Add.Array();
-
-			ChangeInterestRequestData.QueriesToAdd.Emplace(Query);
-		}
-
-		if (Remove.Num() > 0)
-		{
-			ChangeInterestQuery Query{};
-			Query.Components = ClientNonAuthInterestResultType.ComponentIds;
-			Query.ComponentSets = ClientNonAuthInterestResultType.ComponentSetsIds;
-			Query.Entities = Remove.Array();
-
-			ChangeInterestRequestData.QueriesToRemove.Emplace(Query);
-		}
+		UpdateInterestQuery(ChangeInterestRequestData, FullEntityDiff, ClientNonAuthInterestResultType);
+		UpdateInterestQuery(ChangeInterestRequestData, LightweightEntityDiff, ClientLightweightInterestResultType);
 
 		ChangeInterestRequestData.bOverwrite = bOverwrite;
 	}
@@ -518,6 +499,49 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 		   InterestedEntityIdList.Num(), *InPlayerController->GetName());
 
 	return InterestedEntityIdList;
+}
+
+UnrealServerInterestFactory::InterestQueryEntityDiff UnrealServerInterestFactory::GetEntityDiff(
+	const TSet<Worker_EntityId_Key>& InterestedEntities, TSet<Worker_EntityId_Key>& InterestedEntitiesCache, const bool bOverwrite) const
+{
+	InterestQueryEntityDiff Diff;
+
+	if (bOverwrite)
+	{
+		Diff.Add = InterestedEntities;
+	}
+	else
+	{
+		Diff.Add = InterestedEntities.Difference(InterestedEntitiesCache);
+		Diff.Remove = InterestedEntitiesCache.Difference(InterestedEntities);
+	}
+	InterestedEntitiesCache = InterestedEntities;
+
+	return Diff;
+}
+
+void UnrealServerInterestFactory::UpdateInterestQuery(ChangeInterestRequest& ChangeInterestRequestData,
+													  const InterestQueryEntityDiff& EntityDiff, const SchemaResultType& ResultType) const
+{
+	if (EntityDiff.Add.Num() > 0)
+	{
+		ChangeInterestQuery Query{};
+		Query.Components = ResultType.ComponentIds;
+		Query.ComponentSets = ResultType.ComponentSetsIds;
+		Query.Entities = EntityDiff.Add.Array();
+
+		ChangeInterestRequestData.QueriesToAdd.Emplace(Query);
+	}
+
+	if (EntityDiff.Remove.Num() > 0)
+	{
+		ChangeInterestQuery Query{};
+		Query.Components = ResultType.ComponentIds;
+		Query.ComponentSets = ResultType.ComponentSetsIds;
+		Query.Entities = EntityDiff.Remove.Array();
+
+		ChangeInterestRequestData.QueriesToRemove.Emplace(Query);
+	}
 }
 
 void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const

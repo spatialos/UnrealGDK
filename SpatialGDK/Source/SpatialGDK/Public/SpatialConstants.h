@@ -110,6 +110,7 @@ const Worker_ComponentSetId PARTITION_WORKER_AUTH_COMPONENT_SET_ID = 9911;
 const Worker_ComponentSetId PARTITION_METADATA_AUTH_COMPONENT_SET_ID = 9912;
 const Worker_ComponentSetId SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID = 9913;
 const Worker_ComponentSetId AUTH_SERVER_ONLY_COMPONENT_SET_ID = 9914;
+const Worker_ComponentSetId CLIENT_LIGHTWEIGHT_COMPONENT_SET_ID = 9915;
 
 extern const FString SERVER_AUTH_COMPONENT_SET_NAME;
 extern const FString CLIENT_AUTH_COMPONENT_SET_NAME;
@@ -153,6 +154,8 @@ const Worker_ComponentId ACTOR_OWNERSHIP_COMPONENT_ID = 9959;
 const Worker_ComponentId AUTHORITY_INTENTV2_COMPONENT_ID = 9958;
 const Worker_ComponentId AUTHORITY_INTENT_ACK_COMPONENT_ID = 9957;
 const Worker_ComponentId PARTITION_ACK_COMPONENT_ID = 9956;
+
+const Worker_ComponentId LIGHTWEIGHT_ENTITY_COMPONENT_ID = 9955;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
@@ -402,6 +405,9 @@ extern const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_
 // A list of components clients require on entities they are authoritative over on top of the components already checked out by the interest
 // query.
 extern const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST;
+
+// A list of something something lightweight interest. // TODO: explain
+extern const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_LIGHTWEIGHT_CLIENT_INTEREST;
 
 // A list of components servers require on top of any generated data and handover components in order to handle non-authoritative actors
 // correctly.

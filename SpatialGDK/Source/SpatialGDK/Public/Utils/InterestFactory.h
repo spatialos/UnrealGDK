@@ -53,6 +53,7 @@ public:
 
 	const SchemaResultType& GetClientNonAuthInterestResultType() const { return ClientNonAuthInterestResultType; }
 	const SchemaResultType& GetClientAuthInterestResultType() const { return ClientAuthInterestResultType; }
+	const SchemaResultType& GetClientLightweightInterestResultType() const { return ClientLightweightInterestResultType; }
 	const SchemaResultType& GetServerNonAuthInterestResultType() const { return ServerNonAuthInterestResultType; }
 	const SchemaResultType& GetServerAuthInterestResultType() const { return ServerAuthInterestResultType; }
 
@@ -64,6 +65,7 @@ protected:
 	// TODO: create and pull out into result types class
 	SchemaResultType CreateClientNonAuthInterestResultType();
 	SchemaResultType CreateClientAuthInterestResultType();
+	SchemaResultType CreateClientLightweightInterestResultType();
 	SchemaResultType CreateServerNonAuthInterestResultType();
 	SchemaResultType CreateServerAuthInterestResultType();
 
@@ -112,6 +114,7 @@ protected:
 	// Cache the result types of queries.
 	SchemaResultType ClientNonAuthInterestResultType;
 	SchemaResultType ClientAuthInterestResultType;
+	SchemaResultType ClientLightweightInterestResultType;
 	SchemaResultType ServerNonAuthInterestResultType;
 	SchemaResultType ServerAuthInterestResultType;
 };
@@ -141,6 +144,17 @@ private:
 	void AddObjectToConstraint(FObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
 	TArray<Worker_EntityId> GetClientInterestedEntityIds(const APlayerController* InPlayerController) const;
+
+	struct InterestQueryEntityDiff
+	{
+		TSet<Worker_EntityId_Key> Add;
+		TSet<Worker_EntityId_Key> Remove;
+	};
+
+	InterestQueryEntityDiff GetEntityDiff(const TSet<Worker_EntityId_Key>& InterestedEntities,
+										  TSet<Worker_EntityId_Key>& InterestedEntitiesCache, const bool bOverwrite) const;
+	void UpdateInterestQuery(ChangeInterestRequest& ChangeInterestRequestData, const InterestQueryEntityDiff& EntityDiff,
+							 const SchemaResultType& ResultType) const;
 
 	USpatialPackageMapClient* PackageMap;
 };
