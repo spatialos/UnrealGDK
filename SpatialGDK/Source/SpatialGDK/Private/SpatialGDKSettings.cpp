@@ -225,6 +225,10 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureClientConnection(false)
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
+	, bUseClientEntityInterestQueries(false)
+	, ClientEntityIdInterestUpdateFrameFrequency(10)
+	, bUseNarrowPhaseNCDInterestCulling(true)
+	, bUserSpaceServerInterest(false)
 	, bEnableCrossLayerActorSpawning(true)
 	, StartupLogRate(5.0f)
 	, ActorMigrationLogRate(5.0f)
@@ -235,6 +239,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, EventTracingRotatingLogsMaxFileCount(256)
 	, bEnableAlwaysWriteRPCs(false)
 	, bEnableInitialOnlyReplicationCondition(false)
+	, bEnableMetricsExport(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 	RPCRingBufferSizeOverrides.Add(ERPCType::ServerAlwaysWrite, 1);
@@ -282,6 +287,8 @@ void USpatialGDKSettings::PostInitProperties()
 				UE_LOG(LogSpatialGDKSettings, Log, TEXT("Invalid event tracing sampling class specified: %s."), *OverrideValue);
 			}
 		});
+	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableClientEntityInterest"), TEXT("Client interest using entity ID lists"),
+							 bUseClientEntityInterestQueries);
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 

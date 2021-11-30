@@ -39,12 +39,12 @@ struct FStrategySystemViews
 class FSpatialStrategySystem
 {
 public:
-	FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionMgr, FStrategySystemViews InViews,
-						   TUniquePtr<FLoadBalancingStrategy> Strategy);
+	FSpatialStrategySystem(FStrategySystemViews InViews, TUniquePtr<FLoadBalancingStrategy> Strategy,
+						   TUniquePtr<InterestFactory> InInterestF);
 
 	~FSpatialStrategySystem();
 
-	void Init(ISpatialOSWorker& Connection);
+	void Init(ViewCoordinator& Coordinator);
 
 	void Advance(ISpatialOSWorker& Connection);
 	void Flush(ISpatialOSWorker& Connection);
@@ -54,6 +54,7 @@ private:
 	FStrategySystemViews Views;
 
 	TUniquePtr<FPartitionManager> PartitionsMgr;
+	TUniquePtr<InterestFactory> InterestF;
 
 	// +++ Components watched to implement the strategy +++
 	TLBDataStorage<AuthorityIntentACK> AuthACKView;

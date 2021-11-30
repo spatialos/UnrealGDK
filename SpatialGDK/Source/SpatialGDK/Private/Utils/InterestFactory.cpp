@@ -7,18 +7,26 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Schema/ChangeInterest.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/Interest/NetCullDistanceInterest.h"
 
 #include "Engine/Classes/GameFramework/Actor.h"
 #include "Engine/World.h"
+#include "EngineClasses/SpatialReplicationGraph.h"
+#include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
+#include "ReplicationGraph.h"
 #include "UObject/UObjectIterator.h"
+#include "Utils/MetricsExport.h"
 
 #if WITH_GAMEPLAY_DEBUGGER
 #include "GameplayDebuggerCategoryReplicator.h"
+#include "GameplayDebuggerPlayerManager.h"
 #endif
 
 DEFINE_LOG_CATEGORY(LogInterestFactory);
@@ -126,28 +134,40 @@ Interest InterestFactory::CreateServerWorkerInterest(TArray<Worker_ComponentId> 
 	// Build the Interest component as we go by updating the component-> query list mappings.
 	Interest ServerInterest;
 
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
 	Query ServerQuery{};
 
-	// Workers have interest in all system worker entities.
-	ServerQuery = Query();
-	ServerQuery.ResultComponentIds = { SpatialConstants::WORKER_COMPONENT_ID,
-									   /* System component query tag */ SpatialConstants::SYSTEM_COMPONENT_ID };
-	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
-	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
+	if (!Settings->bUserSpaceServerInterest)
+	{
+		// Workers have interest in all system worker entities.
+		ServerQuery = Query();
+		ServerQuery.ResultComponentIds = { SpatialConstants::WORKER_COMPONENT_ID,
+										   /* System component query tag */ SpatialConstants::SYSTEM_COMPONENT_ID };
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
+		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
 
-	// And an interest in all server worker entities.
-	ServerQuery = Query();
-	ServerQuery.ResultComponentIds = { SpatialConstants::SERVER_WORKER_COMPONENT_ID, SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
-	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
-	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
+		// And an interest in all server worker entities.
+		ServerQuery = Query();
+		ServerQuery.ResultComponentIds = { SpatialConstants::SERVER_WORKER_COMPONENT_ID,
+										   SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
+		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
 
-	// Ensure server worker receives core GDK snapshot entities.
-	ServerQuery = Query();
-	ServerQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
-	ServerQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
-	ServerQuery.Constraint = CreateGDKSnapshotEntitiesConstraint();
-	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
+		// Ensure server worker receives core GDK snapshot entities.
+		ServerQuery = Query();
+		ServerQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
+		ServerQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
+		ServerQuery.Constraint = CreateGDKSnapshotEntitiesConstraint();
+		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
 
+		// Interest in load balancing partitions
+		ServerQuery = Query();
+		ServerQuery.ResultComponentIds = MoveTemp(PartitionsComponents);
+		ServerQuery.ResultComponentIds.Add(SpatialConstants::LOADBALANCER_PARTITION_TAG_COMPONENT_ID);
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::LOADBALANCER_PARTITION_TAG_COMPONENT_ID;
+		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
+	}
 	// SelfInterest for routing worker components.
 	ServerQuery = Query();
 	ServerQuery.ResultComponentIds = { SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID,
@@ -155,13 +175,6 @@ Interest InterestFactory::CreateServerWorkerInterest(TArray<Worker_ComponentId> 
 									   SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID,
 									   SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID };
 	ServerQuery.Constraint.bSelfConstraint = true;
-	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
-
-	// Interest in load balancing partitions
-	ServerQuery = Query();
-	ServerQuery.ResultComponentIds = MoveTemp(PartitionsComponents);
-	ServerQuery.ResultComponentIds.Add(SpatialConstants::LOADBALANCER_PARTITION_TAG_COMPONENT_ID);
-	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::LOADBALANCER_PARTITION_TAG_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
 
 	return ServerInterest;
@@ -181,47 +194,52 @@ Interest InterestFactory::CreatePartitionInterest(const SpatialGDK::QueryConstra
 	const Worker_ComponentId PartitionCompletenessTag = Settings->bRunStrategyWorker ? SpatialConstants::PARTITION_AUTH_TAG_COMPONENT_ID
 																					 : SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID;
 
-	// Add load balancing query
 	Query PartitionQuery{};
-	PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
-	PartitionQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
-	PartitionQuery.Constraint = LoadBalancingConstraint;
-	AddComponentQueryPairToInterestComponent(PartitionInterest, PartitionAuthComponentSet, PartitionQuery);
-
-	// Ensure server worker receives AlwaysRelevant entities.
-	PartitionQuery = Query();
-	PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
-	PartitionQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
-	PartitionQuery.Constraint = CreateServerAlwaysRelevantConstraint();
-	AddComponentQueryPairToInterestComponent(PartitionInterest, PartitionAuthComponentSet, PartitionQuery);
 
 	// Add a self query for completeness
-	PartitionQuery = Query();
 	PartitionQuery.ResultComponentIds = { PartitionCompletenessTag };
 	PartitionQuery.Constraint.bSelfConstraint = true;
 	AddComponentQueryPairToInterestComponent(PartitionInterest, PartitionAuthComponentSet, PartitionQuery);
 
-	// Query to know about all the actors tagged with a debug component
-	if (bDebug)
+	if (!Settings->bUserSpaceServerInterest)
 	{
+		// Add load balancing query
 		PartitionQuery = Query();
-		PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_DEBUG_COMPONENT_ID };
-		PartitionQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_DEBUG_COMPONENT_ID;
+		PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
+		PartitionQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
+		PartitionQuery.Constraint = LoadBalancingConstraint;
 		AddComponentQueryPairToInterestComponent(PartitionInterest, PartitionAuthComponentSet, PartitionQuery);
 
+		// Ensure server worker receives AlwaysRelevant entities.
 		PartitionQuery = Query();
-		PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID };
-		PartitionQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID;
+		PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
+		PartitionQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
+		PartitionQuery.Constraint = CreateServerAlwaysRelevantConstraint();
 		AddComponentQueryPairToInterestComponent(PartitionInterest, PartitionAuthComponentSet, PartitionQuery);
-	}
+
+		// Query to know about all the actors tagged with a debug component
+		if (bDebug)
+		{
+			PartitionQuery = Query();
+			PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_DEBUG_COMPONENT_ID };
+			PartitionQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_DEBUG_COMPONENT_ID;
+			AddComponentQueryPairToInterestComponent(PartitionInterest, PartitionAuthComponentSet, PartitionQuery);
+
+			PartitionQuery = Query();
+			PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID };
+			PartitionQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID;
+			AddComponentQueryPairToInterestComponent(PartitionInterest, PartitionAuthComponentSet, PartitionQuery);
+		}
 
 #if WITH_GAMEPLAY_DEBUGGER
-	// Query to know about all the actors tagged with a gameplay debugger component
-	PartitionQuery = Query();
-	PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID };
-	PartitionQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID;
-	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, PartitionQuery);
+		// Query to know about all the actors tagged with a gameplay debugger component
+		PartitionQuery = Query();
+		PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID };
+		PartitionQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID;
+		AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID,
+												 PartitionQuery);
 #endif
+	}
 
 	return PartitionInterest;
 }
@@ -261,17 +279,12 @@ Interest UnrealServerInterestFactory::CreateInterest(AActor* InActor, const FCla
 
 	if (InActor->IsA(APlayerController::StaticClass()))
 	{
-		// Put the "main" client interest queries on the player controller
-		AddClientPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
+		if (!Settings->bUseClientEntityInterestQueries)
+		{
+			// Put the "main" client interest queries on the player controller
+			AddClientPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
+		}
 	}
-
-#if WITH_GAMEPLAY_DEBUGGER
-	if (AGameplayDebuggerCategoryReplicator* Replicator = Cast<AGameplayDebuggerCategoryReplicator>(InActor))
-	{
-		// Put special server interest on the replicator for the auth server to ensure player controller visibility
-		AddServerGameplayDebuggerCategoryReplicatorActorInterest(ResultInterest, *Replicator);
-	}
-#endif
 
 	// Clients need to see owner only and server RPC components on entities they have authority over
 	AddClientSelfInterest(ResultInterest);
@@ -279,21 +292,29 @@ Interest UnrealServerInterestFactory::CreateInterest(AActor* InActor, const FCla
 	// Every actor needs a self query for the server to the client RPC endpoint
 	AddServerSelfInterest(ResultInterest);
 
-	// Ensure the auth server has interest in an actor's ownership chain
-	AddServerActorOwnerInterest(ResultInterest, InActor, InEntityId);
+	if (!Settings->bUserSpaceServerInterest)
+	{
+#if WITH_GAMEPLAY_DEBUGGER
+		if (AGameplayDebuggerCategoryReplicator* Replicator = Cast<AGameplayDebuggerCategoryReplicator>(InActor))
+		{
+			// Put special server interest on the replicator for the auth server to ensure player controller visibility
+			AddServerGameplayDebuggerCategoryReplicatorActorInterest(ResultInterest, *Replicator);
+		}
+#endif
 
-	// Add interest in AlwaysInterested UProperties
-	AddAlwaysInterestedInterest(ResultInterest, InActor, InInfo);
+		// Ensure the auth server has interest in an actor's ownership chain
+		AddServerActorOwnerInterest(ResultInterest, InActor, InEntityId);
 
+		// Add interest in AlwaysInterested UProperties
+		AddAlwaysInterestedInterest(ResultInterest, InActor, InInfo);
+	}
 	return ResultInterest;
 }
 
 void InterestFactory::AddClientPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
 {
 	const QueryConstraint LevelConstraint = CreateLevelConstraints(InActor);
-
 	AddClientAlwaysRelevantQuery(OutInterest, InActor, InInfo, LevelConstraint);
-
 	AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
 
 	// Either add the NCD interest because there are no user interest queries, or because the user interest specified we should.
@@ -353,6 +374,151 @@ void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(I
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, ReplicatorAuthServerQuery);
 }
 #endif
+
+bool UnrealServerInterestFactory::CreateClientInterestDiff(APlayerController* PlayerController,
+														   ChangeInterestRequest& ChangeInterestRequestData, const bool bOverwrite) const
+{
+	USpatialNetConnection* NetConnection =
+		(PlayerController != nullptr) ? Cast<USpatialNetConnection>(PlayerController->NetConnection) : nullptr;
+	if (!ensure(GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
+		|| !ensureMsgf(PlayerController != nullptr, TEXT("Only PCs can use client entity interest: %s"), *GetNameSafe(PlayerController))
+		|| !ensureMsgf(NetConnection != nullptr, TEXT("Failed to retieve USpatialNetConnection from controller: %s"),
+					   *GetNameSafe(PlayerController)))
+	{
+		return false;
+	}
+
+	AActor* Pawn = PlayerController->GetPawn();
+	if (Pawn != nullptr && Pawn != PlayerController->GetViewTarget())
+	{
+		PlayerController->SetViewTarget(Pawn);
+	}
+	if (NetConnection->ViewTarget == nullptr)
+	{
+		NetConnection->ViewTarget = NetConnection->PlayerController->GetViewTarget();
+	}
+
+	TArray<Worker_EntityId> ClientInterestedEntities = GetClientInterestedEntityIds(PlayerController);
+
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(PlayerController->GetNetDriver());
+
+#if WITH_EDITOR
+	// Make debugging easier
+	ClientInterestedEntities.Sort();
+#endif
+
+	ChangeInterestRequestData.Clear();
+
+	{
+		// Add non-auth interest
+		TSet<Worker_EntityId_Key> FullInterested;
+		FullInterested.Reserve(ClientInterestedEntities.Num());
+		for (auto EntityId : ClientInterestedEntities)
+		{
+			FullInterested.Add(EntityId);
+		}
+
+		TSet<Worker_EntityId_Key> Add, Remove;
+		if (bOverwrite)
+		{
+			Add = FullInterested;
+			Remove.Empty();
+		}
+		else
+		{
+			Add = FullInterested.Difference(NetConnection->EntityInterestCache);
+			Remove = NetConnection->EntityInterestCache.Difference(FullInterested);
+		}
+		NetConnection->EntityInterestCache = FullInterested;
+
+		ChangeInterestRequestData.SystemEntityId = NetConnection->ConnectionClientWorkerSystemEntityId;
+
+		if (Add.Num() > 0)
+		{
+			ChangeInterestQuery Query{};
+			Query.Components = ClientNonAuthInterestResultType.ComponentIds;
+			Query.ComponentSets = ClientNonAuthInterestResultType.ComponentSetsIds;
+			Query.Entities = Add.Array();
+
+			ChangeInterestRequestData.QueriesToAdd.Emplace(Query);
+		}
+
+		if (Remove.Num() > 0)
+		{
+			ChangeInterestQuery Query{};
+			Query.Components = ClientNonAuthInterestResultType.ComponentIds;
+			Query.ComponentSets = ClientNonAuthInterestResultType.ComponentSetsIds;
+			Query.Entities = Remove.Array();
+
+			ChangeInterestRequestData.QueriesToRemove.Emplace(Query);
+		}
+
+		ChangeInterestRequestData.bOverwrite = bOverwrite;
+	}
+
+	if (ChangeInterestRequestData.IsEmpty())
+	{
+		return false;
+	}
+
+	if (UMetricsExport* MetricsExport = PlayerController->GetWorld()->GetGameInstance()->GetSubsystem<UMetricsExport>())
+	{
+		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
+		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("total_interested_entities"), ClientInterestedEntities.Num());
+	}
+
+	return true;
+}
+
+TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityIds(const APlayerController* InPlayerController) const
+{
+	TArray<Worker_EntityId> InterestedEntityIdList{};
+
+	UNetConnection* NetConnection = InPlayerController->NetConnection;
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(NetConnection->Driver);
+	USpatialReplicationGraph* RepGraph = Cast<USpatialReplicationGraph>(NetConnection->Driver->GetReplicationDriver());
+	if (RepGraph == nullptr)
+	{
+		UE_LOG(LogInterestFactory, Error, TEXT("Rep graph was nullptr or not a USpatialReplicationGraph subclass."));
+		return TArray<Worker_EntityId>();
+	}
+
+	TArray<AActor*> ClientInterestedActors = RepGraph->GatherClientInterestedActors(NetConnection);
+
+	UNetReplicationGraphConnection* ConnectionDriver =
+		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
+	if (UMetricsExport* MetricsExport = InPlayerController->GetWorld()->GetGameInstance()->GetSubsystem<UMetricsExport>())
+	{
+		USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(InPlayerController->NetConnection);
+		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), SpatialNetConnection->GetPlayerControllerEntityId());
+		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("interested_spatialized_actors"), ClientInterestedActors.Num());
+	}
+
+	InterestedEntityIdList.Reserve(ClientInterestedActors.Num());
+
+	for (const AActor* Actor : ClientInterestedActors)
+	{
+		const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+
+		// We should be assigning entity IDs to replicated Actors as soon as they are created.
+		// The only exception is startup Actors that are authoritative on another server worker.
+		// In this case, we need to wait for the other server to replicate this Actor, and the Runtime
+		// to send us the entity data.
+		if (EntityId == SpatialConstants::INVALID_ENTITY_ID && !(Actor->bNetStartup && !Actor->HasAuthority()))
+		{
+			UE_LOG(LogInterestFactory, Error, TEXT("Frame %u. Failed getting entity ID for %s when creating client entity interest"),
+				   RepGraph->GetReplicationGraphFrame(), *GetNameSafe(Actor));
+			continue;
+		}
+
+		InterestedEntityIdList.Emplace(EntityId);
+	}
+
+	UE_LOG(LogInterestFactory, Verbose, TEXT("Frame %u. Sending %i interest entities for %s"), RepGraph->GetReplicationGraphFrame(),
+		   InterestedEntityIdList.Num(), *InPlayerController->GetName());
+
+	return InterestedEntityIdList;
+}
 
 void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const
 {
@@ -614,6 +780,11 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 
 bool InterestFactory::ShouldAddNetCullDistanceInterest(const AActor* InActor) const
 {
+	if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
+	{
+		return false;
+	}
+
 	// If the actor has a component to specify interest and that indicates that we shouldn't add
 	// constraints based on NetCullDistanceSquared, abort. There is a check elsewhere to ensure that
 	// there is at most one ActorInterestQueryComponent.

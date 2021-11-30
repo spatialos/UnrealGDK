@@ -52,7 +52,7 @@ public:
 	 * all frequencies is used.
 	 */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Meta = (ClampMin = 0.0), Category = "SpatialGDK")
-	float Frequency;
+	float Frequency = 0.0f;
 };
 
 UCLASS(Abstract, BlueprintInternalUseOnly)

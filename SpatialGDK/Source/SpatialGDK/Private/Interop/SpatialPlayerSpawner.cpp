@@ -308,11 +308,18 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 	const FURL Url = PlayerSpawner::ExtractUrlFromPlayerSpawnParams(SpawnPlayerRequest);
 
 	// Find a PlayerStart Actor on this server.
-	AActor* PlayerStartActor = NetDriver->GetWorld()->GetAuthGameMode()->FindPlayerStart(nullptr, Url.Portal);
+	AGameModeBase* GameMode = NetDriver->GetWorld()->GetAuthGameMode();
+	AActor* PlayerStartActor = GameMode->FindPlayerStart(nullptr, Url.Portal);
+
+	if (USpatialStatics::IsStrategyWorkerEnabled())
+	{
+		ensureAlways(GameMode->HasAuthority());
+		PassSpawnRequestToNetDriver(SpawnPlayerRequest, PlayerStartActor);
+		return;
+	}
 
 	// If the PlayerStart is authoritative locally, spawn the player locally.
-	if (USpatialStatics::IsStrategyWorkerEnabled()
-		|| (PlayerStartActor != nullptr && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*PlayerStartActor)))
+	if (PlayerStartActor != nullptr && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*PlayerStartActor))
 	{
 		UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Handling SpawnPlayerRequest request locally. Client worker ID: %lld."),
 			   ClientWorkerId);
@@ -329,7 +336,7 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 	// forwarded worker knows to search for a PlayerStart.
 	if (PlayerStartActor == nullptr)
 	{
-		VirtualWorkerToForwardTo = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*UGameplayStatics::GetGameMode(GetWorld()));
+		VirtualWorkerToForwardTo = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*GameMode);
 		if (VirtualWorkerToForwardTo == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Error,
@@ -518,7 +525,7 @@ void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const Worker_EntityId
 	const FUnrealObjectRef PlayerStartRef =
 		GetObjectRefFromSchema(OldRequestPayload, SpatialConstants::FORWARD_SPAWN_PLAYER_START_ACTOR_ID);
 	const TWeakObjectPtr<UObject> PlayerStart = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(PlayerStartRef);
-	if (bShouldTryDifferentPlayerStart || !PlayerStart.IsValid() || PlayerStart->IsPendingKill())
+	if (bShouldTryDifferentPlayerStart || !PlayerStart.IsValid())
 	{
 		UE_LOG(LogSpatialPlayerSpawner, Warning,
 			   TEXT("Target PlayerStart to spawn player was no longer valid after forwarding failed. Finding another PlayerStart."));

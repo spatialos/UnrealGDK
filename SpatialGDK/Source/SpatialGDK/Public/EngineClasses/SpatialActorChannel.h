@@ -292,9 +292,11 @@ private:
 
 	void UpdateVisibleComponent(AActor* Actor);
 
-	bool SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition);
+	bool SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition) const;
 
 	void ValidateChannelNotBroken();
+
+	void CheckForClientEntityInterestUpdate();
 
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.

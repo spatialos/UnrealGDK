@@ -17,26 +17,26 @@ struct FSpatialPingAverageData
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)
-	float LastMeasurementsWindowAvg;
+	float LastMeasurementsWindowAvg = 0.0f;
 	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)
-	float LastMeasurementsWindowMin;
+	float LastMeasurementsWindowMin = 0.0f;
 	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)
-	float LastMeasurementsWindowMax;
+	float LastMeasurementsWindowMax = 0.0f;
 	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)
-	float LastMeasurementsWindow50thPercentile;
+	float LastMeasurementsWindow50thPercentile = 0.0f;
 	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)
-	float LastMeasurementsWindow90thPercentile;
+	float LastMeasurementsWindow90thPercentile = 0.0f;
 	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)
-	int WindowSize;
+	int WindowSize = 0;
 
 	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)
-	float TotalAvg;
+	float TotalAvg = 0.0f;
 	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)
-	float TotalMin;
+	float TotalMin = 0.0f;
 	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)
-	float TotalMax;
+	float TotalMax = 0.0f;
 	UPROPERTY(BlueprintReadWrite, Category = SpatialPing)
-	int TotalNum;
+	int TotalNum = 0;
 };
 
 /*

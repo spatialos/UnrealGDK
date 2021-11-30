@@ -4,6 +4,7 @@
 
 #include "LoadBalancing/WorkerRegion.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialConstants.h"
 #include "SpatialDebuggerConfigUI.h"
 
 #include "Containers/Map.h"
@@ -45,16 +46,16 @@ struct FWorkerRegionInfo
 	GENERATED_BODY()
 
 	UPROPERTY()
-	FColor Color;
+	FColor Color = FColor(EForceInit::ForceInit);
 
 	UPROPERTY()
-	FBox2D Extents;
+	FBox2D Extents = FBox2D(EForceInit::ForceInit);
 
 	UPROPERTY()
-	FString WorkerName;
+	FString WorkerName = FString();
 
 	UPROPERTY()
-	uint32 VirtualWorkerID;
+	uint32 VirtualWorkerID = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 };
 
 UENUM()

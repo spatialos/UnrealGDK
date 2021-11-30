@@ -19,6 +19,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineStats.h"
+#include "GameFramework/GameStateBase.h"
 #include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
@@ -34,6 +35,7 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityFactory.h"
 #include "Utils/InterestFactory.h"
+#include "Utils/MetricsExport.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaOption.h"
 #include "Utils/SpatialActorUtils.h"
@@ -249,7 +251,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 
 void USpatialActorChannel::RetireEntityIfAuthoritative()
 {
-	if (NetDriver->Connection == nullptr)
+	if (NetDriver->Connection == nullptr || NetDriver->ActorSystem == nullptr)
 	{
 		return;
 	}
@@ -415,10 +417,8 @@ void USpatialActorChannel::UpdateShadowData()
 
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
 {
-	checkf(Object != nullptr, TEXT("Attempted to create initial rep change state on an object which is null."));
-	checkf(!Object->IsPendingKill(),
-		   TEXT("Attempted to create initial rep change state on an object which is pending kill. This will fail to create a RepLayout: "),
-		   *Object->GetName());
+	checkf(Object.IsValid(), TEXT("Attempted to create initial rep change state on an object which was invalid: %s."),
+		   *GetNameSafe(Object.Get()));
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object.Get()).Get();
 
@@ -429,18 +429,24 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 	for (uint16 CmdIdx = 0; CmdIdx < CmdCount; ++CmdIdx)
 	{
 		const FRepLayoutCmd& Cmd = Replicator.RepLayout->Cmds[CmdIdx];
-		const FRepChangedParent& Parent = Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
 
-		// HACK: Need special case here because the gdk relies on the whole of the RepMovement struct being replicated to the client to
-		// decide whether to replicate physics. see: ComponentReader::ApplySchemaObject
-
-		// UNR-5843 TODO: fix this so we no longer need this special handling, for instance by replicating bRepPhysics as a separate always
-		// replicated field.
-		const bool bRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
-
-		if (!Parent.Active && !bRepActorMovement)
+		if (Cmd.Type != ERepLayoutCmdType::Return)
 		{
-			continue;
+			// HACK: Need special case here because the gdk relies on the whole of the RepMovement struct being replicated to the client to
+			// decide whether to replicate physics. see: ComponentReader::ApplySchemaObject
+
+			// UNR-5843 TODO: fix this so we no longer need this special handling, for instance by replicating bRepPhysics as a separate
+			// always replicated field.
+			if (ensure(Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents.IsValidIndex(Cmd.ParentIndex)))
+			{
+				const FRepChangedParent& Parent =
+					Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
+				const bool bRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
+				if (!Parent.Active && !bRepActorMovement)
+				{
+					continue;
+				}
+			}
 		}
 
 		InitialRepChanged.Add(Cmd.RelativeHandle);
@@ -678,10 +684,18 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	ReplicationBytesWritten = 0;
 
-	if (!bCreatingNewEntity && NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
+	if (!bCreatingNewEntity)
 	{
-		NetDriver->ActorSystem->UpdateInterestComponent(Actor);
-		SetNeedOwnerInterestUpdate(false);
+		if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries && Actor->IsA<APlayerController>())
+		{
+			CheckForClientEntityInterestUpdate();
+		}
+
+		if (NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
+		{
+			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
+			SetNeedOwnerInterestUpdate(false);
+		}
 	}
 
 	// If any properties have changed, send a component update.
@@ -1063,7 +1077,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelUpdateSpatialPosition);
 
 	// Additional check to validate Actor is still present
-	if (Actor == nullptr || Actor->IsPendingKill())
+	if (!IsValid(Actor))
 	{
 		return;
 	}
@@ -1299,7 +1313,66 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 	}
 }
 
-bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition)
+void USpatialActorChannel::CheckForClientEntityInterestUpdate()
+{
+	// Only valid if rep graph enabled, client entity interest is enabled, and we're processing a player controller
+	const double CurrentTime = NetDriver->GetElapsedTime();
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	const UReplicationGraph* RepGraph = Cast<USpatialReplicationGraph>(NetDriver->GetReplicationDriver());
+	USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection());
+
+	if (RepGraph == nullptr || NetConnection == nullptr)
+	{
+		UE_LOG(LogSpatialActorChannel, Error,
+			   TEXT("Failed to handle client entity interest, invalid rep graph (0x%x) or net connection (0x%x)"), RepGraph, NetConnection);
+		return;
+	}
+
+	UNetReplicationGraphConnection* RepGraphConnection =
+		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
+
+	if (RepGraphConnection == nullptr)
+	{
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to handle client entity interest, replication connection driver was nullptr"));
+		return;
+	}
+
+	// If interest is already marked dirty (e.g. because we just gained authority over the PC and want to flush immediate),
+	// then don't bother doing any checks.
+	if (NetDriver->ActorSystem->IsClientInterestDirty(EntityId))
+	{
+		NetConnection->TimeWhenClientInterestLastUpdated = CurrentTime;
+		return;
+	}
+
+	bool bShouldMarkInterestDirty = false;
+
+	// Round robin updating client interest
+	if (RepGraph->GetReplicationGraphFrame() % Settings->ClientEntityIdInterestUpdateFrameFrequency
+		== RepGraphConnection->ConnectionOrderNum % Settings->ClientEntityIdInterestUpdateFrameFrequency)
+	{
+		bShouldMarkInterestDirty = true;
+	}
+
+	if (!bShouldMarkInterestDirty)
+	{
+		return;
+	}
+
+	if (UMetricsExport* MetricsExport = Actor->GetWorld()->GetGameInstance()->GetSubsystem<UMetricsExport>())
+	{
+		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
+		const float TimeSinceLastClientInterestUpdate =
+			static_cast<const float>(CurrentTime - NetConnection->TimeWhenClientInterestLastUpdated);
+		MetricsExport->WriteMetricsToProtocolBuffer(*ClientIdentifier, TEXT("interest_update_frequency"),
+													1.f / TimeSinceLastClientInterestUpdate);
+	}
+	NetConnection->TimeWhenClientInterestLastUpdated = CurrentTime;
+
+	NetDriver->ActorSystem->MarkClientInterestDirty(EntityId, /*bOverwrite*/ false);
+}
+
+bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition) const
 {
 	// Check that the Actor satisfies both lower thresholds OR either of the maximum thresholds
 	OutNewSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);

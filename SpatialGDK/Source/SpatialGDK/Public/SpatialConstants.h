@@ -256,6 +256,7 @@ const Schema_FieldId WORKER_TYPE_ID = 2;
 // WorkerEntity command IDs
 const Schema_FieldId WORKER_DISCONNECT_COMMAND_ID = 1;
 const Schema_FieldId WORKER_CLAIM_PARTITION_COMMAND_ID = 2;
+const Schema_FieldId WORKER_CHANGE_INTEREST_COMMAND_ID = 3;
 
 // SpatialDebugger Field IDs.
 const Schema_FieldId SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID = 1;
@@ -365,6 +366,10 @@ const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 
 const Worker_ComponentId MIN_EXTERNAL_SCHEMA_ID = 1000;
 const Worker_ComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
+
+// TOOD: This is a hack to ensure the starting snapshot entities, and core Unreal objects are on
+// the same worker. This should be removed when we have better control over LBS.
+const int LAYER_TO_RUN_ON_WORKER_AUTH_OVER_SNAPSHOT_PARTITION = 1001;
 
 extern const FString SPATIALOS_METRICS_DYNAMIC_FPS;
 
