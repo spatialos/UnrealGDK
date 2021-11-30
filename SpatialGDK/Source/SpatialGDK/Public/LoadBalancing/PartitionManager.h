@@ -19,8 +19,7 @@ class ViewCoordinator;
 class FPartitionManager
 {
 public:
-	FPartitionManager(const FSubView& InServerWorkerView, Worker_EntityId InStrategyWorkerEntityId, ViewCoordinator& Coordinator,
-					  TUniquePtr<InterestFactory>&& InterestF);
+	FPartitionManager(const FSubView& InServerWorkerView, ViewCoordinator& Coordinator, InterestFactory& InterestF);
 	~FPartitionManager();
 
 	void Init(ISpatialOSWorker& Connection);

@@ -191,7 +191,22 @@ if exist "%SPATIAL_DIR%" (
 )
 
 call :MarkStartOfBlock "Build C# utilities"
-    call :ExecuteAndCheck %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
+    REM Try to find the engine directory, defaulting to UE5 if not able to find it
+    if exist "..\..\Build\Build.version" (
+        REM MajorVersion has quotes around it in the file, but for some reason, findstr just ignores that...
+        findstr /m "MajorVersion: 5" "..\..\Build\Build.version"
+        if ERRORLEVEL 1 (
+            echo "Found the engine directory, and it seems like it is a UE4 installation"
+            call :ExecuteAndCheck %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
+        ) else (
+            echo "Found the engine directory, and it is a UE5 installation"
+            call :ExecuteAndCheck %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /property:DefineConstants=UE_5_0_OR_NEWER /restore
+        )
+    )
+    else (
+        echo "Not able to find the engine directory, assuming the engine is UE5."
+        call :ExecuteAndCheck %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /property:DefineConstants=UE_5_0_OR_NEWER /restore
+    )
 call :MarkEndOfBlock "Build C# utilities"
 
 call :MarkEndOfBlock "%~0"

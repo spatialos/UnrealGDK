@@ -26,6 +26,7 @@
 #include "GameFramework/WorldSettings.h"
 #include "GenericPlatform/GenericPlatformMath.h"
 #include "Kismet/GameplayStatics.h"
+#include "Misc/EngineVersionComparison.h"
 #include "Modules/ModuleManager.h"
 #include "Net/UnrealNetwork.h"
 
@@ -599,7 +600,10 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 
 FColor ASpatialDebugger::GetTextColorForBackgroundColor(const FColor& BackgroundColor) const
 {
+#if UE_VERSION_OLDER_THAN(5, 0, 0)
+#else
 	return BackgroundColor.ReinterpretAsLinear().GetLuminance() > 0.5 ? FColor::Black : FColor::White;
+#endif
 }
 
 // This will break once we have more than 10,000 workers, happily kicking that can down the road.
@@ -682,7 +686,10 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 												NewMousePosition.Y - (CrosshairTexture->GetSurfaceHeight() * 0.5f));
 
 				// Draw the crosshair at the mouse position.
+#if UE_VERSION_OLDER_THAN(5, 0, 0)
+#else
 				FCanvasTileItem TileItem(CrossHairDrawPosition, CrosshairTexture->GetResource(), FLinearColor::White);
+#endif
 				TileItem.BlendMode = SE_BLEND_Translucent;
 				Canvas->DrawItem(TileItem);
 			}

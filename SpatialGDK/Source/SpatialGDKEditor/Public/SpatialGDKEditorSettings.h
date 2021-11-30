@@ -48,6 +48,7 @@ struct FWorkerPermissionsSection
 		, bReserveEntityID(true)
 		, bAllowEntityQuery(true)
 		, bDisableEntityQueryRestrictedComponents(false)
+		, bAllowSystemEntityCommand(true)
 	{
 	}
 
@@ -75,6 +76,10 @@ struct FWorkerPermissionsSection
 	 * information. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Disable entity queries on restricted components"))
 	bool bDisableEntityQueryRestrictedComponents;
+
+	/** Enables a worker instance to execute system entity commands. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow system entity commands"))
+	bool bAllowSystemEntityCommand;
 };
 
 USTRUCT()
@@ -340,6 +345,10 @@ public:
 	/** Show worker boundaries in the editor. */
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Enable spatial debugger in editor"))
 	bool bSpatialDebuggerEditorEnabled;
+
+	/** Records SpatialOS session logs locally. */
+	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Record SpatialOS session logs"))
+	bool bEnableSessionLogRecording;
 
 	/** Allows the local SpatialOS deployment to be automatically stopped. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-stop local deployment"))

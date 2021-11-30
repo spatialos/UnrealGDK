@@ -25,6 +25,7 @@
 #include "Interfaces/IProjectManager.h"
 #include "Internationalization/Regex.h"
 #include "LevelEditor.h"
+#include "Misc/EngineVersionComparison.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Runtime/Launch/Resources/Version.h"
@@ -338,7 +339,12 @@ void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandLis
 	{
 		TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
 		ToolbarExtender->AddToolBarExtension(
-			"Play", EExtensionHook::After, InPluginCommands,
+#if UE_VERSION_OLDER_THAN(5, 0, 0)
+			"Game",
+#else
+			"Play",
+#endif
+			EExtensionHook::After, InPluginCommands,
 			FToolBarExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddToolbarExtension));
 
 		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
@@ -933,9 +939,10 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 	const FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, SnapshotName);
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 	const uint16 RuntimeGRPCPort = SpatialGDKEditorSettings->GetDefaultReceptionistPort();
+	const bool bEnableSessionLogRecording = SpatialGDKEditorSettings->bEnableSessionLogRecording;
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotPath, RuntimeVersion,
-															 RuntimeGRPCPort] {
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotPath, RuntimeVersion, RuntimeGRPCPort,
+															 bEnableSessionLogRecording] {
 		if (!FetchRuntimeBinaryWrapper(RuntimeVersion))
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but could not fetch the local runtime."));
@@ -972,7 +979,8 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 		};
 
 		LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotPath,
-														GetOptionalExposedRuntimeIP(), RuntimeGRPCPort, CallBack);
+														GetOptionalExposedRuntimeIP(), RuntimeGRPCPort, bEnableSessionLogRecording,
+														CallBack);
 	});
 }
 
@@ -1016,65 +1024,67 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> OnR
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
 	const uint16 RuntimeGRPCPort = SpatialGDKEditorSettings->GetDefaultReceptionistPort();
-	// If the Runtime port has changed, the previous Inspector process should be killed 
+	// If the Runtime port has changed, the previous Inspector process should be killed
 	const bool bShouldKillInspectorProcess = RuntimeGRPCPort != CachedRuntimeGRPCPort && CachedRuntimeGRPCPort != 0;
 	CachedRuntimeGRPCPort = RuntimeGRPCPort;
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion, OnReady, RuntimeGRPCPort, bShouldKillInspectorProcess] {
-		if (!bShouldKillInspectorProcess)
-		{
-			if (InspectorProcess && InspectorProcess->Update())
+	AsyncTask(
+		ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion, OnReady, RuntimeGRPCPort, bShouldKillInspectorProcess] {
+			if (!bShouldKillInspectorProcess)
 			{
-				// We already have an inspector process running. Call ready callback if any.
-				if (OnReady)
+				if (InspectorProcess && InspectorProcess->Update())
 				{
-					OnReady();
+					// We already have an inspector process running. Call ready callback if any.
+					if (OnReady)
+					{
+						OnReady();
+					}
+					return;
 				}
+			}
+
+			// Check for any old inspector processes that may be leftover from previous runs. Kill any we find.
+			SpatialCommandUtils::TryKillProcessWithName(SpatialGDKServicesConstants::InspectorExe);
+
+			// Grab the inspector binary
+			if (!SpatialCommandUtils::FetchInspectorBinary(InspectorVersion, GetDefault<USpatialGDKSettings>()->IsRunningInChina()))
+			{
+				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to fetch the local inspector binary but failed!"));
+				OnShowFailedNotification(TEXT("Failed to fetch local inspector!"));
 				return;
 			}
-		}
 
-		// Check for any old inspector processes that may be leftover from previous runs. Kill any we find.
-		SpatialCommandUtils::TryKillProcessWithName(SpatialGDKServicesConstants::InspectorExe);
+			FString InspectorArgs =
+				FString::Printf(TEXT("--grpc_addr=localhost:%hu --http_addr=%s --schema_bundle=\"%s\""), RuntimeGRPCPort,
+								*SpatialGDKServicesConstants::InspectorHTTPAddress, *SpatialGDKServicesConstants::SchemaBundlePath);
 
-		// Grab the inspector binary
-		if (!SpatialCommandUtils::FetchInspectorBinary(InspectorVersion, GetDefault<USpatialGDKSettings>()->IsRunningInChina()))
-		{
-			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to fetch the local inspector binary but failed!"));
-			OnShowFailedNotification(TEXT("Failed to fetch local inspector!"));
-			return;
-		}
+			InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,
+								 SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
+								 /*InCreatePipes*/ true };
 
-		FString InspectorArgs =
-			FString::Printf(TEXT("--grpc_addr=localhost:%hu --http_addr=%s --schema_bundle=\"%s\""), RuntimeGRPCPort, *SpatialGDKServicesConstants::InspectorHTTPAddress, *SpatialGDKServicesConstants::SchemaBundlePath);
+			FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+			TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
 
-		InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,
-							 SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
-							 /*InCreatePipes*/ true };
+			InspectorProcess->OnOutput().BindLambda([this](const FString& Output) {
+				UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Inspector: %s"), *Output)
+			});
 
-		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-		TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
+			InspectorProcess->OnCanceled().BindLambda([this] {
+				if (InspectorProcess.IsSet() && InspectorProcess->GetReturnCode() != SpatialGDKServicesConstants::ExitCodeSuccess)
+				{
+					UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Inspector crashed! Please check logs for more details. Exit code: %s"),
+						   *FString::FromInt(InspectorProcess->GetReturnCode()));
+					OnShowFailedNotification(TEXT("Inspector crashed!"));
+				}
+			});
 
-		InspectorProcess->OnOutput().BindLambda([this](const FString& Output) {
-			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Inspector: %s"), *Output)
-		});
+			InspectorProcess->Launch();
 
-		InspectorProcess->OnCanceled().BindLambda([this] {
-			if (InspectorProcess.IsSet() && InspectorProcess->GetReturnCode() != SpatialGDKServicesConstants::ExitCodeSuccess)
+			if (OnReady)
 			{
-				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Inspector crashed! Please check logs for more details. Exit code: %s"),
-					   *FString::FromInt(InspectorProcess->GetReturnCode()));
-				OnShowFailedNotification(TEXT("Inspector crashed!"));
+				OnReady();
 			}
 		});
-
-		InspectorProcess->Launch();
-
-		if (OnReady)
-		{
-			OnReady();
-		}
-	});
 }
 
 void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()

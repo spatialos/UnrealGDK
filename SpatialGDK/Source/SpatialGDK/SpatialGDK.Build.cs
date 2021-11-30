@@ -6,7 +6,11 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Diagnostics;
+#if UE_5_0_OR_LATER
 using EpicGames.Core;
+#else
+using Tools.DotNETCommon;
+#endif
 using UnrealBuildTool;
 
 public class SpatialGDK : ModuleRules
@@ -31,6 +35,7 @@ public class SpatialGDK : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "EngineSettings",
+                "Http",
                 "InputCore",
                 "OnlineSubsystemUtils",
                 "Projects",
@@ -40,13 +45,11 @@ public class SpatialGDK : ModuleRules
                 "UMG"
             });
 
-#if true // TODO: UE5 macro
         PrivateDependencyModuleNames.AddRange(
             new string[]
             {
                 "NetCore",
             });
-#endif
 
         if (Target.bBuildDeveloperTools || (Target.Configuration != UnrealTargetConfiguration.Shipping &&
                                             Target.Configuration != UnrealTargetConfiguration.Test))
@@ -77,7 +80,11 @@ public class SpatialGDK : ModuleRules
         string SharedLibSuffix = ".so";
         bool bAddDelayLoad = false;
 
+#if UE_5_0_OR_LATER
         if (Target.Platform == UnrealTargetPlatform.Win64)
+#else
+        if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
+#endif
         {
             LibPrefix = "improbable_";
             ImportLibSuffix = ".lib";
@@ -94,14 +101,16 @@ public class SpatialGDK : ModuleRules
             SharedLibSuffix = ".prx";
             bAddDelayLoad = true;
         }
-        //else if (Target.Platform == UnrealTargetPlatform.XboxOne)
-        //{
-        //    LibPrefix = "improbable_";
-        //    ImportLibSuffix = ".lib";
-        //    SharedLibSuffix = ".dll";
-        //    // We don't set bAddDelayLoad = true here, because we get "unresolved external symbol __delayLoadHelper2".
-        //    // See: https://www.fmod.org/questions/question/deploy-issue-on-xboxone-with-unrealengine-4-14/
-        //}
+#if !UE_5_0_OR_LATER
+        else if (Target.Platform == UnrealTargetPlatform.XboxOne)
+        {
+            LibPrefix = "improbable_";
+            ImportLibSuffix = ".lib";
+            SharedLibSuffix = ".dll";
+            // We don't set bAddDelayLoad = true here, because we get "unresolved external symbol __delayLoadHelper2".
+            // See: https://www.fmod.org/questions/question/deploy-issue-on-xboxone-with-unrealengine-4-14/
+        }
+#endif
         else if (Target.Platform == UnrealTargetPlatform.IOS)
         {
             ImportLibSuffix = SharedLibSuffix = "_static.a";
@@ -110,6 +119,15 @@ public class SpatialGDK : ModuleRules
         {
             throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
         }
+
+#if UE_5_0_OR_LATER
+        if (Target.Platform.IsInGroup(UnrealPlatformGroup.XboxCommon))
+        {
+            bAddDelayLoad = false;
+            // We don't want bAddDelayLoad here, because we get "unresolved external symbol __delayLoadHelper2".
+            // See: https://www.fmod.org/questions/question/deploy-issue-on-xboxone-with-unrealengine-4-14/
+        }
+#endif
 
         string WorkerImportLib = System.String.Format("{0}worker{1}", LibPrefix, ImportLibSuffix);
         string WorkerSharedLib = System.String.Format("{0}worker{1}", LibPrefix, SharedLibSuffix);

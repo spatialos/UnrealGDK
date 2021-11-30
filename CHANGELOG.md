@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add a function flag (SPATIALFUNC_NeverQueueForUnresolvedParameters) to allow RPCs to never queue even with unresolved parameters.
 - Client IP addresses are now accessable using the SpatialStatics function: GetPlayerClientIP.
 - Spatial connection timeout can not be specified using the config parameter: ConnectionTimeoutMillis.
+- Experimental implementation of USI is now available, with integration within the Disco387 map (fuller map support not guaranteed). To run, enable the TestGymsReplicationGraph, and bRunStrategyWorker.
 
 ### Bug fixes:
 - Fix `A functional test is already running error` that would sometimes occur when re-running multi-server functional tests.

@@ -7,6 +7,7 @@
 #include "Editor.h"
 #include "Internationalization/Regex.h"
 #include "Misc/CoreDelegates.h"
+#include "Misc/EngineVersionComparison.h"
 #include "Misc/FileHelper.h"
 #include "Modules/ModuleManager.h"
 #include "SlateOptMacros.h"
@@ -23,7 +24,10 @@ const FString DefaultLogCategory = TEXT("Runtime");
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SSpatialOutputLog::Construct(const FArguments& InArgs)
 {
+#if UE_VERSION_OLDER_THAN(5, 0, 0)
+#else
 	SOutputLog::Construct(SOutputLog::FArguments(), true);
+#endif
 
 	// Remove ourselves as the constructor of our parent (SOutputLog) added 'this' as a remote output device.
 	GLog->RemoveOutputDevice(this);

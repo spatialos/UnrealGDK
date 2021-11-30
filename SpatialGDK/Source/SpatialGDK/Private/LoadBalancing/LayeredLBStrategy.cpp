@@ -447,6 +447,12 @@ TArray<SpatialGDK::ComponentData> ULayeredLBStrategy::CreateStaticLoadBalancingD
 
 		uint32 LayerIndex = LayerData.FindChecked(LayerName).LayerIndex;
 
+		// Force all unique actor class actors to run on worker auth over snapshot entities
+		if (FUnrealObjectRef::IsUniqueActorClass(Actor.GetClass()))
+		{
+			LayerIndex = SpatialConstants::LAYER_TO_RUN_ON_WORKER_AUTH_OVER_SNAPSHOT_PARTITION;
+		}
+
 		SpatialGDK::ActorGroupMember MembershipComponent(LayerIndex);
 		ComponentData.Add(MembershipComponent.CreateComponentData());
 	}
