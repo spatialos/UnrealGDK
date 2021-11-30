@@ -342,7 +342,7 @@ void FSpatialStrategySystem::UpdateStrategySystemInterest(ISpatialOSWorker& Conn
 	{
 		Query ServerQuery = {};
 		ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID };
-		for (const Worker_ComponentId& Component : UpdatesToConsider)
+		for (const Worker_ComponentId Component : UpdatesToConsider)
 		{
 			ServerQuery.ResultComponentIds.Add(Component);
 		}
@@ -354,7 +354,7 @@ void FSpatialStrategySystem::UpdateStrategySystemInterest(ISpatialOSWorker& Conn
 	{
 		Query ServerQuery = {};
 		ServerQuery.ResultComponentIds = { SpatialConstants::SERVER_WORKER_COMPONENT_ID };
-		for (const Worker_ComponentId& Component : ServerWorkerDataStorages.GetComponentsToWatch())
+		for (const Worker_ComponentId Component : ServerWorkerDataStorages.GetComponentsToWatch())
 		{
 			ServerQuery.ResultComponentIds.Add(Component);
 		}
@@ -399,13 +399,13 @@ void FSpatialStrategySystem::CreateUSIQuery(ISpatialOSWorker& Connection)
 		ChangeInterestQuery StrategyQuery;
 		StrategyQuery.TrueConstraint = true;
 		StrategyQuery.ResultComponentIds.Add(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID);
-		for (const Worker_ComponentId& Component : UpdatesToConsider)
+		for (const Worker_ComponentId Component : UpdatesToConsider)
 		{
 			StrategyQuery.ResultComponentIds.Add(Component);
 		}
 
 		StrategyQuery.ResultComponentIds.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID);
-		for (const Worker_ComponentId& Component : ServerWorkerDataStorages.GetComponentsToWatch())
+		for (const Worker_ComponentId Component : ServerWorkerDataStorages.GetComponentsToWatch())
 		{
 			StrategyQuery.ResultComponentIds.Add(Component);
 		}
