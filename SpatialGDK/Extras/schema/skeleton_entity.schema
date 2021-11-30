@@ -8,6 +8,10 @@ component SkeletonEntityManifest {
     bool acked_manifest = 3;
 }
 
+component SkeletonEntityManifestGSMTag {
+	id = 2018;
+}
+
 component_set SkeletonEntityAuthComponentSet {
   id = 9913;
   components = [
@@ -15,3 +19,9 @@ component_set SkeletonEntityAuthComponentSet {
   ];
 }
 
+component_set SkeletonEntityGSMAuthComponentSet {
+  id = 9915;
+  components = [
+	unreal.SkeletonEntityManifestGSMTag,
+  ];
+}
