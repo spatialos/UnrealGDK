@@ -12,8 +12,8 @@ class ISpatialOSWorker;
 
 struct ChangeInterestQuery
 {
-	TArray<Worker_ComponentId> Components;
-	TArray<Worker_ComponentSetId> ComponentSets;
+	TArray<Worker_ComponentId> ResultComponentIds;
+	TArray<Worker_ComponentSetId> ResultComponentSetIds;
 	TArray<Worker_EntityId_Key> Entities;
 	bool TrueConstraint = false;
 

@@ -436,8 +436,8 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(APlayerController* Pl
 		if (Add.Num() > 0)
 		{
 			ChangeInterestQuery Query{};
-			Query.Components = ClientNonAuthInterestResultType.ComponentIds;
-			Query.ComponentSets = ClientNonAuthInterestResultType.ComponentSetsIds;
+			Query.ResultComponentIds = ClientNonAuthInterestResultType.ComponentIds;
+			Query.ResultComponentSetIds = ClientNonAuthInterestResultType.ComponentSetsIds;
 			Query.Entities = Add.Array();
 
 			ChangeInterestRequestData.QueriesToAdd.Emplace(Query);
@@ -446,8 +446,8 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(APlayerController* Pl
 		if (Remove.Num() > 0)
 		{
 			ChangeInterestQuery Query{};
-			Query.Components = ClientNonAuthInterestResultType.ComponentIds;
-			Query.ComponentSets = ClientNonAuthInterestResultType.ComponentSetsIds;
+			Query.ResultComponentIds = ClientNonAuthInterestResultType.ComponentIds;
+			Query.ResultComponentSetIds = ClientNonAuthInterestResultType.ComponentSetsIds;
 			Query.Entities = Remove.Array();
 
 			ChangeInterestRequestData.QueriesToRemove.Emplace(Query);

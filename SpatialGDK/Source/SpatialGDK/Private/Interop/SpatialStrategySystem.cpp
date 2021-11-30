@@ -398,21 +398,21 @@ void FSpatialStrategySystem::CreateUSIQuery(ISpatialOSWorker& Connection)
 	{
 		ChangeInterestQuery StrategyQuery;
 		StrategyQuery.TrueConstraint = true;
-		StrategyQuery.Components.Add(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID);
+		StrategyQuery.ResultComponentIds.Add(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID);
 		for (const Worker_ComponentId& Component : UpdatesToConsider)
 		{
-			StrategyQuery.Components.Add(Component);
+			StrategyQuery.ResultComponentIds.Add(Component);
 		}
 
-		StrategyQuery.Components.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID);
+		StrategyQuery.ResultComponentIds.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID);
 		for (const Worker_ComponentId& Component : ServerWorkerDataStorages.GetComponentsToWatch())
 		{
-			StrategyQuery.Components.Add(Component);
+			StrategyQuery.ResultComponentIds.Add(Component);
 		}
 
-		StrategyQuery.Components.Add(SpatialConstants::WORKER_COMPONENT_ID);
-		StrategyQuery.Components.Add(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
-		StrategyQuery.Components.Add(SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID);
+		StrategyQuery.ResultComponentIds.Add(SpatialConstants::WORKER_COMPONENT_ID);
+		StrategyQuery.ResultComponentIds.Add(SpatialConstants::PARTITION_ACK_COMPONENT_ID);
+		StrategyQuery.ResultComponentIds.Add(SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID);
 
 		Request.QueriesToAdd.Add(MoveTemp(StrategyQuery));
 	}

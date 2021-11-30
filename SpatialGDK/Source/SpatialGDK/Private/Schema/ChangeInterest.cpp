@@ -28,12 +28,12 @@ void ChangeInterestQuery::DebugOutput(const FString& DiffType) const
 	});
 	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: %s %s"), *DiffType, *EntitiesString);
 
-	const FString ComponentsString = FString::JoinBy(Components, TEXT(" "), [](const Worker_ComponentId ComponentId) {
+	const FString ComponentsString = FString::JoinBy(ResultComponentIds, TEXT(" "), [](const Worker_ComponentId ComponentId) {
 		return FString::Printf(TEXT("%d"), ComponentId);
 	});
 	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: components %s"), *ComponentsString);
 
-	const FString ComponentSetsString = FString::JoinBy(ComponentSets, TEXT(" "), [](const Worker_ComponentSetId ComponentSetId) {
+	const FString ComponentSetsString = FString::JoinBy(ResultComponentSetIds, TEXT(" "), [](const Worker_ComponentSetId ComponentSetId) {
 		return FString::Printf(TEXT("%d"), ComponentSetId);
 	});
 	UE_LOG(LogChangeInterest, Log, TEXT("Interest diff: component sets %s"), *ComponentSetsString);
@@ -95,8 +95,8 @@ Worker_CommandRequest ChangeInterestRequest::CreateRequest() const
 
 		AddEntityListToSchema(QueriesToAddObject, 2, Query.Entities);
 		Schema_AddBool(QueriesToAddObject, 3, Query.TrueConstraint);
-		AddUint32ListToSchema(ResultTypeObject, 1, Query.Components);
-		AddUint32ListToSchema(ResultTypeObject, 2, Query.ComponentSets);
+		AddUint32ListToSchema(ResultTypeObject, 1, Query.ResultComponentIds);
+		AddUint32ListToSchema(ResultTypeObject, 2, Query.ResultComponentSetIds);
 	}
 
 	for (const ChangeInterestQuery& Query : QueriesToRemove)
@@ -107,8 +107,8 @@ Worker_CommandRequest ChangeInterestRequest::CreateRequest() const
 
 		AddEntityListToSchema(QueriesToRemoveObject, 2, Query.Entities);
 		Schema_AddBool(QueriesToRemoveObject, 3, Query.TrueConstraint);
-		AddUint32ListToSchema(ResultTypeObject, 1, Query.Components);
-		AddUint32ListToSchema(ResultTypeObject, 2, Query.ComponentSets);
+		AddUint32ListToSchema(ResultTypeObject, 1, Query.ResultComponentIds);
+		AddUint32ListToSchema(ResultTypeObject, 2, Query.ResultComponentSetIds);
 	}
 
 	Schema_AddBool(RequestObject, 3, bOverwrite);
