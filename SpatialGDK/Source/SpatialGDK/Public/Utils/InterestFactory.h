@@ -143,7 +143,15 @@ private:
 
 	void AddObjectToConstraint(FObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
-	TArray<Worker_EntityId> GetClientInterestedEntityIds(const APlayerController* InPlayerController) const;
+	struct ClientInterestedEntitiesResult
+	{
+		TArray<Worker_EntityId> FullEntities;
+		TArray<Worker_EntityId> LightweightEntities;
+	};
+
+	ClientInterestedEntitiesResult GetClientInterestedEntityIds(const APlayerController* InPlayerController) const;
+	void ExtractEntityIdsFromActorArray(TArray<Worker_EntityId>& OutEntityIds, const TArray<AActor*> Actors,
+										const uint32 RepGraphFrame) const;
 
 	struct InterestQueryEntityDiff
 	{

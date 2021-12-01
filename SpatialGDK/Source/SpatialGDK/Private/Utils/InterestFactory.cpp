@@ -409,21 +409,22 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(APlayerController* Pl
 		NetConnection->ViewTarget = NetConnection->PlayerController->GetViewTarget();
 	}
 
-	TArray<Worker_EntityId> ClientInterestedEntities = GetClientInterestedEntityIds(PlayerController);
+	ClientInterestedEntitiesResult ClientInterestedEntities = GetClientInterestedEntityIds(PlayerController);
 
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(PlayerController->GetNetDriver());
 
 #if WITH_EDITOR
 	// Make debugging easier
-	ClientInterestedEntities.Sort();
+	ClientInterestedEntities.FullEntities.Sort();
+	ClientInterestedEntities.LightweightEntities.Sort();
 #endif
 
 	ChangeInterestRequestData.Clear();
 
 	{
 		// Add non-auth interest
-		TSet<Worker_EntityId_Key> FullInterested(ClientInterestedEntities);
-		TSet<Worker_EntityId_Key> LightweightInterested;
+		TSet<Worker_EntityId_Key> FullInterested(ClientInterestedEntities.FullEntities);
+		TSet<Worker_EntityId_Key> LightweightInterested(ClientInterestedEntities.LightweightEntities);
 
 		InterestQueryEntityDiff FullEntityDiff = GetEntityDiff(FullInterested, NetConnection->FullEntityInterestCache, bOverwrite);
 		InterestQueryEntityDiff LightweightEntityDiff =
@@ -445,15 +446,20 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(APlayerController* Pl
 	if (UMetricsExport* MetricsExport = PlayerController->GetWorld()->GetGameInstance()->GetSubsystem<UMetricsExport>())
 	{
 		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
-		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("total_interested_entities"), ClientInterestedEntities.Num());
+		MetricsExport->WriteMetricsToProtocolBuffer(
+			ClientIdentifier, TEXT("total_interested_entities"),
+			ClientInterestedEntities.FullEntities.Num()
+				+ ClientInterestedEntities.LightweightEntities
+					  .Num()); // TODO: is it ok to just add full + lightweight here or do we want to report separately?
 	}
 
 	return true;
 }
 
-TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityIds(const APlayerController* InPlayerController) const
+UnrealServerInterestFactory::ClientInterestedEntitiesResult UnrealServerInterestFactory::GetClientInterestedEntityIds(
+	const APlayerController* InPlayerController) const
 {
-	TArray<Worker_EntityId> InterestedEntityIdList{};
+	UnrealServerInterestFactory::ClientInterestedEntitiesResult InterestedEntities{};
 
 	UNetConnection* NetConnection = InPlayerController->NetConnection;
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(NetConnection->Driver);
@@ -461,10 +467,10 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 	if (RepGraph == nullptr)
 	{
 		UE_LOG(LogInterestFactory, Error, TEXT("Rep graph was nullptr or not a USpatialReplicationGraph subclass."));
-		return TArray<Worker_EntityId>();
+		return {};
 	}
 
-	TArray<AActor*> ClientInterestedActors = RepGraph->GatherClientInterestedActors(NetConnection);
+	USpatialReplicationGraph::ClientInterestedActorsResult ClientInterestedActors = RepGraph->GatherClientInterestedActors(NetConnection);
 
 	UNetReplicationGraphConnection* ConnectionDriver =
 		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
@@ -472,12 +478,31 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 	{
 		USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(InPlayerController->NetConnection);
 		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), SpatialNetConnection->GetPlayerControllerEntityId());
-		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("interested_spatialized_actors"), ClientInterestedActors.Num());
+		MetricsExport->WriteMetricsToProtocolBuffer(
+			ClientIdentifier, TEXT("interested_spatialized_actors"),
+			ClientInterestedActors.FullActors.Num()
+				+ ClientInterestedActors.LightweightActors
+					  .Num()); // TODO: is it ok to just add full + lightweight here or should they be reported separately?
 	}
 
-	InterestedEntityIdList.Reserve(ClientInterestedActors.Num());
+	ExtractEntityIdsFromActorArray(InterestedEntities.FullEntities, ClientInterestedActors.FullActors,
+								   RepGraph->GetReplicationGraphFrame());
+	ExtractEntityIdsFromActorArray(InterestedEntities.LightweightEntities, ClientInterestedActors.LightweightActors,
+								   RepGraph->GetReplicationGraphFrame());
 
-	for (const AActor* Actor : ClientInterestedActors)
+	UE_LOG(LogInterestFactory, Verbose, TEXT("Frame %u. Sending %i full, %i lightweight interest entities for %s"),
+		   RepGraph->GetReplicationGraphFrame(), InterestedEntities.FullEntities.Num(), InterestedEntities.LightweightEntities.Num(),
+		   *InPlayerController->GetName());
+
+	return InterestedEntities;
+}
+
+void UnrealServerInterestFactory::ExtractEntityIdsFromActorArray(TArray<Worker_EntityId>& OutEntityIds, const TArray<AActor*> Actors,
+																 const uint32 RepGraphFrame) const
+{
+	OutEntityIds.Reserve(Actors.Num());
+
+	for (const AActor* Actor : Actors)
 	{
 		const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 
@@ -488,17 +513,12 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 		if (EntityId == SpatialConstants::INVALID_ENTITY_ID && !(Actor->bNetStartup && !Actor->HasAuthority()))
 		{
 			UE_LOG(LogInterestFactory, Error, TEXT("Frame %u. Failed getting entity ID for %s when creating client entity interest"),
-				   RepGraph->GetReplicationGraphFrame(), *GetNameSafe(Actor));
+				   RepGraphFrame, *GetNameSafe(Actor));
 			continue;
 		}
 
-		InterestedEntityIdList.Emplace(EntityId);
+		OutEntityIds.Emplace(EntityId);
 	}
-
-	UE_LOG(LogInterestFactory, Verbose, TEXT("Frame %u. Sending %i interest entities for %s"), RepGraph->GetReplicationGraphFrame(),
-		   InterestedEntityIdList.Num(), *InPlayerController->GetName());
-
-	return InterestedEntityIdList;
 }
 
 UnrealServerInterestFactory::InterestQueryEntityDiff UnrealServerInterestFactory::GetEntityDiff(

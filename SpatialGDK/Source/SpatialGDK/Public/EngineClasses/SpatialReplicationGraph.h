@@ -24,7 +24,13 @@ public:
 
 	FGlobalActorReplicationInfoMap& GetGlobalActorReplicationInfoMap() { return GlobalActorReplicationInfoMap; }
 
-	TArray<AActor*> GatherClientInterestedActors(UNetConnection* NetConnection);
+	struct ClientInterestedActorsResult
+	{
+		TArray<AActor*> FullActors;
+		TArray<AActor*> LightweightActors;
+	};
+
+	ClientInterestedActorsResult GatherClientInterestedActors(UNetConnection* NetConnection);
 
 protected:
 	//~ Begin UReplicationGraph Interface
@@ -40,9 +46,9 @@ protected:
 	TUniquePtr<FSpatialLoadBalancingHandler> LoadBalancingHandler;
 
 private:
-	TArray<AActor*> ExtractClientInterestActorsFromGather(UNetReplicationGraphConnection* ConnectionManager,
-														  FGatheredReplicationActorLists& GatheredReplicationListsForConnection,
-														  FNetViewerArray& Viewers);
+	ClientInterestedActorsResult ExtractClientInterestActorsFromGather(
+		UNetReplicationGraphConnection* ConnectionManager, FGatheredReplicationActorLists& GatheredReplicationListsForConnection,
+		FNetViewerArray& Viewers);
 	void GatherDependentActors(FPerConnectionActorInfoMap& ConnectionActorInfoMap, FGlobalActorReplicationInfo& GlobalActorInfo,
 							   TArray<AActor*>& ClientInterestedActors);
 
