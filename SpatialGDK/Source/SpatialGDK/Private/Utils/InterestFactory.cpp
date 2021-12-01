@@ -526,8 +526,8 @@ void UnrealServerInterestFactory::UpdateInterestQuery(ChangeInterestRequest& Cha
 	if (EntityDiff.Add.Num() > 0)
 	{
 		ChangeInterestQuery Query{};
-		Query.Components = ResultType.ComponentIds;
-		Query.ComponentSets = ResultType.ComponentSetsIds;
+		Query.ResultComponentIds = ResultType.ComponentIds;
+		Query.ResultComponentSetIds = ResultType.ComponentSetsIds;
 		Query.Entities = EntityDiff.Add.Array();
 
 		ChangeInterestRequestData.QueriesToAdd.Emplace(Query);
@@ -536,8 +536,8 @@ void UnrealServerInterestFactory::UpdateInterestQuery(ChangeInterestRequest& Cha
 	if (EntityDiff.Remove.Num() > 0)
 	{
 		ChangeInterestQuery Query{};
-		Query.Components = ResultType.ComponentIds;
-		Query.ComponentSets = ResultType.ComponentSetsIds;
+		Query.ResultComponentIds = ResultType.ComponentIds;
+		Query.ResultComponentSetIds = ResultType.ComponentSetsIds;
 		Query.Entities = EntityDiff.Remove.Array();
 
 		ChangeInterestRequestData.QueriesToRemove.Emplace(Query);

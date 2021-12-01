@@ -1119,7 +1119,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 																		SchemaDatabase->ComponentIdToFieldIdsIndex,
 																		SchemaDatabase->FieldIdsArray, SchemaDatabase->ListIdsArray));
 
-	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 15);
+	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 16);
 
 	TestTrue("Found spatial well known components",
 			 SchemaDatabase->ComponentSetIdToComponentIds.Contains(SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID));
@@ -1185,7 +1185,6 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 			{
 				return false;
 			}
-
 
 			// We should have a class for each type of set
 			TestTrue("Set is not empty", DataComponents->ComponentIDs.Num() > 0);

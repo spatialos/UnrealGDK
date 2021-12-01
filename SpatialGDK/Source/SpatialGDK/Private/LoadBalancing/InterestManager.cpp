@@ -640,8 +640,8 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 				if (NumAdded > 0)
 				{
 					ChangeInterestQuery QueryAdd;
-					QueryAdd.Components = InterestF.GetServerNonAuthInterestResultType().ComponentIds;
-					QueryAdd.ComponentSets = InterestF.GetServerNonAuthInterestResultType().ComponentSetsIds;
+					QueryAdd.ResultComponentIds = InterestF.GetServerNonAuthInterestResultType().ComponentIds;
+					QueryAdd.ResultComponentSetIds = InterestF.GetServerNonAuthInterestResultType().ComponentSetsIds;
 					QueryAdd.Entities = MoveTemp(Added);
 					Request.QueriesToAdd.Add(MoveTemp(QueryAdd));
 				}
@@ -649,8 +649,8 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 				if (NumRemoved > 0)
 				{
 					ChangeInterestQuery QueryRemove;
-					QueryRemove.Components = InterestF.GetServerNonAuthInterestResultType().ComponentIds;
-					QueryRemove.ComponentSets = InterestF.GetServerNonAuthInterestResultType().ComponentSetsIds;
+					QueryRemove.ResultComponentIds = InterestF.GetServerNonAuthInterestResultType().ComponentIds;
+					QueryRemove.ResultComponentSetIds = InterestF.GetServerNonAuthInterestResultType().ComponentSetsIds;
 					QueryRemove.Entities = MoveTemp(Removed);
 					Request.QueriesToRemove.Add(MoveTemp(QueryRemove));
 				}
