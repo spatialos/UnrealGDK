@@ -446,11 +446,10 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(APlayerController* Pl
 	if (UMetricsExport* MetricsExport = PlayerController->GetWorld()->GetGameInstance()->GetSubsystem<UMetricsExport>())
 	{
 		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
-		MetricsExport->WriteMetricsToProtocolBuffer(
-			ClientIdentifier, TEXT("total_interested_entities"),
-			ClientInterestedEntities.FullEntities.Num()
-				+ ClientInterestedEntities.LightweightEntities
-					  .Num()); // TODO: is it ok to just add full + lightweight here or do we want to report separately?
+		// TODO: is it ok to just add full + lightweight here or do we want to report separately?
+		const int32 TotalInterestedEntities =
+			ClientInterestedEntities.FullEntities.Num() + ClientInterestedEntities.LightweightEntities.Num();
+		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("total_interested_entities"), TotalInterestedEntities);
 	}
 
 	return true;
@@ -478,11 +477,9 @@ UnrealServerInterestFactory::ClientInterestedEntitiesResult UnrealServerInterest
 	{
 		USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(InPlayerController->NetConnection);
 		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), SpatialNetConnection->GetPlayerControllerEntityId());
-		MetricsExport->WriteMetricsToProtocolBuffer(
-			ClientIdentifier, TEXT("interested_spatialized_actors"),
-			ClientInterestedActors.FullActors.Num()
-				+ ClientInterestedActors.LightweightActors
-					  .Num()); // TODO: is it ok to just add full + lightweight here or should they be reported separately?
+		// TODO: is it ok to just add full + lightweight here or should they be reported separately?
+		const int32 InterestedSpatializedActors = ClientInterestedActors.FullActors.Num() + ClientInterestedActors.LightweightActors.Num();
+		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("interested_spatialized_actors"), InterestedSpatializedActors);
 	}
 
 	ExtractEntityIdsFromActorArray(InterestedEntities.FullEntities, ClientInterestedActors.FullActors,
