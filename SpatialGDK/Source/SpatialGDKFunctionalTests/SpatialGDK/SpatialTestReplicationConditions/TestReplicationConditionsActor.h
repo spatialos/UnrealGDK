@@ -160,6 +160,9 @@ public:
 	UPROPERTY(Replicated)
 	int32 CondCustom_Var;
 
+	UPROPERTY(Replicated)
+	TArray<int32> CondCustom_Array;
+
 	bool bCustomReplicationEnabled;
 };
 
@@ -180,6 +183,9 @@ public:
 
 	UPROPERTY(Replicated)
 	int32 CondCustom_Var;
+
+	UPROPERTY(Replicated)
+	TArray<int32> CondCustom_Array;
 
 	UPROPERTY(Replicated)
 	UTestReplicationConditionsComponent_Custom* StaticComponent;
