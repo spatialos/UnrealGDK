@@ -441,9 +441,14 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 			{
 				const FRepChangedParent& Parent =
 					Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
-				const bool bIgnoreRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && !Actor->GetReplicatedMovement().bRepPhysics;
-				if (!Parent.Active && bIgnoreRepActorMovement)
+				const bool bRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
+				if (!Parent.Active && !bRepActorMovement)
 				{
+					if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
+					{
+						CmdIdx = Cmd.EndCmd;
+						ensure(Replicator.RepLayout->Cmds[CmdIdx].Type == ERepLayoutCmdType::Return);
+					}
 					continue;
 				}
 			}
