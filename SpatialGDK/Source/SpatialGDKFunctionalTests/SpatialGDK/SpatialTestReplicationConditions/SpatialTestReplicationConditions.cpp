@@ -526,6 +526,15 @@ void ASpatialTestReplicationConditions::ProcessCustomActorProperties(ATestReplic
 	WrappedAction(Actor->CondCustom_Var, bCustomEnabled, bCustomEnabled ? 1010 : 2010);
 	WrappedAction(Actor->StaticComponent->CondCustom_Var, bCustomEnabled, bCustomEnabled ? 1020 : 2020, StaticCompText);
 	WrappedAction(Actor->DynamicComponent->CondCustom_Var, bCustomEnabled, bCustomEnabled ? 1030 : 2030, DynamicCompText);
+
+	// Simplify checking by ensuring all arrays have at least one element
+	Actor->CondCustom_Array.SetNum(1);
+	Actor->StaticComponent->CondCustom_Array.SetNum(1);
+	Actor->DynamicComponent->CondCustom_Array.SetNum(1);
+
+	WrappedAction(Actor->CondCustom_Array[0], bCustomEnabled, bCustomEnabled ? 1040 : 2040);
+	WrappedAction(Actor->StaticComponent->CondCustom_Array[0], bCustomEnabled, bCustomEnabled ? 1050 : 2050, StaticCompText);
+	WrappedAction(Actor->DynamicComponent->CondCustom_Array[0], bCustomEnabled, bCustomEnabled ? 1060 : 2060, DynamicCompText);
 }
 
 void ASpatialTestReplicationConditions::ProcessAutonomousOnlyActorProperties(bool bWrite, bool bAutonomousExpected, bool bSimulatedExpected)
