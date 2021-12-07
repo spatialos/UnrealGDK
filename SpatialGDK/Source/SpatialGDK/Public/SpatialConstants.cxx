@@ -230,6 +230,9 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST = 
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_LIGHTWEIGHT_SERVER_INTEREST =
 	TArray<Worker_ComponentId>{ LIGHTWEIGHT_ENTITY_COMPONENT_ID };
+	
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_LIGHTWEIGHT_CLIENT_INTEREST =
+	TArray<Worker_ComponentId>{ LIGHTWEIGHT_ENTITY_COMPONENT_ID };
 
 const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
 	"improbable/standard_library.schema",

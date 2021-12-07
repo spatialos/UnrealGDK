@@ -48,6 +48,7 @@ void InterestFactory::CreateAndCacheInterestState()
 	ClientCheckoutRadiusConstraint = NetCullDistanceInterest::CreateCheckoutRadiusConstraints(ClassInfoManager);
 	ClientNonAuthInterestResultType = CreateClientNonAuthInterestResultType();
 	ClientAuthInterestResultType = CreateClientAuthInterestResultType();
+	ClientLightweightInterestResultType = CreateClientLightweightInterestResultType();
 	ServerNonAuthInterestResultType = CreateServerNonAuthInterestResultType();
 	ServerAuthInterestResultType = CreateServerAuthInterestResultType();
 	ServerLightweightInterestResultType = CreateServerLightweightInterestResultType();
@@ -91,6 +92,16 @@ SchemaResultType InterestFactory::CreateClientAuthInterestResultType()
 	}
 
 	return ClientAuthResultType;
+}
+
+SchemaResultType InterestFactory::CreateClientLightweightInterestResultType()
+{
+	SchemaResultType ClientLightweightResultType{};
+
+	ClientLightweightResultType.ComponentIds.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_LIGHTWEIGHT_CLIENT_INTEREST);
+	ClientLightweightResultType.ComponentSetsIds.Push(SpatialConstants::CLIENT_LIGHTWEIGHT_COMPONENT_SET_ID);
+
+	return ClientLightweightResultType;
 }
 
 SchemaResultType InterestFactory::CreateServerNonAuthInterestResultType()
@@ -409,60 +420,31 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(APlayerController* Pl
 		NetConnection->ViewTarget = NetConnection->PlayerController->GetViewTarget();
 	}
 
-	TArray<Worker_EntityId> ClientInterestedEntities = GetClientInterestedEntityIds(PlayerController);
+	ClientInterestedEntitiesResult ClientInterestedEntities = GetClientInterestedEntityIds(PlayerController);
 
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(PlayerController->GetNetDriver());
 
 #if WITH_EDITOR
 	// Make debugging easier
-	ClientInterestedEntities.Sort();
+	ClientInterestedEntities.FullEntities.Sort();
+	ClientInterestedEntities.LightweightEntities.Sort();
 #endif
 
 	ChangeInterestRequestData.Clear();
 
 	{
 		// Add non-auth interest
-		TSet<Worker_EntityId_Key> FullInterested;
-		FullInterested.Reserve(ClientInterestedEntities.Num());
-		for (auto EntityId : ClientInterestedEntities)
-		{
-			FullInterested.Add(EntityId);
-		}
+		TSet<Worker_EntityId_Key> FullInterested(ClientInterestedEntities.FullEntities);
+		TSet<Worker_EntityId_Key> LightweightInterested(ClientInterestedEntities.LightweightEntities);
 
-		TSet<Worker_EntityId_Key> Add, Remove;
-		if (bOverwrite)
-		{
-			Add = FullInterested;
-			Remove.Empty();
-		}
-		else
-		{
-			Add = FullInterested.Difference(NetConnection->EntityInterestCache);
-			Remove = NetConnection->EntityInterestCache.Difference(FullInterested);
-		}
-		NetConnection->EntityInterestCache = FullInterested;
+		InterestQueryEntityDiff FullEntityDiff = GetEntityDiff(FullInterested, NetConnection->FullEntityInterestCache, bOverwrite);
+		InterestQueryEntityDiff LightweightEntityDiff =
+			GetEntityDiff(LightweightInterested, NetConnection->LightweightEntityInterestCache, bOverwrite);
 
 		ChangeInterestRequestData.SystemEntityId = NetConnection->ConnectionClientWorkerSystemEntityId;
 
-		if (Add.Num() > 0)
-		{
-			ChangeInterestQuery Query{};
-			Query.Components = ClientNonAuthInterestResultType.ComponentIds;
-			Query.ComponentSets = ClientNonAuthInterestResultType.ComponentSetsIds;
-			Query.Entities = Add.Array();
-
-			ChangeInterestRequestData.QueriesToAdd.Emplace(Query);
-		}
-
-		if (Remove.Num() > 0)
-		{
-			ChangeInterestQuery Query{};
-			Query.Components = ClientNonAuthInterestResultType.ComponentIds;
-			Query.ComponentSets = ClientNonAuthInterestResultType.ComponentSetsIds;
-			Query.Entities = Remove.Array();
-
-			ChangeInterestRequestData.QueriesToRemove.Emplace(Query);
-		}
+		UpdateInterestQuery(ChangeInterestRequestData, FullEntityDiff, ClientNonAuthInterestResultType);
+		UpdateInterestQuery(ChangeInterestRequestData, LightweightEntityDiff, ClientLightweightInterestResultType);
 
 		ChangeInterestRequestData.bOverwrite = bOverwrite;
 	}
@@ -475,15 +457,19 @@ bool UnrealServerInterestFactory::CreateClientInterestDiff(APlayerController* Pl
 	if (UMetricsExport* MetricsExport = PlayerController->GetWorld()->GetGameInstance()->GetSubsystem<UMetricsExport>())
 	{
 		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), NetConnection->GetPlayerControllerEntityId());
-		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("total_interested_entities"), ClientInterestedEntities.Num());
+		// TODO: is it ok to just add full + lightweight here or do we want to report separately?
+		const int32 TotalInterestedEntities =
+			ClientInterestedEntities.FullEntities.Num() + ClientInterestedEntities.LightweightEntities.Num();
+		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("total_interested_entities"), TotalInterestedEntities);
 	}
 
 	return true;
 }
 
-TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityIds(const APlayerController* InPlayerController) const
+UnrealServerInterestFactory::ClientInterestedEntitiesResult UnrealServerInterestFactory::GetClientInterestedEntityIds(
+	const APlayerController* InPlayerController) const
 {
-	TArray<Worker_EntityId> InterestedEntityIdList{};
+	UnrealServerInterestFactory::ClientInterestedEntitiesResult InterestedEntities{};
 
 	UNetConnection* NetConnection = InPlayerController->NetConnection;
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(NetConnection->Driver);
@@ -491,10 +477,10 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 	if (RepGraph == nullptr)
 	{
 		UE_LOG(LogInterestFactory, Error, TEXT("Rep graph was nullptr or not a USpatialReplicationGraph subclass."));
-		return TArray<Worker_EntityId>();
+		return {};
 	}
 
-	TArray<AActor*> ClientInterestedActors = RepGraph->GatherClientInterestedActors(NetConnection);
+	USpatialReplicationGraph::ClientInterestedActorsResult ClientInterestedActors = RepGraph->GatherClientInterestedActors(NetConnection);
 
 	UNetReplicationGraphConnection* ConnectionDriver =
 		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
@@ -502,12 +488,29 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 	{
 		USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(InPlayerController->NetConnection);
 		const FString ClientIdentifier = FString::Printf(TEXT("PC-%lld"), SpatialNetConnection->GetPlayerControllerEntityId());
-		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("interested_spatialized_actors"), ClientInterestedActors.Num());
+		// TODO: is it ok to just add full + lightweight here or should they be reported separately?
+		const int32 InterestedSpatializedActors = ClientInterestedActors.FullActors.Num() + ClientInterestedActors.LightweightActors.Num();
+		MetricsExport->WriteMetricsToProtocolBuffer(ClientIdentifier, TEXT("interested_spatialized_actors"), InterestedSpatializedActors);
 	}
 
-	InterestedEntityIdList.Reserve(ClientInterestedActors.Num());
+	ExtractEntityIdsFromActorArray(InterestedEntities.FullEntities, ClientInterestedActors.FullActors,
+								   RepGraph->GetReplicationGraphFrame());
+	ExtractEntityIdsFromActorArray(InterestedEntities.LightweightEntities, ClientInterestedActors.LightweightActors,
+								   RepGraph->GetReplicationGraphFrame());
 
-	for (const AActor* Actor : ClientInterestedActors)
+	UE_LOG(LogInterestFactory, Verbose, TEXT("Frame %u. Sending %i full, %i lightweight interest entities for %s"),
+		   RepGraph->GetReplicationGraphFrame(), InterestedEntities.FullEntities.Num(), InterestedEntities.LightweightEntities.Num(),
+		   *InPlayerController->GetName());
+
+	return InterestedEntities;
+}
+
+void UnrealServerInterestFactory::ExtractEntityIdsFromActorArray(TArray<Worker_EntityId>& OutEntityIds, const TArray<AActor*> Actors,
+																 const uint32 RepGraphFrame) const
+{
+	OutEntityIds.Reserve(Actors.Num());
+
+	for (const AActor* Actor : Actors)
 	{
 		const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 
@@ -518,17 +521,55 @@ TArray<Worker_EntityId> UnrealServerInterestFactory::GetClientInterestedEntityId
 		if (EntityId == SpatialConstants::INVALID_ENTITY_ID && !(Actor->bNetStartup && !Actor->HasAuthority()))
 		{
 			UE_LOG(LogInterestFactory, Error, TEXT("Frame %u. Failed getting entity ID for %s when creating client entity interest"),
-				   RepGraph->GetReplicationGraphFrame(), *GetNameSafe(Actor));
+				   RepGraphFrame, *GetNameSafe(Actor));
 			continue;
 		}
 
-		InterestedEntityIdList.Emplace(EntityId);
+		OutEntityIds.Emplace(EntityId);
+	}
+}
+
+UnrealServerInterestFactory::InterestQueryEntityDiff UnrealServerInterestFactory::GetEntityDiff(
+	const TSet<Worker_EntityId_Key>& InterestedEntities, TSet<Worker_EntityId_Key>& InterestedEntitiesCache, const bool bOverwrite) const
+{
+	InterestQueryEntityDiff Diff;
+
+	if (bOverwrite)
+	{
+		Diff.Add = InterestedEntities;
+	}
+	else
+	{
+		Diff.Add = InterestedEntities.Difference(InterestedEntitiesCache);
+		Diff.Remove = InterestedEntitiesCache.Difference(InterestedEntities);
+	}
+	InterestedEntitiesCache = InterestedEntities;
+
+	return Diff;
+}
+
+void UnrealServerInterestFactory::UpdateInterestQuery(ChangeInterestRequest& ChangeInterestRequestData,
+													  const InterestQueryEntityDiff& EntityDiff, const SchemaResultType& ResultType) const
+{
+	if (EntityDiff.Add.Num() > 0)
+	{
+		ChangeInterestQuery Query{};
+		Query.ResultComponentIds = ResultType.ComponentIds;
+		Query.ResultComponentSetIds = ResultType.ComponentSetsIds;
+		Query.Entities = EntityDiff.Add.Array();
+
+		ChangeInterestRequestData.QueriesToAdd.Emplace(Query);
 	}
 
-	UE_LOG(LogInterestFactory, Verbose, TEXT("Frame %u. Sending %i interest entities for %s"), RepGraph->GetReplicationGraphFrame(),
-		   InterestedEntityIdList.Num(), *InPlayerController->GetName());
+	if (EntityDiff.Remove.Num() > 0)
+	{
+		ChangeInterestQuery Query{};
+		Query.ResultComponentIds = ResultType.ComponentIds;
+		Query.ResultComponentSetIds = ResultType.ComponentSetsIds;
+		Query.Entities = EntityDiff.Remove.Array();
 
-	return InterestedEntityIdList;
+		ChangeInterestRequestData.QueriesToRemove.Emplace(Query);
+	}
 }
 
 void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const

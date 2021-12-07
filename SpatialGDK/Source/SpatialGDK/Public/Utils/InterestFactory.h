@@ -53,6 +53,7 @@ public:
 
 	const SchemaResultType& GetClientNonAuthInterestResultType() const { return ClientNonAuthInterestResultType; }
 	const SchemaResultType& GetClientAuthInterestResultType() const { return ClientAuthInterestResultType; }
+	const SchemaResultType& GetClientLightweightInterestResultType() const { return ClientLightweightInterestResultType; }
 	const SchemaResultType& GetServerNonAuthInterestResultType() const { return ServerNonAuthInterestResultType; }
 	const SchemaResultType& GetServerAuthInterestResultType() const { return ServerAuthInterestResultType; }
 	const SchemaResultType& GetServerLightweightInterestResultType() const { return ServerLightweightInterestResultType; }
@@ -65,6 +66,7 @@ protected:
 	// TODO: create and pull out into result types class
 	SchemaResultType CreateClientNonAuthInterestResultType();
 	SchemaResultType CreateClientAuthInterestResultType();
+	SchemaResultType CreateClientLightweightInterestResultType();
 	SchemaResultType CreateServerNonAuthInterestResultType();
 	SchemaResultType CreateServerAuthInterestResultType();
 	SchemaResultType CreateServerLightweightInterestResultType();
@@ -114,6 +116,7 @@ protected:
 	// Cache the result types of queries.
 	SchemaResultType ClientNonAuthInterestResultType;
 	SchemaResultType ClientAuthInterestResultType;
+	SchemaResultType ClientLightweightInterestResultType;
 	SchemaResultType ServerNonAuthInterestResultType;
 	SchemaResultType ServerAuthInterestResultType;
 	SchemaResultType ServerLightweightInterestResultType;
@@ -143,7 +146,26 @@ private:
 
 	void AddObjectToConstraint(FObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
 
-	TArray<Worker_EntityId> GetClientInterestedEntityIds(const APlayerController* InPlayerController) const;
+	struct ClientInterestedEntitiesResult
+	{
+		TArray<Worker_EntityId> FullEntities;
+		TArray<Worker_EntityId> LightweightEntities;
+	};
+
+	ClientInterestedEntitiesResult GetClientInterestedEntityIds(const APlayerController* InPlayerController) const;
+	void ExtractEntityIdsFromActorArray(TArray<Worker_EntityId>& OutEntityIds, const TArray<AActor*> Actors,
+										const uint32 RepGraphFrame) const;
+
+	struct InterestQueryEntityDiff
+	{
+		TSet<Worker_EntityId_Key> Add;
+		TSet<Worker_EntityId_Key> Remove;
+	};
+
+	InterestQueryEntityDiff GetEntityDiff(const TSet<Worker_EntityId_Key>& InterestedEntities,
+										  TSet<Worker_EntityId_Key>& InterestedEntitiesCache, const bool bOverwrite) const;
+	void UpdateInterestQuery(ChangeInterestRequest& ChangeInterestRequestData, const InterestQueryEntityDiff& EntityDiff,
+							 const SchemaResultType& ResultType) const;
 
 	USpatialPackageMapClient* PackageMap;
 };

@@ -155,7 +155,7 @@ void USpatialReplicationGraph::PostReplicateActors(UNetReplicationGraphConnectio
 // We don't use the GatherReplicatedActorList function for this job because that applies things like rate limiting
 // through returning an Actor on alternating calls. For interest, we want to get a conservative list of Actors that
 // we expect that node would replicate over multiple subsequent replication calls (at least until next interest change).
-TArray<AActor*> USpatialReplicationGraph::GatherClientInterestedActors(UNetConnection* NetConnection)
+USpatialReplicationGraph::ClientInterestedActorsResult USpatialReplicationGraph::GatherClientInterestedActors(UNetConnection* NetConnection)
 {
 	QUICK_SCOPE_CYCLE_COUNTER(NET_ClientEntityInterest__GatherClientInterestedActors);
 
@@ -198,19 +198,19 @@ TArray<AActor*> USpatialReplicationGraph::GatherClientInterestedActors(UNetConne
 	// - remove duplicate Actors from consideration
 	// - ignore our non-spatial and dormant Actors
 	// - add dependent Actors
-	TArray<AActor*> ClientInterestedActors =
+	ClientInterestedActorsResult ClientInterestedActors =
 		ExtractClientInterestActorsFromGather(ConnectionManager, GatheredReplicationListsForConnection, Viewer);
 
 	return ClientInterestedActors;
 }
 
-TArray<AActor*> USpatialReplicationGraph::ExtractClientInterestActorsFromGather(
+USpatialReplicationGraph::ClientInterestedActorsResult USpatialReplicationGraph::ExtractClientInterestActorsFromGather(
 	UNetReplicationGraphConnection* ConnectionManager, FGatheredReplicationActorLists& GatheredReplicationListsForConnection,
 	FNetViewerArray& Viewers)
 {
 	QUICK_SCOPE_CYCLE_COUNTER(NET_ClientEntityInterest_ExtractFromGatheredLists);
 
-	TArray<AActor*> ClientInterestedActors{};
+	ClientInterestedActorsResult ClientInterestedActors{};
 
 	FPerConnectionActorInfoMap& ConnectionActorInfoMap = ConnectionManager->ActorInfoMap;
 	const uint32 FrameNum = GetReplicationGraphFrame();
@@ -276,9 +276,21 @@ TArray<AActor*> USpatialReplicationGraph::ExtractClientInterestActorsFromGather(
 
 			// At this point the replication flow prioritizes the connection's owner and view target.
 
-			ClientInterestedActors.Emplace(Actor);
+			ClientInterestedActors.FullActors.Emplace(Actor);
 
-			GatherDependentActors(ConnectionActorInfoMap, GlobalActorInfo, ClientInterestedActors);
+			GatherDependentActors(ConnectionActorInfoMap, GlobalActorInfo, ClientInterestedActors.FullActors);
+		}
+	}
+
+	for (const FActorRepListConstView& List : GatheredReplicationListsForConnection.GetLists(EActorRepListTypeFlags::Lightweight))
+	{
+		for (AActor* Actor : List)
+		{
+			// TODO: Checks
+
+			ClientInterestedActors.LightweightActors.Emplace(Actor);
+
+			// TODO: Gather dependent?
 		}
 	}
 
