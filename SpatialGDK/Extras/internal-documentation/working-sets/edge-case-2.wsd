@@ -1,0 +1,64 @@
+@startuml Working sets - all on the same ServerWorker
+entity ServerWorker
+database Runtime
+entity StrategyWorker
+
+ServerWorker -> Runtime: Create **E1**
+ServerWorker -> Runtime: Create **E2**
+
+ServerWorker -> Runtime: Create Marker Entity with **E1** and **E2**
+
+Runtime -> StrategyWorker: Assign **E1** to W1
+Runtime -> StrategyWorker: Assign **E2** to W2
+
+StrategyWorker -> Runtime: **E2** should migrate
+
+Runtime -> ServerWorker: Active handover a member entity **E2**
+
+ServerWorker -> ServerWorker: **AuthorityLost** on **E2**
+note right 
+    Unwanted
+end note
+
+ServerWorker -> Runtime: Send Active handover ACK
+
+Runtime -> StrategyWorker: Deliver the active handover ACK
+
+StrategyWorker -> Runtime: Assign **E1** to W1
+StrategyWorker -> Runtime: Assign **E2** to W2
+
+Runtime -> StrategyWorker: Marker Entity created
+
+StrategyWorker -> Runtime: Migrate requested entities to the correct partition
+
+Runtime -> ServerWorker: Soft handover logic
+
+ServerWorker -> Runtime: Write soft handover ACKs
+
+Runtime -> StrategyWorker: Deliver ACKs
+
+group Writes to different entities - no ordering guarantees
+    StrategyWorker -> Runtime: Write list of set members to the marker
+    StrategyWorker -> Runtime: Write Marker Entity ID to set member 1
+    StrategyWorker -> Runtime: Write Marker Entity ID to set member 2...
+    StrategyWorker -> Runtime: Write Marker Entity ID to set member N
+end
+
+group Writes to different entities - no ordering guarantees
+    ServerWorker <- Runtime: Write list of set members to the marker
+    ServerWorker <- Runtime: Write Marker Entity ID to set member 1
+    ServerWorker <- Runtime: Write Marker Entity ID to set member 2...
+    ServerWorker <- Runtime: Write Marker Entity ID to set member N
+end
+@enduml
+
+We'd like to prioritize a working set
+that doesn't require a migration between
+multiple workers.
+
+The discussion on whether we should allow
+the user to have authority over an entity that
+the user requested to be a part of a working set,
+or if we must lose it until the set is complete.
+
+Blank entities and batching are essential for getting rid of the race at entity creation.

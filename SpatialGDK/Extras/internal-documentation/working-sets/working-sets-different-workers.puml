@@ -1,0 +1,53 @@
+@startuml Working sets - multiple ServerWorkers
+entity RequestingServerWorker
+entity InitiallyAuthServerWorker
+database Runtime
+entity StrategyWorker
+
+RequestingServerWorker -> RequestingServerWorker: Store local information about a working set
+RequestingServerWorker -> Runtime: Create Marker Entity
+
+Runtime -> StrategyWorker: Marker Entity created
+
+StrategyWorker -> Runtime: Migrate requested entities to the correct partition
+
+group Writes to different entities - no ordering guarantees
+    Runtime -> RequestingServerWorker: Active handover logic
+    Runtime -> InitiallyAuthServerWorker: Active handover logic
+end group
+
+RequestingServerWorker -> Runtime: Write Active handover ACKs
+InitiallyAuthServerWorker -> Runtime: Write Active handover ACKs
+
+Runtime -> StrategyWorker: Deliver ACKs
+
+StrategyWorker <- StrategyWorker: All authority ACKs have been received,\ncan assign authority and confirm the working set
+
+group Writes to different entities - no ordering guarantees
+    group AuthorityDelegation
+        StrategyWorker -> Runtime: Delegate set member 1 to correct partition
+        StrategyWorker -> Runtime: Delegate set member 2... to correct partition
+        StrategyWorker -> Runtime: Delegate set member N to correct partition
+    end
+    StrategyWorker -> Runtime: Write list of set members to the marker
+    StrategyWorker -> Runtime: Write Marker Entity ID to set member 1
+    StrategyWorker -> Runtime: Write Marker Entity ID to set member 2...
+    StrategyWorker -> Runtime: Write Marker Entity ID to set member N
+end
+
+alt Set member 1 authority -> Marker Entity -> Remaining set members' authority -> Set member data updates
+    Runtime -> RequestingServerWorker: You have auth over Member 1
+    RequestingServerWorker -> RequestingServerWorker: Member 1 is expected to be a part of a working set this\nworker has requested, don't call <b>AuthGain</b>
+    Runtime -> RequestingServerWorker: Marker Entity defines a Working Set of Member 1..N
+    Runtime -> RequestingServerWorker: You have auth over Member 2..N-1
+    RequestingServerWorker -> RequestingServerWorker: No AuthGain calls due to a working set not being formed
+    Runtime -> RequestingServerWorker: You have auth over Member N
+    RequestingServerWorker -> RequestingServerWorker: Working set formed, call <b>AuthGain</b>
+else Marker Entity -> Set members' authority -> Set member data updates
+    Runtime -> RequestingServerWorker: Marker Entity defines a Working Set of Member 1..N
+    Runtime -> RequestingServerWorker: You have auth over Member 1..N-1
+    RequestingServerWorker -> RequestingServerWorker: No AuthGain calls due to a working set not being formed
+    Runtime -> RequestingServerWorker: You have auth over Member N
+    RequestingServerWorker -> RequestingServerWorker: Working set formed, call <b>AuthGain</b>
+end
+@enduml
