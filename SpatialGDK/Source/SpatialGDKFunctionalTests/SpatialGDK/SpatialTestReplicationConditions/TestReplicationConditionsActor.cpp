@@ -105,6 +105,7 @@ void UTestReplicationConditionsComponent_Custom::GetLifetimeReplicatedProps(TArr
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(ThisClass, CondCustom_Var, COND_Custom);
+	DOREPLIFETIME_CONDITION(ThisClass, CondCustom_Array, COND_Custom);
 }
 
 void UTestReplicationConditionsComponent_Custom::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
@@ -112,6 +113,7 @@ void UTestReplicationConditionsComponent_Custom::PreReplication(IRepChangedPrope
 	Super::PreReplication(ChangedPropertyTracker);
 
 	DOREPLIFETIME_ACTIVE_OVERRIDE(ThisClass, CondCustom_Var, bCustomReplicationEnabled);
+	DOREPLIFETIME_ACTIVE_OVERRIDE(ThisClass, CondCustom_Array, bCustomReplicationEnabled);
 }
 
 void UTestReplicationConditionsComponent_Custom::SetCustomReplicationEnabled(bool bEnabled)
@@ -132,6 +134,7 @@ void ATestReplicationConditionsActor_Custom::GetLifetimeReplicatedProps(TArray<F
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(ThisClass, CondCustom_Var, COND_Custom);
+	DOREPLIFETIME_CONDITION(ThisClass, CondCustom_Array, COND_Custom);
 	DOREPLIFETIME(ThisClass, StaticComponent);
 	DOREPLIFETIME(ThisClass, DynamicComponent);
 }
@@ -141,6 +144,7 @@ void ATestReplicationConditionsActor_Custom::PreReplication(IRepChangedPropertyT
 	Super::PreReplication(ChangedPropertyTracker);
 
 	DOREPLIFETIME_ACTIVE_OVERRIDE(ThisClass, CondCustom_Var, bCustomReplicationEnabled);
+	DOREPLIFETIME_ACTIVE_OVERRIDE(ThisClass, CondCustom_Array, bCustomReplicationEnabled);
 }
 
 void ATestReplicationConditionsActor_Custom::SpawnDynamicComponents()
