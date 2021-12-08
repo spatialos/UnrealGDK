@@ -15,6 +15,7 @@
 #include "UObject/UObjectIterator.h"
 #include "UObject/WeakObjectPtrTemplates.h"
 
+#include "Engine/WorldComposition.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialHandoverManager.h"
@@ -85,6 +86,8 @@
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialStatics.h"
+#include "WorldPartition/WorldPartition.h"
+#include "WorldPartition/WorldPartitionRuntimeHash.h"
 
 #if WITH_EDITOR
 #include "Settings/LevelEditorPlaySettings.h"
@@ -682,6 +685,24 @@ void USpatialNetDriver::CreateAndInitializeCoreClassesAfterStartup()
 	}
 }
 
+void USpatialNetDriver::CreateAndInitializeLoadBalancingStrategy()
+{
+	if (LoadBalanceStrategy == nullptr)
+	{
+		const UWorld* CurrentWorld = GetWorld();
+		const TSubclassOf<UAbstractSpatialMultiWorkerSettings> MultiWorkerSettingsClass =
+			USpatialStatics::GetSpatialMultiWorkerClass(CurrentWorld);
+
+		UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
+			MultiWorkerSettingsClass->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
+
+		LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
+		LoadBalanceStrategy->Init();
+		Cast<ULayeredLBStrategy>(LoadBalanceStrategy)->SetLayers(MultiWorkerSettings->WorkerLayers);
+		LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
+	}
+}
+
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 {
 	if (!IsServer())
@@ -710,10 +731,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 																	   ? *MultiWorkerSettings->LockingPolicy
 																	   : UOwnershipLockingPolicy::StaticClass();
 
-	LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
-	LoadBalanceStrategy->Init();
-	Cast<ULayeredLBStrategy>(LoadBalanceStrategy)->SetLayers(MultiWorkerSettings->WorkerLayers);
-	LoadBalanceStrategy->SetVirtualWorkerIds(1, LoadBalanceStrategy->GetMinimumRequiredWorkers());
+	CreateAndInitializeLoadBalancingStrategy();
 
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, Connection->GetWorkerId());
 
@@ -1277,6 +1295,48 @@ void USpatialNetDriver::NotifyStreamingLevelUnload(class ULevel* Level)
 	}
 
 	Super::NotifyStreamingLevelUnload(Level);
+}
+
+void USpatialNetDriver::SetWorld(class UWorld* InWorld)
+{
+	Super::SetWorld(InWorld);
+
+	if (InWorld == nullptr || (InWorld->WorldComposition == nullptr && InWorld->GetWorldPartition() == nullptr))
+	{
+		return;
+	}
+
+	USpatialGameInstance* GameInstance = GetGameInstance();
+	FName WorkerType = GameInstance->GetSpatialWorkerType();
+	if (WorkerType == SpatialConstants::DefaultServerWorkerType)
+	{
+		CreateAndInitializeLoadBalancingStrategy();
+
+		// Server world composition strategy
+
+		ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(InWorld->GetWorldSettings());
+		UClass* ServerLevelStreamingStrategyClass = WorldSettings->ServerLevelStreamingStrategyClass;
+
+		if (ServerLevelStreamingStrategyClass != nullptr)
+		{
+			UWorldComposition* WorldComposition = InWorld->WorldComposition;
+			UWorldPartition* WorldPartition = InWorld->GetWorldPartition();
+
+			ServerLevelStreamingStrategy = NewObject<USpatialServerLevelStreamingStrategy>(this, ServerLevelStreamingStrategyClass);
+			if (InWorld->WorldComposition)
+			{
+				ServerLevelStreamingStrategy->InitialiseStrategy(WorldComposition->GetTilesList(), InWorld->OriginLocation);
+				WorldComposition->ServerLevelStreamingStrategy =
+				Cast<UAbstractServerLevelStreamingStrategy>(ServerLevelStreamingStrategy);
+			}
+
+			if (WorldPartition)
+			{
+				WorldPartition->RuntimeHash->ServerLevelStreamingStrategy =
+					Cast<UAbstractServerLevelStreamingStrategy>(ServerLevelStreamingStrategy);
+			}
+		}
+	}
 }
 
 void USpatialNetDriver::ProcessOwnershipChanges()
@@ -3475,6 +3535,23 @@ int64 USpatialNetDriver::GetActorEntityId(const AActor& Actor) const
 uint32 USpatialNetDriver::ClientGetSessionId() const
 {
 	return SessionId;
+}
+
+TArray<FName> USpatialNetDriver::GetLoadedSublevelPackageNames() const
+{
+	const UWorld* CurrentWorld = GetWorld();
+	const TArray<ULevelStreaming*>& Sublevels = CurrentWorld->GetStreamingLevels();
+
+	TArray<FName> OutArray;
+	OutArray.Reserve(Sublevels.Num());
+
+	for (const ULevelStreaming* LevelStreaming : Sublevels)
+	{
+		const FName LevelPath = LevelStreaming->GetWorldAssetPackageFName();
+		OutArray.Add(LevelPath);
+	}
+
+	return OutArray;
 }
 
 bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)

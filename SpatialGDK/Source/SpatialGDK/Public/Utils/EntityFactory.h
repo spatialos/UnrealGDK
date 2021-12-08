@@ -41,10 +41,8 @@ public:
 										  TArray<FWorkerComponentUpdate>& OutComponentUpdates, uint32& OutBytesWritten);
 	static UnrealMetadata CreateMetadata(const AActor& InActor);
 
-	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const FString& PartitionName, const Worker_EntityId EntityId,
-																		const InterestFactory* InterestFactory,
-																		const SpatialGDK::QueryConstraint& LoadBalancingConstraint,
-																		VirtualWorkerId VirtualWorker, bool bDebugContexValid);
+	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const FString& PartitionName, const Worker_EntityId EntityId, const InterestFactory* InterestFactory,
+																		const SpatialGDK::QueryConstraint& LoadBalancingConstraint, VirtualWorkerId VirtualWorker, bool bDebugContexValid);
 
 	static inline bool IsClientAuthoritativeComponent(Worker_ComponentId ComponentId)
 	{

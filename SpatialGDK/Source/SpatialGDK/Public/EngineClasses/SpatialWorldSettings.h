@@ -41,6 +41,10 @@ public:
 	void SetMultiWorkerSettingsClass(TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass);
 #endif // WITH_EDITOR
 
+	/** Specify a strategy for server-side world composition. */
+	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	TSubclassOf<UAbstractServerLevelStreamingStrategy> ServerLevelStreamingStrategyClass;
+
 private:
 	/** Specify the load balancing strategy to be used for multiple workers */
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")

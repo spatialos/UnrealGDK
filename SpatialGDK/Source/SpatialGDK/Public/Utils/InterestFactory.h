@@ -47,7 +47,7 @@ public:
 	InterestFactory(USpatialClassInfoManager* InClassInfoManager);
 
 	Interest CreateServerWorkerInterest(TArray<Worker_ComponentId> PartitionsComponents) const;
-	Interest CreatePartitionInterest(const QueryConstraint& LoadBalancingConstraint, bool bDebug) const;
+	Interest CreatePartitionInterest(const SpatialGDK::QueryConstraint& LoadBalancingConstraint, bool bDebug) const;
 	static Interest CreateRoutingWorkerInterest();
 	Interest CreateSkeletonEntityInterest() const;
 

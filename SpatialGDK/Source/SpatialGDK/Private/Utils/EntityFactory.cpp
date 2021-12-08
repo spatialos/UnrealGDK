@@ -507,10 +507,9 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	return Components;
 }
 
-TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const FString& PartitionName, const Worker_EntityId EntityId,
-																			const InterestFactory* InterestFactory,
-																			const SpatialGDK::QueryConstraint& LoadBalancingConstraint,
-																			VirtualWorkerId VirtualWorker, bool bDebugContextValid)
+TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(
+	const FString& PartitionName, const Worker_EntityId EntityId, const InterestFactory* InterestFactory,
+	const SpatialGDK::QueryConstraint& LoadBalancingConstraint, VirtualWorkerId VirtualWorker, bool bDebugContextValid)
 {
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
@@ -531,7 +530,8 @@ TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(cons
 	Components.Add(Metadata(FString::Format(TEXT("{0}:{1}"), { *PartitionName, VirtualWorker })).CreateComponentData());
 	if (InterestFactory != nullptr)
 	{
-		Components.Add(InterestFactory->CreatePartitionInterest(LoadBalancingConstraint, bDebugContextValid).CreateComponentData());
+		Components.Add(InterestFactory->CreatePartitionInterest(LoadBalancingConstraint, bDebugContextValid)
+						   .CreateComponentData());
 	}
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_SHADOW_COMPONENT_ID));

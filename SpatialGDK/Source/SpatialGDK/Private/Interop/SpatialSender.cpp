@@ -8,6 +8,7 @@
 #include "Net/NetworkProfiler.h"
 #include "Runtime/Launch/Resources/Version.h"
 
+#include "Engine/WorldComposition.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetConnection.h"
@@ -77,11 +78,18 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 	Worker_PartitionId PartitionId = NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId();
 	VirtualWorkerId VirtualId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
 
+	// If the load balancing is updated, then we need to update the server level streaming strategy.
+	UWorld* World = GetWorld();
+	USpatialServerLevelStreamingStrategy* ServerLevelStreamingStrategy = NetDriver->ServerLevelStreamingStrategy;
+	if (World && World->WorldComposition && ServerLevelStreamingStrategy)
+	{
+		ServerLevelStreamingStrategy->InitialiseStrategy(World->WorldComposition->GetTilesList(), World->OriginLocation);
+	}
+
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
 	FWorkerComponentUpdate InterestUpdate =
 		NetDriver->InterestFactory
-			->CreatePartitionInterest(NetDriver->LoadBalanceStrategy->GetWorkerInterestQueryConstraint(VirtualId),
-									  NetDriver->DebugCtx != nullptr /*bDebug*/)
+			->CreatePartitionInterest(NetDriver->LoadBalanceStrategy->GetWorkerInterestQueryConstraint(VirtualId), NetDriver->DebugCtx != nullptr /*bDebug*/)
 			.CreateInterestUpdate();
 
 	Connection->SendComponentUpdate(PartitionId, &InterestUpdate);

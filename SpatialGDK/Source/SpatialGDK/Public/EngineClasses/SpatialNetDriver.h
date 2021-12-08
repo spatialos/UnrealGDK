@@ -17,6 +17,7 @@
 
 #include "Interop/AsyncPackageLoadFilter.h"
 #include "IpNetDriver.h"
+#include "ServerWorldComposition/SpatialServerLevelStreamingStrategy.h"
 #include "TimerManager.h"
 
 #include "SpatialNetDriver.generated.h"
@@ -135,6 +136,8 @@ public:
 	virtual void NotifyActorLevelUnloaded(AActor* Actor) override;
 	virtual void NotifyStreamingLevelUnload(class ULevel* Level) override;
 
+	virtual void SetWorld(class UWorld* InWorld) override;
+
 	virtual void PushCrossServerRPCSender(AActor* Sender) override;
 	virtual void PopCrossServerRPCSender() override;
 	virtual void PushDependentActor(AActor* Dependent) override;
@@ -226,6 +229,8 @@ public:
 	UPROPERTY()
 	USpatialNetDriverDebugContext* DebugCtx;
 	UPROPERTY()
+	USpatialServerLevelStreamingStrategy* ServerLevelStreamingStrategy;
+	UPROPERTY()
 	USpatialNetDriverGameplayDebuggerContext* GameplayDebuggerCtx;
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
@@ -299,6 +304,8 @@ public:
 	};
 	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
 
+	TArray<FName> GetLoadedSublevelPackageNames() const;
+
 private:
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
@@ -332,6 +339,7 @@ private:
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
 
+	void CreateAndInitializeLoadBalancingStrategy();
 	void CreateAndInitializeLoadBalancingClasses();
 
 	void CreateServerSpatialOSNetConnection();

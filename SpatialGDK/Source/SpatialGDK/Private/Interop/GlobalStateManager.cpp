@@ -374,6 +374,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
+	NetDriver->World->GetWorldSettings()->NotifyMatchStarted();
 }
 
 void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)

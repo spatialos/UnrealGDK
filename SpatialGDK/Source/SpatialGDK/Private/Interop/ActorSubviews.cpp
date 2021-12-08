@@ -6,6 +6,7 @@
 #include "Interop/InitialOnlyFilter.h"
 #include "Interop/OwnershipCompletenessHandler.h"
 #include "Interop/SkeletonEntities.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ActorOwnership.h"
 #include "Schema/Restricted.h"
 #include "Schema/Tombstone.h"
@@ -64,6 +65,26 @@ bool MainActorSubviewSetup::IsActorEntity(const Worker_EntityId EntityId, const 
 	if (!SkeletonEntityFunctions::IsCompleteSkeleton(Entity))
 	{
 		return false;
+	}
+
+	const bool bStreamedActor = !Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::NOT_STREAMED_COMPONENT_ID });
+	if (bStreamedActor && NetDriver.LoadBalanceStrategy != nullptr && NetDriver.ServerLevelStreamingStrategy != nullptr)
+	{
+		bool bActorInLoadedLevels = false;
+		for (FName LevelPath : NetDriver.GetLoadedSublevelPackageNames())
+		{
+			const Worker_ComponentId LevelComponentId = NetDriver.ClassInfoManager->GetComponentIdFromLevelPath(LevelPath.ToString());
+			if (Entity.Components.ContainsByPredicate(ComponentIdEquality{ LevelComponentId }))
+			{
+				bActorInLoadedLevels = true;
+				break;
+			}
+		}
+
+		if (!bActorInLoadedLevels)
+		{
+			return false;
+		}
 	}
 
 	if (NetDriver.AsyncPackageLoadFilter != nullptr)
