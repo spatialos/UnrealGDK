@@ -53,7 +53,9 @@ public:
 	// the PlayerController as a partition entity for the client worker.
 	Worker_EntityId ConnectionClientWorkerSystemEntityId;
 
-	double TimeWhenClientInterestLastUpdated;
+  
+	TSet<Worker_EntityId_Key> EntityInterestCache;
+  
 
 	TSet<Worker_EntityId_Key> EntityInterestCache;
 

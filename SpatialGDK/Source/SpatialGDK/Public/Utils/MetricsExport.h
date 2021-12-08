@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "HttpModule.h"
+#include "Misc/EngineVersionComparison.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "MetricsExport.generated.h"
 
@@ -57,5 +58,9 @@ private:
 	FString WorkerType;
 	FString WorkerId;
 
+#if UE_VERSION_OLDER_THAN(5, 0, 0)
 	FDelegateHandle TickerHandle;
+#else
+	FTSTicker::FDelegateHandle TickerHandle;
+#endif
 };

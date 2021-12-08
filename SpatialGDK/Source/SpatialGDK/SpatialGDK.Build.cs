@@ -35,7 +35,11 @@ public class SpatialGDK : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "EngineSettings",
+#if UE_5_0_OR_LATER
+                "HTTP",
+#else
                 "Http",
+#endif
                 "InputCore",
                 "OnlineSubsystemUtils",
                 "Projects",

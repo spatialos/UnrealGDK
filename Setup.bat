@@ -202,8 +202,7 @@ call :MarkStartOfBlock "Build C# utilities"
             echo "Found the engine directory, and it is a UE5 installation"
             call :ExecuteAndCheck %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /property:DefineConstants=UE_5_0_OR_NEWER /restore
         )
-    )
-    else (
+    ) else (
         echo "Not able to find the engine directory, assuming the engine is UE5."
         call :ExecuteAndCheck %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /property:DefineConstants=UE_5_0_OR_NEWER /restore
     )

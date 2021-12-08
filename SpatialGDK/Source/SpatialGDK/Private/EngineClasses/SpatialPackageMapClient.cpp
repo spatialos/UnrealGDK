@@ -564,6 +564,11 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	// Remove actor subobjects.
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 
+	if (SpatialNetDriver->ActorSystem == nullptr)
+	{
+		return;
+	}
+
 	SpatialGDK::UnrealMetadata* UnrealMetadata = SpatialNetDriver->ActorSystem->GetUnrealMetadata(EntityId);
 
 	// If UnrealMetadata is nullptr (can happen if the editor is closing down) just return.
