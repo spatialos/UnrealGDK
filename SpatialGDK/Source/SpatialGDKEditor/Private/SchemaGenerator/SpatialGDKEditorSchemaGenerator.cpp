@@ -19,6 +19,10 @@
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
+#include "Runtime/Engine/Private/WorldPartition/RuntimeSpatialHash/RuntimeSpatialHashGridHelper.h"
+#include "Runtime/Engine/Public/WorldPartition/WorldPartition.h"
+#include "Runtime/Engine/Public/WorldPartition/WorldPartitionActorCluster.h"
+#include "Runtime/Engine/Public/WorldPartition/WorldPartitionRuntimeSpatialHash.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "Templates/SharedPointer.h"
 #include "UObject/UObjectIterator.h"
@@ -342,6 +346,62 @@ void GenerateSchemaForSublevels()
 	GenerateSchemaForSublevels(SchemaOutputPath, LevelNamesToPaths);
 }
 
+void GenerateWorldPartitionDummyLevels(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, const FName& LevelPath,
+									   const FString& LevelName)
+{
+	FSoftObjectPath LevelSoftPath(LevelPath);
+	UWorldPartition* WorldPartition = nullptr;
+
+	if (UWorld* World = Cast<UWorld>(LevelSoftPath.TryLoad()))
+	{
+		if (AWorldSettings* WorldSettings = World->GetWorldSettings())
+		{
+			WorldPartition = WorldSettings->GetWorldPartition();
+			if (WorldPartition == nullptr)
+			{
+				return;
+			}
+			// Unfortunately need this hack to trick the world partition into initiating in cook mode, otherwise we would crash
+			bool bOldFlag = PRIVATE_GIsRunningCookCommandlet;
+			PRIVATE_GIsRunningCookCommandlet = true;
+			WorldPartition->Initialize(World, FTransform::Identity);
+			PRIVATE_GIsRunningCookCommandlet = bOldFlag;
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Found a world with no world settings."));
+			return;
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Found a level with no world."));
+		return;
+	}
+
+	TArray<FString> PackagesToGenerate;
+	WorldPartition->GenerateStreaming(EWorldPartitionStreamingMode::Cook, &PackagesToGenerate);
+
+	for (const FString& PackageName : PackagesToGenerate)
+	{
+		FString InGamePackageName = TEXT("/Memory") + PackageName;
+		Worker_ComponentId ComponentId = LevelPathToComponentId.FindRef(InGamePackageName);
+		if (ComponentId == 0)
+		{
+			ComponentId = IdGenerator.Next();
+			LevelPathToComponentId.Add(InGamePackageName, ComponentId);
+		}
+		FString ModifiedPackageName = InGamePackageName.Replace(TEXT("-"), TEXT("n"));
+		WriteLevelComponent(Writer, ModifiedPackageName, ComponentId, InGamePackageName);
+	}
+
+	// Unfortunately need this hack to accompany the initialize hack above
+	bool bOldFlag = PRIVATE_GIsRunningCookCommandlet;
+	PRIVATE_GIsRunningCookCommandlet = true;
+	WorldPartition->Uninitialize();
+	PRIVATE_GIsRunningCookCommandlet = bOldFlag;
+}
+
 void GenerateSchemaForSublevels(const FString& SchemaOutputPath, const TMultiMap<FName, FName>& LevelNamesToPaths)
 {
 	FCodeWriter Writer;
@@ -367,19 +427,22 @@ void GenerateSchemaForSublevels(const FString& SchemaOutputPath, const TMultiMap
 
 			for (int i = 0; i < LevelPaths.Num(); i++)
 			{
+				FString ScrambledLevelName = FString::Printf(TEXT("%sInd%d"), *LevelNameString, i);
+				GenerateWorldPartitionDummyLevels(Writer, IdGenerator, LevelPaths[i], ScrambledLevelName);
 				Worker_ComponentId ComponentId = LevelPathToComponentId.FindRef(LevelPaths[i].ToString());
 				if (ComponentId == 0)
 				{
 					ComponentId = IdGenerator.Next();
 					LevelPathToComponentId.Add(LevelPaths[i].ToString(), ComponentId);
 				}
-				WriteLevelComponent(Writer, FString::Printf(TEXT("%sInd%d"), *LevelNameString, i), ComponentId, LevelPaths[i].ToString());
+				WriteLevelComponent(Writer, ScrambledLevelName, ComponentId, LevelPaths[i].ToString());
 			}
 		}
 		else
 		{
 			// Write a single component.
 			FString LevelPath = LevelNamesToPaths.FindRef(LevelName).ToString();
+			GenerateWorldPartitionDummyLevels(Writer, IdGenerator, LevelNamesToPaths.FindRef(LevelName), LevelName.ToString());
 			Worker_ComponentId ComponentId = LevelPathToComponentId.FindRef(LevelPath);
 			if (ComponentId == 0)
 			{
