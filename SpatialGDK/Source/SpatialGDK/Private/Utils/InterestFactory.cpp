@@ -134,7 +134,7 @@ SchemaResultType InterestFactory::CreateServerLightweightInterestResultType()
 	SchemaResultType ServerLightweightResultType{};
 
 	ServerLightweightResultType.ComponentIds.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_LIGHTWEIGHT_SERVER_INTEREST);
-	ServerLightweightResultType.ComponentSetsIds.Push(SpatialConstants::SERVER_LIGHTWEIGHT_COMPONENT_SET_ID);
+	//ServerLightweightResultType.ComponentSetsIds.Push(SpatialConstants::SERVER_LIGHTWEIGHT_COMPONENT_SET_ID);
 
 	return ServerLightweightResultType;
 }

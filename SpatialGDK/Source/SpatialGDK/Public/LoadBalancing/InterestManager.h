@@ -101,6 +101,17 @@ protected:
 		EVB_PrevVisible,
 		EVB_Count
 	};
-	TArray<TArray<Worker_EntityId_Key>> CachedServerInterest[EVB_Count];
+
+	enum EntityFidelityType
+	{
+		EFT_Full,
+		EFT_Lightweight,
+		EFT_Count
+	};
+
+	TArray<TArray<Worker_EntityId_Key>> CachedServerInterest[EFT_Count][EVB_Count];
+
+private:
+	EntityFidelityType GetEntityEFT(Worker_EntityId EntityId) const;
 };
 } // namespace SpatialGDK

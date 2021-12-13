@@ -268,6 +268,16 @@ void FInterestManager::SwapEntries(int32 Slot1, int32 Slot2)
 	}
 }
 
+FInterestManager::EntityFidelityType FInterestManager::GetEntityEFT(Worker_EntityId EntityId) const
+{
+	if (LightweightEntities.GetObjects().Contains(EntityId))
+	{
+		return EFT_Lightweight;
+	}
+
+	return EFT_Full;
+}
+
 void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArray<Worker_EntityId> Workers, const TArray<FBox2D>& Regions)
 {
 	SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputation);
@@ -282,7 +292,8 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 	}
 
 	// Set an entity that has not moved since 5 secs as inactive. It will not be checked against the regions.
-	// This assumes that the bits allocation against workers remains constant, which is not valid anymore when changing/reassigning regions.
+	// This assumes that the bits allocation against workers remains constant, which is not valid anymore when changing/reassigning
+	// regions.
 	const double InactiveTime = 5.0;
 	const uint64 TimeToConsiderInactive = FPlatformTime::Cycles64() - (InactiveTime / FPlatformTime::GetSecondsPerCycle64());
 	for (int32 i = 0; i < static_cast<int32>(ActiveEntities); ++i)
@@ -300,11 +311,14 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 	const uint32 NumRegions = Regions.Num();
 	const uint32 NumEntities = Entities.Num();
 
-	if (CachedServerInterest[0].Num() < static_cast<int32>(NumRegions))
+	if (CachedServerInterest[0][0].Num() < static_cast<int32>(NumRegions))
 	{
-		for (int i = 0; i < EVB_Count; ++i)
+		for (int i = 0; i < EFT_Count; ++i)
 		{
-			CachedServerInterest[i].SetNum(NumRegions);
+			for (int j = 0; j < EVB_Count; ++j)
+			{
+				CachedServerInterest[i][j].SetNum(NumRegions);
+			}
 		}
 	}
 
@@ -317,9 +331,9 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 		// hence visiting the tree before testing the entities is just more data to process.
 		// Have to test it for the player interest since the tree culling might actually do something in that case.
 
-		// Since the regions are a partition of the entire space in the server case, a better strategy would be to find the region in the
-		// partition an entity belongs to and test the position against the segment boundaries with the interest border. The region's
-		// connectivity would be needed to interpret these results.
+		// Since the regions are a partition of the entire space in the server case, a better strategy would be to find the region in
+		// the partition an entity belongs to and test the position against the segment boundaries with the interest border. The
+		// region's connectivity would be needed to interpret these results.
 		SCOPE_CYCLE_COUNTER(STAT_InterestManagerComputationBroadphase);
 		const uint32 NumActiveEntities = ActiveEntities;
 
@@ -561,11 +575,15 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 		const uint64* VisibilityPtr = Visibility.GetData();
 
 		// Reset region visibility.
-		for (uint32 j = 0; j < NumRegions; ++j)
+		for (uint32 ieft = 0; ieft < EFT_Count; ieft++)
 		{
-			Swap(CachedServerInterest[EVB_PrevVisible][j], CachedServerInterest[EVB_CurrVisible][j]);
-			CachedServerInterest[EVB_CurrVisible][j].SetNum(0, false);
+			for (uint32 j = 0; j < NumRegions; ++j)
+			{
+				Swap(CachedServerInterest[ieft][EVB_PrevVisible][j], CachedServerInterest[ieft][EVB_CurrVisible][j]);
+				CachedServerInterest[ieft][EVB_CurrVisible][j].SetNum(0, false);
+			}
 		}
+
 		for (uint32 i = 0; i < NumEntities; ++i)
 		{
 			uint64 VisMask = *VisibilityPtr;
@@ -575,7 +593,8 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 				// _tzcnt_u64 -> Count trailing zeros, <==> position of the first set bit
 				// equivalent of peeling one set region at a time
 				const uint32 j = _tzcnt_u64(VisMask);
-				CachedServerInterest[EVB_CurrVisible][j].Add(Entities[i]);
+				Worker_EntityId_Key EntityId = Entities[i];
+				CachedServerInterest[GetEntityEFT(EntityId)][EVB_CurrVisible][j].Add(EntityId);
 				VisMask &= ~(1ull << j);
 #else
 				ensureMsgf(false, TEXT("Interest manager should only be run on servers"));
@@ -584,90 +603,99 @@ void FInterestManager::ComputeInterest(ISpatialOSWorker& Connection, const TArra
 			++VisibilityPtr;
 		}
 
-		for (uint32 j = 0; j < NumRegions; ++j)
+		for (uint32 ieft = 0; ieft < EFT_Count; ++ieft)
 		{
-			// If several regions are assigned to a single worker, the lists need to be merged and
-			// duplicates eliminated before computing the add/remove lists.
-
-			auto& CurVisible = CachedServerInterest[EVB_CurrVisible][j];
-			auto& PrevVisible = CachedServerInterest[EVB_PrevVisible][j];
-			auto& Added = CachedServerInterest[EVB_NewlyAdded][j];
-			Added.SetNum(0, false);
-			CurVisible.Sort();
-			int32 Removed = 0;
-			int32 CursorPrev = 0;
-			int32 CursorCur = 0;
-
-			const int32 NumCur = CurVisible.Num();
-			const int32 NumPrev = PrevVisible.Num();
-
-			while (CursorCur < NumCur || CursorPrev < NumPrev)
+			for (uint32 j = 0; j < NumRegions; ++j)
 			{
-				if (CursorCur == NumCur || (CursorPrev < NumPrev && CurVisible[CursorCur] > PrevVisible[CursorPrev]))
+				// If several regions are assigned to a single worker, the lists need to be merged and
+				// duplicates eliminated before computing the add/remove lists.
+
+				auto& CurVisible = CachedServerInterest[ieft][EVB_CurrVisible][j];
+				auto& PrevVisible = CachedServerInterest[ieft][EVB_PrevVisible][j];
+				auto& Added = CachedServerInterest[ieft][EVB_NewlyAdded][j];
+
+				Added.SetNum(0, false);
+				CurVisible.Sort();
+				int32 Removed = 0;
+				int32 CursorPrev = 0;
+				int32 CursorCur = 0;
+
+				const int32 NumCur = CurVisible.Num();
+				const int32 NumPrev = PrevVisible.Num();
+
+				while (CursorCur < NumCur || CursorPrev < NumPrev)
 				{
-					PrevVisible[Removed] = PrevVisible[CursorPrev];
-					++Removed;
-					++CursorPrev;
-					continue;
+					if (CursorCur == NumCur || (CursorPrev < NumPrev && CurVisible[CursorCur] > PrevVisible[CursorPrev]))
+					{
+						PrevVisible[Removed] = PrevVisible[CursorPrev];
+						++Removed;
+						++CursorPrev;
+						continue;
+					}
+					if (CursorPrev == NumPrev || (CursorCur < NumCur && CurVisible[CursorCur] < PrevVisible[CursorPrev]))
+					{
+						Added.Add(CurVisible[CursorCur]);
+						++CursorCur;
+						continue;
+					}
+					if (CurVisible[CursorCur] == PrevVisible[CursorPrev])
+					{
+						++CursorCur;
+						++CursorPrev;
+					}
 				}
-				if (CursorPrev == NumPrev || (CursorCur < NumCur && CurVisible[CursorCur] < PrevVisible[CursorPrev]))
-				{
-					Added.Add(CurVisible[CursorCur]);
-					++CursorCur;
-					continue;
-				}
-				if (CurVisible[CursorCur] == PrevVisible[CursorPrev])
-				{
-					++CursorCur;
-					++CursorPrev;
-				}
+				PrevVisible.SetNum(Removed);
 			}
-			PrevVisible.SetNum(Removed);
 		}
 	}
 
 	{
-		for (uint32 j = 0; j < NumRegions; ++j)
+		for (uint32 ieft = 0; ieft < EFT_Count; ++ieft)
 		{
-			auto& Added = CachedServerInterest[EVB_NewlyAdded][j];
-			auto& Removed = CachedServerInterest[EVB_PrevVisible][j];
-
-			int NumLightweightAdded = Algo::CountIf(Added, [this](auto Entity) {
-				return LightweightEntities.GetObjects().Contains(Entity);
-			});
-			if (NumLightweightAdded > 0)
+			for (uint32 j = 0; j < NumRegions; ++j)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("!!! Lightweight entities added: %d"), NumLightweightAdded);
-			}
+				auto& Added = CachedServerInterest[ieft][EVB_NewlyAdded][j];
+				auto& Removed = CachedServerInterest[ieft][EVB_PrevVisible][j];
 
-			const int32 NumAdded = Added.Num();
-			const int32 NumRemoved = Removed.Num();
-
-			if (NumAdded > 0 || NumRemoved > 0)
-			{
-				ChangeInterestRequest Request;
-				Request.SystemEntityId = Workers[j];
-				Request.bOverwrite = false;
-
-				if (NumAdded > 0)
+				int NumLightweightAdded = Algo::CountIf(Added, [this](auto Entity) {
+					return LightweightEntities.GetObjects().Contains(Entity);
+				});
+				if (NumLightweightAdded > 0)
 				{
-					ChangeInterestQuery QueryAdd;
-					QueryAdd.ResultComponentIds = InterestF.GetServerNonAuthInterestResultType().ComponentIds;
-					QueryAdd.ResultComponentSetIds = InterestF.GetServerNonAuthInterestResultType().ComponentSetsIds;
-					QueryAdd.Entities = MoveTemp(Added);
-					Request.QueriesToAdd.Add(MoveTemp(QueryAdd));
+					UE_LOG(LogTemp, Warning, TEXT("!!! Lightweight entities added: %d"), NumLightweightAdded);
 				}
 
-				if (NumRemoved > 0)
-				{
-					ChangeInterestQuery QueryRemove;
-					QueryRemove.ResultComponentIds = InterestF.GetServerNonAuthInterestResultType().ComponentIds;
-					QueryRemove.ResultComponentSetIds = InterestF.GetServerNonAuthInterestResultType().ComponentSetsIds;
-					QueryRemove.Entities = MoveTemp(Removed);
-					Request.QueriesToRemove.Add(MoveTemp(QueryRemove));
-				}
+				const int32 NumAdded = Added.Num();
+				const int32 NumRemoved = Removed.Num();
 
-				Request.SendRequest(Connection);
+				if (NumAdded > 0 || NumRemoved > 0)
+				{
+					ChangeInterestRequest Request;
+					Request.SystemEntityId = Workers[j];
+					Request.bOverwrite = false;
+
+					SchemaResultType ResultType = (ieft == EFT_Lightweight ? InterestF.GetServerLightweightInterestResultType() : InterestF.GetServerNonAuthInterestResultType());
+
+					if (NumAdded > 0)
+					{
+						ChangeInterestQuery QueryAdd;
+						QueryAdd.ResultComponentIds = ResultType.ComponentIds;
+						QueryAdd.ResultComponentSetIds = ResultType.ComponentSetsIds;
+						QueryAdd.Entities = MoveTemp(Added);
+						Request.QueriesToAdd.Add(MoveTemp(QueryAdd));
+					}
+
+					if (NumRemoved > 0)
+					{
+						ChangeInterestQuery QueryRemove;
+						QueryRemove.ResultComponentIds = ResultType.ComponentIds;
+						QueryRemove.ResultComponentSetIds = ResultType.ComponentSetsIds;
+						QueryRemove.Entities = MoveTemp(Removed);
+						Request.QueriesToRemove.Add(MoveTemp(QueryRemove));
+					}
+
+					Request.SendRequest(Connection);
+				}
 			}
 		}
 	}
