@@ -2,6 +2,7 @@
 
 #pragma once
 #include "SpatialConstants.h"
+
 #include "SpatialShadowActor.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialShadowActor, Log, All);
@@ -15,7 +16,7 @@ public:
 	void Init(AActor& InActor);
 	void Update();
 
-	void CheckUnauthorisedDataChanges();
+	void CheckUnauthorisedDataChanges(const ENetMode NetMode);
 
 protected:
 	UPROPERTY()

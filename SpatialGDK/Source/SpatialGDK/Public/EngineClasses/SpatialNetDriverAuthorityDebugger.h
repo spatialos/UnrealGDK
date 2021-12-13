@@ -29,8 +29,8 @@ public:
 	void UpdateSpatialShadowActor(const Worker_EntityId_Key EntityId);
 	void CheckUnauthorisedDataChanges();
 
-	static bool IsSuppressedActor(const AActor& InActor);
-	static bool IsSuppressedProperty(const FProperty& InProperty);
+	static bool IsSuppressedActor(const AActor& Actor);
+	static bool IsSuppressedProperty(const FProperty& Property, const AActor& Actor);
 
 protected:
 	UPROPERTY()
@@ -43,4 +43,5 @@ protected:
 	// TODO: link PR to investigate these cases
 	const static TArray<FName> SuppressedActors;
 	const static TArray<FName> SuppressedProperties;
+	const static TArray<FName> SuppressedAutonomousProperties;
 };
