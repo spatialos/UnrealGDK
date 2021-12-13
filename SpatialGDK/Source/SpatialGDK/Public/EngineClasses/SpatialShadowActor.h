@@ -1,7 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+#include "Engine/NetDriver.h"
 #include "SpatialConstants.h"
+
 #include "SpatialShadowActor.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialShadowActor, Log, All);
@@ -15,7 +17,7 @@ public:
 	void Init(AActor& InActor);
 	void Update();
 
-	void CheckUnauthorisedDataChanges();
+	void CheckUnauthorisedDataChanges(UNetDriver& NetDriver);
 
 protected:
 	UPROPERTY()

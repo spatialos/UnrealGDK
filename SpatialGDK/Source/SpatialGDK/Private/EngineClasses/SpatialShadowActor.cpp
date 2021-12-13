@@ -57,7 +57,7 @@ void USpatialShadowActor::CreateHash()
 	bIsValidHash = true;
 }
 
-void USpatialShadowActor::CheckUnauthorisedDataChanges()
+void USpatialShadowActor::CheckUnauthorisedDataChanges(UNetDriver& NetDriver)
 {
 	if (IsPendingKillOrUnreachable() || !IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
 	{
@@ -83,8 +83,12 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges()
 		return;
 	}
 
+	TArray<FLifetimeProperty> LifetimeReplicatedProperties;
+	Actor->GetClass()->GetDefaultObject()->GetLifetimeReplicatedProps(LifetimeReplicatedProperties);
+	const bool bIsClient = NetDriver.GetNetMode() == NM_Client;
+
 	// Compare hashed properties
-	int32 i = 0;
+	int32 i = -1;
 
 	for (TFieldIterator<const FProperty> PropIt(Actor->GetClass()); PropIt; ++PropIt)
 	{
@@ -92,6 +96,22 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges()
 
 		if (Property->HasAnyPropertyFlags(CPF_Net) && Property->HasAnyPropertyFlags(CPF_HasGetValueTypeHash))
 		{
+			// Use pre-increment to work around multiple exit paths
+			++i;
+
+			// Check this is a replicated property we care about
+			const FLifetimeProperty* ReplicatedPropertyPtr =
+				LifetimeReplicatedProperties.FindByPredicate([Property](const FLifetimeProperty& ReplicatedProperty) {
+					return ReplicatedProperty.RepIndex == Property->RepIndex;
+				});
+
+			const bool bServerOnly =
+				ReplicatedPropertyPtr->Condition == COND_ServerOnly || ReplicatedPropertyPtr->Condition == COND_AuthServerOnly;
+			if (bServerOnly && bIsClient)
+			{
+				continue;
+			}
+
 			// If it's a pointer property need to check the object we are pointing to is valid before hashing - otherwise causes problems on
 			// shutdown when objects are being deleted
 			if (const FObjectProperty* ObjectProperty = CastField<FObjectProperty>(Property))
@@ -100,14 +120,14 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges()
 
 				if (!IsValid(ObjectPointer) || ObjectPointer->IsPendingKillOrUnreachable())
 				{
-					i++;
 					continue;
 				}
 			}
 
 			const uint32 LatestPropertyHash = Property->GetValueTypeHash(Property->ContainerPtrToValuePtr<void>(Actor, 0));
 
-			if (ReplicatedPropertyHashes[i] != LatestPropertyHash && !USpatialNetDriverAuthorityDebugger::IsSuppressedProperty(*Property))
+			if (ReplicatedPropertyHashes[i] != LatestPropertyHash
+				&& !USpatialNetDriverAuthorityDebugger::IsSuppressedProperty(*Property, *Actor))
 			{
 				UE_LOG(LogSpatialShadowActor, Error,
 					   TEXT("Changed actor without authority with name %s of type %s, property changed without authority was %s!"),
@@ -116,7 +136,6 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges()
 				// Store hash to avoid generating a duplicate error message
 				ReplicatedPropertyHashes[i] = LatestPropertyHash;
 			}
-			i++;
 		}
 	}
 }
