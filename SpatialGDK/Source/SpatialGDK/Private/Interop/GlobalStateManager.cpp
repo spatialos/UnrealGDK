@@ -88,6 +88,11 @@ void UGlobalStateManager::SendShutdownMultiProcessRequest()
 	CommandRequest.schema_type = Schema_CreateCommandRequest();
 
 	NetDriver->Connection->SendCommandRequest(GlobalStateManagerEntityId, &CommandRequest, RETRY_UNTIL_COMPLETE, {});
+
+	// Flush the command and wait for a bit - in multiple processes mode, the command might not be flushed until
+	// the external processes are terminated.
+	NetDriver->Connection->Flush();
+	FPlatformProcess::Sleep(0.1f);
 }
 
 void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
