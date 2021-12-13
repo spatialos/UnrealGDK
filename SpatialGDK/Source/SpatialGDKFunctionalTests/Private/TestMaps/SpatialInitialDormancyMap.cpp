@@ -3,6 +3,7 @@
 #include "TestMaps/SpatialInitialDormancyMap.h"
 
 #include "SpatialGDKFunctionalTests/SpatialGDK/DormancyTests/DormancyTestActor.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/DormancyTests/InitiallyDormantMapActorDeletionTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DormancyTests/InitiallyDormantMapActorTest.h"
 
 USpatialInitialDormancyMap::USpatialInitialDormancyMap()
@@ -14,6 +15,7 @@ void USpatialInitialDormancyMap::CreateCustomContentForMap()
 {
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 
+	AddActorToLevel<AInitiallyDormantMapActorDeletionTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<AInitiallyDormantMapActorTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADormancyTestActor>(CurrentLevel, FTransform::Identity);
 }
