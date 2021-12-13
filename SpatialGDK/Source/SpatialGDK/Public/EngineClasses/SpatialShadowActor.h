@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
-#include "Engine/NetDriver.h"
 #include "SpatialConstants.h"
 
 #include "SpatialShadowActor.generated.h"
@@ -17,7 +16,7 @@ public:
 	void Init(AActor& InActor);
 	void Update();
 
-	void CheckUnauthorisedDataChanges(UNetDriver& NetDriver);
+	void CheckUnauthorisedDataChanges(const ENetMode NetMode);
 
 protected:
 	UPROPERTY()

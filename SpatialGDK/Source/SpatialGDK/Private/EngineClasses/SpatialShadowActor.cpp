@@ -57,7 +57,7 @@ void USpatialShadowActor::CreateHash()
 	bIsValidHash = true;
 }
 
-void USpatialShadowActor::CheckUnauthorisedDataChanges(UNetDriver& NetDriver)
+void USpatialShadowActor::CheckUnauthorisedDataChanges(const ENetMode NetMode)
 {
 	if (IsPendingKillOrUnreachable() || !IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
 	{
@@ -85,7 +85,7 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges(UNetDriver& NetDriver)
 
 	TArray<FLifetimeProperty> LifetimeReplicatedProperties;
 	Actor->GetClass()->GetDefaultObject()->GetLifetimeReplicatedProps(LifetimeReplicatedProperties);
-	const bool bIsClient = NetDriver.GetNetMode() == NM_Client;
+	const bool bIsClient = NetMode == NM_Client;
 
 	// Compare hashed properties
 	int32 i = -1;

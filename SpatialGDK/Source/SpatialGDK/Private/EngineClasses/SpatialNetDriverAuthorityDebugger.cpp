@@ -46,7 +46,7 @@ void USpatialNetDriverAuthorityDebugger::CheckUnauthorisedDataChanges()
 {
 	for (auto It = SpatialShadowActors.CreateIterator(); It; ++It)
 	{
-		It.Value()->CheckUnauthorisedDataChanges(*NetDriver);
+		It.Value()->CheckUnauthorisedDataChanges(NetDriver->GetNetMode());
 	}
 }
 
