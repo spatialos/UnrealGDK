@@ -438,11 +438,12 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 
 			// UNR-5843 TODO: fix this so we no longer need this special handling, for instance by replicating bRepPhysics as a separate
 			// always replicated field.
+			const bool bRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
+#if UE_VERSION_OLDER_THAN(5, 0, 0)
 			if (ensure(Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents.IsValidIndex(Cmd.ParentIndex)))
 			{
 				const FRepChangedParent& Parent =
 					Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->Parents[Cmd.ParentIndex];
-				const bool bRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
 				if (!Parent.Active && !bRepActorMovement)
 				{
 					if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
@@ -454,6 +455,13 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 					continue;
 				}
 			}
+#else
+			if (!bRepActorMovement
+				&& !Replicator.RepState->GetSendingRepState()->RepChangedPropertyTracker->IsParentActive(Cmd.ParentIndex))
+			{
+				continue;
+			}
+#endif
 		}
 
 		InitialRepChanged.Add(Cmd.RelativeHandle);
@@ -555,14 +563,14 @@ int64 USpatialActorChannel::ReplicateActor()
 		// Don't need to do anything, because it should have already been logged.
 		return 0;
 	}
-	// If our Actor is PendingKill, that's bad. It means that somehow it wasn't properly removed
+	// If our Actor is not valid, that's bad. It means that somehow it wasn't properly removed
 	// from the NetDriver or ReplicationDriver.
 	// TODO: Maybe notify the NetDriver / RepDriver about this, and have the channel close?
-	else if (Actor->IsPendingKillOrUnreachable())
+	else if (!IsValid(Actor))
 	{
 		bActorIsPendingKill = true;
 		ActorReplicator.Reset();
-		FString Error(FString::Printf(TEXT("ReplicateActor called with PendingKill Actor! %s"), *Describe()));
+		FString Error(FString::Printf(TEXT("ReplicateActor called with invalid Actor! %s"), *Describe()));
 		UE_LOG(LogNet, Log, TEXT("%s"), *Error);
 		ensureMsgf(false, TEXT("%s"), *Error);
 		return 0;
