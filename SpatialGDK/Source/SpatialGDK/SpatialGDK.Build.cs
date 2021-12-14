@@ -99,22 +99,6 @@ public class SpatialGDK : ModuleRules
         {
             ImportLibSuffix = SharedLibSuffix = ".dylib";
         }
-        else if (Target.Platform == UnrealTargetPlatform.PS4)
-        {
-            ImportLibSuffix = "_stub.a";
-            SharedLibSuffix = ".prx";
-            bAddDelayLoad = true;
-        }
-#if !UE_5_0_OR_LATER
-        else if (Target.Platform == UnrealTargetPlatform.XboxOne)
-        {
-            LibPrefix = "improbable_";
-            ImportLibSuffix = ".lib";
-            SharedLibSuffix = ".dll";
-            // We don't set bAddDelayLoad = true here, because we get "unresolved external symbol __delayLoadHelper2".
-            // See: https://www.fmod.org/questions/question/deploy-issue-on-xboxone-with-unrealengine-4-14/
-        }
-#endif
         else if (Target.Platform == UnrealTargetPlatform.IOS)
         {
             ImportLibSuffix = SharedLibSuffix = "_static.a";
@@ -123,15 +107,6 @@ public class SpatialGDK : ModuleRules
         {
             throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
         }
-
-#if UE_5_0_OR_LATER
-        if (Target.Platform.IsInGroup(UnrealPlatformGroup.XboxCommon))
-        {
-            bAddDelayLoad = false;
-            // We don't want bAddDelayLoad here, because we get "unresolved external symbol __delayLoadHelper2".
-            // See: https://www.fmod.org/questions/question/deploy-issue-on-xboxone-with-unrealengine-4-14/
-        }
-#endif
 
         string WorkerImportLib = System.String.Format("{0}worker{1}", LibPrefix, ImportLibSuffix);
         string WorkerSharedLib = System.String.Format("{0}worker{1}", LibPrefix, SharedLibSuffix);
