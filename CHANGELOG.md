@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed PlayerControllers incorrectly being deleted when Actor is teleported out of owning Server's interest range.
 - NCD and sublevel schema generation won't invalidate schema determinism.
 - Fixed an issue where VirtualWorkerIds can conflict with existing state when a worker restarts.
+- Fixed an issue where SpatialDebugger can have multiple entities created for it when a worker restarts.
 
 ### Internal:
 - Modified startup flow to only create ActorSystem, RPCService and some others after startup has otherwise finished; removed initial op reordering.
