@@ -507,12 +507,6 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 		SlowCheckMapsConsistency(Subobject);
 	}
 
-	// If the actor is initially dormant, we must register it to our dormancy map.
-	if (Actor->NetDormancy == ENetDormancy::DORM_Initial)
-	{
-		SpatialNetDriver->RegisterDormantEntityId(EntityId);
-	}
-
 	return NetGUID;
 }
 
