@@ -5,6 +5,8 @@
 #include "Interop/SpatialServerWorkerSystemImpl.h"
 #include "SpatialGDKSettings.h"
 
+#include "GeneralProjectSettings.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialServerWorkerSystem);
 
 DEFINE_VTABLE_PTR_HELPER_CTOR(USpatialServerWorkerSystem);
@@ -13,6 +15,11 @@ USpatialServerWorkerSystem::~USpatialServerWorkerSystem() = default;
 
 bool USpatialServerWorkerSystem::ShouldCreateSubsystem(UObject* Outer) const
 {
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+	{
+		return false;
+	}
+
 	USpatialGameInstance* GameInstance = Cast<USpatialGameInstance>(Outer);
 	if (!ensure(GameInstance != nullptr))
 	{
