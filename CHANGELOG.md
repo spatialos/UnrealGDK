@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed IsActorGroupOwnerForClass logging an error if NetDriver was not ready.
 - Fixed PlayerControllers incorrectly being deleted when Actor is teleported out of owning Server's interest range.
 - NCD and sublevel schema generation won't invalidate schema determinism.
+- Multiple processes PIE servers now shut down correctly.
 - Fixed an issue where VirtualWorkerIds can conflict with existing state when a worker restarts.
 - Fixed an issue where SpatialDebugger can have multiple entities created for it when a worker restarts.
 
