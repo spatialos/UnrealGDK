@@ -72,9 +72,13 @@ enum Type
 DECLARE_DYNAMIC_DELEGATE(FOnConfigUIClosedDelegate);
 
 /**
- * Visualise spatial information at runtime and in the editor
+ * Visualise spatial information at runtime and in the editor.
+ *
+ * This class doesn't have to be Persistent, but due to it mimicking
+ * GameMode, GameState etc. in its creation flow, it needs to persist
+ * between multiple launches of workers.
  */
-UCLASS(SpatialType = (NotPersistent), Blueprintable, NotPlaceable, Transient)
+UCLASS(SpatialType, Blueprintable, NotPlaceable, Transient)
 class SPATIALGDK_API ASpatialDebugger : public AInfo
 {
 	GENERATED_UCLASS_BODY()

@@ -263,6 +263,9 @@ bool FAuthCreateAndAssignPartitions::FAssignPartitionsToWorkersStep::TryFinish()
 	SharedState->DiscoveredPartitionEntityIds.GetKeys(WorkerPartitions);
 	WorkerPartitions.Append(SharedState->NewCreatedPartitionEntityIds);
 
+	// Sorting ensures consistency between VirtualWorkerIds and partitions between restarts.
+	WorkerPartitions.Sort();
+
 	ComponentUpdate Update(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
 
 	for (int32 WorkerIndex = 0; WorkerIndex < Setup.ExpectedServerWorkersCount; ++WorkerIndex)
