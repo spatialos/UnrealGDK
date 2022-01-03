@@ -83,6 +83,19 @@ FWorkingSetSystem::FEntityToWorkerMap FWorkingSetSystem::CreateEntityToOwningWor
 
 		const Worker_PartitionId ServerAuthPartitionId = Delegation.Delegations.FindChecked(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
 
+		{
+			// This considers an edge case where an entity is still in staging partition, which the StrategyWorker
+			// didn't create and thus doesn't have knowledge of.
+			const EntityViewElement& PartitionEntity = View.FindChecked(ServerAuthPartitionId);
+
+			const ComponentData* StagingPartitionComponent =
+				PartitionEntity.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::STAGING_PARTITION_COMPONENT_ID });
+			if (StagingPartitionComponent != nullptr)
+			{
+				return Schema_GetEntityId(StagingPartitionComponent->GetFields(), 1);
+			}
+		}
+
 		const FPartitionHandle PartitionHandle = PartitionManager.GetPartition(ServerAuthPartitionId);
 		check(PartitionHandle.IsValid());
 		const FLBWorkerHandle WorkerHandle = PartitionManager.GetWorkerForPartition(PartitionHandle);
