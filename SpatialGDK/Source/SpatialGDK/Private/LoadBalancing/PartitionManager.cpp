@@ -555,6 +555,18 @@ TOptional<Worker_PartitionId> FPartitionManager::GetPartitionId(FPartitionHandle
 	return PartitionState.Id;
 }
 
+FPartitionHandle FPartitionManager::GetPartition(Worker_PartitionId PartitionId) const
+{
+	for (const FPartitionHandle& Partition : m_Impl->Partitions)
+	{
+		if (Partition->State->Id == PartitionId)
+		{
+			return Partition;
+		}
+	}
+	return {};
+}
+
 FPartitionHandle FPartitionManager::CreatePartition(FString DisplayName, const QueryConstraint& Interest, TArray<ComponentData> MetaData)
 {
 	FPartitionHandle NewPartition = MakeShared<FPartitionDesc>();
@@ -643,7 +655,7 @@ TArray<FLBWorkerHandle> FPartitionManager::GetDisconnectedWorkers()
 	return DisconnectedWorkers;
 }
 
-Worker_EntityId FPartitionManager::GetServerWorkerEntityIdForWorker(FLBWorkerHandle Worker)
+Worker_EntityId FPartitionManager::GetServerWorkerEntityIdForWorker(FLBWorkerHandle Worker) const
 {
 	if (!m_Impl->ConnectedWorkers.Contains(Worker))
 	{
@@ -653,7 +665,7 @@ Worker_EntityId FPartitionManager::GetServerWorkerEntityIdForWorker(FLBWorkerHan
 	return Worker->State->ServerWorkerId;
 }
 
-Worker_EntityId FPartitionManager::GetSystemWorkerEntityIdForWorker(FLBWorkerHandle Worker)
+Worker_EntityId FPartitionManager::GetSystemWorkerEntityIdForWorker(FLBWorkerHandle Worker) const
 {
 	if (!m_Impl->ConnectedWorkers.Contains(Worker))
 	{
@@ -663,7 +675,7 @@ Worker_EntityId FPartitionManager::GetSystemWorkerEntityIdForWorker(FLBWorkerHan
 	return Worker->State->SystemWorkerId;
 }
 
-FLBWorkerHandle FPartitionManager::GetWorkerForServerWorkerEntity(Worker_EntityId EntityId)
+FLBWorkerHandle FPartitionManager::GetWorkerForServerWorkerEntity(Worker_EntityId EntityId) const
 {
 	for (const auto& Worker : m_Impl->ConnectedWorkers)
 	{
@@ -676,4 +688,13 @@ FLBWorkerHandle FPartitionManager::GetWorkerForServerWorkerEntity(Worker_EntityI
 	return FLBWorkerHandle();
 }
 
+FLBWorkerHandle FPartitionManager::GetWorkerForPartition(FPartitionHandle Partition) const
+{
+	if (!m_Impl->Partitions.Contains(Partition))
+	{
+		return {};
+	}
+	FPartitionInternalState& State = *Partition->State;
+	return State.UserAssignment;
+}
 } // namespace SpatialGDK

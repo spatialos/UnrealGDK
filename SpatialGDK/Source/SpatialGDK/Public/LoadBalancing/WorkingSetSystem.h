@@ -53,6 +53,8 @@ public:
 private:
 	struct FImpl;
 
+	FEntityToWorkerMap EntityToOwningWorker;
+
 	struct FWorkingSetData
 	{
 		FWorkingSetState TargetState;

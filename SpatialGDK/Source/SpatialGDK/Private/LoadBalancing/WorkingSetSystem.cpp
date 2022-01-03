@@ -25,6 +25,7 @@ struct FWorkingSetSystem::FImpl
 	struct FReadWorkingSetData
 	{
 		TFunction<const FWorkingSetState*(Worker_EntityId)> GetConfirmedWorkingSet;
+		FEntityToWorkerMap EntityToOwningWorker;
 		const TMap<Worker_EntityId_Key, Worker_EntityId>& ActorOwnership;
 	};
 
@@ -66,7 +67,34 @@ struct FWorkingSetSystem::FImpl
 															   const TSet<Worker_EntityId_Key>& DeclinedRequests);
 };
 
-FWorkingSetSystem::FWorkingSetSystem(FEntityToWorkerMap InEntityToOwningWorker) {}
+FWorkingSetSystem::FEntityToWorkerMap FWorkingSetSystem::CreateEntityToOwningWorkerMap(const EntityView& View,
+																					   const FPartitionManager& PartitionManager)
+{
+	return [&View, &PartitionManager](Worker_EntityId EntityId) -> Worker_EntityId {
+		const EntityViewElement* Entity = View.Find(EntityId);
+		if (!ensure(Entity != nullptr))
+		{
+			return SpatialConstants::INVALID_ENTITY_ID;
+		}
+
+		const ComponentData* AuthorityDelegationComponent =
+			Entity->Components.FindByPredicate(ComponentIdEquality{ AuthorityDelegation::ComponentId });
+		AuthorityDelegation Delegation(AuthorityDelegationComponent->GetUnderlying());
+
+		const Worker_PartitionId ServerAuthPartitionId = Delegation.Delegations.FindChecked(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
+
+		const FPartitionHandle PartitionHandle = PartitionManager.GetPartition(ServerAuthPartitionId);
+		check(PartitionHandle.IsValid());
+		const FLBWorkerHandle WorkerHandle = PartitionManager.GetWorkerForPartition(PartitionHandle);
+		check(WorkerHandle.IsValid());
+		return PartitionManager.GetSystemWorkerEntityIdForWorker(WorkerHandle);
+	};
+}
+
+FWorkingSetSystem::FWorkingSetSystem(FEntityToWorkerMap InEntityToOwningWorker)
+	: EntityToOwningWorker(InEntityToOwningWorker)
+{
+}
 
 FWorkingSetSystem::~FWorkingSetSystem() {}
 
@@ -80,7 +108,7 @@ void FWorkingSetSystem::Advance(const FSubView& MarkerEntitiesSubview)
 											}
 											return nullptr;
 										},
-										 ActorOwnership };
+										 EntityToOwningWorker, ActorOwnership };
 
 	FImpl::FWorkingSetDataUpdates DataUpdates = FImpl::GatherWorkingSetRequests(MarkerEntitiesSubview);
 	{
@@ -265,8 +293,23 @@ TSet<Worker_EntityId_Key> FWorkingSetSystem::FImpl::DeclineConflictingRequests(c
 		Worker_EntityId MarkerEntityId;
 		TSet<Worker_EntityId_Key> ConflictingEntities;
 
-		static bool Compare(const FConflictingWorkingSetData& Lhs, const FConflictingWorkingSetData& Rhs)
+		static bool Compare(const FConflictingWorkingSetData& Lhs, const FConflictingWorkingSetData& Rhs, const FWorkingSetState& LhsState,
+							const FWorkingSetState& RhsState, FEntityToWorkerMap MapEntityToOwningWorker)
 		{
+			// Special case: prioritize sets when all entities in a set are owned by the same worker.
+			auto IsOwnedByOneWorker = [&MapEntityToOwningWorker](const FWorkingSetState& State) {
+				TSet<Worker_EntityId_Key> WorkersOwningSetMembers;
+				Algo::Transform(State.MemberEntities, WorkersOwningSetMembers, MapEntityToOwningWorker);
+				return WorkersOwningSetMembers.Num() == 1;
+			};
+
+			const bool bIsLhsOwnedByOneWorker = IsOwnedByOneWorker(LhsState);
+			const bool bIsRhsOwnedByOneWorker = IsOwnedByOneWorker(RhsState);
+			if (bIsLhsOwnedByOneWorker != bIsRhsOwnedByOneWorker)
+			{
+				return bIsLhsOwnedByOneWorker;
+			}
+
 			const TSet<Worker_EntityId_Key> SetOverlap = Lhs.ConflictingEntities.Intersect(Rhs.ConflictingEntities);
 			if (SetOverlap.Num() > 0)
 			{
@@ -276,7 +319,6 @@ TSet<Worker_EntityId_Key> FWorkingSetSystem::FImpl::DeclineConflictingRequests(c
 					return Lhs.ConflictingEntities.Num() < Rhs.ConflictingEntities.Num();
 				}
 			}
-
 			// The sets either don't overlap at all, or have the same number of conflicting entities;
 			// any ordering will be fine, so let's disambiguate using marker entity IDs.
 			return Lhs.MarkerEntityId < Rhs.MarkerEntityId;
@@ -317,8 +359,10 @@ TSet<Worker_EntityId_Key> FWorkingSetSystem::FImpl::DeclineConflictingRequests(c
 	}
 
 	// The ordering here is for the sake of consistency and potentially better resolution of conflicts.
-	ConflictingMarkerEntities.ValueSort([](const FConflictingWorkingSetData& Lhs, const FConflictingWorkingSetData& Rhs) {
-		return FConflictingWorkingSetData::Compare(Lhs, Rhs);
+	ConflictingMarkerEntities.ValueSort([&DataUpdates, EntityToOwningWorker = In.EntityToOwningWorker](
+											const FConflictingWorkingSetData& Lhs, const FConflictingWorkingSetData& Rhs) {
+		return FConflictingWorkingSetData::Compare(Lhs, Rhs, DataUpdates.WorkingSetUpdates.FindChecked(Lhs.MarkerEntityId),
+												   DataUpdates.WorkingSetUpdates.FindChecked(Rhs.MarkerEntityId), EntityToOwningWorker);
 	});
 
 	TSet<Worker_EntityId_Key> AssignedConflictingEntities;
