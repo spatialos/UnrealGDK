@@ -493,6 +493,8 @@ protected:
 
 	void NotifyTestFinishedObserver() override;
 
+	bool IsExternalProcessClient();
+
 private:
 	// FlowController which is locally owned.
 	ASpatialFunctionalTestFlowController* LocalFlowController;

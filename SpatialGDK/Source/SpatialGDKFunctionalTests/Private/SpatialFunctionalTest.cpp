@@ -1194,6 +1194,11 @@ void ASpatialFunctionalTest::NotifyTestFinishedObserver()
 	bNotifyObserversCalled = true;
 }
 
+bool ASpatialFunctionalTest::IsExternalProcessClient()
+{
+	return (LocalFlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client) && !GIsEditor;
+}
+
 void ASpatialFunctionalTest::TakeSnapshot(const FSpatialFunctionalTestSnapshotTakenDelegate& BlueprintCallback)
 {
 	ISpatialGDKEditorModule* SpatialGDKEditorModule = FModuleManager::GetModulePtr<ISpatialGDKEditorModule>("SpatialGDKEditor");
