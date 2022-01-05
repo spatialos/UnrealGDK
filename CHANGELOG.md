@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking changes:
 - SpatialSwitchHasAuthority now respects World's version of IsServer which assumes server status when NetDriver is null.
 - We no longer support Unreal Engine version 4.25. We recommend that you upgrade to the newest version 4.27 to continue receiving updates.
+- `bSpatialAuthorityDebugger` will no longer log on clients when they modify server-only properties.
 
 ### Features:
 - Add support DOREPLIFETIME_ACTIVE_OVERRIDE for replication conditions, with the exception of TArray's this should now work the same as in native.
@@ -39,6 +40,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed IsActorGroupOwnerForClass logging an error if NetDriver was not ready.
 - Fixed PlayerControllers incorrectly being deleted when Actor is teleported out of owning Server's interest range.
 - NCD and sublevel schema generation won't invalidate schema determinism.
+- Multiple processes PIE servers now shut down correctly.
+- Fixed an issue where VirtualWorkerIds can conflict with existing state when a worker restarts.
+- Fixed an issue where SpatialDebugger can have multiple entities created for it when a worker restarts.
 
 ### Internal:
 - Modified startup flow to only create ActorSystem, RPCService and some others after startup has otherwise finished; removed initial op reordering.

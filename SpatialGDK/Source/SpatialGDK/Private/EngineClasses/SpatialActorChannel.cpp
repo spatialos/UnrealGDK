@@ -316,7 +316,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 {
 	ValidateChannelNotBroken();
 
-	if (NetDriver != nullptr)
+	if (NetDriver != nullptr && NetDriver->ActorSystem != nullptr)
 	{
 #if WITH_EDITOR
 		const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
@@ -433,7 +433,8 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 		if (Cmd.Type != ERepLayoutCmdType::Return)
 		{
 			// HACK: Need special case here because the gdk relies on the whole of the RepMovement struct being replicated to the client to
-			// decide whether to replicate physics. see: ComponentReader::ApplySchemaObject
+			// decide whether to replicate physics. As such if rep physics is enabled, we replicate RepMovement even if Active is false.
+			// See: ComponentReader::ApplySchemaObject
 
 			// UNR-5843 TODO: fix this so we no longer need this special handling, for instance by replicating bRepPhysics as a separate
 			// always replicated field.
@@ -444,6 +445,12 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 				const bool bRepActorMovement = Cmd.Type == ERepLayoutCmdType::RepMovement && Actor->GetReplicatedMovement().bRepPhysics;
 				if (!Parent.Active && !bRepActorMovement)
 				{
+					if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
+					{
+						// Skip past all commands in this array as they're all considered inactive now.
+						CmdIdx = Cmd.EndCmd - 1;
+						ensure(Replicator.RepLayout->Cmds[CmdIdx].Type == ERepLayoutCmdType::Return);
+					}
 					continue;
 				}
 			}

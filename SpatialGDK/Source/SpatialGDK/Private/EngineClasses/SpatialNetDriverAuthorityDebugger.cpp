@@ -33,6 +33,9 @@ const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedProperties = {
 	TEXT("Role"),						// Multiple - all actors
 	TEXT("RemoteRole")					// Multiple - all actors
 };
+const TArray<FName> USpatialNetDriverAuthorityDebugger::SuppressedAutonomousProperties = {
+	TEXT("Pawn"), // Controllers
+};
 
 void USpatialNetDriverAuthorityDebugger::Init(USpatialNetDriver& InNetDriver)
 {
@@ -43,7 +46,7 @@ void USpatialNetDriverAuthorityDebugger::CheckUnauthorisedDataChanges()
 {
 	for (auto It = SpatialShadowActors.CreateIterator(); It; ++It)
 	{
-		It.Value()->CheckUnauthorisedDataChanges();
+		It.Value()->CheckUnauthorisedDataChanges(NetDriver->GetNetMode());
 	}
 }
 
@@ -87,12 +90,17 @@ void USpatialNetDriverAuthorityDebugger::UpdateSpatialShadowActor(const Worker_E
 	(*SpatialShadowActor)->Update();
 }
 
-bool USpatialNetDriverAuthorityDebugger::IsSuppressedActor(const AActor& InActor)
+bool USpatialNetDriverAuthorityDebugger::IsSuppressedActor(const AActor& Actor)
 {
-	return SuppressedActors.Contains(InActor.GetClass()->GetFName());
+	return SuppressedActors.Contains(Actor.GetClass()->GetFName());
 }
 
-bool USpatialNetDriverAuthorityDebugger::IsSuppressedProperty(const FProperty& InProperty)
+bool USpatialNetDriverAuthorityDebugger::IsSuppressedProperty(const FProperty& Property, const AActor& Actor)
 {
-	return SuppressedProperties.Contains(InProperty.GetFName());
+	if (SuppressedProperties.Contains(Property.GetFName()))
+	{
+		return true;
+	}
+
+	return (Actor.Role == ROLE_AutonomousProxy && SuppressedAutonomousProperties.Contains(Property.GetFName()));
 }
