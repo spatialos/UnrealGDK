@@ -79,10 +79,10 @@ void ClientConnectionManager::RegisterClientConnection(const Worker_EntityId InW
 	WorkerConnections.Add(InWorkerEntityId, ClientConnection);
 
 	const EntityViewElement* EntityView = SubView->GetView().Find(InWorkerEntityId);
-	if (!ensureAlwaysMsgf(EntityView != nullptr,
-						  TEXT("Failed to find entity component data for system worker entity %lld. Client IP will be unset."),
-						  InWorkerEntityId))
+	if (EntityView == nullptr)
 	{
+		UE_LOG(LogWorkerEntitySystem, Warning,
+			   TEXT("Failed to find entity component data for system worker entity %lld. Client IP will be unset."), InWorkerEntityId);
 		return;
 	}
 
