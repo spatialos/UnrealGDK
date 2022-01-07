@@ -155,6 +155,13 @@ const Worker_ComponentId AUTHORITY_INTENTV2_COMPONENT_ID = 9958;
 const Worker_ComponentId AUTHORITY_INTENT_ACK_COMPONENT_ID = 9957;
 const Worker_ComponentId PARTITION_ACK_COMPONENT_ID = 9956;
 
+const Worker_ComponentId WORKING_SET_MARKER_TAG_COMPONENT_ID = 9955;
+const Worker_ComponentId WORKING_SET_REQUEST_COMPONENT_ID = 9954;
+const Worker_ComponentId WORKING_SET_RESPONSE_COMPONENT_ID = 9953;
+const Worker_ComponentId WORKING_SET_MEMBER_COMPONENT_ID = 9952;
+
+const Worker_ComponentId STAGING_PARTITION_COMPONENT_ID = 9951;
+
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
 // System query tags for entity completeness

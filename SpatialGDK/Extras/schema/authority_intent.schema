@@ -2,6 +2,7 @@
 package unreal;
 
 import "improbable/standard_library.schema";
+import "unreal/gdk/working_sets.schema";
 
 component AuthorityIntent {
      id = 9980;
@@ -24,7 +25,9 @@ component AuthorityIntentAck {
 component_set StrategyWorkerAuthComponentSet {
   id = 9909;
   components = [
-    unreal.AuthorityIntentV2
+    unreal.AuthorityIntentV2,
+    unreal.WorkingSetMarkerResponse,
+    unreal.WorkingSetActorMember
   ];
 }
 

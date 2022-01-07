@@ -649,9 +649,7 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 {
 	if (!bDirectAssignment)
 	{
-		TSet<Worker_EntityId_Key> NotChecked;
-		ToRefresh = ToRefresh.Union(Ctx.ModifiedEntities);
-		ToRefresh = ToRefresh.Difference(Ctx.DeletedEntities);
+		ToRefresh = Ctx.ModifiedEntities.Difference(Ctx.DeletedEntities);
 		for (Worker_EntityId DeletedEntity : Ctx.DeletedEntities)
 		{
 			Assignment.Remove(DeletedEntity);
@@ -681,12 +679,6 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 
 		for (Worker_EntityId EntityId : ToRefresh)
 		{
-			if (Ctx.MigratingEntities.Contains(EntityId))
-			{
-				NotChecked.Add(EntityId);
-				continue;
-			}
-
 			const ActorGroupMember* Group = GroupStorage->GetObjects().Find(EntityId);
 			const FVector* Position = PositionStorage->GetPositions().Find(EntityId);
 			const bool bHasGroup = Group != nullptr;
@@ -774,7 +766,6 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 				}
 			}
 		}
-		ToRefresh = MoveTemp(NotChecked);
 	}
 	else
 	{

@@ -12,3 +12,7 @@ component PartitionIntentAck{
      uint64 assignment_counter_ack = 1;
 }
 
+component StagingPartition {
+    id = 9951;
+    EntityId owning_worker_entity = 1;
+}

@@ -34,6 +34,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
 #include "Runtime/Launch/Resources/Version.h"
+#include "Schema/WorkingSet.h"
 
 #if WITH_GAMEPLAY_DEBUGGER
 #include "GameplayDebuggerCategoryReplicator.h"
@@ -43,6 +44,12 @@ DEFINE_LOG_CATEGORY(LogEntityFactory);
 
 namespace SpatialGDK
 {
+static FWorkerComponentData Convert(ComponentData Component)
+{
+	const Worker_ComponentId ComponentId = Component.GetComponentId();
+	return FWorkerComponentData{ /*Reserved =*/nullptr, ComponentId, /*Schema =*/MoveTemp(Component).Release(), /*UserHandle =*/nullptr };
+}
+
 EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap,
 							 USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService)
 	: NetDriver(InNetDriver)
@@ -189,6 +196,7 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	{
 		ComponentDatas.Add(AuthorityIntentV2().CreateComponentData());
 		ComponentDatas.Add(AuthorityIntentACK().CreateComponentData());
+		ComponentDatas.Add(Convert(FWorkingSetMember().CreateComponentData()));
 		if (NetDriver->LoadBalanceStrategy->IsStrategyWorkerAware())
 		{
 			TArray<SpatialGDK::ComponentData> DecoratorData = NetDriver->LoadBalanceStrategy->CreateStaticLoadBalancingData(*Actor);

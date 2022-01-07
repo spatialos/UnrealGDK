@@ -27,6 +27,7 @@ public:
 	bool IsReady();
 
 	TOptional<Worker_PartitionId> GetPartitionId(FPartitionHandle);
+	FPartitionHandle GetPartition(Worker_PartitionId) const;
 	FPartitionHandle CreatePartition(FString DisplayName, const SpatialGDK::QueryConstraint& Interest, TArray<ComponentData> MetaData);
 	void SetPartitionInterest(FPartitionHandle Partition, const SpatialGDK::QueryConstraint& NewInterest);
 	void AssignPartitionTo(FPartitionHandle Partition, FLBWorkerHandle Worker);
@@ -38,9 +39,10 @@ public:
 	TArray<FLBWorkerHandle> GetConnectedWorkers();
 	TArray<FLBWorkerHandle> GetDisconnectedWorkers();
 
-	Worker_EntityId GetServerWorkerEntityIdForWorker(FLBWorkerHandle);
-	Worker_EntityId GetSystemWorkerEntityIdForWorker(FLBWorkerHandle);
-	FLBWorkerHandle GetWorkerForServerWorkerEntity(Worker_EntityId);
+	Worker_EntityId GetServerWorkerEntityIdForWorker(FLBWorkerHandle) const;
+	Worker_EntityId GetSystemWorkerEntityIdForWorker(FLBWorkerHandle) const;
+	FLBWorkerHandle GetWorkerForServerWorkerEntity(Worker_EntityId) const;
+	FLBWorkerHandle GetWorkerForPartition(FPartitionHandle) const;
 
 	struct Impl;
 

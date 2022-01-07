@@ -26,10 +26,27 @@ void FCreateStagingPartition::Start()
 	TArray<FWorkerComponentData> Components = SpatialGDK::EntityFactory::CreatePartitionEntityComponents(
 		TEXT("WorkerStagingPartition"), StagingPartitionId, nullptr, QueryConstraint(), 0, true);
 
-	TArray<ComponentData> PartitionComponentsToCreate;
-	Algo::Transform(Components, PartitionComponentsToCreate, [](const FWorkerComponentData& Component) {
+	auto Convert = [](const FWorkerComponentData& Component) {
 		return ComponentData(OwningComponentDataPtr(Component.schema_type), Component.component_id);
-	});
+	};
+	TArray<ComponentData> PartitionComponentsToCreate;
+	Algo::Transform(Components, PartitionComponentsToCreate, Convert);
+
+	// Save staging partition's owning worker system entity ID.
+	ComponentData StagingPartitionComponent(SpatialConstants::STAGING_PARTITION_COMPONENT_ID);
+	Schema_AddEntityId(StagingPartitionComponent.GetFields(), 1, Coordinator.GetWorkerSystemEntityId());
+
+	PartitionComponentsToCreate.Emplace(MoveTemp(StagingPartitionComponent));
+
+	Interest StagingPartitionInterest;
+	Query StagingPartitionComponentQuery;
+	StagingPartitionComponentQuery.Constraint.bSelfConstraint = true;
+	StagingPartitionComponentQuery.ResultComponentIds = { SpatialConstants::STAGING_PARTITION_COMPONENT_ID };
+	StagingPartitionInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID,
+													  { {
+														  StagingPartitionComponentQuery,
+													  } });
+	PartitionComponentsToCreate.Emplace(Convert(StagingPartitionInterest.CreateComponentData()));
 
 	Worker_RequestId CreationRequest =
 		Coordinator.SendCreateEntityRequest(MoveTemp(PartitionComponentsToCreate), StagingPartitionId, RETRY_UNTIL_COMPLETE);

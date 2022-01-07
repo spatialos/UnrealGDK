@@ -22,11 +22,13 @@ public:
 
 	const TSet<Worker_EntityId_Key>& GetEntitiesToEvaluate() const { return EntitiesToEvaluate; }
 	const TSet<Worker_EntityId_Key>& GetEntitiesToAttach() const { return EntitiesToAttach; }
+	const TSet<Worker_EntityId_Key>& GetReleasedEntities() const { return ReleasedEntities; }
 
 protected:
 	TMap<Worker_EntityId_Key, TSet<Worker_EntityId_Key>> ActorSets;
 	TMap<Worker_EntityId_Key, Worker_EntityId_Key> ActorSetMembership;
 	TSet<Worker_EntityId_Key> EntitiesToEvaluate;
 	TSet<Worker_EntityId_Key> EntitiesToAttach;
+	TSet<Worker_EntityId_Key> ReleasedEntities;
 };
 } // namespace SpatialGDK
