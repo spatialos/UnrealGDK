@@ -41,6 +41,7 @@ namespace Improbable
             var noBuild = args.Count(arg => arg.ToLowerInvariant() == "-nobuild") > 0;
             var noCompile = args.Count(arg => arg.ToLowerInvariant() == "-nocompile") > 0;
             var noServer = args.Count(arg => arg.ToLowerInvariant() == "-noserver") > 0;
+            var alreadyBuilt = args.Count(arg => arg.ToLowerInvariant() == "-alreadybuilt") > 0;
             var additionalUATArgs = string.Join(" ", args.Skip(4).Where(arg => (arg.ToLowerInvariant() != "-nobuild") && (arg.ToLowerInvariant() != "-nocompile")));
 
             var stagingDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "unreal"));
@@ -163,7 +164,7 @@ exit /b !ERRORLEVEL!";
                     "-package",
                     "-unversioned",
                     "-compressed",
-                    "-stagingdirectory=" + Quote(stagingDir),
+                    alreadyBuilt ? "-nostagingdirectory" : "-stagingdirectory=" + Quote(stagingDir),
                     "-stdout",
                     "-FORCELOGFLUSH",
                     "-CrashForUAT",
