@@ -91,7 +91,7 @@ void ASpatialTestRPCTimeout::PrepareTest()
 }
 
 USpatialRPCTimeoutMap::USpatialRPCTimeoutMap()
-	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialRPCTimeoutMap"))
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("SpatialRPCTimeoutMap"))
 {
 	// clang-format off
 	SetCustomConfig(TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR
