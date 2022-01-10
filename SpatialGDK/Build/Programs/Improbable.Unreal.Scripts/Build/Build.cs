@@ -44,7 +44,9 @@ namespace Improbable
             var alreadyBuilt = args.Count(arg => arg.ToLowerInvariant() == "-alreadybuilt") > 0;
             var additionalUATArgs = string.Join(" ", args.Skip(4).Where(arg => (arg.ToLowerInvariant() != "-nobuild") && (arg.ToLowerInvariant() != "-nocompile")));
 
-            var stagingDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "unreal"));
+            var stagingDir = alreadyBuilt ? 
+                                Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../Game", "Saved", "StagedBuilds")) // default staging dir
+                                : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "unreal")); // custom staging dir
             var outputDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "assembly", "worker"));
             var baseGameName = Path.GetFileNameWithoutExtension(projectFile);
 
@@ -164,7 +166,7 @@ exit /b !ERRORLEVEL!";
                     "-package",
                     "-unversioned",
                     "-compressed",
-                    alreadyBuilt ? "-nostagingdirectory" : "-stagingdirectory=" + Quote(stagingDir),
+                    "-stagingdirectory=" + Quote(stagingDir),
                     "-stdout",
                     "-FORCELOGFLUSH",
                     "-CrashForUAT",
@@ -263,7 +265,7 @@ exit /b !ERRORLEVEL!";
                     "-package",
                     "-unversioned",
                     "-compressed",
-                    alreadyBuilt ? "-nostagingdirectory" : "-stagingdirectory=" + Quote(stagingDir),
+                    "-stagingdirectory=" + Quote(stagingDir),
                     "-stdout",
                     "-FORCELOGFLUSH",
                     "-CrashForUAT",
