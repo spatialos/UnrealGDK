@@ -263,7 +263,7 @@ exit /b !ERRORLEVEL!";
                     "-package",
                     "-unversioned",
                     "-compressed",
-                    "-stagingdirectory=" + Quote(stagingDir),
+                    alreadyBuilt ? "-nostagingdirectory" : "-stagingdirectory=" + Quote(stagingDir),
                     "-stdout",
                     "-FORCELOGFLUSH",
                     "-CrashForUAT",
