@@ -1,8 +1,7 @@
 #include "Interop/SpatialWorkingSetSubsystem.h"
 
-#include <Actor.h>
-
 #include "Algo/Transform.h"
+#include "GameFramework/Actor.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
