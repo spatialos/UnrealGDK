@@ -80,9 +80,17 @@ void ASpatialDebugger::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (UWorld* World = GetWorld())
+	{
+		if (World->IsPlayingReplay())
+		{
+			UE_LOG(LogSpatialDebugger, Log, TEXT("Playing replay, ignoring SpatialDebugger."));
+			return;
+		}
+	}
+
 	if (!ensureAlwaysMsgf(NetDriver != nullptr, TEXT("Failed to call BeginPlay on SpatialDebugger. NetDriver was nullptr")))
 	{
-		SetActorTickEnabled(false);
 		return;
 	}
 
