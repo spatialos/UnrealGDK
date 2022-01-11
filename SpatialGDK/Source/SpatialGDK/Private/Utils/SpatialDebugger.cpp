@@ -82,6 +82,7 @@ void ASpatialDebugger::BeginPlay()
 
 	if (!ensureAlwaysMsgf(NetDriver != nullptr, TEXT("Failed to call BeginPlay on SpatialDebugger. NetDriver was nullptr")))
 	{
+		SetActorTickEnabled(false);
 		return;
 	}
 
@@ -128,6 +129,7 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 
 	if (!ensureAlwaysMsgf(NetDriver != nullptr, TEXT("Failed to call SpatialDebugger::Tick. NetDriver was nullptr")))
 	{
+		SetActorTickEnabled(false);
 		return;
 	}
 
