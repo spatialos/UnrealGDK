@@ -85,6 +85,7 @@ void ASpatialDebugger::BeginPlay()
 		if (World->IsPlayingReplay())
 		{
 			UE_LOG(LogSpatialDebugger, Log, TEXT("Playing replay, ignoring SpatialDebugger."));
+			SetActorTickEnabled(false);
 			return;
 		}
 	}
