@@ -53,7 +53,7 @@ void USpatialNetDriverAuthorityDebugger::CheckUnauthorisedDataChanges()
 void USpatialNetDriverAuthorityDebugger::AddSpatialShadowActor(const Worker_EntityId_Key EntityId)
 {
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
-	if (!IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
+	if (!IsValid(Actor) || Actor->IsUnreachable())
 	{
 		return;
 	}

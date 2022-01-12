@@ -21,6 +21,7 @@
 #include "Misc/MonitoredProcess.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "Templates/SharedPointer.h"
+#include "UObject/SavePackage.h"
 #include "UObject/UObjectIterator.h"
 
 #include "Engine/WorldComposition.h"
@@ -936,9 +937,17 @@ bool SaveSchemaDatabase(USchemaDatabase* SchemaDatabase)
 	Package->GetMetaData();
 
 	FString FilePath = FString::Printf(TEXT("%s%s"), *PackagePath, *FPackageName::GetAssetPackageExtension());
+#if UE_VERSION_OLDER_THAN(5, 0, 0)
 	bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone,
 										  *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()),
 										  GError, nullptr, false, true, SAVE_NoError);
+#else
+	FSavePackageArgs Args;
+	Args.TopLevelFlags = EObjectFlags::RF_Public | EObjectFlags::RF_Standalone;
+	Args.SaveFlags = SAVE_NoError;
+	bool bSuccess = UPackage::SavePackage(
+		Package, SchemaDatabase, *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()), Args);
+#endif
 
 	if (!bSuccess)
 	{

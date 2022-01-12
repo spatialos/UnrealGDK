@@ -11,6 +11,7 @@
 #include "Interop/InitialOnlyFilter.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "Misc/EngineVersionComparison.h"
 #include "Schema/Restricted.h"
 #include "Schema/Tombstone.h"
 #include "SpatialConstants.h"
@@ -823,7 +824,11 @@ void ActorSystem::DestroySubObject(const FUnrealObjectRef& ObjectRef, UObject& O
 			Actor->OnSubobjectDestroyFromReplication(&Object);
 
 			Object.PreDestroyFromReplication();
+#if UE_VERSION_OLDER_THAN(5, 0, 0)
 			Object.MarkPendingKill();
+#else
+			Object.MarkAsGarbage();
+#endif
 
 			NetDriver->PackageMap->RemoveSubobject(ObjectRef);
 		}
@@ -2080,7 +2085,7 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		if (NetDriver->GetWorld() != nullptr && !NetDriver->GetWorld()->IsPendingKillOrUnreachable())
+		if (IsValid(NetDriver->GetWorld()))
 		{
 			for (UObject* SubObject : ActorChannel->CreateSubObjects)
 			{

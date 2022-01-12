@@ -51,18 +51,21 @@ bool FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(USpatialNetDriver* NetDr
 	return CppStructOps->NetDeltaSerialize(NetDeltaInfo, Source);
 }
 
-void SpatialFastArrayNetSerializeCB::NetSerializeStruct(UScriptStruct* Struct, FBitArchive& Ar, UPackageMap* PackageMap, void* Data,
-														bool& bHasUnmapped)
+void SpatialFastArrayNetSerializeCB::NetSerializeStruct(FNetDeltaSerializeInfo& Params)
 {
+	FBitArchive& Ar = Params.Reader ? static_cast<FBitArchive&>(*Params.Reader) : static_cast<FBitArchive&>(*Params.Writer);
+	Params.bOutHasMoreUnmapped = false;
+	UScriptStruct* Struct = CastChecked<UScriptStruct>(Params.Struct);
+
 	// Check if struct has custom NetSerialize function, otherwise call standard struct replication
 	if (Struct->StructFlags & STRUCT_NetSerializeNative)
 	{
 		UScriptStruct::ICppStructOps* CppStructOps = Struct->GetCppStructOps();
 		check(CppStructOps); // else should not have STRUCT_NetSerializeNative
 		bool bSuccess = true;
-		if (!CppStructOps->NetSerialize(Ar, PackageMap, bSuccess, reinterpret_cast<uint8*>(Data)))
+		if (!CppStructOps->NetSerialize(Ar, Params.Map, bSuccess, reinterpret_cast<uint8*>(Params.Data)))
 		{
-			bHasUnmapped = true;
+			Params.bOutHasMoreUnmapped = true;
 		}
 
 		// Check the success of the serialization and print a warning if it failed. This is how native handles failed serialization.
@@ -75,7 +78,8 @@ void SpatialFastArrayNetSerializeCB::NetSerializeStruct(UScriptStruct* Struct, F
 	{
 		TSharedPtr<FRepLayout> RepLayout = NetDriver->GetStructRepLayout(Struct);
 
-		RepLayout_SerializePropertiesForStruct(*RepLayout, Ar, PackageMap, reinterpret_cast<uint8*>(Data), bHasUnmapped);
+		RepLayout_SerializePropertiesForStruct(*RepLayout, Ar, Params.Map, reinterpret_cast<uint8*>(Params.Data),
+											   Params.bOutHasMoreUnmapped);
 	}
 }
 

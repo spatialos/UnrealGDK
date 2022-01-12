@@ -32,7 +32,7 @@ void USpatialShadowActor::Init(AActor& InActor)
 
 void USpatialShadowActor::Update()
 {
-	if (!IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
+	if (!IsValid(Actor) || Actor->IsUnreachable())
 	{
 		return;
 	}
@@ -59,7 +59,7 @@ void USpatialShadowActor::CreateHash()
 
 void USpatialShadowActor::CheckUnauthorisedDataChanges(const ENetMode NetMode)
 {
-	if (IsPendingKillOrUnreachable() || !IsValid(Actor) || Actor->IsPendingKillOrUnreachable())
+	if (!IsValid(this) || IsUnreachable() || !IsValid(Actor) || Actor->IsUnreachable())
 	{
 		return;
 	}
@@ -118,7 +118,7 @@ void USpatialShadowActor::CheckUnauthorisedDataChanges(const ENetMode NetMode)
 			{
 				const UObject* ObjectPointer = ObjectProperty->GetObjectPropertyValue_InContainer(Actor, 0);
 
-				if (!IsValid(ObjectPointer) || ObjectPointer->IsPendingKillOrUnreachable())
+				if (!IsValid(ObjectPointer) || ObjectPointer->IsUnreachable())
 				{
 					continue;
 				}

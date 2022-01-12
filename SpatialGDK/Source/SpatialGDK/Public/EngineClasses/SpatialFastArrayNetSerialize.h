@@ -12,22 +12,15 @@ class USpatialNetDriver;
 
 namespace SpatialGDK
 {
-PRAGMA_DISABLE_DEPRECATION_WARNINGS // TODO: UNR-2371 - Remove when we update our usage of FNetDeltaSerializeInfo
-
-	class SpatialFastArrayNetSerializeCB : public INetSerializeCB
+class SpatialFastArrayNetSerializeCB : public INetSerializeCB
 {
 public:
 	SpatialFastArrayNetSerializeCB(USpatialNetDriver* InNetDriver)
 		: NetDriver(InNetDriver)
 	{
 	}
-	virtual void NetSerializeStruct(UScriptStruct* Struct, FBitArchive& Ar, UPackageMap* PackageMap, void* Data,
-									bool& bHasUnmapped) override;
-	// TODO: UNR-2371 - Look at whether we need to implement these and implement 'NetSerializeStruct(FNetDeltaSerializeInfo& Params)'.
-	virtual void NetSerializeStruct(FNetDeltaSerializeInfo& Params) override
-	{
-		checkf(false, TEXT("The GDK does not support the new version of NetSerializeStruct yet."));
-	};
+
+	virtual void NetSerializeStruct(FNetDeltaSerializeInfo& Params) override;
 
 	virtual void GatherGuidReferencesForFastArray(struct FFastArrayDeltaSerializeParams& Params) override
 	{
@@ -65,7 +58,5 @@ struct FSpatialNetDeltaSerializeInfo : FNetDeltaSerializeInfo
 	static bool DeltaSerializeWrite(USpatialNetDriver* NetDriver, FSpatialNetBitWriter& Writer, UObject* Object, int32 ArrayIndex,
 									FProperty* ParentProperty, UScriptStruct* NetDeltaStruct);
 };
-
-PRAGMA_ENABLE_DEPRECATION_WARNINGS // TODO: UNR-2371 - Remove when we update our usage of FNetDeltaSerializeInfo
 
 } // namespace SpatialGDK
