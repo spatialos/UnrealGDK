@@ -15,7 +15,10 @@ public class SpatialGDK : ModuleRules
     {
         bLegacyPublicIncludePaths = false;
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-        bUseUnity = false;
+        
+		string unity_mode_env = System.Environment.GetEnvironmentVariable("GDK_UNITY_MODE");
+		bool unity_mode = bool.Parse(unity_mode_env);
+		bUseUnity = unity_mode;
 
         PrivateIncludePaths.Add("SpatialGDK/Private");
 
