@@ -9,7 +9,7 @@ public class SpatialGDKEditorCommandlet : ModuleRules
 		bLegacyPublicIncludePaths = false;
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		
-		string unity_mode_env = Environment.GetEnvironmentVariable("UNITY_MODE");
+		string unity_mode_env = System.Environment.GetEnvironmentVariable("UNITY_MODE");
 		bool unity_mode = bool.Parse(unity_mode_env);
 		bUseUnity = unity_mode;
 
