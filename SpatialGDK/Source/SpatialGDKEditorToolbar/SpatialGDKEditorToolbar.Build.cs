@@ -8,7 +8,10 @@ public class SpatialGDKEditorToolbar : ModuleRules
     {
         bLegacyPublicIncludePaths = false;
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-        bUseUnity = false;
+        
+		string unity_mode_env = Environment.GetEnvironmentVariable("UNITY_MODE");
+		bool unity_mode = bool.Parse(unity_mode_env);
+		bUseUnity = unity_mode;
 
         PrivateIncludePaths.Add("SpatialGDKEditorToolbar/Private");
 
