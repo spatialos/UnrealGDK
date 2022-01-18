@@ -19,7 +19,7 @@ public class SpatialGDK : ModuleRules
         // Buildkite can store environment variables like "True" and "False" as "1" and "0", which can't be parsed by bool.TryParse() or bool.Parse()
 		string unity_mode_env = Environment.GetEnvironmentVariable("GDK_UNITY_MODE");
 		bool unity_mode;
-        if (bool.TryParse(unity_mode_env, unity_mode)) {
+        if (bool.TryParse(unity_mode_env, out unity_mode)) {
             // unity_mode_env is "True", "False" or case-insensitive versions of these
     		bUseUnity = unity_mode;
         } else if (unity_mode_env.Equals("0")) {
