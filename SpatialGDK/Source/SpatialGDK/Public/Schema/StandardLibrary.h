@@ -297,7 +297,7 @@ struct AuthorityDelegation : AbstractMutableComponent
 		return Data;
 	}
 
-	Worker_ComponentUpdate CreateAuthorityDelegationUpdate()
+	Worker_ComponentUpdate CreateAuthorityDelegationUpdate() const
 	{
 		Worker_ComponentUpdate ComponentUpdate = {};
 		ComponentUpdate.component_id = ComponentId;

@@ -22,6 +22,8 @@ struct FActorSubviewExtension
 	TOptional<FActorFilterPredicateFactory> PredicateFactory;
 	TOptional<FActorRefreshCallbackPredicateFactory> RefreshCallbackFactory;
 
+	FActorSubviewExtension Combine(FActorSubviewExtension Other) const;
+
 	FFilterPredicate ExtendPredicate(FFilterPredicate Predicate) const
 	{
 		if (PredicateFactory)
@@ -29,6 +31,14 @@ struct FActorSubviewExtension
 			return (*PredicateFactory)(Predicate);
 		}
 		return Predicate;
+	}
+
+	static FActorRefreshCallbackPredicateFactory AppendCallbacks(TArray<FDispatcherRefreshCallback> CallbacksToAppend)
+	{
+		return [CallbacksToAppend = MoveTemp(CallbacksToAppend)](TArray<FDispatcherRefreshCallback> Callbacks) {
+			Callbacks.Append(CallbacksToAppend);
+			return Callbacks;
+		};
 	}
 
 	TArray<FDispatcherRefreshCallback> ExtendCallbacks(TArray<FDispatcherRefreshCallback> Callbacks) const
@@ -47,6 +57,7 @@ FSubView& CreateCustomActorSubView(TOptional<Worker_ComponentId> MaybeCustomComp
 
 FSubView& CreateActorAuthSubView(USpatialNetDriver& NetDriver);
 
+FSubView& CreateBaseAuthoritySubView(USpatialNetDriver& NetDriver);
 FSubView& CreateAuthoritySubView(USpatialNetDriver& NetDriver);
 
 FSubView& CreatePlayerOwnershipSubView(USpatialNetDriver& NetDriver);

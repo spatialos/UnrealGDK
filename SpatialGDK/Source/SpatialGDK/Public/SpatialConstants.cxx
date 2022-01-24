@@ -226,6 +226,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST = 
 	SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID,
 
 	AUTHORITY_INTENTV2_COMPONENT_ID,
+	WORKING_SET_MEMBER_COMPONENT_ID,
 };
 const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
 	"improbable/standard_library.schema",
@@ -244,6 +245,7 @@ const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
 	"unreal/gdk/unreal_metadata.schema",
 	"unreal/gdk/actor_group_member.schema",
 	"unreal/gdk/actor_set_member.schema",
+	"unreal/gdk/working_sets.schema",
 	"unreal/gdk/migration_diagnostic.schema",
 	"unreal/gdk/actor_ownership.schema",
 	"unreal/gdk/skeleton_entity.schema",
@@ -279,6 +281,7 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
 	{ CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverACKRPCs" },
 	{ MIGRATION_DIAGNOSTIC_COMPONENT_ID, "unreal.MigrationDiagnostic" },
 	{ ACTOR_OWNERSHIP_COMPONENT_ID, "unreal.ActorOwnership" },
+	{ WORKING_SET_REQUEST_COMPONENT_ID, "unreal.WorkingSetMarkerRequest" },
 
 	{ SKELETON_ENTITY_POPULATION_FINISHED_TAG_COMPONENT_ID, "unreal.SkeletonEntityPopulationFinishedTag" },
 };

@@ -8,6 +8,7 @@ void FActorSetSystem::Update(TLBDataStorage<ActorSetMember>& Data, TSet<Worker_E
 {
 	EntitiesToEvaluate.Empty();
 	EntitiesToAttach.Empty();
+	ReleasedEntities.Empty();
 
 	for (Worker_EntityId Modified : Data.GetModifiedEntities())
 	{
@@ -51,6 +52,7 @@ void FActorSetSystem::Update(TLBDataStorage<ActorSetMember>& Data, TSet<Worker_E
 		{
 			EntitiesToEvaluate.Add(Modified);
 			ActorSetMembership.Remove(Modified);
+			ReleasedEntities.Add(Modified);
 		}
 		else
 		{
@@ -72,9 +74,17 @@ void FActorSetSystem::Update(TLBDataStorage<ActorSetMember>& Data, TSet<Worker_E
 		if (ActorSets.RemoveAndCopyValue(Deleted, SetToClear))
 		{
 			EntitiesToEvaluate.Append(SetToClear);
+			ReleasedEntities.Append(SetToClear);
+
+			for (const auto ReleasedEntityId : SetToClear)
+			{
+				const Worker_EntityId_Key* SetEntityId = ActorSetMembership.Find(ReleasedEntityId);
+				if (SetEntityId != nullptr && *SetEntityId == Deleted)
+				{
+					ActorSetMembership.Remove(ReleasedEntityId);
+				}
+			}
 		}
-		EntitiesToEvaluate.Remove(Deleted);
-		EntitiesToAttach.Remove(Deleted);
 
 		Worker_EntityId_Key CurrentSetLeader;
 		if (ActorSetMembership.RemoveAndCopyValue(Deleted, CurrentSetLeader))
@@ -89,6 +99,13 @@ void FActorSetSystem::Update(TLBDataStorage<ActorSetMember>& Data, TSet<Worker_E
 				}
 			}
 		}
+	}
+
+	for (Worker_EntityId Deleted : DeletedEntities)
+	{
+		EntitiesToEvaluate.Remove(Deleted);
+		EntitiesToAttach.Remove(Deleted);
+		ReleasedEntities.Remove(Deleted);
 	}
 }
 

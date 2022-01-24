@@ -34,7 +34,8 @@ void FSpatialStrategySystem::Init(ViewCoordinator& Coordinator)
 {
 	PartitionsMgr = MakeUnique<SpatialGDK::FPartitionManager>(Views.ServerWorkerView, Coordinator, *InterestF);
 	PartitionsMgr->Init(Coordinator);
-
+	WorkingSetSystem =
+		MakeUnique<FWorkingSetSystem>(FWorkingSetSystem::CreateEntityToOwningWorkerMap(Coordinator.GetView(), *PartitionsMgr));
 	FLoadBalancingSharedData SharedData(*PartitionsMgr, ActorSetSystem, ManifestPublisher, *InterestF);
 	Strategy->Init(Coordinator, SharedData, UserDataStorages.DataStorages, ServerWorkerDataStorages.DataStorages);
 	DataStorages.DataStorages.Add(&AuthACKView);
@@ -140,6 +141,7 @@ void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 	}
 
 	ActorSetSystem.Update(SetMemberView, RemovedEntities);
+	WorkingSetSystem->Advance(Views.WorkingSetMarkersSubview);
 }
 
 void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
@@ -160,7 +162,36 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	}
 
 	// Iterator over the data storage to collect the entities which have been modified this frame.
+	const TSet<Worker_EntityId_Key> ModifiedEntities = GatherModifiedEntities();
+
+	// Ask the Strategy about the entities that need migration.
+	FMigrationContext Ctx(MigratingEntities, ModifiedEntities, DataStorages.EntitiesRemoved);
+	Strategy->CollectEntitiesToMigrate(Ctx);
+	for (const auto& StrategyMigration : Ctx.EntitiesToMigrate)
+	{
+		StrategyAssignments.Emplace(StrategyMigration.Key, StrategyMigration.Value);
+	}
+	for (const Worker_EntityId_Key DeletedEntity : Ctx.DeletedEntities)
+	{
+		StrategyAssignments.Remove(DeletedEntity);
+	}
+
+	AugmentMigrations(Ctx);
+
+	PendingMigrations.Empty();
+
+	for (auto DeletedEntity : Ctx.DeletedEntities)
+	{
+		EntityAssignment.Remove(DeletedEntity);
+	}
+
+	ApplyMigrations(Connection, Ctx);
+}
+
+TSet<Worker_EntityId_Key> FSpatialStrategySystem::GatherModifiedEntities() const
+{
 	TSet<Worker_EntityId_Key> ModifiedEntities = ActorSetSystem.GetEntitiesToEvaluate();
+	ModifiedEntities.Append(WorkingSetSystem->GetEntitiesToForceLoadBalance());
 	for (auto& Storage : UserDataStorages.DataStorages)
 	{
 		ModifiedEntities = ModifiedEntities.Union(Storage->GetModifiedEntities());
@@ -173,16 +204,47 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 			Iterator.RemoveCurrent();
 			continue;
 		}
+		if (WorkingSetSystem->IsMarkerEntity(*Iterator))
+		{
+			// Marker entities aren't considered by themselves
+			Iterator.RemoveCurrent();
+			continue;
+		}
+		if (WorkingSetSystem->GetOwningMarkerEntityId(*Iterator) != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			if (!WorkingSetSystem->IsWorkingLeaderEntity(*Iterator))
+			{
+				Iterator.RemoveCurrent();
+				continue;
+			}
+		}
 		if (DataStorages.EntitiesRemoved.Contains(*Iterator))
 		{
 			Iterator.RemoveCurrent();
 			continue;
 		}
 	}
+	return ModifiedEntities;
+}
 
-	// Ask the Strategy about the entities that need migration.
-	FMigrationContext Ctx(MigratingEntities, ModifiedEntities, DataStorages.EntitiesRemoved);
-	Strategy->CollectEntitiesToMigrate(Ctx);
+void FSpatialStrategySystem::AugmentMigrations(FMigrationContext& Ctx) const
+{
+	for (const Worker_EntityId_Key ReleasedEntityId : ActorSetSystem.GetReleasedEntities())
+	{
+		if (!Ctx.EntitiesToMigrate.Contains(ReleasedEntityId))
+		{
+			check(StrategyAssignments.Contains(ReleasedEntityId));
+			Ctx.EntitiesToMigrate.Emplace(ReleasedEntityId, StrategyAssignments[ReleasedEntityId]);
+		}
+	}
+	for (const Worker_EntityId_Key EntityRequiringLoadBalancing : WorkingSetSystem->GetEntitiesToForceLoadBalance())
+	{
+		if (!Ctx.EntitiesToMigrate.Contains(EntityRequiringLoadBalancing))
+		{
+			check(StrategyAssignments.Contains(EntityRequiringLoadBalancing));
+			Ctx.EntitiesToMigrate.Emplace(EntityRequiringLoadBalancing, StrategyAssignments[EntityRequiringLoadBalancing]);
+		}
+	}
 
 	// If there were pending migrations, meld them with the migration requests
 	for (auto PendingMigration : PendingMigrations)
@@ -192,17 +254,54 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 			Ctx.EntitiesToMigrate.Add(PendingMigration);
 		}
 	}
-	PendingMigrations.Empty();
-
+	TMap<Worker_EntityId_Key, FPartitionHandle> MarkerEntityMigrations;
 	// Filter the set considering set membership
 	for (auto Iterator = Ctx.EntitiesToMigrate.CreateIterator(); Iterator; ++Iterator)
 	{
 		Worker_EntityId EntityId = Iterator->Key;
 		if (ActorSetSystem.GetSetLeader(EntityId) != SpatialConstants::INVALID_ENTITY_ID)
 		{
+			// If a strategy said to migrate an owned entity, disregard that.
 			Iterator.RemoveCurrent();
+			continue;
+		}
+		if (WorkingSetSystem->IsWorkingLeaderEntity(EntityId))
+		{
+			// If a strategy said to migrate a special working set entity, consider this as an order to migrate the set and disregard
+			// original entity migration.
+			const Worker_EntityId MarkerEntityId = WorkingSetSystem->GetOwningMarkerEntityId(EntityId);
+			check(MarkerEntityId != SpatialConstants::INVALID_ENTITY_ID);
+			MarkerEntityMigrations.Emplace(MarkerEntityId, Iterator->Value);
+			Iterator.RemoveCurrent();
+			continue;
+		}
+		if (WorkingSetSystem->GetOwningMarkerEntityId(EntityId) != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			// If a strategy said to migrate a working set entity, disregard that.
+			Iterator.RemoveCurrent();
+			continue;
 		}
 	}
+
+	for (const Worker_EntityId_Key NewMarkerEntity : WorkingSetSystem->GetNewMarkerEntities())
+	{
+		if (!MarkerEntityMigrations.Contains(NewMarkerEntity))
+		{
+			const Worker_EntityId LeaderEntityId = WorkingSetSystem->GetSet(NewMarkerEntity)->LeaderEntity;
+			if (LeaderEntityId == SpatialConstants::INVALID_ENTITY_ID)
+			{
+				// This set was actually declined - the marker entity should stay in created worker's staging partition.
+				continue;
+			}
+			FPartitionHandle LeaderPartition = EntityAssignment[LeaderEntityId];
+			MarkerEntityMigrations.Emplace(NewMarkerEntity, LeaderPartition);
+			UE_LOG(LogSpatialStrategySystem, Log,
+				   TEXT("Assigning marker entity to leader partition MarkerEntityId: %lld LeaderEntityId: %lld"), NewMarkerEntity,
+				   LeaderEntityId);
+		}
+	}
+
+	Ctx.EntitiesToMigrate.Append(MarkerEntityMigrations);
 
 	{
 		// Augment the migrations with the set information.
@@ -212,14 +311,32 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 			Worker_EntityId EntityId = Migration.Key;
 			if (auto Set = ActorSetSystem.GetSet(EntityId))
 			{
+				// When an ownership hierarchy leader migrates, also migrate all entities in the set.
 				for (auto ActorInSet : *Set)
 				{
 					Ctx.EntitiesToMigrate.Add(ActorInSet, Migration.Value);
 				}
 			}
+			if (WorkingSetSystem->IsMarkerEntity(EntityId))
+			{
+				// When a working set marker entity migrates, migrate all entities in the set.
+				UE_LOG(LogSpatialStrategySystem, Verbose, TEXT("Migrating set marker EntityId: %lld"), EntityId);
+
+				const auto WorkingSet = WorkingSetSystem->GetSet(EntityId);
+				for (const Worker_EntityId ActualSetMember : WorkingSet->ConfirmedEntities)
+				{
+					UE_LOG(LogSpatialStrategySystem, VeryVerbose, TEXT("Migrating set actual member %lld"), ActualSetMember);
+					Ctx.EntitiesToMigrate.Add(ActualSetMember, Migration.Value);
+				}
+				for (const Worker_EntityId RequestedSetMember : WorkingSet->TargetEntities)
+				{
+					UE_LOG(LogSpatialStrategySystem, VeryVerbose, TEXT("Migrating set requested member %lld"), RequestedSetMember);
+					Ctx.EntitiesToMigrate.Add(RequestedSetMember, Migration.Value);
+				}
+				UE_LOG(LogSpatialStrategySystem, VeryVerbose, TEXT("Finished working set migration"));
+			}
 		}
 	}
-
 	{
 		// Attach actors that just joined a set to their leader
 		for (Worker_EntityId ToAttach : ActorSetSystem.GetEntitiesToAttach())
@@ -234,7 +351,7 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 				continue;
 			}
 
-			FPartitionHandle* LeaderPartition = EntityAssignment.Find(Leader);
+			const FPartitionHandle* LeaderPartition = EntityAssignment.Find(Leader);
 			if (!ensureMsgf(LeaderPartition != nullptr,
 							TEXT("Leader should have been evaluated, and should be contained in EntitiesToMigrate")))
 			{
@@ -242,11 +359,38 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 			}
 			Ctx.EntitiesToMigrate.Add(ToAttach, *LeaderPartition);
 		}
-	}
 
-	for (auto DeletedEntity : Ctx.DeletedEntities)
+		// Attach actors that just joined a set to their leader
+		for (Worker_EntityId ToAttach : WorkingSetSystem->GetEntitiesToAttach())
+		{
+			if (Ctx.EntitiesToMigrate.Contains(ToAttach))
+			{
+				continue;
+			}
+			Worker_EntityId Leader = WorkingSetSystem->GetOwningMarkerEntityId(ToAttach);
+			if (!ensure(Leader != SpatialConstants::INVALID_ENTITY_ID))
+			{
+				continue;
+			}
+
+			const FPartitionHandle* LeaderPartition = EntityAssignment.Find(Leader);
+			if (!ensureMsgf(LeaderPartition != nullptr,
+							TEXT("Working set marker should have been evaluated, should be contained in EntityAssignment. EntityId %lld "
+								 "Marker Entity Id %lld"),
+							ToAttach, Leader))
+			{
+				continue;
+			}
+			Ctx.EntitiesToMigrate.Add(ToAttach, *LeaderPartition);
+		}
+	}
+}
+
+void FSpatialStrategySystem::ApplyMigrations(ISpatialOSWorker& Connection, const FMigrationContext& Ctx)
+{
+	if (Ctx.EntitiesToMigrate.Num() > 0)
 	{
-		EntityAssignment.Remove(DeletedEntity);
+		UE_LOG(LogSpatialStrategySystem, Verbose, TEXT("Processing %d migrations..."), Ctx.EntitiesToMigrate.Num());
 	}
 
 	for (const auto& Migration : Ctx.EntitiesToMigrate)
@@ -254,6 +398,10 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 		Worker_EntityId EntityId = Migration.Key;
 
 		FPartitionHandle Partition = Migration.Value;
+
+		UE_LOG(LogSpatialStrategySystem, Verbose, TEXT("Migrating %lld -> %lld"), EntityId,
+			   PartitionsMgr->GetPartitionId(Partition).Get(/*DefaultVale =*/SpatialConstants::INVALID_ENTITY_ID));
+
 		EntityAssignment.Add(EntityId, Partition);
 		TOptional<Worker_PartitionId> DestPartition = PartitionsMgr->GetPartitionId(Partition);
 		AuthorityIntentV2& AuthIntent = AuthorityIntentView.FindChecked(EntityId);
@@ -278,6 +426,11 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 		MigratingEntities.Add(EntityId);
 	}
 
+	if (Ctx.EntitiesToMigrate.Num() > 0)
+	{
+		UE_LOG(LogSpatialStrategySystem, Verbose, TEXT("Migrations done."));
+	}
+
 	TSet<Worker_EntityId_Key> EntitiesToUpdate = NetOwningClientView.GetModifiedEntities();
 	EntitiesToUpdate.Append(AuthACKView.GetModifiedEntities());
 
@@ -298,6 +451,8 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	}
 	AuthACKView.ClearModified();
 
+	WorkingSetSystem->UpdateMigratingEntities(MigratingEntities, Connection);
+
 	// Process the entities needing a change to client ownership
 	for (auto EntityToUpdateOwner : NetOwningClientView.GetModifiedEntities())
 	{
@@ -310,9 +465,9 @@ void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 	NetOwningClientView.ClearModified();
 
 	// Send the actual authority delegation updates
-	for (auto EntityToUpdate : EntitiesToUpdate)
+	for (const Worker_EntityId_Key EntityToUpdate : EntitiesToUpdate)
 	{
-		AuthorityDelegation& AuthDelegation = AuthorityDelegationView.FindChecked(EntityToUpdate);
+		const AuthorityDelegation& AuthDelegation = AuthorityDelegationView.FindChecked(EntityToUpdate);
 		ComponentUpdate Update(OwningComponentUpdatePtr(AuthDelegation.CreateAuthorityDelegationUpdate().schema_type),
 							   SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID);
 		Connection.SendComponentUpdate(EntityToUpdate, MoveTemp(Update), {});

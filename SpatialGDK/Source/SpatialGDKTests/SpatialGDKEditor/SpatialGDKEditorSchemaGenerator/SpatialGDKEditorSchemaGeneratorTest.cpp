@@ -934,6 +934,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "actor_set_member.schema",
 										   "actor_ownership.schema",
 										   "skeleton_entity.schema",
+										   "working_sets.schema",
 										   "spawndata.schema",
 										   "spawner.schema",
 										   "tombstone.schema",

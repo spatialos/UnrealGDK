@@ -1,0 +1,42 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+component WorkingSetMarkerTag {
+	id = 9955;
+}
+
+// Defines a working set - a set of entities that are either
+// all auth on the same worker, or not auth on any.
+type WorkingSetState {
+	int64 epoch = 1;
+	list<EntityId> member_entities = 2;
+	EntityId leader_entity = 3;
+}
+
+// Defines a ServerWorker's request for requested_entities
+// to be put in the same partition as leader_entity.
+// Epoch should be increased whenever a worker updates
+// other fields.
+component WorkingSetMarkerRequest {
+	id = 9954;
+
+	data WorkingSetState;
+}
+
+// Defines a StrategyWorker's response to ServerWorker's 
+// request. When generations in Request and Response components
+// are the same, the ServerWorker considers the request fulfilled.
+// Note that actual_entities could differ from requested_entities
+// in cases where multiple working sets request the same entity.
+component WorkingSetMarkerResponse {
+	id = 9953;
+
+	data WorkingSetState;
+}
+
+// Defines an actor entity's WorkingSet membership.
+component WorkingSetActorMember {
+	id = 9952;
+
+	EntityId working_set_marker_entity = 1;
+}

@@ -81,6 +81,9 @@ class SpatialDebuggerSystem;
 class ActorSystem;
 class SpatialRPCService;
 class SpatialRoutingSystem;
+class FWorkingSetDataStorage;
+class FWorkingSetCompletenessHandler;
+class FWorkingSetChangesHandler;
 class FSpatialHandoverManager;
 class SpatialLoadBalanceEnforcer;
 class UnrealServerInterestFactory;
@@ -234,6 +237,9 @@ public:
 
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
 	TOptional<SpatialGDK::FOwnershipCompletenessHandler> OwnershipCompletenessHandler;
+	TUniquePtr<SpatialGDK::FWorkingSetDataStorage> WorkingSetData;
+	TUniquePtr<SpatialGDK::FWorkingSetCompletenessHandler> WorkingSetHandler;
+	TUniquePtr<SpatialGDK::FWorkingSetChangesHandler> WorkingSetChangesHandler;
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 	TUniquePtr<FSpatialNetDriverRPC> RPCs;
@@ -241,6 +247,7 @@ public:
 	FSpatialNetDriverServerRPC* ServerRPCs = nullptr;
 
 	const SpatialGDK::FSubView* LBSubView = nullptr;
+	const SpatialGDK::FSubView* WorkingSetMarkerSubview = nullptr;
 
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
 	TUniquePtr<SpatialGDK::FSpatialStrategySystem> StrategySystem;

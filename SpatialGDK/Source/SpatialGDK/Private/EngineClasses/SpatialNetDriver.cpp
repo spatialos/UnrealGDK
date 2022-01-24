@@ -57,9 +57,12 @@
 #include "Interop/SpatialSnapshotManager.h"
 #include "Interop/SpatialStrategySystem.h"
 #include "Interop/SpatialWorkerFlags.h"
+#include "Interop/SpatialWorkingSetSubsystem.h"
 #include "Interop/Startup/DefaultServerWorkerStartupHandler.h"
 #include "Interop/Startup/SpatialClientWorkerStartupHandler.h"
 #include "Interop/WellKnownEntitySystem.h"
+#include "Interop/WorkingSetsCommon.h"
+#include "Interop/WorkingSetsHandler.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/LBDataStorage.h"
@@ -577,6 +580,20 @@ void USpatialNetDriver::CreateAndInitializeCoreClassesAfterStartup()
 		if (SpatialSettings->bEnableInitialOnlyReplicationCondition && !IsServer())
 		{
 			InitialOnlyFilter = MakeUnique<SpatialGDK::InitialOnlyFilter>(*Connection);
+		}
+
+		{
+			using namespace SpatialGDK;
+
+			ViewCoordinator& Coordinator = Connection->GetCoordinator();
+
+			WorkingSetMarkerSubview = &CreateWorkingSetMarkersSubview(Coordinator);
+			WorkingSetData = MakeUnique<FWorkingSetDataStorage>();
+
+			FSubView& BaseAuthoritativeActorSubview = ActorSubviews::CreateBaseAuthoritySubView(*this);
+			WorkingSetHandler = MakeUnique<FWorkingSetCompletenessHandler>(*WorkingSetData, BaseAuthoritativeActorSubview);
+			WorkingSetChangesHandler =
+				MakeUnique<FWorkingSetChangesHandler>(StagingPartitionId, Connection->GetCoordinator(), *WorkingSetData);
 		}
 
 		const SpatialGDK::FSubView& ActorSubview = SpatialGDK::ActorSubviews::CreateActorSubView(*this);
@@ -2314,6 +2331,15 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				Connection->Flush();
 			}
 
+			if (WorkingSetData.IsValid())
+			{
+				WorkingSetData->Advance(*WorkingSetMarkerSubview);
+				WorkingSetHandler->Advance(Connection->GetCoordinator());
+				GetGameInstance()->GetSubsystem<USpatialActorSetSubsystem>()->Advance(*WorkingSetMarkerSubview);
+
+				WorkingSetChangesHandler->Advance();
+			}
+
 			if (HandoverManager.IsValid())
 			{
 				HandoverManager->Advance();
@@ -3348,8 +3374,10 @@ void USpatialNetDriver::TryFinishStartup()
 			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy =
 				MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy, *VirtualWorkerTranslator);
 
+			SpatialGDK::FSubView& WorkingSetsMarkerSubview = SpatialGDK::CreateWorkingSetMarkersSubview(Connection->GetCoordinator());
+
 			SpatialGDK::FStrategySystemViews Views(
-				{ LBView, ServerWorkerView, LocallyAuthSkeletonEntityManifestsSubview, FilledManifestSubView });
+				{ LBView, ServerWorkerView, LocallyAuthSkeletonEntityManifestsSubview, FilledManifestSubView, WorkingSetsMarkerSubview });
 
 			StrategySystem = MakeUnique<SpatialGDK::FSpatialStrategySystem>(Views, MoveTemp(Strategy),
 																			MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));

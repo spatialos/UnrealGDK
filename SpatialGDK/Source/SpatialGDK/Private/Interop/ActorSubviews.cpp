@@ -6,7 +6,10 @@
 #include "Interop/InitialOnlyFilter.h"
 #include "Interop/OwnershipCompletenessHandler.h"
 #include "Interop/SkeletonEntities.h"
+#include "Interop/SpatialSender.h"
+#include "Interop/WorkingSetsHandler.h"
 #include "Schema/ActorOwnership.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/Restricted.h"
 #include "Schema/Tombstone.h"
 #include "Schema/UnrealMetadata.h"
@@ -17,6 +20,8 @@
 
 namespace SpatialGDK
 {
+DEFINE_LOG_CATEGORY_STATIC(LogSpatialActorSubviews, Log, All);
+
 namespace ActorSubviews
 {
 namespace MainActorSubviewSetup
@@ -140,6 +145,16 @@ TArray<FDispatcherRefreshCallback> SimulatedSubviewSetup::GetCallbacks(ViewCoord
 	return OwnershipSubviewSetup::GetCallbacks(Coordinator);
 }
 
+FActorSubviewExtension FActorSubviewExtension::Combine(FActorSubviewExtension Other) const
+{
+	return { FActorFilterPredicateFactory([Self = *this, Other](FFilterPredicate BasePredicate) {
+				 return Self.ExtendPredicate(Other.ExtendPredicate(BasePredicate));
+			 }),
+			 FActorRefreshCallbackPredicateFactory([Self = *this, Other](TArray<FDispatcherRefreshCallback> BaseCallbacks) {
+				 return Self.ExtendCallbacks(Other.ExtendCallbacks(BaseCallbacks));
+			 }) };
+}
+
 FSubView& CreateActorSubView(USpatialNetDriver& NetDriver)
 {
 	return CreateCustomActorSubView(/*CustomComponentId =*/{}, /*CustomPredicate =*/{}, /*CustomRefresh =*/{}, NetDriver);
@@ -222,14 +237,120 @@ static FActorSubviewExtension GetNetDriverSubviewExtension(USpatialNetDriver& Ne
 			 }) };
 }
 
+bool IsWorkingSetCompleteAuthActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element,
+										 const FWorkingSetCompletenessHandler* WorkingSetHandler)
+{
+	const ComponentData* WorkingSetMemberComponent =
+		Element.Components.FindByPredicate(ComponentIdEquality{ FWorkingSetMember::ComponentId });
+
+	if (!ensure(WorkingSetMemberComponent != nullptr))
+	{
+		return false;
+	}
+
+	const auto* OwningSet = WorkingSetHandler->GetOwningSet(EntityId);
+
+	const bool bIsWorkingSetReferencingEntity = OwningSet != nullptr;
+
+	const FWorkingSetMember WorkingSetMember(*WorkingSetMemberComponent);
+
+	const bool bIsEntityReferencingWorkingSet = WorkingSetMember.WorkingSetMarkerEntityId != SpatialConstants::INVALID_ENTITY_ID;
+
+	if (bIsWorkingSetReferencingEntity != bIsEntityReferencingWorkingSet)
+	{
+		// Desync between working set marker entity and the entity means we're authority incomplete.
+		bool bIsStillAuthEntity = false;
+
+		auto CanHaveOptimisticAuthority = [EntityId, bIsEntityReferencingWorkingSet](const FWorkingSetCommonData& SetState) {
+			if (SetState.RequestedState.Epoch <= SetState.ConfirmedState.Epoch)
+			{
+				return false;
+			}
+
+			const bool bIsEntityInRequestedState = SetState.RequestedState.MemberEntities.Contains(EntityId);
+
+			return bIsEntityInRequestedState == bIsEntityReferencingWorkingSet;
+		};
+
+		{
+			const auto* OwningWorkingSet = WorkingSetHandler->GetMarkerEntitySet(WorkingSetMember.WorkingSetMarkerEntityId);
+
+			if (OwningWorkingSet != nullptr)
+			{
+				bIsStillAuthEntity |= CanHaveOptimisticAuthority(*OwningWorkingSet);
+			}
+		}
+
+		if (OwningSet != nullptr)
+		{
+			bIsStillAuthEntity |= CanHaveOptimisticAuthority(*OwningSet);
+		}
+
+		if (!bIsStillAuthEntity)
+		{
+			UE_LOG(LogSpatialActorSubviews, Verbose,
+				   TEXT("Marker entity and actor entity working set state desynced. EntityId: %lld MarkerEntityId: %lld"), EntityId,
+				   WorkingSetMember.WorkingSetMarkerEntityId);
+
+			return false;
+		}
+	}
+
+	if (!bIsEntityReferencingWorkingSet)
+	{
+		UE_LOG(LogSpatialActorSubviews, Verbose, TEXT("Entity not a part of a working set, working set complete. EntityId: %lld"),
+			   EntityId);
+
+		// The entity isn't part of any working sets.
+		return true;
+	}
+
+	const FWorkingSetCommonData* SetData =
+		OwningSet != nullptr ? OwningSet : WorkingSetHandler->GetMarkerEntitySet(WorkingSetMember.WorkingSetMarkerEntityId);
+
+	return SetData != nullptr && WorkingSetHandler->IsWorkingSetComplete(*SetData);
+}
+
+static FSubView& CreateCustomAuthoritySubView(ViewCoordinator& Coordinator, const FActorSubviewExtension& Extension)
+{
+	return Coordinator.CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
+									 Extension.ExtendPredicate(GetRoleFilterPredicate(&AuthoritySubviewSetup::IsAuthorityActorEntity)),
+									 Extension.ExtendCallbacks(AuthoritySubviewSetup::GetCallbacks(Coordinator)));
+}
+
+FSubView& CreateBaseAuthoritySubView(USpatialNetDriver& NetDriver)
+{
+	const FActorSubviewExtension Extension = GetNetDriverSubviewExtension(NetDriver);
+
+	return CreateCustomAuthoritySubView(NetDriver.Connection->GetCoordinator(), Extension);
+}
+
 FSubView& CreateAuthoritySubView(USpatialNetDriver& NetDriver)
 {
 	const FActorSubviewExtension Extension = GetNetDriverSubviewExtension(NetDriver);
 
-	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
-		Extension.ExtendPredicate(GetRoleFilterPredicate(&AuthoritySubviewSetup::IsAuthorityActorEntity)),
-		Extension.ExtendCallbacks(AuthoritySubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator())));
+	const FActorSubviewExtension WorkingSetExtension{
+		FActorFilterPredicateFactory(
+			[WorkingSetHandlerPtr = NetDriver.WorkingSetHandler.Get()](FFilterPredicate BasePredicate) -> FFilterPredicate {
+				return [BasePredicate, WorkingSetHandlerPtr](const Worker_EntityId EntityId, const EntityViewElement& Entity) {
+					if (!BasePredicate(EntityId, Entity))
+					{
+						return false;
+					}
+
+					return IsWorkingSetCompleteAuthActorEntity(EntityId, Entity, WorkingSetHandlerPtr);
+				};
+			}),
+		/*RefreshCallbackFactory =*/
+		FActorSubviewExtension::AppendCallbacks({
+			NetDriver.Connection->GetCoordinator().CreateComponentChangedRefreshCallback(FWorkingSetMember::ComponentId),
+		})
+	};
+
+	const FActorSubviewExtension StrategyWorkerOnlyExtension =
+		GetDefault<USpatialGDKSettings>()->bRunStrategyWorker ? WorkingSetExtension : FActorSubviewExtension();
+
+	return CreateCustomAuthoritySubView(NetDriver.Connection->GetCoordinator(), Extension.Combine(StrategyWorkerOnlyExtension));
 }
 
 bool IsPlayerOwned(Worker_EntityId EntityId, const EntityViewElement& Entity, const FOwnershipCompletenessHandler* OwnershipHandler)
