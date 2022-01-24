@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-using System;
 using UnrealBuildTool;
 
 public class SpatialGDKTests : ModuleRules
