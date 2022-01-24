@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
 using UnrealBuildTool;
 
 public class SpatialGDKFunctionalTests : ModuleRules
@@ -8,10 +7,10 @@ public class SpatialGDKFunctionalTests : ModuleRules
     {
         bLegacyPublicIncludePaths = false;
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-        bUseUnity = false;
+        bUseUnity = BuildUtils.GetUnityModeSetting();
 
         PrivateIncludePaths.Add(ModuleDirectory);
-        
+
         PrivateDependencyModuleNames.AddRange(
             new string[] {
                 "SpatialGDK",

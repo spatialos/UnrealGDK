@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
 using UnrealBuildTool;
 
 public class SpatialGDKEditorToolbar : ModuleRules
@@ -8,7 +7,7 @@ public class SpatialGDKEditorToolbar : ModuleRules
     {
         bLegacyPublicIncludePaths = false;
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-        bUseUnity = false;
+        bUseUnity = BuildUtils.GetUnityModeSetting();
 
         PrivateIncludePaths.Add("SpatialGDKEditorToolbar/Private");
 

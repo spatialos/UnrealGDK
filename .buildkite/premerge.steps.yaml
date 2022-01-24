@@ -14,6 +14,9 @@ common_env_vars: &common_env_vars
   EXTRA_TESTS_RUN_NATIVE: "${EXTRA_TESTS_RUN_NATIVE:-False}"
   EXTRA_TESTS_RUN_REPGRAPH: "${EXTRA_TESTS_RUN_REPGRAPH:-False}"
   EXTRA_TESTS_RUNS: "${EXTRA_TESTS_RUNS:-1}"
+  ENGINE_UNITY_MODE: "${ENGINE_UNITY_MODE:-True}"
+  GDK_UNITY_MODE: "${GDK_UNITY_MODE:-False}"
+  ENGINE_USE_PCH: "${ENGINE_USE_PCH:-True}"
 
 steps:
   # New build pipeline

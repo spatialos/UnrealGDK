@@ -15,7 +15,7 @@ public class SpatialGDK : ModuleRules
     {
         bLegacyPublicIncludePaths = false;
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-        bUseUnity = false;
+        bUseUnity = BuildUtils.GetUnityModeSetting();
 
         PrivateIncludePaths.Add("SpatialGDK/Private");
 
@@ -104,7 +104,7 @@ public class SpatialGDK : ModuleRules
         {
             ImportLibSuffix = SharedLibSuffix = "_static.a";
         }
-        else if(!(Target.Platform == UnrealTargetPlatform.Linux || Target.Platform == UnrealTargetPlatform.Android))
+        else if (!(Target.Platform == UnrealTargetPlatform.Linux || Target.Platform == UnrealTargetPlatform.Android))
         {
             throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
         }
